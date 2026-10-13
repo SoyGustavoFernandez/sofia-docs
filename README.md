@@ -50,6 +50,7 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 | [Catálogos I](ola-1-fundamentos/19-inventario-de-pantallas/19c-catalogos-1.md) | Unidades de medida, jerarquías de unidades, laboratorios, ingredientes activos y catálogo DIGEMID |
 | [Catálogos II](ola-1-fundamentos/19-inventario-de-pantallas/19d-catalogos-2.md) | Medicamentos, presentaciones de venta, formulaciones clínicas, proveedores (con historial de precios) y aseguradoras |
 | [Inventario y atención](ola-1-fundamentos/19-inventario-de-pantallas/19e-inventario-y-atencion.md) | Lotes, stock por sucursal, pacientes, profesionales de salud y recetas médicas (incluye el escáner con IA) |
+| [Punto de venta](ola-1-fundamentos/19-inventario-de-pantallas/19f-punto-de-venta.md) | Sesiones de caja (apertura, cierre y arqueo), nueva venta, cobro, comprobante, búsqueda y detalle de ventas, anulación y devolución |
 
 ### Inventarios base
 
@@ -57,7 +58,6 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 ## En preparación
 
-- Resto del inventario de pantallas: punto de venta.
 - Modelo de datos transaccional e historial de scripts.
 - Seguridad: autenticación y controles.
 - Catálogo de códigos de error y referencia de la API.
