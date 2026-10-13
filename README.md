@@ -46,6 +46,7 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 |---|---|
 | [Acceso, layout y componentes compartidos](ola-1-fundamentos/19-inventario-de-pantallas/19a-acceso-layout-y-compartidos.md) | Inicio de sesión, registro de empresa, recuperación de contraseña, dashboard, menú, cabecera, carga masiva y textos comunes |
 | [Administración](ola-1-fundamentos/19-inventario-de-pantallas/19b-administracion.md) | Empresa, sucursales, empleados, roles y permisos, cuentas de usuario y series fiscales |
+| [Catálogos I](ola-1-fundamentos/19-inventario-de-pantallas/19c-catalogos-1.md) | Unidades de medida, jerarquías de unidades, laboratorios, ingredientes activos y catálogo DIGEMID |
 
 ### Inventarios base
 
@@ -53,7 +54,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 ## En preparación
 
-- Resto del inventario de pantallas: catálogos, inventario y atención, punto de venta.
+- Resto del inventario de pantallas: catálogos II, inventario y atención, punto de venta.
 - Modelo de datos transaccional e historial de scripts.
 - Seguridad: autenticación y controles.
 - Carga masiva y exportación, catálogo de códigos de error y referencia de la API.
