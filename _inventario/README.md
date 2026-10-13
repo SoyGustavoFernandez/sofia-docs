@@ -1,6 +1,6 @@
 # Inventarios base
 
-Generados por script (`inventario.js`, en el scratchpad de la sesión) leyendo el árbol de trabajo. Primera generación: 2026-10-06 sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`. **Regenerados el 2026-10-13 11:15 sobre `27597cd` y `01b8260`** (los conteos de la tabla son los de esa regeneración si difieren; ver la salida del script). Son la lista de control contra la que se validan las tablas de cobertura de cada documento.
+Generados por script (`inventario.js`, en el scratchpad de la sesión) leyendo el árbol de trabajo. Primera generación: 2026-10-06 sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`. **Regenerados el 2026-10-13 12:17 sobre `43f5529` y `eeffbb6`** (los conteos de la tabla son los de esa regeneración si difieren; ver la salida del script). Son la lista de control contra la que se validan las tablas de cobertura de cada documento.
 
 El árbol de trabajo tenía cambios sin commitear al generarlos (ver `REGLAS-AGENTES.md`, sección 3). El script `0028_Ventas_Sesion_Anulacion.sql` quedó commiteado en `358935e`.
 
