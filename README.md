@@ -38,6 +38,7 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Integraciones externas](ola-1-fundamentos/07-integraciones.md) | Gemini, Presidio, correo, y el estado real de SUNAT y DIGEMID |
 | [Guía del desarrollador](ola-1-fundamentos/08-guia-del-desarrollador.md) | Requisitos, entorno local, configuración, comandos de calidad, hooks de commit y convenciones |
 | [Carga masiva y exportación](ola-1-fundamentos/20-carga-masiva-y-exportacion.md) | Las 12 cargas masivas (plantilla, validaciones por fila y guardado) y las 22 exportaciones a Excel |
+| [Glosario](ola-1-fundamentos/06-glosario.md) | 133 términos de SUNAT, DIGEMID, caja, inventario, organización e IA, con lo que significan en el sistema y dónde aparecen |
 
 ### Inventario de pantallas
 
@@ -61,7 +62,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 - Modelo de datos transaccional e historial de scripts.
 - Seguridad: autenticación y controles.
 - Catálogo de códigos de error y referencia de la API.
-- Glosario, pruebas automatizadas, despliegue y operación, estado del sistema y deuda técnica.
+- Pruebas automatizadas, despliegue y operación, estado del sistema y deuda técnica.
 - Historias de usuario, casos de uso, procesos de negocio y manual de usuario.
 - Casos de prueba funcionales y matriz de trazabilidad.
 
