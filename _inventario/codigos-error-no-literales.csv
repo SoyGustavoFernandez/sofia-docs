@@ -1,0 +1,15 @@
+expresion;tipo;fuente
+code;Validation;sofia-apis/src/SOFIA.Application/Common/Behaviors/ValidationBehavior.cs:31
+NombreDuplicado;Conflict;sofia-apis/src/SOFIA.Application/Laboratorios/Common/LaboratorioDuplicateChecker.cs:19
+CodigoDuplicado;Conflict;sofia-apis/src/SOFIA.Application/Laboratorios/Common/LaboratorioDuplicateChecker.cs:29
+TaxIdDuplicado;Conflict;sofia-apis/src/SOFIA.Application/Proveedores/Common/ProveedorDuplicateChecker.cs:19
+RazonSocialDuplicada;Conflict;sofia-apis/src/SOFIA.Application/Proveedores/Common/ProveedorDuplicateChecker.cs:24
+ExcelImportException.FilasExcedidas;Validation;sofia-apis/src/SOFIA.Infrastructure/Excel/ExcelReaderService.cs:64
+ExcelImportException.ArchivoExcedeDescompresion;Validation;sofia-apis/src/SOFIA.Infrastructure/Excel/ExcelReaderService.cs:152
+ExcelImportException.ArchivoInvalido;Validation;sofia-apis/src/SOFIA.Infrastructure/Excel/ExcelReaderService.cs:170
+RequestTooLargeCode;Validation;sofia-apis/src/SOFIA.API/Infrastructure/GlobalExceptionHandler.cs:51
+RequestInvalidCode;Validation;sofia-apis/src/SOFIA.API/Infrastructure/GlobalExceptionHandler.cs:52
+ConcurrencyConflictCode;Conflict;sofia-apis/src/SOFIA.API/Infrastructure/GlobalExceptionHandler.cs:87
+DuplicadoCode;Conflict;sofia-apis/src/SOFIA.API/Infrastructure/GlobalExceptionHandler.cs:102
+ValorInvalidoCode;Validation;sofia-apis/src/SOFIA.API/Infrastructure/GlobalExceptionHandler.cs:103
+ReferenciaInvalidaCode;Conflict;sofia-apis/src/SOFIA.API/Infrastructure/GlobalExceptionHandler.cs:104

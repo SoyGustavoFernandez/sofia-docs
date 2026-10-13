@@ -1,0 +1,13 @@
+enum;fuente
+CondicionVenta;sofia-apis/src/SOFIA.Domain/Enums/CondicionVenta.cs
+DestinoDevolucion;sofia-apis/src/SOFIA.Domain/Enums/DestinoDevolucion.cs
+EstadoComprobanteSunat;sofia-apis/src/SOFIA.Domain/Enums/EstadoComprobanteSunat.cs
+EstadoDespacho;sofia-apis/src/SOFIA.Domain/Enums/EstadoDespacho.cs
+EstadoLogistico;sofia-apis/src/SOFIA.Domain/Enums/EstadoLogistico.cs
+EstadoResolucionCuarentena;sofia-apis/src/SOFIA.Domain/Enums/EstadoResolucionCuarentena.cs
+EstadoSesion;sofia-apis/src/SOFIA.Domain/Enums/EstadoSesion.cs
+EstadoVenta;sofia-apis/src/SOFIA.Domain/Enums/EstadoVenta.cs
+MetodoPago;sofia-apis/src/SOFIA.Domain/Enums/MetodoPago.cs
+ModalidadRegistro;sofia-apis/src/SOFIA.Domain/Enums/ModalidadRegistro.cs
+TipoComprobante;sofia-apis/src/SOFIA.Domain/Enums/TipoComprobante.cs
+TipoDocumentoIdentidad;sofia-apis/src/SOFIA.Domain/Enums/TipoDocumentoIdentidad.cs
