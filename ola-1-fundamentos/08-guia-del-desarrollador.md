@@ -3,18 +3,34 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-06 |
-| **Backend** | `sofia-apis`, rama `main`, commit `00991bc` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `31af681` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-10-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código y de archivos de configuración y tooling de ambos repositorios (solo lectura). No se ejecutó ningún comando de compilación, prueba, formato ni servidor. El apartado «Entorno local observado» recoge una comprobación hecha por el orquestador con `docker ps` / `docker inspect`. |
+
+## Historial de cambios
+
+### Versión 1.1 (2026-10-14)
+
+Reconciliación con el código actual (`sofia-apis` `00991bc` → `43f5529`, `sofia-web-spa` `31af681` → `eeffbb6`). Los archivos que la versión 1.0 marcaba como «En curso» ya están commiteados; no cambia ningún paso del entorno local.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 3.6 (`environment.js`) | La etiqueta `<script src="environment.js">` estaba solo en el árbol de trabajo (`index.html:18`); en el commit nada cargaba `environment.js`, así que `window.__env` nunca se definía (**En curso**). | `index.html:18` carga `environment.js` en el commit: `window.__env` se define. Con el objeto vacío del repositorio siguen mandando los valores compilados. | `8f36125` |
+| 4.2 (`npm run build`) | La configuración por defecto era `development` en el commit y `production` en el árbol de trabajo (**En curso**). | Es `production` (`angular.json:95`). Se mantiene la recomendación de indicar la configuración explícitamente. | `8f36125` |
+| 4.2 (`npm run lint`) | Los patrones apuntaban a `src/app/modules/**` (carpeta inexistente) en el commit y a `src/app/pages/**` en el árbol de trabajo (**En curso**); con el commit, `ng lint` no revisaba las pantallas. | Los patrones del commit son `src/app/core`, `src/app/pages` y `src/app/shared` (`angular.json:141-148`): `ng lint` sí revisa las pantallas. | `8f36125` |
+| 2.1 y 8.4 (scripts de base de datos) | 27 scripts commiteados (`0001` a `0027`); `0028_Ventas_Sesion_Anulacion.sql` sin rastrear; el último commiteado era el `0027`. | 28 scripts (`0001` a `0028`); el siguiente número libre es `0029`. | `358935e` |
+| 2.1 (pruebas de integración) | `AnularVentaCajaIntegrationTests.cs` sin rastrear (**En curso**); áreas de `SOFIA.IntegrationTests` sin `Maestros` ni `Proveedores`. | Commiteado; se suman las áreas `Maestros` (eliminar con dependencias) y `Proveedores` (precios). | `358935e`, `27597cd`, `606cb69` |
+| 10.2 «En curso (sin commitear)» | Cuatro archivos con cambios locales. | Ninguno: `git status --short` está limpio en los dos repositorios. | `8f36125`, `358935e` |
+| 1 (nota sobre los `README.md`) y 10.1 | Los `README.md` de ambos repositorios no se usaron como fuente por sus errores conocidos; los dos tenían cambios sin commitear que la guía no usaba. | Los dos `README.md` se reescribieron y están commiteados (`43f5529`, `eeffbb6`). La guía sigue sin usarlos como fuente y no afirma nada sobre su contenido; NV-12 registra que no se auditó si sus errores conocidos se corrigieron. | `43f5529`, `eeffbb6` |
 
 Esta guía es para quien clona por primera vez los dos repositorios de SOFIA:
 
 - `sofia-apis` — backend .NET (API REST, migraciones de base de datos, servicio de anonimización).
 - `sofia-web-spa` — frontend Angular.
 
-Cada afirmación lleva su fuente con el formato `repo/ruta/archivo:línea`. Los `README.md` y `CLAUDE.md` de los repositorios **no** se usaron como fuente (tienen errores conocidos). Nunca se escriben valores de secretos: donde haga falta uno verás un marcador como `<tu-contraseña>`.
+Cada afirmación lleva su fuente con el formato `repo/ruta/archivo:línea`. Los `README.md` y `CLAUDE.md` de los repositorios **no** se usaron como fuente (tenían errores conocidos; los dos `README.md` se reescribieron en `43f5529` y `eeffbb6` y no se auditaron de nuevo, ver NV-12). Nunca se escriben valores de secretos: donde haga falta uno verás un marcador como `<tu-contraseña>`.
 
 ## Índice
 
@@ -208,7 +224,7 @@ src/SOFIA.Infrastructure/
 src/SOFIA.DbUp/
 ├── Program.cs
 ├── appsettings.json        Solo la clave ConnectionStrings:DefaultConnection, vacía
-├── Scripts/                0001_... a 0027_... (27 scripts commiteados)
+├── Scripts/                0001_... a 0028_... (28 scripts)
 └── Dockerfile
 
 src/SOFIA.PresidioAPI/
@@ -221,12 +237,13 @@ src/SOFIA.UnitTests/         Una carpeta por módulo (espejo de SOFIA.Applicatio
 src/SOFIA.IntegrationTests/
 ├── Infrastructure/         SofiaWebAppFactory, BaseIntegrationTest, TestCurrentUser, CapturingEmailSender, sembradores
 ├── <Área>/                 Api, Auditoria, Concurrency, Dashboard, Email, Empleados, Excel, FormulacionesClinicas,
-│                           Laboratorios, Medicamentos, Pacientes, Persistence, Recetas, Security, Ventas
+│                           Laboratorios, Maestros, Medicamentos, Pacientes, Persistence, Proveedores, Recetas,
+│                           Security, Ventas
 └── xunit.runner.json       parallelizeTestCollections = false
 src/SOFIA.ArchitectureTests/ArchitectureTests.cs
 ```
 
-> **En curso (sin commitear):** en el árbol de trabajo existe además `src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql` y `src/SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs`, que `git status` muestra como no rastreados. No forman parte del commit `00991bc`.
+> `src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql` y `src/SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs` ya están commiteados (`358935e`).
 
 Carpetas vacías que existen solo en esta máquina (Git no las rastrea, así que no aparecerán en tu clon): `src/SOFIA.Application/Laboratorios/Commands/ImportarLaboratorios/` y `src/SOFIA.Application/Security/Queries/Roles/GetPermissionCatalog/`.
 
@@ -499,7 +516,7 @@ Todo lo siguiente sale de `sofia-apis/src/SOFIA.DbUp/Program.cs` (50 líneas) y 
 
 Atención al `appsettings.json` de DbUp: se busca en el **directorio actual** (`SetBasePath(Directory.GetCurrentDirectory())`, `Program.cs:6`), y de todos modos trae la cadena vacía (`sofia-apis/src/SOFIA.DbUp/appsettings.json:3`). En la práctica la cadena llega por user-secrets (compartidos con la API, ver [3.2](#32-dónde-se-configura-cada-cosa)), por variable de entorno o por argumento.
 
-**Convención de nombres de los scripts** (observada en los 27 archivos de `sofia-apis/src/SOFIA.DbUp/Scripts/`): `NNNN_Descripcion_Con_Guiones_Bajos.sql`, con número de cuatro dígitos consecutivo, por ejemplo `0001_Initial_Schema.sql`, `0017_Permiso_Ventas_Anular.sql`, `0027_VentasPagos_Transaccion_Index.sql`. El prefijo numérico es lo que da el orden de ejecución. Cómo agregar uno: ver [8.4](#84-agregar-un-script-de-base-de-datos).
+**Convención de nombres de los scripts** (observada en los 28 archivos de `sofia-apis/src/SOFIA.DbUp/Scripts/`): `NNNN_Descripcion_Con_Guiones_Bajos.sql`, con número de cuatro dígitos consecutivo, por ejemplo `0001_Initial_Schema.sql`, `0017_Permiso_Ventas_Anular.sql`, `0028_Ventas_Sesion_Anulacion.sql`. El prefijo numérico es lo que da el orden de ejecución. Cómo agregar uno: ver [8.4](#84-agregar-un-script-de-base-de-datos).
 
 ### 3.5 API
 
@@ -559,7 +576,7 @@ El contenido del `environment.local.ts` de esta máquina no se abrió (es config
 
 **`public/environment.js` (configuración en tiempo de ejecución).** Contiene `window.__env = {};` (`sofia-web-spa/public/environment.js:1`). `resolveEnvironment()` usa `window.__env` solo si es un objeto con `production` booleano y `api.baseurl` no vacío; en caso contrario devuelve los valores compilados (`environment.model.ts:9-31`). Con el objeto vacío del repositorio, por tanto, mandan los valores compilados. Sirve para que un despliegue cambie la URL de la API sin recompilar: `environment.prod.ts` trae `baseurl` vacío (`environment.prod.ts:3-9`).
 
-> **En curso (sin commitear):** la etiqueta `<script src="environment.js"></script>` que carga ese archivo está en `src/index.html:18` del árbol de trabajo, pero **no** en el commit `31af681` (`git diff --cached src/index.html`). En el commit documentado nada carga `environment.js`, así que `window.__env` nunca se define y siempre se usan los valores compilados.
+> La etiqueta `<script src="environment.js"></script>` que carga ese archivo está en `src/index.html:18` (`sofia-web-spa/src/index.html:18`), dentro de `<head>`, así que `window.__env` se define antes de arrancar Angular. Hasta el commit `31af681` esa etiqueta no existía y nada cargaba `environment.js`; se agregó en `8f36125`. Un despliegue que sobrescriba `environment.js` con un objeto válido ya tiene efecto.
 
 **Puerto y host.** `ng serve` usa `localhost:4200` (`angular.json:108-111`). El script `npm start` ejecuta `ng serve -o`, que además abre el navegador (`package.json:7`).
 
@@ -633,11 +650,11 @@ Scripts de `sofia-web-spa/package.json:5-17`:
 | Script | Comando real | Qué hace exactamente |
 |---|---|---|
 | `npm start` | `ng serve -o` | Servidor de desarrollo en `localhost:4200` con la configuración `development` (usa `environment.local.ts`) y abre el navegador (`angular.json:97-112`) |
-| `npm run build` | `ng build` | Compila a `dist/sofia-web-spa` con el builder `@angular-devkit/build-angular:browser` (`angular.json:26,33`). **En curso (sin commitear):** en el árbol de trabajo la configuración por defecto es `production` (`angular.json:95`: AOT, optimización, hashes, sin source maps, presupuestos de 5 MB, usa `environment.prod.ts`); en el commit `31af681` es `development` (`git diff --cached angular.json`). Para no depender de eso, indica la configuración: `npm run build -- --configuration production` |
+| `npm run build` | `ng build` | Compila a `dist/sofia-web-spa` con el builder `@angular-devkit/build-angular:browser` (`angular.json:26,33`). La configuración por defecto es `production` (`angular.json:95`: AOT, optimización, hashes, sin source maps, presupuestos de 5 MB, usa `environment.prod.ts`); hasta el commit `31af681` era `development` y cambió en `8f36125`. Aun así, indica la configuración para no depender del valor por defecto: `npm run build -- --configuration production` |
 | `npm run watch` | `ng build --watch --configuration development` | Compilación incremental de desarrollo (necesita `environment.local.ts`) |
 | `npm test` | `ng test` | Karma + Jasmine con `karma.conf.js`: navegador Chrome con ventana, modo observación (`autoWatch: true`, `singleRun: false`), informes `progress` y `kjhtml`, `tsconfig.spec.json`, sirve `public/` como recursos (`angular.json:116-130`, `karma.conf.js:27-40`) |
 | `npm run test:ci` | `ng test --watch=false --browsers=ChromeHeadlessCI` | Una sola pasada en Chrome sin interfaz, con el lanzador `ChromeHeadlessCI` (`ChromeHeadless` + `--no-sandbox --disable-gpu`, `karma.conf.js:33-38`) |
-| `npm run lint` | `ng lint --fix` | ESLint a través del builder `@angular-eslint/builder:lint` sobre los patrones `lintFilePatterns`, corrigiendo lo corregible. **En curso (sin commitear):** en el árbol de trabajo los patrones son `src/app/core`, `src/app/pages` y `src/app/shared` (`.ts` y `.html`, `angular.json:141-148`); en el commit `31af681` apuntan a `src/app/modules/**` en lugar de `src/app/pages/**`, carpeta que no existe, por lo que con el commit documentado `ng lint` no revisa las pantallas |
+| `npm run lint` | `ng lint --fix` | ESLint a través del builder `@angular-eslint/builder:lint` sobre los patrones `lintFilePatterns`, corrigiendo lo corregible. Los patrones son `src/app/core`, `src/app/pages` y `src/app/shared` (`.ts` y `.html`, `angular.json:141-148`), así que revisa las pantallas; hasta el commit `31af681` apuntaban a `src/app/modules/**` (carpeta que no existe) en lugar de `src/app/pages/**` y no las revisaban (cambió en `8f36125`) |
 | `npm run lint:fast` | `eslint --cache --cache-location node_modules/.cache/eslint --fix` | ESLint con caché y corrección; es el mismo comando que usa `lint-staged`. Sin argumentos no recibe archivos: pásale rutas (`npm run lint:fast -- src/app/pages/pos`) |
 | `npm run lint:ci` | `ESLINT_TYPEAWARE=true eslint --max-warnings=0 .` | ESLint sobre todo el proyecto, con análisis con tipos (carga `tsconfig.json`) y fallando ante cualquier advertencia (`eslint.config.js:12,26`) |
 | `npm run precommit:lint` | `lint-staged` | Lo llama el hook `pre-commit` (ver [5.2](#52-spa-sofia-web-spa-husky--lint-staged--commitlint)) |
@@ -954,9 +971,7 @@ Guía: el módulo `laboratorios`.
 
 Deducido de `sofia-apis/src/SOFIA.DbUp/Program.cs`, `SOFIA.DbUp.csproj` y los scripts existentes.
 
-1. Crea el archivo en `sofia-apis/src/SOFIA.DbUp/Scripts/` con el siguiente número libre: `NNNN_Descripcion.sql`. El último commiteado es `0027_VentasPagos_Transaccion_Index.sql`.
-
-   > **En curso (sin commitear):** en el árbol de trabajo ya existe `0028_Ventas_Sesion_Anulacion.sql`. Comprueba con `git status` y con el estado de `main` cuál es el siguiente número libre antes de crear el tuyo.
+1. Crea el archivo en `sofia-apis/src/SOFIA.DbUp/Scripts/` con el siguiente número libre: `NNNN_Descripcion.sql`. El último es `0028_Ventas_Sesion_Anulacion.sql`, así que el siguiente libre en este commit es `0029`; comprueba el estado de `main` antes de crear el tuyo por si otra persona tomó ese número.
 
 2. No hay que tocar el `.csproj`: `Scripts\*.sql` ya se incluye como recurso embebido (`SOFIA.DbUp.csproj:18-20`). El archivo debe estar directamente en `Scripts/`, no en una subcarpeta.
 3. Escribe el script **repetible** cuando sea posible, como hacen los existentes: `IF EXISTS (... sys.columns ...)` antes de un `ALTER` (`0026_Empleados_Apellido_Materno_Opcional.sql:2-3`), `IF NOT EXISTS` antes de un `INSERT` (`0002_SeedBaseRoles.sql:5-9`), `NOT EXISTS` en inserciones masivas (`0017_Permiso_Ventas_Anular.sql:6-8`). Empieza con un comentario de una línea que explique el motivo (`0026...:1`, `0017...:1`) y separa lotes con `GO`.
@@ -1017,19 +1032,20 @@ Todos se deducen del código o de la configuración; ninguno se reprodujo ejecut
 | NV-9 | Si `docker compose up -d <servicio>` exige las variables marcadas con `:?` de servicios que no se arrancan (por ejemplo `JWT_SECRET_KEY` al levantar solo `sqlserver`) | No se ejecutó Docker Compose |
 | NV-10 | Entorno local observado (nombres y puertos de contenedores, Docker detenido a las 17:43) | Dato aportado por el orquestador con `docker ps`/`docker inspect`; este documento no lo comprobó |
 | NV-11 | Confianza en el certificado HTTPS de desarrollo | No hay nada en el repositorio que lo configure; se cita el comando estándar del SDK sin ejecutarlo |
+| NV-12 | Si los `README.md` de `sofia-apis` y `sofia-web-spa`, reescritos en `43f5529` y `eeffbb6`, ya no tienen los errores conocidos que tenían (rutas inexistentes, versión de Angular, puertos) | La guía no los usa como fuente (regla del encargo) y no se auditaron línea por línea; esta guía no afirma nada sobre su contenido |
 
 ### 10.2 En curso (sin commitear)
 
-Afirmaciones que dependen de archivos modificados en el árbol de trabajo y que no forman parte de los commits documentados:
+Ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en `sofia-apis` (`43f5529`) ni en `sofia-web-spa` (`eeffbb6`). Los cuatro archivos que la versión 1.0 tenía aquí ya están commiteados y las secciones que dependían de ellos se actualizaron:
 
-| Archivo | Qué cambia respecto al commit | Dónde afecta en esta guía |
+| Archivo | Qué cambió respecto a la versión 1.0 | Dónde afecta en esta guía |
 |---|---|---|
-| `sofia-web-spa/angular.json` (en staging) | `build.defaultConfiguration` pasa de `development` a `production`; los `lintFilePatterns` pasan de `src/app/modules/**` (carpeta inexistente) a `src/app/pages/**` | [4.2](#42-spa): `npm run build` y `npm run lint` |
-| `sofia-web-spa/src/index.html` (en staging) | Añade `<script src="environment.js"></script>` | [3.6](#36-spa): configuración en tiempo de ejecución |
-| `sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql` (sin rastrear) | Script nuevo | [2.1](#21-backend-sofia-apis), [8.4](#84-agregar-un-script-de-base-de-datos): siguiente número libre |
-| `sofia-apis/src/SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs` (sin rastrear) | Prueba nueva | [2.1](#21-backend-sofia-apis) |
+| `sofia-web-spa/angular.json` | `build.defaultConfiguration` es `production`; los `lintFilePatterns` apuntan a `src/app/pages/**` (`8f36125`) | [4.2](#42-spa): `npm run build` y `npm run lint` |
+| `sofia-web-spa/src/index.html` | Incluye `<script src="environment.js"></script>` en la línea 18 (`8f36125`) | [3.6](#36-spa): configuración en tiempo de ejecución |
+| `sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql` | Script commiteado (`358935e`) | [2.1](#21-backend-sofia-apis), [8.4](#84-agregar-un-script-de-base-de-datos): siguiente número libre `0029` |
+| `sofia-apis/src/SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs` | Prueba commiteada (`358935e`) | [2.1](#21-backend-sofia-apis) |
 
-El resto de los archivos en curso listados en las reglas (ventas, caja, `venta-detail`, traducciones de `pos`, los dos `README.md`) no se usan en esta guía.
+Los archivos de ventas, caja, `venta-detail`, traducciones de `pos` y los dos `README.md` que también tuvieron cambios no se usan en esta guía (los `README.md` ya están commiteados; ver NV-12).
 
 ### 10.3 Pendientes detectados (no existen en los repositorios)
 
@@ -1149,7 +1165,7 @@ Inventario: los archivos de configuración y tooling pedidos en el encargo, más
 
 ## 12. Fuentes
 
-Archivos leídos para esta guía (árbol de trabajo sobre los commits `00991bc` y `31af681`; para los archivos en curso se contrastó con `git diff --cached` y `git status`).
+Archivos leídos para esta guía (commits `43f5529` y `eeffbb6`, con el árbol de trabajo sin cambios locales según `git status`).
 
 **`sofia-apis` — configuración y tooling**
 
