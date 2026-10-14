@@ -10,8 +10,8 @@ El árbol de trabajo tenía cambios sin commitear al generarlos (ver `REGLAS-AGE
 | `permisos.csv` | Pares módulo × acción usados en `[HasPermission]` y cuántos endpoints los exigen | 105 (27 módulos) |
 | `scripts-dbup.csv` | Scripts DbUp y su número de líneas | 28 |
 | `tablas.csv` | Tablas con el script y la línea de su `CREATE TABLE` | 50 |
-| `codigos-error.csv` | Códigos de error literales distintos, con su tipo y número de ocurrencias | 341 |
-| `codigos-error-ocurrencias.csv` | Cada ocurrencia de `Error.<Tipo>("codigo", …)` con `archivo:línea` | 711 |
+| `codigos-error.csv` | Códigos de error literales distintos, con su tipo y número de ocurrencias | 347 |
+| `codigos-error-ocurrencias.csv` | Cada ocurrencia de `Error.<Tipo>("codigo", …)` con `archivo:línea` | 719 |
 | `codigos-error-no-literales.csv` | Llamadas a `Error.<Tipo>(…)` cuyo código es una constante o variable (hay que resolverlas a mano) | 14 |
 | `validadores.csv` | Validadores FluentValidation; su código de error es dinámico: `{Request}.{Propiedad}` | 83 |
 | `commands-queries.csv` | Commands y queries de `SOFIA.Application` (113 commands y 90 queries) | 203 |
