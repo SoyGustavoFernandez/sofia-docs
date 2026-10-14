@@ -3,17 +3,34 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-06 |
-| **Backend** | `sofia-apis`, rama `main`, commit `00991bc` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `31af681` |
-| **Método** | Lectura de código: scripts DbUp `0001`–`0027` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio. No se consultó la base de datos ni la API. |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-10-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Método** | Lectura de código: scripts DbUp `0001`–`0028` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio. No se consultó la base de datos ni la API. |
+
+## Historial de cambios
+
+### Versión 1.1 (2026-10-14)
+
+Reconciliación con el código actual (`sofia-apis` `00991bc` → `43f5529`, `sofia-web-spa` `31af681` → `eeffbb6`). El esquema de las 27 tablas no cambió: no hay scripts nuevos que las toquen y las configuraciones de EF de estas tablas no cambiaron; cambió cómo se usa `Historial_Precios_Prov` y qué guarda `Sucursales.Numero_Licencia` al registrar una empresa.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 7.2 `Historial_Precios_Prov`, «Uso en el código» | «Solo lectura»: ningún código inserta ni modifica filas; el endpoint `POST /Proveedores/precios` devolvía un identificador sin guardar; la tabla solo podía poblarse en la base. | La tabla se lee (ventas, consulta de historial) y se escribe: el registro de precio inserta una fila con el costo neto y cierra (fecha de fin) las filas abiertas del mismo proveedor y producto (`RegistrarPrecioProveedorCommandHandler.cs`). Hay un método nuevo `CerrarVigencia` en la entidad. No hay vía para editar ni borrar filas. | `606cb69` |
+| 7.2, columnas `Fecha_Fin_Vigencia`, `Lead_Time_Dias`, `Cantidad_Min_Compra` | Sin nota de uso. | Notas de cómo las llena el registro de precio (fecha de fin nula al registrar y fecha puesta al cerrar; plazo 0; cantidad mínima 1). | `606cb69` |
+| 12, pendiente de `Historial_Precios_Prov` | «La aplicación solo la lee; no existe ninguna vía para registrar cotizaciones.» | La aplicación la lee y la escribe; queda pendiente que no se puedan editar ni borrar precios y que la regla de un solo precio abierto no tenga índice único. | `606cb69` |
+| 3.2 `Sucursales`, `Numero_Licencia` y `Direccion_Fisica` | La licencia siempre tenía un valor del usuario. | La sede principal que crea el registro de empresa nace con la licencia vacía (texto vacío, no nulo; antes quedaba como «Por definir») y la dirección es obligatoria al registrar. | `9dd1705`, `41f0a05` |
+| 3.2, `TenantId` | Cita `Ent/Sucursal.cs:51-52`. | Se mantiene y se agrega `Ent/Sucursal.cs:73-74` (`CreateSedePrincipal`). | `41f0a05` |
+| 1, 10 y 14 (script `0028`) | El `0028` estaba sin commitear y no se consideraba. | El `0028` está commiteado; agrega `Ventas_Cabecera.Sesion_Anulacion_ID` y su clave foránea, ambas de la Parte B. El alcance pasa a `0001`–`0028`; sigue sin tocar las 27 tablas. | `358935e` |
+| 10.1 | Cita `RegistrarEmpresaCommandHandler.cs:113-114`. | `:115-116`. | `9dd1705`, `41f0a05` |
+| 12, «En curso (sin commitear)» | Nada depende de archivos sin commitear; el `0028` lo estaba. | Sin cambios locales en los repositorios. | `358935e` |
 
 ## 1. Alcance y forma de lectura
 
 Este documento es el diccionario de datos de las **27 tablas de maestros y seguridad** de SOFIA: empresa y organización (3), seguridad (9), sistema (2), catálogo farmacéutico y comercial (11) y personas (2). Las otras 23 tablas (inventario, transferencias, cuarentena y actas, recetas, caja, ventas, SUNAT, devoluciones, delivery, magistrales y servicios) y el historial de scripts se documentan en la Parte B.
 
-El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0027`**. El script `0028_Ventas_Sesion_Anulacion.sql` está sin commitear y no se considera; se revisó y solo toca `Ventas_Cabecera`, que es de la Parte B (`sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql:2-7`), así que no afecta a ninguna tabla de este documento.
+El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0028`**. El script `0028_Ventas_Sesion_Anulacion.sql` solo agrega la columna `Sesion_Anulacion_ID` y su clave foránea a `Ventas_Cabecera`, que es de la Parte B (`sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql:2-7`), así que no afecta a ninguna tabla de este documento.
 
 ### 1.1 Abreviaturas de las fuentes
 
@@ -21,7 +38,7 @@ Para no repetir rutas largas en cada celda, las citas usan estas abreviaturas:
 
 | Abreviatura | Ruta real |
 |---|---|
-| `0001:86` | `sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql`, línea 86. El mismo criterio vale para `0002` … `0027` (el nombre completo de cada script está en la sección [Fuentes](#14-fuentes)). |
+| `0001:86` | `sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql`, línea 86. El mismo criterio vale para `0002` … `0028` (el nombre completo de cada script está en la sección [Fuentes](#14-fuentes)). |
 | `Cfg/X.cs:n` | `sofia-apis/src/SOFIA.Infrastructure/Persistence/Configurations/X.cs`, línea n |
 | `Ent/X.cs:n` | `sofia-apis/src/SOFIA.Domain/Entities/X.cs`, línea n |
 | `DbContext:n` | `sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs`, línea n |
@@ -174,8 +191,8 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 |---|---|---|---|---|---|
 | `Sucursal_ID` | `UNIQUEIDENTIFIER` | No | `NEWSEQUENTIALID()` | Identificador de la sucursal. Clave primaria. | `0001:8` |
 | `Nombre` | `VARCHAR(100)` | No | — | Nombre de la sucursal. | `0001:9` |
-| `Direccion_Fisica` | `VARCHAR(255)` | No | — | Dirección del local. | `0001:10` |
-| `Numero_Licencia` | `VARCHAR(50)` | No | — | Número de licencia del establecimiento. Único por empresa entre sucursales no borradas. | `0001:11` |
+| `Direccion_Fisica` | `VARCHAR(255)` | No | — | Dirección del local. Al registrar una empresa es obligatoria (la dirección de la sede principal). | `0001:10` |
+| `Numero_Licencia` | `VARCHAR(50)` | No | — | Número de licencia del establecimiento. Único por empresa entre sucursales no borradas. La sede principal creada por el registro de empresa sin licencia queda con texto vacío (`Ent/Sucursal.cs:56-76`); la edición de la sucursal exige informarla. | `0001:11` |
 | `Gerente_ID` | `UNIQUEIDENTIFIER` | Sí | — | Empleado que gerencia la sucursal. | `0001:12` |
 | `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0001:13` |
 | `CreatedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario creador. | `0001:14` |
@@ -185,7 +202,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:18` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:19` |
 | `Empresa_ID` | `UNIQUEIDENTIFIER` | Sí | — | Empresa a la que pertenece la sucursal. | `0005:33-34` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. El dominio la iguala a `Empresa_ID` al crear (`Ent/Sucursal.cs:51-52`). | `0005:33-35` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. El dominio la iguala a `Empresa_ID` al crear (`Ent/Sucursal.cs:51-52`, y `:73-74` en `CreateSedePrincipal`). | `0005:33-35` |
 
 **Clave primaria:** `Sucursal_ID` (sin nombre en el script).
 
@@ -1016,7 +1033,7 @@ Importante: aunque el catálogo de DIGEMID es de alcance nacional, en SOFIA la t
 
 **Propósito.** Cotizaciones de costo de un producto por proveedor, con su periodo de vigencia, plazo de entrega y cantidad mínima de compra.
 **Entidad.** `HistorialPrecioProveedor` (`Ent/HistorialPrecioProveedor.cs:5`), configurada en `Cfg/HistorialPrecioProveedorConfiguration.cs`. `DbSet` en `DbContext:38`.
-**Uso en el código: solo lectura.** El único uso es `sofia-apis/src/SOFIA.Application/Ventas/Common/VentaDetalleFactory.cs:311-317`, que al vender toma el costo de la cotización vigente más reciente del producto (y usa 0 si no hay ninguna). **Ningún código inserta ni modifica filas**: no hay llamadas a `HistorialPrecioProveedor.Create` en `SOFIA.Application`, `SOFIA.Infrastructure` ni `SOFIA.API`. Existe el endpoint `POST /api/v1/Proveedores/precios` (`sofia-apis/src/SOFIA.API/Controllers/ProveedoresController.cs:28`, permiso `Proveedores:RegistrarPrecioProveedor`), pero su handler solo comprueba que el proveedor exista y devuelve un identificador nuevo sin guardar nada (`sofia-apis/src/SOFIA.Application/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs:19-20`). Hoy la tabla solo puede poblarse directamente en la base de datos.
+**Uso en el código: lectura y escritura.** La **escribe** el registro de precio de proveedor: `POST /api/v1/Proveedores/precios` (`sofia-apis/src/SOFIA.API/Controllers/ProveedoresController.cs:29`, permiso `Proveedores:RegistrarPrecioProveedor`), cuyo handler calcula el costo neto (precio × (1 − descuento / 100), a 4 decimales), cierra con el instante actual la `Fecha_Fin_Vigencia` de las filas abiertas del mismo proveedor y producto (`HistorialPrecioProveedor.CerrarVigencia`, `sofia-apis/src/SOFIA.Domain/Entities/HistorialPrecioProveedor.cs:132-142`) e inserta una fila nueva con vigencia abierta (`sofia-apis/src/SOFIA.Application/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs:25-52`). La **lee** la consulta del historial de un proveedor, `GET /api/v1/Proveedores/{id}/precios` (`sofia-apis/src/SOFIA.Application/Proveedores/Queries/GetPreciosProveedor/GetPreciosProveedorQueryHandler.cs:28-36`), las eliminaciones de proveedor y de medicamento, que se bloquean si hay filas no borradas que los referencian (`sofia-apis/src/SOFIA.Application/Proveedores/Commands/DeleteProveedor/DeleteProveedorCommandHandler.cs:24-31`, `sofia-apis/src/SOFIA.Application/Medicamentos/Commands/DeleteMedicamento/DeleteMedicamentoCommandHandler.cs:39`), y la venta, que al vender toma el costo de la cotización vigente más reciente del producto, de cualquier proveedor, y usa 0 si no hay ninguna (`sofia-apis/src/SOFIA.Application/Ventas/Common/VentaDetalleFactory.cs:311-317`). **Ningún código edita (`HistorialPrecioProveedor.Update`) ni borra filas.** La unicidad «una sola fila abierta por proveedor y producto» la mantiene el handler; la base no la impone (ver D-04 y la sección 12).
 **Creada en** `0001:244-262`; modificada en `0005` y `0020`.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
@@ -1024,11 +1041,11 @@ Importante: aunque el catálogo de DIGEMID es de alcance nacional, en SOFIA la t
 | `Cotizacion_ID` | `UNIQUEIDENTIFIER` | No | `NEWSEQUENTIALID()` | Identificador de la cotización. Clave primaria. | `0001:245` |
 | `Proveedor_ID` | `UNIQUEIDENTIFIER` | No | — | Proveedor que cotiza. | `0001:246` |
 | `Producto_ID` | `UNIQUEIDENTIFIER` | No | — | Medicamento cotizado. | `0001:247` |
-| `Costo_Por_Unidad_Base` | `DECIMAL(12,4)` | No | — | Costo por unidad base del producto. No puede ser negativo. | `0001:248` → `0020:115-116` |
-| `Fecha_Inicio_Vigencia` | `DATETIME` | No | — | Inicio de vigencia de la cotización. | `0001:249` |
-| `Fecha_Fin_Vigencia` | `DATETIME` | Sí | — | Fin de vigencia; `NULL` significa vigencia abierta (`sofia-apis/src/SOFIA.Application/Ventas/Common/VentaDetalleFactory.cs:314`). | `0001:250` |
-| `Lead_Time_Dias` | `INT` | No | — | Plazo de entrega en días. No puede ser negativo. | `0001:251` → `0020:117-118` |
-| `Cantidad_Min_Compra` | `INT` | Sí | `1` | Cantidad mínima de compra. Si tiene valor debe ser al menos 1. | `0001:252` → `0020:119-120` |
+| `Costo_Por_Unidad_Base` | `DECIMAL(12,4)` | No | — | Costo por unidad base del producto. No puede ser negativo. El registro de precio guarda aquí el costo neto (precio de compra con el descuento ya aplicado), no el precio bruto. | `0001:248` → `0020:115-116` |
+| `Fecha_Inicio_Vigencia` | `DATETIME` | No | — | Inicio de vigencia de la cotización. El registro de precio lo fija en el instante del registro (hora UTC del servidor). | `0001:249` |
+| `Fecha_Fin_Vigencia` | `DATETIME` | Sí | — | Fin de vigencia; `NULL` significa vigencia abierta (`sofia-apis/src/SOFIA.Application/Ventas/Common/VentaDetalleFactory.cs:314`). Un precio nuevo entra con `NULL` y, al registrar el siguiente del mismo proveedor y producto, el handler le pone como fin el inicio del nuevo. | `0001:250` |
+| `Lead_Time_Dias` | `INT` | No | — | Plazo de entrega en días. No puede ser negativo. El registro de precio siempre guarda 0. | `0001:251` → `0020:117-118` |
+| `Cantidad_Min_Compra` | `INT` | Sí | `1` | Cantidad mínima de compra. Si tiene valor debe ser al menos 1. El registro de precio guarda 1 (el valor por defecto de la entidad). | `0001:252` → `0020:119-120` |
 | `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0001:253` |
 | `CreatedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario creador. | `0001:254` |
 | `LastModifiedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: última modificación. | `0001:255` |
@@ -1475,7 +1492,7 @@ erDiagram
 
 ## 10. Datos sembrados y modificados por scripts
 
-Ninguno de los scripts `0001`–`0027` contiene cargas masivas de datos escritas en el propio script. Lo que hacen con datos de las 27 tablas de este documento es lo siguiente.
+Ninguno de los scripts `0001`–`0028` contiene cargas masivas de datos escritas en el propio script. Lo que hacen con datos de las 27 tablas de este documento es lo siguiente.
 
 ### 10.1 Roles base (`0002`)
 
@@ -1492,7 +1509,7 @@ Inserta **6 filas** en `Seguridad_Roles`, cada una solo si no existe ya un rol c
 
 Dos observaciones que se desprenden de los scripts y del código:
 
-- Estos roles se insertan **antes** de que exista la columna `TenantId` (la agrega el `0005` como `NULL` y ningún script la rellena), así que quedan con `TenantId` nulo. El filtro de empresa de la aplicación descarta las filas con `TenantId` nulo (`DbContext:98-109`), de modo que las consultas normales no los ven. Lo que cada empresa usa es su propio rol `Admin`, que se crea al registrarla (`sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:113-114`).
+- Estos roles se insertan **antes** de que exista la columna `TenantId` (la agrega el `0005` como `NULL` y ningún script la rellena), así que quedan con `TenantId` nulo. El filtro de empresa de la aplicación descarta las filas con `TenantId` nulo (`DbContext:98-109`), de modo que las consultas normales no los ven. Lo que cada empresa usa es su propio rol `Admin`, que se crea al registrarla (`sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:115-116`).
 - **Ningún script siembra permisos** (`Seguridad_Permisos_Rol`) para estos roles ni los asigna a cuentas.
 
 ### 10.2 Catálogo DIGEMID (`0004`)
@@ -1565,12 +1582,12 @@ Los scripts son la fuente de verdad del esquema: la base se crea con DbUp, no co
 
 - `Sistema_Notificaciones_Internas`: tabla sin uso en el código y con el mapeo de EF desalineado (D-01).
 - `Registro_Privacidad_Presidio`: tabla sin uso en el código.
-- `Historial_Precios_Prov`: la aplicación solo la lee; no existe ninguna vía (API ni pantalla) para registrar cotizaciones.
+- `Historial_Precios_Prov`: la aplicación la lee y la escribe (registro de precio, desde la versión 1.1), pero no existe vía para editar ni borrar un precio ya registrado, el plazo de entrega y la cantidad mínima no se pueden informar (quedan en 0 y 1) y la regla de un solo precio abierto por proveedor y producto la impone solo el handler: no hay índice único en la base.
 - `Auditoria_Eventos_Seguridad`: la aplicación solo escribe; no se encontró código que consulte la tabla.
 - `Seguridad_Permisos_Rol`: la unicidad `UQ_Rol_Modulo_Accion` no ignora las filas borradas lógicamente, a diferencia del resto de claves de negocio.
 - Los roles base del `0002` y las filas DIGEMID del `0004` quedan con `TenantId` nulo y fuera del alcance del filtro de empresa.
 
-**En curso (sin commitear):** nada de este documento depende de los archivos sin commitear. El script `0028` no toca ninguna de las 27 tablas.
+**En curso (sin commitear):** ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en los repositorios. El script `0028`, que en la versión 1.0 estaba sin commitear, ya está commiteado y no toca ninguna de las 27 tablas.
 
 ---
 
@@ -1620,7 +1637,7 @@ Otros elementos del encargo:
 | Diagramas ER (4 grupos) | Sección 9 |
 | Discrepancias entre scripts y EF | Sección 11 (D-01 a D-13) |
 | Tablas sin uso en el código | Apartados 4.9 y 5.1; resumen en la sección 12 |
-| Scripts `0012`, `0016`, `0018`, `0021`, `0024`, `0027` | Leídos completos; no tocan ninguna de las 27 tablas (solo tablas de la Parte B). No aplica documentarlos aquí. |
+| Scripts `0012`, `0016`, `0018`, `0021`, `0024`, `0027`, `0028` | Leídos completos; no tocan ninguna de las 27 tablas (solo tablas de la Parte B). No aplica documentarlos aquí. |
 | Historial de scripts | No aplica: corresponde a la Parte B. |
 
 ---
@@ -1656,7 +1673,7 @@ Otros elementos del encargo:
 - `0025_Receta_Flexible_Verificacion.sql`
 - `0026_Empleados_Apellido_Materno_Opcional.sql`
 - `0027_VentasPagos_Transaccion_Index.sql`
-- `0028_Ventas_Sesion_Anulacion.sql` (sin commitear; leído solo para confirmar que no afecta a estas tablas)
+- `0028_Ventas_Sesion_Anulacion.sql` (leído solo para confirmar que no afecta a estas tablas)
 
 **Configuraciones de EF** (`sofia-apis/src/SOFIA.Infrastructure/Persistence/`):
 
@@ -1680,6 +1697,7 @@ Otros elementos del encargo:
 - `sofia-apis/src/SOFIA.Application/Security/Commands/ResetPassword/ResetPasswordCommandHandler.cs`
 - `sofia-apis/src/SOFIA.Application/Security/Commands/Roles/AssignPermission/AssignPermissionToRolCommandHandler.cs`
 - `sofia-apis/src/SOFIA.Application/Ventas/Common/VentaDetalleFactory.cs`
+- `sofia-apis/src/SOFIA.API/Controllers/ProveedoresController.cs`, `sofia-apis/src/SOFIA.Application/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs`, `sofia-apis/src/SOFIA.Application/Proveedores/Queries/GetPreciosProveedor/GetPreciosProveedorQueryHandler.cs`, `sofia-apis/src/SOFIA.Application/Proveedores/Commands/DeleteProveedor/DeleteProveedorCommandHandler.cs`, `sofia-apis/src/SOFIA.Application/Medicamentos/Commands/DeleteMedicamento/DeleteMedicamentoCommandHandler.cs`
 - `sofia-apis/src/SOFIA.Application/JerarquiasUoM/Common/JerarquiaConversionResolver.cs`
 - `sofia-apis/src/SOFIA.Application/DIGEMID/Commands/CargaMasivaDigemid/CargaMasivaDigemidCommandHandler.cs`, `sofia-apis/src/SOFIA.Application/DIGEMID/Queries/GetDigemidCatalogo/GetDigemidCatalogoQueryHandler.cs`
 - `sofia-apis/src/SOFIA.Infrastructure/Services/OutboxProcessor.cs`, `BuscadorFuzzyService.cs`
