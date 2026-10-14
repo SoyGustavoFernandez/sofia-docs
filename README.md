@@ -7,7 +7,7 @@ El código vive en dos repositorios:
 - [sofia-apis](https://github.com/SoyGustavoFernandez/sofia-apis): API REST (.NET 10, Clean Architecture, CQRS, SQL Server).
 - [sofia-web-spa](https://github.com/SoyGustavoFernandez/sofia-web-spa): aplicación web (Angular 20).
 
-> **Documentación en construcción.** Cada documento indica en su cabecera el commit de cada repositorio sobre el que se escribió. El código siguió cambiando después: las diferencias conocidas se reconciliarán en una pasada posterior.
+> **Documentación en construcción.** Cada documento indica en su cabecera el commit de cada repositorio sobre el que se escribió y su versión. Los documentos publicados están alineados con `sofia-apis` `43f5529` y `sofia-web-spa` `eeffbb6`; los que se corrigieron por cambios posteriores del código están en la versión 1.1 y llevan un historial de cambios.
 
 ## Cómo se escribió
 
