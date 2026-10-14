@@ -3,11 +3,29 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-06 |
-| **Backend** | `sofia-apis`, rama `main`, commit `00991bc` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `31af681` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-10-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código fuente (sin compilar, sin ejecutar la aplicación ni llamar a la API). Conteos tomados de `docs/_inventario/*.csv` y contrastados con el árbol de archivos |
+
+## Historial de cambios
+
+### Versión 1.1 (2026-10-14)
+
+Reconciliación con el código actual (`sofia-apis` `00991bc` → `43f5529`, `sofia-web-spa` `31af681` → `eeffbb6`). La arquitectura no cambió; cambian las marcas «En curso» ya commiteadas, un hallazgo que dejó de ser cierto y algunos conteos.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 11.10, punto 1 | En el commit `index.html` no cargaba `environment.js`; la etiqueta era solo un cambio local, así que `window.__env` nunca se definía (**En curso**). | `src/index.html` carga `environment.js` (línea 18, `<script src="environment.js">` dentro de `<head>`), de modo que `window.__env` se define; como `public/environment.js` trae `{}` y `resolveEnvironment` lo descarta, hasta que el despliegue lo sobrescriba se usan los valores compilados. | `8f36125` |
+| 11.10, punto 3 | La configuración de compilación por defecto era `development` (`angular.json:95`) y un cambio local la pasaba a `production` (**En curso**). | Es `production` (`angular.json:95`); `ng build` sin argumentos compila en producción. | `8f36125` |
+| 8.2 (sucursal base del token) | `AnularVentaCommandHandler.cs` tenía cambios sin commitear y la cita de su línea 28 correspondía al árbol de trabajo (**En curso**). | Sin marca; `GetSucursalId()` está en la línea 28 del commit actual. | `358935e` |
+| 10.5 (`RowVersion`) | `VentaConfiguration.cs:56-58` en el commit y 59-61 en el árbol de trabajo (**En curso**). | `VentaConfiguration.cs:59-61` (agrega el mapeo de `Sesion_Anulacion_ID`). | `358935e` |
+| 10.6 (DbUp) | Los scripts iban de `0001` a `0027`; el `0028` no estaba commiteado (**En curso**). | Van de `0001` a `0028`; el `0028` agrega `Sesion_Anulacion_ID` a `Ventas_Cabecera`. | `358935e` |
+| 4.3 (conteos) | 89 queries, 202 handlers; el CSV tenía 204 filas (115 `Command` y 89 `Query`) con dos interfaces mezcladas; proveedores con 3 queries. | 90 queries, 203 handlers (se suma `GetPreciosProveedorQuery`); el CSV regenerado tiene 203 filas (113 `Command` y 90 `Query`) y coincide con los archivos; proveedores con 4 queries. | `606cb69` |
+| 11.8 (`*appPermiso`) y 13.5 (`AsNoTracking`) | 84 usos; `AsNoTracking` 113 veces y 72 de 89 handlers de query. | 85 usos (el botón «Registrar precio»); `AsNoTracking` 115 veces y 73 de 90 handlers de query. | `606cb69`, `9cbbe58` |
+| Citas de línea | `nueva-venta.component.ts:496,521` y `sucursales-detail.component.ts:18-19,156,170`. | `:495,520` y `:19-20,157,171`. | `063817c`, `01b8260` |
+| «En curso (sin commitear)» (sección de pendientes) | Cinco elementos. | Ninguno: `git status --short` está limpio en los dos repositorios. | `8f36125`, `358935e` |
 
 Este documento describe la arquitectura que el código implementa hoy. No describe la arquitectura deseada. Cada afirmación lleva su `archivo:línea`. Las rutas son relativas a la carpeta que contiene los dos repositorios (`sofia-apis` y `sofia-web-spa`).
 
@@ -514,14 +532,14 @@ Los controladores reciben `ISender` por constructor (`sofia-apis/src/SOFIA.API/C
 | Elemento | Cantidad | Cómo se contó |
 |---|---|---|
 | Commands | 113 | Archivos `*Command.cs` de `SOFIA.Application` sin contar `ICommand.cs` ni `IAuditableCommand.cs` |
-| Queries | 89 | Archivos `*Query.cs`; coincide con `docs/_inventario/commands-queries.csv` (89 filas `Query`) |
-| Handlers | 202 (113 de command y 89 de query) | Archivos `*CommandHandler.cs` y `*QueryHandler.cs` |
+| Queries | 90 | Archivos `*Query.cs`; coincide con `docs/_inventario/commands-queries.csv` (90 filas `Query`) |
+| Handlers | 203 (113 de command y 90 de query) | Archivos `*CommandHandler.cs` y `*QueryHandler.cs` |
 | Validadores | 83 (72 de command y 11 de query) | Archivos `*Validator.cs`; coincide con `docs/_inventario/validadores.csv` (83 filas) |
 | Commands sin validador | 41 | Commands sin archivo `<Caso>CommandValidator.cs` en su carpeta |
 | Commands auditables | 24 | Archivos `*Command.cs` que implementan `IAuditableCommand`; coincide con las 24 constantes de `Common/Models/AuditEventos.cs:6-29` |
 | Queries que no devuelven `Result<T>` | 12 | Las 12 `PreviewImport*Query` (devuelven el resultado de la previsualización directamente) |
 
-**Discrepancia con el inventario.** `commands-queries.csv` tiene 204 filas: 115 marcadas `Command` y 89 `Query`. Dos de las 115 no son commands sino las interfaces `IAuditableCommand` e `ICommand` (filas 3 y 4 del CSV). El número real de commands es 113.
+**Inventario.** El `commands-queries.csv` regenerado el 2026-10-13 tiene 203 filas de datos: 113 `Command` y 90 `Query`, que coinciden con los archivos. (El CSV anterior tenía 204 filas, con 115 `Command` porque incluía las interfaces `IAuditableCommand` e `ICommand`; esa discrepancia ya no existe.)
 
 De los 113 commands, 112 implementan `ICommand` o `ICommand<T>`. El restante, `SetRolSucursalesCommand`, implementa `IRequest<Result>, IAuditableCommand` (`sofia-apis/src/SOFIA.Application/Security/Commands/Roles/SetSucursales/SetRolSucursalesCommand.cs:8`); como `IAuditableCommand` hereda de `IBaseCommand`, también corre dentro de una transacción.
 
@@ -534,7 +552,7 @@ Reparto por módulo (commands; queries; validadores):
 | Delivery | 4 | 2 | 2 | Pacientes | 4 | 3 | 3 |
 | Devoluciones | 1 | 2 | 2 | PresentacionesVenta | 3 | 2 | 2 |
 | DIGEMID | 6 | 5 | 4 | Profesionales | 4 | 3 | 2 |
-| Empleados | 3 | 2 | 3 | Proveedores | 5 | 3 | 3 |
+| Empleados | 3 | 2 | 3 | Proveedores | 5 | 4 | 3 |
 | Empresas | 2 | 2 | 2 | Recetas | 3 | 3 | 4 |
 | FormulacionesClinicas | 3 | 3 | 2 | Security | 20 | 8 | 10 |
 | IngredientesActivos | 4 | 3 | 3 | Seguros | 4 | 3 | 1 |
@@ -545,7 +563,7 @@ Reparto por módulo (commands; queries; validadores):
 | | | | | UnidadesMedida | 4 | 3 | 3 |
 | | | | | Ventas | 4 | 5 | 4 |
 
-Totales: 113 commands, 89 queries, 83 validadores.
+Totales: 113 commands, 90 queries, 83 validadores.
 
 ### 4.4 Recorrido de una escritura: crear una sucursal
 
@@ -949,7 +967,7 @@ Ejemplos: `sofia-apis/src/SOFIA.Application/Inventarios/Queries/GetStockPorSucur
 
 **b) Sucursal base del token (`currentUser.GetSucursalId()`).** Los módulos operativos trabajan siempre sobre la sucursal base del usuario, sin posibilidad de elegir otra. La extensión devuelve error si el token no trae sucursal (`sofia-apis/src/SOFIA.Application/Common/Extensions/CurrentUserExtensions.cs:8-21`). La usan 20 handlers: todos los de Ventas (`CreateVenta`, `CompletarVenta`, `ActualizarVentaPendiente`, `AnularVenta`, `GetVentas`, `GetVentaById`, `GetConfiguracionVenta`, `GetLotesDisponiblesVenta`), `AperturarCaja`, `ProcesarDevolucion`, los seis de Transferencias, los dos commands de Magistrales, `AislarLoteCuarentena` y `GetMedicamentos` (búsqueda de `GetSucursalId()`; por ejemplo `sofia-apis/src/SOFIA.Application/Ventas/Commands/CreateVenta/CreateVentaCommandHandler.cs:20`, `sofia-apis/src/SOFIA.Application/POS/Commands/AperturarCaja/AperturarCajaCommandHandler.cs:17`).
 
-`AnularVentaCommandHandler.cs` tiene cambios sin commitear; la cita de su línea 28 corresponde al árbol de trabajo. **En curso (sin commitear).**
+En `AnularVentaCommandHandler.cs`, `GetSucursalId()` está en la línea 28 (`sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs:28`).
 
 Los maestros (sucursales, empleados, catálogos, pacientes, etc.) no se filtran por sucursal: solo por empresa.
 
@@ -1076,7 +1094,7 @@ Cinco entidades tienen una propiedad `RowVersion` mapeada con `IsRowVersion()`:
 | Entidad | Tabla | Evidencia (configuración EF) |
 |---|---|---|
 | `InventarioSucursal` | `Inventario_Sucursal` | `Persistence/Configurations/InventarioSucursalConfiguration.cs:32-34` |
-| `Venta` | `Ventas_Cabecera` | `Persistence/Configurations/VentaConfiguration.cs:56-58` en el commit documentado; el archivo tiene cambios locales que desplazan esas líneas a 59-61 (**En curso (sin commitear)**) |
+| `Venta` | `Ventas_Cabecera` | `Persistence/Configurations/VentaConfiguration.cs:59-61` |
 | `Transferencia` | `Transferencias_Cab` | `Persistence/Configurations/TransferenciaConfiguration.cs:47-49` |
 | `PosSesionCaja` | `POS_Sesiones_Caja` | `Persistence/Configurations/PosSesionCajaConfiguration.cs:59-61` |
 | `RefreshToken` | `RefreshTokens` | `Persistence/Configurations/RefreshTokenConfiguration.cs:29` |
@@ -1090,8 +1108,8 @@ El resto de entidades no tiene control de concurrencia: gana la última escritur
 ### 10.6 Relación con DbUp: EF no migra
 
 - No hay carpeta de migraciones de EF ni llamadas a `Database.Migrate` o `EnsureCreated` (búsqueda en `SOFIA.API`, `SOFIA.Application` y `SOFIA.Infrastructure`: sin resultados). La API no modifica el esquema al arrancar.
-- El esquema lo crea la consola `SOFIA.DbUp`: asegura que la base exista y ejecuta, en orden de nombre, los scripts embebidos que aún no se aplicaron (`sofia-apis/src/SOFIA.DbUp/Program.cs:25-34`; `SOFIA.DbUp.csproj:19`). Los scripts se nombran con un prefijo numérico de cuatro dígitos, de `0001_Initial_Schema.sql` a `0027_VentasPagos_Transaccion_Index.sql` en el commit documentado.
-- `0028_Ventas_Sesion_Anulacion.sql` existe en el árbol de trabajo pero no está commiteado. **En curso (sin commitear).**
+- El esquema lo crea la consola `SOFIA.DbUp`: asegura que la base exista y ejecuta, en orden de nombre, los scripts embebidos que aún no se aplicaron (`sofia-apis/src/SOFIA.DbUp/Program.cs:25-34`; `SOFIA.DbUp.csproj:19`). Los scripts se nombran con un prefijo numérico de cuatro dígitos, de `0001_Initial_Schema.sql` a `0028_Ventas_Sesion_Anulacion.sql` en el commit documentado.
+- El último, `0028_Ventas_Sesion_Anulacion.sql`, agrega `Sesion_Anulacion_ID` y su clave foránea a `Ventas_Cabecera` (`sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql:2-7`); el siguiente script nuevo tomaría el número `0029`.
 - La cadena de conexión llega por argumento de línea de comandos o por configuración (`appsettings.json`, secretos de usuario, variables de entorno): `Program.cs:5-14`.
 - En `docker-compose`, `sofia-dbup` espera a que SQL Server esté sano y se reinicia si falla (`sofia-apis/docker-compose.yml:91-101`). El servicio `sofia-api` no declara dependencia de `sofia-dbup` (`docker-compose.yml:69-75`).
 - Consecuencia: cada cambio de esquema necesita un script nuevo **y** el ajuste manual de la configuración EF correspondiente; nada comprueba en compilación que coincidan.
@@ -1221,7 +1239,7 @@ No hay tienda central (ni NgRx ni similares en `package.json:18-37`). El estado 
 | `TimezoneService` | Zona horaria elegida; por defecto `America/Lima` | `signal` más `localStorage` (clave `sofia_timezone`) | `src/app/core/services/shared/timezone.service.ts:3-21` |
 | `CoreService` (plantilla) | Opciones del marco: tema, barra lateral colapsada | `signal` más `BehaviorSubject` | `src/app/matdash/services/core.service.ts:9-33` |
 | `CSLoadingService` | Peticiones en curso | `BehaviorSubject` | `src/app/shared/services/loading/loading.service.ts:9-17` |
-| Borradores del POS | Venta en curso por usuario | `localStorage`, con clave por usuario | `src/app/core/auth/user-storage.ts:4,8-10`; `src/app/pages/pos/nueva-venta/nueva-venta.component.ts:496,521` |
+| Borradores del POS | Venta en curso por usuario | `localStorage`, con clave por usuario | `src/app/core/auth/user-storage.ts:4,8-10`; `src/app/pages/pos/nueva-venta/nueva-venta.component.ts:495,520` |
 
 Los servicios de datos de cada módulo no guardan estado: cada método devuelve un `Observable` de `HttpClient` (`src/app/pages/sucursales/services/sucursal.service.ts:16-66`).
 
@@ -1269,7 +1287,7 @@ La lista de scopes y su número de claves está en `docs/_inventario/i18n-scopes
 - Es reactiva: usa `computed` y `effect`, así que el elemento aparece cuando llegan los permisos (líneas 20, 27-32).
 - Reutiliza `AuthService.hasPermission`, la misma regla del guard y del menú.
 
-Tiene 84 usos (`docs/_inventario/app-permiso-usos.csv`). Solo oculta elementos de la interfaz; la autorización real la hace la API.
+Tiene 85 usos (`docs/_inventario/app-permiso-usos.csv`). Solo oculta elementos de la interfaz; la autorización real la hace la API.
 
 El menú lateral aplica la misma regla: `SidebarComponent` filtra `navItems` con `hasPermission(modulo)` y oculta los grupos que quedan vacíos (`src/app/matdash/layouts/full/vertical/sidebar/sidebar.component.ts:29-34`; `visible-nav-items.ts:4-13`).
 
@@ -1359,9 +1377,9 @@ El detalle funcional está reservado para el documento de carga masiva y exporta
 
 Puntos a tener en cuenta:
 
-1. **En el commit documentado, `index.html` no carga `environment.js`.** La versión commiteada de `src/index.html` (22 líneas) no tiene ninguna etiqueta `<script>`; la línea `<script src="environment.js"></script>` existe solo como cambio local. Por tanto, en el commit `31af681` `window.__env` nunca se define y la configuración en tiempo de ejecución no tiene efecto. **En curso (sin commitear).**
+1. **`index.html` carga `environment.js`.** `src/index.html` (23 líneas) incluye `<script src="environment.js"></script>` dentro de `<head>` (`sofia-web-spa/src/index.html:18`), por lo que `window.__env` se define antes de arrancar la aplicación. `public/environment.js` trae `window.__env = {};` (objeto vacío, que `resolveEnvironment` descarta), así que mientras el despliegue no lo sobrescriba se usan los valores compilados. Hasta el commit `31af681` esa etiqueta no estaba en `index.html` y la configuración en tiempo de ejecución no tenía efecto; se agregó en `8f36125`.
 2. Con `api.baseurl` vacío, una compilación de producción llama a rutas relativas (`/api/v1/...`), es decir, al mismo origen que sirve el SPA (`src/environments/environment.prod.ts:6-8`; `src/app/core/interceptors/auth.interceptor.ts:19-21`).
-3. La configuración de compilación por defecto es `development` en el commit (`angular.json:95`). Un cambio local la pasa a `production`. **En curso (sin commitear).**
+3. La configuración de compilación por defecto es `production` (`"defaultConfiguration": "production"`, `sofia-web-spa/angular.json:95`): `ng build` sin argumentos compila con la configuración `production`. Hasta el commit `31af681` era `development`; cambió en `8f36125`. El destino `lint` revisa ahora `src/app/pages/**` (`.ts` y `.html`) en lugar de `src/app/modules/**`, carpeta que no existe en el SPA (`angular.json:141-148`).
 4. La política de contenido para el hosting estático declara `connect-src 'self'` más tres dominios de Iconify (`public/staticwebapp.config.json:3`). Si la API se publica en otro origen, esa política bloquearía las llamadas salvo que se ajuste en el despliegue. Cómo se resuelve en el entorno real es **No verificado**.
 
 ### 11.11 Manejo de errores
@@ -1381,7 +1399,7 @@ Cómo llega un error del backend al usuario:
 2. Para guardados usa `saveErrorKey(err, clavesDeLaPantalla, clavePorDefecto)`: primero el mapa propio de la pantalla, luego los tres códigos de base de datos (`Db.Duplicado`, `Db.ReferenciaInvalida`, `Db.ValorInvalido`) y al final el mensaje por defecto (`src/app/shared/utils/save-error-key.util.ts:4-15`).
 3. Muestra el texto traducido con `ErrorNotifierService`.
 
-Ejemplo: el detalle de sucursal mapea `Sucursal.NumeroLicencia.Duplicado` a `sucursales.detail.duplicate-licencia` y, para cualquier otro código, usa `sucursales.detail.save-error` (`src/app/pages/sucursales/sucursales-detail/sucursales-detail.component.ts:18-19,156,170`).
+Ejemplo: el detalle de sucursal mapea `Sucursal.NumeroLicencia.Duplicado` a `sucursales.detail.duplicate-licencia` y, para cualquier otro código, usa `sucursales.detail.save-error` (`src/app/pages/sucursales/sucursales-detail/sucursales-detail.component.ts:19-20,157,171`).
 
 Consecuencias:
 
@@ -1574,7 +1592,7 @@ Un cuerpo que supera el límite produce `BadHttpRequestException` y la respuesta
 
 | Medida | Detalle | Evidencia |
 |---|---|---|
-| Lecturas sin seguimiento | `AsNoTracking` aparece 113 veces en `Application` e `Infrastructure`; lo usan 72 de los 89 handlers de query | Búsqueda de `AsNoTracking`; ejemplo `SOFIA.Application/Sucursales/Queries/GetSucursalesWithPagination/GetSucursalesWithPaginationQueryHandler.cs:13-15` |
+| Lecturas sin seguimiento | `AsNoTracking` aparece 115 veces en `Application` e `Infrastructure`; lo usan 73 de los 90 handlers de query | Búsqueda de `AsNoTracking`; ejemplo `SOFIA.Application/Sucursales/Queries/GetSucursalesWithPagination/GetSucursalesWithPaginationQueryHandler.cs:13-15` |
 | Proyección a DTO en SQL | Las queries seleccionan solo las columnas del DTO | `GetSucursalesWithPaginationQueryHandler.cs:32-44` |
 | Caché de permisos | En memoria, 5 minutos, por empresa y rol | `SOFIA.Infrastructure/Authentication/MemoryPermissionCache.cs:9,14-15` |
 | Caché de vigencia de empresa | En memoria, 1 minuto, por empresa | `SOFIA.Infrastructure/DependencyInjection.cs:26,121-125` |
@@ -1714,15 +1732,9 @@ Este documento se hizo solo con lectura de código. No se compiló, no se ejecut
 
 **En curso (sin commitear)**
 
-| # | Qué | Archivo |
-|---|---|---|
-| 1 | La etiqueta `<script src="environment.js">` no está en el commit; sin ella la configuración en tiempo de ejecución del SPA no funciona (sección 11.10) | `sofia-web-spa/src/index.html` |
-| 2 | `defaultConfiguration` de compilación: `development` en el commit, `production` en el árbol de trabajo (sección 11.10) | `sofia-web-spa/angular.json` |
-| 3 | Número de línea de `GetSucursalId()` en el handler de anulación: 27 en el commit, 28 en el árbol de trabajo (sección 8.2) | `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs` |
-| 4 | Líneas del mapeo de `RowVersion` de `Venta`: 56-58 en el commit (sección 10.5) | `sofia-apis/src/SOFIA.Infrastructure/Persistence/Configurations/VentaConfiguration.cs` |
-| 5 | Script `0028_Ventas_Sesion_Anulacion.sql`, fuera del commit documentado (sección 10.6) | `sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql` |
+Ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en `sofia-apis` (`43f5529`) ni en `sofia-web-spa` (`eeffbb6`). Los cinco elementos que la versión 1.0 tenía en esta tabla ya están commiteados: la etiqueta `<script src="environment.js">` de `index.html` y el `defaultConfiguration` de `angular.json` (`8f36125`), y la línea de `GetSucursalId()` en `AnularVentaCommandHandler.cs`, el mapeo de `RowVersion` de `Venta` en `VentaConfiguration.cs` y el script `0028_Ventas_Sesion_Anulacion.sql` (`358935e`).
 
-Ninguna afirmación de arquitectura de este documento depende de `ArqueoCajaCalculator.cs`, `Venta.cs` ni de las pruebas con cambios locales.
+Ninguna afirmación de arquitectura de este documento depende de `ArqueoCajaCalculator.cs` ni de `Venta.cs`.
 
 **Pendientes para otros documentos**
 
@@ -1889,8 +1901,8 @@ Ninguna afirmación de arquitectura de este documento depende de `ArqueoCajaCalc
 
 **`sofia-web-spa` (commit `31af681`)**
 
-- Raíz: `package.json`, `angular.json` (versión del commit y diferencia local), `tsconfig.json`, `commitlint.config.js`, `public/environment.js`, `public/staticwebapp.config.json`, listado de `public/i18n`.
-- `src`: `main.ts`, `index.html` (versión del commit y diferencia local), `typings.d.ts`, `environments/*.ts` (4).
+- Raíz: `package.json`, `angular.json`, `tsconfig.json`, `commitlint.config.js`, `public/environment.js`, `public/staticwebapp.config.json`, listado de `public/i18n`.
+- `src`: `main.ts`, `index.html`, `typings.d.ts`, `environments/*.ts` (4).
 - `src/app`: `app.config.ts`, `app.routes.ts`, `app.component.ts`, `app.component.html`.
 - `src/app/core`: todos los archivos que no son specs (15).
 - `src/app/shared`: `directives/permiso.directive.ts`, `components/carga-masiva/carga-masiva.component.ts`, `components/carga-masiva-page/carga-masiva-page.component.ts`, `components/server-error-snackbar/server-error-snackbar.component.ts`, `models/carga-masiva.model.ts`, `utils/save-error-key.util.ts`, `date/provide-sofia-dates.ts`, `services/loading/loading.interceptor.ts`, `services/loading/loading.service.ts` (inicio), `constants/*`, `testing/*`; selectores y conteo de usos del resto por búsqueda.
