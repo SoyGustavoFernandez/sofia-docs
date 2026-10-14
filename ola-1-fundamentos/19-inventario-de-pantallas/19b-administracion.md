@@ -3,11 +3,27 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-08 |
-| **Backend** | `sofia-apis`, rama `main`, commit `00991bc` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `31af681` |
-| **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores y validadores necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear. |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-10-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores y validadores necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear. La versión 1.1 reconcilia el documento (escrito sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`) con el código actual. |
+
+## Historial de cambios
+
+### Versión 1.1 (2026-10-14)
+
+| # | Apartado o ID | Decía | Dice ahora | Commit |
+|---|---|---|---|---|
+| 1 | §2.2 Mensajes al usuario, fila «Error al eliminar» | Un solo caso: cualquier error mostraba «Error al eliminar la sucursal» (`sucursales.detail.delete-error`) | Dos casos: respuesta HTTP 409 (`Sucursal.InUse`) muestra «No puedes eliminar esta sucursal porque tiene empleados, usuarios, roles, stock, ventas u otros registros asociados.» (`sucursales.detail.delete-in-use`); cualquier otro error sigue mostrando `delete-error` | `27597cd` (apis), `01b8260` (spa) |
+| 2 | §2.2 Comportamientos particulares | «el SPA no avisa de dependencias y el backend no comprueba empleados, series ni cuentas asociadas (RN-SUC-009 en 01a). Cualquier fallo se ve como «Error al eliminar la sucursal»» | El backend comprueba 10 tipos de dependencia y responde 409 `Sucursal.InUse`; el SPA lo explica con `delete-in-use` (la regla RN-SUC-009 de 01a quedó desactualizada: ver el informe) | `27597cd`, `01b8260` |
+| 3 | §2.2 Llamadas a la API, fila Eliminar | Sin código de respuesta | Se anota que puede responder 409 `Sucursal.InUse` | `27597cd` |
+| 4 | §2.2 Observaciones | Sin mención de la licencia de la sede principal | Se agrega que la sede principal creada al registrar la empresa nace con el número de licencia vacío y el formulario lo exige al editarla; la dirección de esa sede viene del registro | `41f0a05`, `9dd1705` (apis) |
+| 5 | §2.2 citas `sucursales-detail.component.ts:línea` | Líneas de la versión `31af681` | Todas las citas desplazadas por la nueva importación (+1) y por el nuevo manejo del error al eliminar | `01b8260` |
+| 6 | §1 resumen y §1.1 Exportación: citas de `empresa.model.ts` | `:268-271` y `:288-296` (líneas que no existían en ese archivo ni en `31af681`, que tenía 73 líneas) | `:29-32` (`UpdateEmpresaRequest`) y `:50-58` (`EmpresaExportRequest`); corrección de una cita errónea previa, no de un cambio de código | `2f82346` (desplazó +1 las líneas posteriores a la 40) |
+| 7 | §7 y §8 | «`empresa/empresa-register`: lo documenta la parte A» | Sin cambio de alcance; se anota que el registro ahora exige la dirección de la sede principal y que la ficha está en la parte A | `2f82346` |
+| 8 | §9 Claves i18n sin uso | `empresa` (95 claves), `sucursales` (20 claves) | `empresa` (100 claves: se suman `register.direccionSede`, `register.direccionSedePlaceholder`, `register.direccionSedeHint`, `form.maxLength255`, `notifications.direccionSedeInvalida`, todas usadas por `empresa-register`); `sucursales` (21 claves: se suma `detail.delete-in-use`, usada). Las listas de claves sin uso no cambian | `2f82346`, `01b8260` |
+| 9 | §10 Fuentes | Backend sin `DeleteSucursal` ni `Sucursal.cs` | Se agregan `DeleteSucursalCommandHandler.cs` y `Sucursal.cs` | `27597cd`, `41f0a05` |
 
 Este documento es la parte B de seis del inventario de pantallas. Cubre los seis módulos de administración: Empresa, Sucursales, Empleados, Roles y permisos, Cuentas de usuario y Series fiscales (19 rutas). Lo compartido (guards, interceptor, `page-header`, `confirm-dialog`, `autocomplete-input`, carga masiva común, textos de la raíz) lo documenta la [parte A](19a-acceso-layout-y-compartidos.md); aquí se remite a ella y se repite el texto exacto de cada etiqueta, botón y mensaje que aparece en estas pantallas. Las reglas de negocio de cada módulo están en [01a](../01-reglas-de-negocio/01a-administracion-y-seguridad.md) y los permisos por endpoint en [05b](../05-seguridad/05b-matriz-de-permisos.md).
 
@@ -49,7 +65,7 @@ Carpeta `app/pages/empresa`, scope i18n `empresa` (`provideTranslocoScope('empre
 
 Resumen de lo que el usuario puede hacer en una empresa (comprobado en las fichas siguientes):
 - **Ver:** nombre, RUC, estado de suscripción, número de sucursales, inicio del periodo de prueba y vencimiento. El indicador «Vigente» solo aparece en la tabla de búsqueda (en el detalle se calcula pero no se pinta).
-- **Editar:** solo **Nombre de la Empresa** y **RUC** (`UpdateEmpresaRequest` solo lleva esos dos campos, `app/pages/empresa/models/empresa.model.ts:268-271`). Estado, fechas y sucursales son de solo lectura y no hay pantalla para cambiarlos.
+- **Editar:** solo **Nombre de la Empresa** y **RUC** (`UpdateEmpresaRequest` solo lleva esos dos campos, `app/pages/empresa/models/empresa.model.ts:29-32`). Estado, fechas y sucursales son de solo lectura y no hay pantalla para cambiarlos.
 - **No existe en pantalla** ninguna opción de configuración de la empresa, en particular la exigencia de registro de receta: no hay ninguna referencia a `exigirRegistroReceta` en `app/pages/empresa` (búsqueda en `src/`: solo aparece en `app/pages/pos/`, que la consume). Coincide con RN-EMP-016 (se cambia solo en base de datos).
 - **No existe** crear ni eliminar empresas desde esta pantalla: el alta es el autorregistro público (parte A, `/auth/register`) y no hay ruta `/empresas/nueva` (`app/pages/empresa/empresa.routes.ts`).
 - **Alcance:** el SPA no filtra por empresa; es la API la que limita cada consulta a la empresa del usuario (RN-EMP-017 en 01a). Por eso, en la práctica, la lista muestra la empresa propia. «No verificado» desde el SPA; ver §7.
@@ -115,7 +131,7 @@ No hay mapa de códigos del backend: cualquier error muestra el mismo texto.
 | Exportar | `EmpresaService.exportar` (`:44-46`) | `POST /api/v1/empresas/exportar` (respuesta blob) | `Empresas:Leer` (`EmpresasController.cs:74`) |
 
 **Exportación**
-- Cuerpo enviado (`EmpresaExportRequest`, `empresa.model.ts:288-296`): `headers` con 7 textos traducidos, en este orden: «Empresa» (`empresa.cols.nombre`), «RUC» (`empresa.cols.ruc`), «Estado» (`empresa.cols.estado`), «Vigente» (`empresa.cols.estaVigente`), «Inicio Trial» (`empresa.fields.fechaInicioTrial`), «Vencimiento» (`empresa.fields.fechaVencimiento`), «Sucursales» (`empresa.fields.sucursalesCount`); `yesLabel` «Sí» (`generic-labels.yes`) y `noLabel` «No» (`generic-labels.no`); y los filtros actuales del formulario (`nombre`, `estado`, `fechaVencimientoDesde`, `fechaVencimientoHasta`). No envía formato de fecha.
+- Cuerpo enviado (`EmpresaExportRequest`, `empresa.model.ts:50-58`): `headers` con 7 textos traducidos, en este orden: «Empresa» (`empresa.cols.nombre`), «RUC» (`empresa.cols.ruc`), «Estado» (`empresa.cols.estado`), «Vigente» (`empresa.cols.estaVigente`), «Inicio Trial» (`empresa.fields.fechaInicioTrial`), «Vencimiento» (`empresa.fields.fechaVencimiento`), «Sucursales» (`empresa.fields.sucursalesCount`); `yesLabel` «Sí» (`generic-labels.yes`) y `noLabel` «No» (`generic-labels.no`); y los filtros actuales del formulario (`nombre`, `estado`, `fechaVencimientoDesde`, `fechaVencimientoHasta`). No envía formato de fecha.
 - Los filtros que se exportan son los del formulario en ese momento, no necesariamente los de la última búsqueda.
 - Archivo: «empresas.xlsx» (`empresa.search.export-filename`).
 - Carga masiva: no existe para empresas.
@@ -274,8 +290,8 @@ Encabezado «Resultados (N)». Paginación 10/25/50. Sin resultados: «Sin resul
 - **Para qué sirve:** crear una sucursal, ver sus datos y, con permisos, editarla o eliminarla.
 - **Cómo se llega:** `/sucursales/nueva`: botón «Nuevo» de la búsqueda. `/sucursales/:id`: enlace del nombre en la búsqueda.
 - **Permiso de ruta:** `/sucursales/nueva` → `Sucursales:Leer` + `Sucursales:Crear`; `/sucursales/:id` → `Sucursales:Leer` (`route-permissions.ts:68-72`).
-- **Migas y cabecera:** título «Sucursales» (`sucursales.title`); migas «Inicio» / «Administración» / «Sucursales» (con enlace a `/sucursales`); botón volver a `/sucursales` (`.html:3-7`, `.ts:65-69`). Misma cabecera en crear y en ver.
-- **Modos** (`ngOnInit`, `.ts:76-86`): sin parámetro `id` → **crear** (`isNew` e `isEditMode` verdaderos, formulario habilitado); con `id` → **ver** (formulario deshabilitado, carga datos) y «Editar» lo habilita.
+- **Migas y cabecera:** título «Sucursales» (`sucursales.title`); migas «Inicio» / «Administración» / «Sucursales» (con enlace a `/sucursales`); botón volver a `/sucursales` (`.html:3-7`, `.ts:66-70`). Misma cabecera en crear y en ver.
+- **Modos** (`ngOnInit`, `.ts:77-87`): sin parámetro `id` → **crear** (`isNew` e `isEditMode` verdaderos, formulario habilitado); con `id` → **ver** (formulario deshabilitado, carga datos) y «Editar» lo habilita.
 
 | Aspecto | Crear (`/nueva`) | Ver (`/:id`) | Editar (`/:id` tras «Editar») |
 |---|---|---|---|
@@ -284,40 +300,41 @@ Encabezado «Resultados (N)». Paginación 10/25/50. Sin resultados: «Sin resul
 | Gerente | Buscador (editable) | Texto deshabilitado | Buscador (editable) |
 | Botones | Cancelar, Guardar | Editar | Cancelar, Guardar, Eliminar |
 
-**Campos del formulario** (`.ts:59-63`, `.html:37-82`)
+**Campos del formulario** (`.ts:60-64`, `.html:37-82`)
 
 | Etiqueta (clave) | `formControlName` | Control | Obligatorio | Validaciones | Mensaje de error | Crear / Editar |
 |---|---|---|---|---|---|---|
-| Nombre (`sucursales.fields.nombre`) | `nombre` | `matInput`, `maxlength="100"` | Sí | `required`, `maxLength(100)` (`.ts:60`) | «Este campo es obligatorio» (`general.errors.required`) | Sí / Sí |
-| Nº de Licencia (`sucursales.fields.numeroLicencia`) | `numeroLicencia` | `matInput`, `maxlength="50"` | Sí | `required`, `maxLength(50)` (`.ts:62`) | Ídem | Sí / Sí |
-| Dirección Física (`sucursales.fields.direccionFisica`) | `direccionFisica` | `matInput`, `maxlength="255"` | Sí | `required`, `maxLength(255)` (`.ts:61`) | Ídem | Sí / Sí |
+| Nombre (`sucursales.fields.nombre`) | `nombre` | `matInput`, `maxlength="100"` | Sí | `required`, `maxLength(100)` (`.ts:61`) | «Este campo es obligatorio» (`general.errors.required`) | Sí / Sí |
+| Nº de Licencia (`sucursales.fields.numeroLicencia`) | `numeroLicencia` | `matInput`, `maxlength="50"` | Sí | `required`, `maxLength(50)` (`.ts:63`) | Ídem | Sí / Sí |
+| Dirección Física (`sucursales.fields.direccionFisica`) | `direccionFisica` | `matInput`, `maxlength="255"` | Sí | `required`, `maxLength(255)` (`.ts:62`) | Ídem | Sí / Sí |
 | Gerente (`sucursales.fields.gerente`) | — (fuera del formulario; `gerenteId` en memoria) | En editar/crear: `csw-autocomplete-input` (placeholder «Gerente», mínimo 2 letras, `clearOnInvalidSelection`); en ver: `matInput` deshabilitado con la etiqueta «Gerente» | No | Solo se puede elegir un empleado de la lista; si se escribe un texto que no coincide, se vacía | — | Sí / Sí |
 
-El buscador del gerente llama a `GET /api/v1/empleados?pageNumber=1&pageSize=20&searchTerm=<texto>` y muestra `nombre_Completo` de cada empleado (`sucursal.service.ts:59-65`, `.ts:71-74`); espera 500 ms tras escribir ([19a §6.3](19a-acceso-layout-y-compartidos.md)). Limpiar el campo envía `gerenteId` nulo al editar; al crear, un gerente no elegido se omite (`undefined`).
+El buscador del gerente llama a `GET /api/v1/empleados?pageNumber=1&pageSize=20&searchTerm=<texto>` y muestra `nombre_Completo` de cada empleado (`sucursal.service.ts:59-65`, `.ts:72-75`); espera 500 ms tras escribir ([19a §6.3](19a-acceso-layout-y-compartidos.md)). Limpiar el campo envía `gerenteId` nulo al editar; al crear, un gerente no elegido se omite (`undefined`).
 
 **Botones y acciones**
 
 | Texto (clave) | Dónde | Visible cuando | Deshabilitado cuando | Qué hace |
 |---|---|---|---|---|
 | Editar (`actions.edit`) | Encabezado de la tarjeta | Modo ver y `*appPermiso="'Actualizar'"` (= `Sucursales:Actualizar`, `.html:27`) | Nunca | `enterEditMode()` |
-| Cancelar (`actions.cancel`) | Pie, derecha | Crear o editar | Nunca | `cancelEdit()`: en crear navega a `/sucursales`; en editar restaura los datos leídos (incluido el gerente) y vuelve a ver (`.ts:114-128`) |
-| Guardar (`actions.save`) | Pie | Crear o editar | `saving()` | `save()` (`.ts:134-174`). Inválido → marca tocados y no envía. Crear → `POST /api/v1/sucursales`, aviso de éxito y navega a `/sucursales`. Editar → `PUT /api/v1/sucursales/:id` con `gerenteId` (nulo si se limpió), aviso, vuelve a ver y recarga |
+| Cancelar (`actions.cancel`) | Pie, derecha | Crear o editar | Nunca | `cancelEdit()`: en crear navega a `/sucursales`; en editar restaura los datos leídos (incluido el gerente) y vuelve a ver (`.ts:115-129`) |
+| Guardar (`actions.save`) | Pie | Crear o editar | `saving()` | `save()` (`.ts:135-175`). Inválido → marca tocados y no envía. Crear → `POST /api/v1/sucursales`, aviso de éxito y navega a `/sucursales`. Editar → `PUT /api/v1/sucursales/:id` con `gerenteId` (nulo si se limpió), aviso, vuelve a ver y recarga |
 | Eliminar (`actions.delete`), clase `sofia-btn-delete` | Pie, a la derecha de Guardar | Solo en editar de una sucursal existente (`!isNew()`) y `*appPermiso="'Eliminar'"` (= `Sucursales:Eliminar`, `.html:103`) | `deleting()` | `confirmDelete()` → diálogo |
 | Botón volver | Cabecera | Siempre | — | `/sucursales` |
 
-**Diálogos que abre:** `ConfirmDialogComponent` (ancho 400 px, [19a §6.1](19a-acceso-layout-y-compartidos.md)) al pulsar «Eliminar»: título «Confirmar eliminación» (`sucursales.detail.delete-confirm-title`), mensaje «¿Estás seguro de que deseas eliminar esta sucursal?» (`sucursales.detail.delete-confirm-message`), botones por defecto «Cancelar» y «Confirmar». Confirmar → `DELETE /api/v1/sucursales/:id`; cancelar no hace nada (`.ts:176-201`).
+**Diálogos que abre:** `ConfirmDialogComponent` (ancho 400 px, [19a §6.1](19a-acceso-layout-y-compartidos.md)) al pulsar «Eliminar»: título «Confirmar eliminación» (`sucursales.detail.delete-confirm-title`), mensaje «¿Estás seguro de que deseas eliminar esta sucursal?» (`sucursales.detail.delete-confirm-message`), botones por defecto «Cancelar» y «Confirmar». Confirmar → `DELETE /api/v1/sucursales/:id`; cancelar no hace nada (`.ts:177-205`).
 
 **Mensajes al usuario**
 
 | Situación | Tipo | Texto exacto (clave) | Fuente |
 |---|---|---|---|
-| Crear o editar correctamente | Éxito | «Sucursal guardada correctamente» (`sucursales.detail.save-success`) | `.ts:151,162` |
-| Código `Sucursal.NumeroLicencia.Duplicado` | Error | «Ya existe una sucursal con ese número de licencia.» (`sucursales.detail.duplicate-licencia`) | `.ts:18-20,156,170` |
+| Crear o editar correctamente | Éxito | «Sucursal guardada correctamente» (`sucursales.detail.save-success`) | `.ts:152,163` |
+| Código `Sucursal.NumeroLicencia.Duplicado` | Error | «Ya existe una sucursal con ese número de licencia.» (`sucursales.detail.duplicate-licencia`) | `.ts:19-21,157,171` |
 | `Db.Duplicado`, `Db.ReferenciaInvalida`, `Db.ValorInvalido` (vía `saveErrorKey`) | Error | «Ya existe un registro con ese mismo valor. Revisa los datos e inténtalo de nuevo.» / «El registro hace referencia a datos que ya no existen o todavía está en uso.» / «Uno de los valores está fuera del rango permitido.» (`errors.dbDuplicado`, `errors.dbReferenciaInvalida`, `errors.dbValorInvalido`) | `save-error-key.util.ts:4-9` |
-| Cualquier otro error al guardar | Error | «Error al guardar la sucursal» (`sucursales.detail.save-error`) | `.ts:156,170` |
-| Eliminación correcta | Éxito | «Sucursal eliminada correctamente» (`sucursales.detail.delete-success`); navega a `/sucursales` | `.ts:193` |
-| Error al eliminar (cualquiera) | Error | «Error al eliminar la sucursal» (`sucursales.detail.delete-error`) | `.ts:198` |
-| Error al cargar | Error | «Error al cargar la sucursal» (`sucursales.detail.load-error`) | `.ts:104` |
+| Cualquier otro error al guardar | Error | «Error al guardar la sucursal» (`sucursales.detail.save-error`) | `.ts:157,171` |
+| Eliminación correcta | Éxito | «Sucursal eliminada correctamente» (`sucursales.detail.delete-success`); navega a `/sucursales` | `.ts:194` |
+| Eliminar una sucursal en uso: la API responde HTTP 409 (`Sucursal.InUse`); el SPA decide por el estado HTTP, no por el código | Error | «No puedes eliminar esta sucursal porque tiene empleados, usuarios, roles, stock, ventas u otros registros asociados.» (`sucursales.detail.delete-in-use`) | `.ts:199-202`; `public/i18n/sucursales/es.json:14` |
+| Cualquier error al eliminar cuyo estado HTTP no sea 409 (por ejemplo 404 `Sucursal.NotFound`, 403, 500 o sin conexión) | Error | «Error al eliminar la sucursal» (`sucursales.detail.delete-error`) | `.ts:199-202` |
+| Error al cargar | Error | «Error al cargar la sucursal» (`sucursales.detail.load-error`) | `.ts:105` |
 
 **Llamadas a la API**
 
@@ -326,17 +343,18 @@ El buscador del gerente llama a `GET /api/v1/empleados?pageNumber=1&pageSize=20&
 | Abrir / tras guardar | `SucursalService.getById` | `GET /api/v1/sucursales/{id}` | `Sucursales:Leer` (`SucursalesController.cs:73`) |
 | Crear | `create` | `POST /api/v1/sucursales` | `Sucursales:Crear` (`:115`) |
 | Editar | `update` | `PUT /api/v1/sucursales/{id}` | `Sucursales:Actualizar` (`:125`) |
-| Eliminar | `delete` | `DELETE /api/v1/sucursales/{id}` | `Sucursales:Eliminar` (`:139`) |
+| Eliminar | `delete` | `DELETE /api/v1/sucursales/{id}` (204; 404 `Sucursal.NotFound`; 409 `Sucursal.InUse` si la sucursal está en uso, `sofia-apis/src/SOFIA.Application/Sucursales/Commands/DeleteSucursal/DeleteSucursalCommandHandler.cs:15-25`) | `Sucursales:Eliminar` (`:139`) |
 | Buscar gerente | `searchEmpleados` | `GET /api/v1/empleados?pageNumber=1&pageSize=20&searchTerm=…` | `Empleados:Leer` (`EmpleadosController.cs:16`) |
 
 **Comportamientos particulares**
-- La eliminación es la eliminación lógica de la API; el SPA no avisa de dependencias y el backend no comprueba empleados, series ni cuentas asociadas (RN-SUC-009 en 01a). Cualquier fallo se ve como «Error al eliminar la sucursal».
+- La eliminación es la eliminación lógica de la API. Antes de borrar, el backend comprueba que la sucursal no esté referenciada (registros no eliminados) por: empleados con esa sucursal base, cuentas, roles, stock (lotes en sucursal), sesiones de caja, series fiscales, ventas, transferencias (como origen o destino), inventario en cuarentena DIGEMID y órdenes de producción magistral; si lo está responde 409 `Sucursal.InUse` y no borra (`sofia-apis/src/SOFIA.Application/Sucursales/Commands/DeleteSucursal/DeleteSucursalCommandHandler.cs:20-25,34-44`). El SPA lo explica con «No puedes eliminar esta sucursal porque tiene empleados, usuarios, roles, stock, ventas u otros registros asociados.» (`sucursales.detail.delete-in-use`) cuando el estado HTTP es 409 (`.ts:199-202`); el SPA no avisa antes de confirmar, solo después de la respuesta. La regla RN-SUC-009 de 01a todavía dice que no se comprueban dependencias (ver el informe de reconciliación).
 - Al editar, el gerente no se envía si no lo tocas: se reenvía el que ya tenía (`gerenteId` en memoria).
 - Quien no tiene `Empleados:Leer` no podrá buscar gerente (el endpoint exige ese permiso); el SPA no lo comprueba. «No verificado» qué ve en ese caso (el buscador queda sin opciones o con error silencioso; no se probó).
 
 **Observaciones**
 - Las validaciones del formulario coinciden con las de la API (100, 255, 50; RN-SUC-002 a 004).
 - La API también rechaza la licencia duplicada en la edición con el mismo código (`UpdateSucursalCommandHandler.cs:25`).
+- La sede principal que se crea al registrar la empresa nace con el número de licencia vacío si en el registro no se envía licencia (`Sucursal.CreateSedePrincipal`, `sofia-apis/src/SOFIA.Domain/Entities/Sucursal.cs:56-76`; `RegistrarEmpresaCommandHandler.cs:85-91`); la pantalla de registro del SPA no envía licencia (ver [19a, `/auth/register`](19a-acceso-layout-y-compartidos.md)). Al abrir esa sede en `/sucursales/:id` el campo «Nº de Licencia» aparece vacío y, como es obligatorio (`required`, `.ts:63`) y la API también lo exige al editar (`Sucursal.cs:94-97`, `UpdateSucursalCommandValidator.cs:23-25`), solo se puede guardar tras completarlo. En la tabla de `/sucursales` esa celda se muestra en blanco (no «—», `sucursales-search.component.html:105`).
 
 ### 2.3 `/sucursales/carga-masiva` — Carga Masiva (sucursales)
 
@@ -1098,7 +1116,7 @@ Las claves `seriesFiscales.errors.*` se usan solo como mensajes de guardado (y c
 |---|---|
 | `empresa/empresa-search`, `empresa/empresa-detail` | §1.1, §1.2 |
 | `empresa/empresa-maintenance` | Sin uso (comprobado: sin ruta ni referencias fuera de sus archivos), §1.2 Observaciones |
-| `empresa/empresa-register` | No es de esta parte: lo documenta la parte A (`/auth/register`) |
+| `empresa/empresa-register` | No es de esta parte: lo documenta la parte A (`/auth/register`; desde `2f82346` pide la dirección de la sede principal) |
 | `sucursales/sucursales-search`, `sucursales-detail`, `sucursales-carga-masiva` | §2.1, §2.2, §2.3 |
 | `empleados/empleados-search`, `empleados-detail` | §3.1, §3.2 |
 | `roles/roles-search`, `roles-detail`, `roles-carga-masiva` | §4.1, §4.2, §4.3 |
@@ -1142,8 +1160,8 @@ Método: para cada clave del `es.json` del scope se buscó la forma completa (co
 
 | Scope | Claves sin ninguna referencia |
 |---|---|
-| `empresa` (95 claves) | `searchPlaceholder`, `add`, `cols.fechaVencimiento`, `cols.cantidadSucursales`, `form.titleView`, `form.estado`, `form.fechaVencimiento`, `notifications.loadError`, `help.nombre`, `help.ruc`, `help.estado`, `noData`, `showing`, `detail.title-edit`, `fields.estaVigente` (15). Además, solo las referencia el componente sin ruta `empresa-maintenance`: `form.titleEdit`, `form.nombre`, `form.ruc`, `form.vigente`, `form.noVigente`, `form.back`, `notifications.updated`, `notifications.loadSingleError`, `notifications.updateError` (9). Las claves `empresa.register.*` y varias de `form.*` y `notifications.*` las usa `empresa-register` (parte A) |
-| `sucursales` (20) | Ninguna |
+| `empresa` (100 claves) | `searchPlaceholder`, `add`, `cols.fechaVencimiento`, `cols.cantidadSucursales`, `form.titleView`, `form.estado`, `form.fechaVencimiento`, `notifications.loadError`, `help.nombre`, `help.ruc`, `help.estado`, `noData`, `showing`, `detail.title-edit`, `fields.estaVigente` (15). Además, solo las referencia el componente sin ruta `empresa-maintenance`: `form.titleEdit`, `form.nombre`, `form.ruc`, `form.vigente`, `form.noVigente`, `form.back`, `notifications.updated`, `notifications.loadSingleError`, `notifications.updateError` (9). Las claves `empresa.register.*` y varias de `form.*` y `notifications.*` las usa `empresa-register` (parte A) |
+| `sucursales` (21) | Ninguna |
 | `empleados` (31) | Ninguna |
 | `roles` (91) | `detail.title-new`, `detail.title-edit`, `detail.nombreRolHint`, `fields.nivelJerarquiaDesde`, `fields.nivelJerarquiaHasta`, `fields.createdAt`, `configuracion.sucursales-save`, `configuracion.sucursales-save-success`, `configuracion.sucursales-save-error`, `permisos.title`, `permisos.subtitle`, `permisos.save`, `permisos.save-success`, `permisos.save-error`, `permisos.no-changes` (15) |
 | `cuentas` (57) | `search.export-filename`, `detail.title-new`, `detail.title-edit`, `fields.roles`, `fields.sucursales`, `roles.assign-success`, `roles.assign-error`, `roles.remove-success`, `roles.remove-error` (9). Además `detail.confirm-delete-confirm` y `detail.confirm-delete-cancel` se pasan al diálogo pero este no las muestra (§5.2) |
@@ -1168,7 +1186,7 @@ Método: para cada clave del `es.json` del scope se buscó la forma completa (co
 **Backend (`sofia-apis/src/`, solo lectura puntual)**
 - `SOFIA.API/Controllers/EmpresasController.cs`, `SucursalesController.cs`, `EmpleadosController.cs`, `RolesController.cs`, `CuentasController.cs`, `SeriesFiscalesController.cs` (permisos por endpoint).
 - `SOFIA.Application/Empresas/Commands/UpdateEmpresa/*` y `Queries/GetEmpresas/GetEmpresasQueryHandler.cs`; `SOFIA.Domain/Entities/Empresa.cs`.
-- `SOFIA.Application/Sucursales/Commands/{Create,Update}Sucursal/*Handler.cs`.
+- `SOFIA.Application/Sucursales/Commands/{Create,Update}Sucursal/*Handler.cs`; `Commands/DeleteSucursal/DeleteSucursalCommandHandler.cs`, `Commands/UpdateSucursal/UpdateSucursalCommandValidator.cs`; `SOFIA.Domain/Entities/Sucursal.cs`; `SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs`.
 - `SOFIA.Application/Empleados/Commands/DeleteEmpleado/*Handler.cs`.
 - `SOFIA.Application/Security/Commands/Roles/{AssignPermission,AssignRol,RemoveRol}/*Handler.cs`; `Commands/Cuentas/{UpdateCuenta,DeleteCuenta,AssignSucursal}/*Handler.cs`; `Commands/Register/RegisterAccountCommandHandler.cs`.
 
