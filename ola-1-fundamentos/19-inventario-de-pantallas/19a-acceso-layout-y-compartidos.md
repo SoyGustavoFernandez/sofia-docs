@@ -3,11 +3,27 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-07 |
-| **Backend** | `sofia-apis`, rama `main`, commit `00991bc` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `31af681` |
-| **Método** | Lectura de código del árbol de trabajo (SPA y, solo para describir qué calcula cada indicador del dashboard, los handlers de `SOFIA.Application/Dashboard`). No se usó el navegador ni la API local. |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-10-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Método** | Lectura de código del árbol de trabajo (SPA y, solo para describir qué calcula cada indicador del dashboard y el registro de empresa, los handlers de `SOFIA.Application/Dashboard` y `SOFIA.Application/Empresas`). No se usó el navegador ni la API local. La versión 1.1 reconcilia el documento (escrito sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`) con el código actual; no hay cambios sin commitear en ninguno de los dos repos. |
+
+## Historial de cambios
+
+### Versión 1.1 (2026-10-14)
+
+| # | Apartado o ID | Decía | Dice ahora | Commit |
+|---|---|---|---|---|
+| 1 | §1.2 Campos del formulario | 8 campos (empresa: nombre y RUC; administrador: 4; cuenta: 2) | 9 campos: se agrega **Dirección de la sede principal** (`direccionSede`), obligatoria, máximo 255 caracteres, no admite solo espacios, con placeholder «Av. Los Olivos 123, Lima» y ayuda «Aparecerá en el encabezado de tus boletas» | `2f82346` (spa), `9dd1705` (apis) |
+| 2 | §1.2 Botones (envío) y Llamadas a la API | El cuerpo no incluía la dirección | El cuerpo incluye `direccionSede` (con `trim()`); sigue sin enviar nombre de sede ni licencia. Citas de línea y de `empresa.model.ts` actualizadas | `2f82346` |
+| 3 | §1.2 Mensajes al usuario | 3 códigos del backend con mensaje propio | 4: se agrega `RegistrarEmpresaCommand.DireccionSede` → «Ingresa la dirección de la sede principal (máximo 255 caracteres)» (`empresa.notifications.direccionSedeInvalida`) | `2f82346`, `9dd1705` |
+| 4 | §1.2 Comportamientos particulares | Sin mención de la sede | La sede principal se crea con la dirección escrita, el nombre «Sede Principal» y el número de licencia vacío (antes la dirección y la licencia se rellenaban con «Por definir» en el backend; la licencia pasa a ser obligatoria recién al editar la sucursal) | `9dd1705`, `41f0a05` (apis) |
+| 5 | §1.1 Diseño (versión) | La versión sale de `environment.appVersion`, «sustituible por `window.__env`» sin decir de dónde se carga | `index.html` carga `environment.js` (que define `window.__env`); el `public/environment.js` del repositorio lo deja vacío, por lo que rige el valor compilado. Además `ng build` usa ahora la configuración `production` por defecto (reemplaza `environment.ts` por `environment.prod.ts`) | `8f36125` (spa) |
+| 6 | §3.2 Efectivo esperado y §9 «En curso (sin commitear)» | `ArqueoCajaCalculator.cs` tenía cambios locales sin commitear | Ya está commiteado: el efectivo esperado suma las ventas cobradas en la sesión (incluidas las anuladas desde otra caja) y resta el efectivo neto de las ventas de otras cajas anuladas en esta; se retira la marca y la fila de §9 | `358935e` (apis) |
+| 7 | §5.4 (saveErrorKey), §6.12 (usos), §7.1 (`*appPermiso`), §8.4 (`general.errors.required`) | 34 referencias a `saveErrorKey`; 153 `showError`; 68 `showSuccess`; 84 usos de `*appPermiso`; `general.errors.required` en 20 archivos | 36 referencias; 155; 69; 85 usos en 47 plantillas; 21 archivos (recuento nuevo por el diálogo `precio-proveedor-dialog` y el historial de precios del detalle de proveedores, recontado con el mismo método) | `606cb69`, `9cbbe58`, `27597cd`, `01b8260` |
+| 8 | §6.3 Dónde se usa | Gerente de `sucursales-detail` «solo en edición» | Gerente en crear y en editar (el buscador se dibuja con `isEditMode()`, verdadero también al crear); corrección de una afirmación que ya era imprecisa, no un cambio de código | — |
+| 9 | §10 y §11 | Cobertura y fuentes sin los archivos nuevos | Se agregan `index.html`, `environment.js`, `angular.json` y los archivos del backend de registro y arqueo | `8f36125`, `2f82346`, `9dd1705`, `41f0a05`, `358935e` |
 
 Este documento es la parte A de seis del inventario de pantallas. Cubre las pantallas públicas, el cambio de contraseña, el dashboard, el layout de la aplicación, guards e interceptores, los componentes y directivas compartidos y los textos comunes de la raíz de `es.json`. Las demás partes remiten aquí para todo lo compartido.
 
@@ -40,7 +56,7 @@ Las cuatro rutas `/auth/*` están fuera del layout: se cargan directamente con `
 - **Cómo se llega:** URL directa; redirección del `authGuard` cuando no hay sesión (§5.1); redirección tras cerrar sesión (§4.4), tras cambiar contraseña (§2) y tras restablecerla (§1.4); enlace «Iniciar sesión» del registro (§1.2) y «Volver a iniciar sesión» de recuperación (§1.3, §1.4).
 - **Permiso de ruta:** ninguno (pública, `src/app/app.routes.ts:10-14`).
 - **Migas y cabecera:** no tiene migas. Título de la tarjeta «Iniciar sesión» (`auth.title`), subtítulo «Ingresa tus credenciales para acceder al sistema» (`auth.subtitle`).
-- **Diseño:** panel izquierdo de marca (logo `⚕ SOFIA`, «Gestión completa de tu farmacia» (`auth.panelTitle`), «Sistema Optimizado Farmacéutico con Inteligencia Artificial» (`auth.system`), cuatro viñetas: «Control de medicamentos y lotes» (`auth.features.inventory`), «Gestión de recetas y pacientes» (`auth.features.patients`), «Reportes DIGEMID automatizados» (`auth.features.digemid`), «Seguridad y auditoría completa» (`auth.features.security`) y pie «© {año} SOFIA · v{versión}») y panel derecho con la tarjeta (`login.component.html:3-37`). El panel de marca de esta página está escrito en línea (no usa `app-auth-brand-panel`, ver §1.5). El panel izquierdo se oculta con ancho de pantalla ≤ 768 px (`login.component.scss:263-266`). La versión sale de `environment.appVersion` (`login.component.ts:55`; valor compilado `1.0.0` en `src/environments/environment.ts:5`, sustituible por `window.__env` según `environment.model.ts`).
+- **Diseño:** panel izquierdo de marca (logo `⚕ SOFIA`, «Gestión completa de tu farmacia» (`auth.panelTitle`), «Sistema Optimizado Farmacéutico con Inteligencia Artificial» (`auth.system`), cuatro viñetas: «Control de medicamentos y lotes» (`auth.features.inventory`), «Gestión de recetas y pacientes» (`auth.features.patients`), «Reportes DIGEMID automatizados» (`auth.features.digemid`), «Seguridad y auditoría completa» (`auth.features.security`) y pie «© {año} SOFIA · v{versión}») y panel derecho con la tarjeta (`login.component.html:3-37`). El panel de marca de esta página está escrito en línea (no usa `app-auth-brand-panel`, ver §1.5). El panel izquierdo se oculta con ancho de pantalla ≤ 768 px (`login.component.scss:263-266`). La versión sale de `environment.appVersion` (`login.component.ts:55`; valor compilado `1.0.0` en `src/environments/environment.ts:5` y en `environment.prod.ts:5`; `environment.model.ts:9-31` usa `window.__env` si trae `production` booleano y `api.baseurl` no vacío, y si no los valores compilados). Desde `8f36125`, `src/index.html:18` carga `environment.js` antes de la aplicación; el `public/environment.js` del repositorio solo define `window.__env = {}`, que no cumple esa condición, así que rige el valor compilado salvo que el despliegue sustituya ese archivo. `ng build` usa ahora la configuración `production` por defecto (`angular.json:95`), que reemplaza `environment.ts` por `environment.prod.ts` (`angular.json:63-68`); `ng serve` conserva `development` por defecto (`angular.json:107`).
 - **Modos:** uno solo.
 
 **Campos del formulario**
@@ -92,13 +108,14 @@ Las cuatro rutas `/auth/*` están fuera del layout: se cargan directamente con `
 - **Diseño:** panel de marca propio (distinto del de login): «Gestión farmacéutica completa» (`empresa.register.brand.headline`), «Una plataforma inteligente para administrar tu farmacia con precisión y eficiencia.» (`...brand.sub`), cuatro viñetas «✓»: «1 mes de prueba gratuita, sin tarjeta» (`...brand.features.trial`), «Multi-sucursal desde el primer día» (`...multiBranch`), «Control de inventario y ventas en tiempo real» (`...realTime`), «Soporte dedicado durante la incorporación» (`...support`); pie «© {año} SOFIA · Todos los derechos reservados» (`...brand.rights`). Se pasa a una columna con ≤ 900 px (`.scss:10-12`).
 - **Modos:** uno solo.
 
-**Campos del formulario** (`empresa-register.component.ts:54-63`; todos con `nonNullable`)
+**Campos del formulario** (`empresa-register.component.ts:57-67`; todos con `nonNullable`; 9 campos)
 
 | Etiqueta (clave `empresa.register.*`) | `formControlName` | Control | Obligatorio | Validaciones | Mensaje de error (clave `empresa.form.*`) |
 |---|---|---|---|---|---|
 | Sección «Datos de la empresa» (`sections.empresa`) | | | | | |
 | Nombre de la Empresa (`nombreEmpresa`) | `nombreEmpresa` | Texto, icono `business`, `autocomplete="organization"` | Sí | `required`, `maxLength(200)` | «Este campo es obligatorio» (`required`); «Máximo 200 caracteres» (`maxLength200`) |
 | RUC (`ruc`) | `ruc` | Texto, icono `badge`, `maxlength="11"`, `inputmode="numeric"` | Sí | `required`, patrón `^\d{11}$` | «Este campo es obligatorio»; «El RUC debe tener exactamente 11 dígitos numéricos» (`rucFormat`) |
+| Dirección de la sede principal (`direccionSede`) | `direccionSede` | Texto, icono `location_on`, `autocomplete="street-address"`, sin atributo `maxlength` (el límite se valida, no se impide escribir). Placeholder «Av. Los Olivos 123, Lima» (`register.direccionSedePlaceholder`). Ayuda bajo el campo: «Aparecerá en el encabezado de tus boletas» (`register.direccionSedeHint`) (`.html:79-97`) | Sí | `required`, `maxLength(255)` (constante `ADDRESS_MAX_LENGTH`, `.ts:19`), patrón `/\S/` que rechaza un texto de solo espacios (`.ts:60`) | «Este campo es obligatorio» (`required`), tanto si está vacío como si solo tiene espacios (falla `required` o el patrón, `.html:88-93`); «Máximo 255 caracteres» (`maxLength255`, `.html:94-96`) |
 | Sección «Datos del administrador» (`sections.admin`) | | | | | |
 | Nombres del administrador (`adminNombres`) | `adminNombres` | Texto, icono `person`, `autocomplete="given-name"` | Sí | `required`, `maxLength(75)` | «Este campo es obligatorio»; «Máximo 75 caracteres» (`maxLength75`) |
 | Apellido paterno (`adminApellidoPaterno`) | `adminApellidoPaterno` | Texto, `autocomplete="family-name"` | Sí | `required`, `maxLength(75)` | Igual que el anterior |
@@ -114,7 +131,7 @@ Los mensajes de error se pintan solo cuando el control está inválido y tocado 
 
 | Texto (clave) | Dónde está | Visible cuando | Deshabilitado cuando | Qué hace |
 |---|---|---|---|---|
-| Registrar Empresa (`empresa.register.submit`); durante el envío spinner + «Procesando...» (`register.processing`) | Fin del formulario (`type="submit"`) | Siempre | `submitting()` | `submit()` (`.ts:65-95`): si es inválido marca todo tocado y no envía; si no, envía los textos con `trim()` (apellido materno vacío se envía `null`; usuario y contraseña sin `trim`) a `EmpresaService.register` |
+| Registrar Empresa (`empresa.register.submit`); durante el envío spinner + «Procesando...» (`register.processing`) | Fin del formulario (`type="submit"`) | Siempre | `submitting()` | `submit()` (`.ts:69-100`): si es inválido marca todo tocado y no envía; si no, envía los textos con `trim()` (incluida `direccionSede`, `.ts:80`; apellido materno vacío se envía `null`; usuario y contraseña sin `trim`) a `EmpresaService.register` |
 | Icono ojo | Sufijo de contraseña | Siempre | Nunca | `togglePasswordVisibility()` |
 | Iniciar sesión (`register.login`), precedido de «¿Ya tienes cuenta?» (`register.hasAccount`) | Pie del formulario | Siempre | — | Navega a `/auth/login` |
 
@@ -122,18 +139,23 @@ Los mensajes de error se pintan solo cuando el control está inválido y tocado 
 
 | Situación | Tipo | Texto exacto (clave) | Fuente |
 |---|---|---|---|
-| Registro correcto (guarda el token y va a `/dashboard`) | Éxito (3 s) | «Empresa registrada correctamente. ¡Bienvenido!» (`empresa.notifications.registerSuccess`) | `.ts:83-87` |
-| Código `Empresa.RUC.Duplicado` | Error (5 s) | «Ya existe una empresa registrada con este RUC» (`empresa.notifications.rucDuplicado`) | `.ts:20-22,91-92` |
-| Código `Auth.DuplicateUsername` | Error | «El usuario ya está en uso. Elige otro.» (`empresa.notifications.usuarioDuplicado`) | `.ts:22` |
-| Cualquier otro error (incluye 429, 5xx, sin red) | Error | «Error al registrar la empresa» (`empresa.notifications.registerError`) | `.ts:92` |
+| Registro correcto (guarda el token y va a `/dashboard`) | Éxito (3 s) | «Empresa registrada correctamente. ¡Bienvenido!» (`empresa.notifications.registerSuccess`) | `.ts:88-92` |
+| Código `Empresa.RUC.Duplicado` | Error (5 s) | «Ya existe una empresa registrada con este RUC» (`empresa.notifications.rucDuplicado`) | `.ts:22-26,95-97` |
+| Código `Auth.DuplicateUsername` | Error | «El usuario ya está en uso. Elige otro.» (`empresa.notifications.usuarioDuplicado`) | `.ts:24` |
+| Código `RegistrarEmpresaCommand.DireccionSede` (la API rechaza la dirección de la sede: vacía o de más de 255 caracteres; el formulario normalmente lo impide antes) | Error | «Ingresa la dirección de la sede principal (máximo 255 caracteres)» (`empresa.notifications.direccionSedeInvalida`) | `.ts:25,95-97` |
+| Cualquier otro error (incluye 429, 5xx, sin red) | Error | «Error al registrar la empresa» (`empresa.notifications.registerError`) | `.ts:97` |
+
+El código de validación lo arma `ValidationBehavior` con la **primera** falla del validador (`{NombreDelRequest}.{Propiedad}`, `sofia-apis/src/SOFIA.Application/Common/Behaviors/ValidationBehavior.cs:30`); por eso el mensaje de la dirección solo aparece si la dirección es la primera propiedad inválida según el orden de reglas del validador (`RegistrarEmpresaCommandValidator.cs:49-51` es la última regla). Las demás validaciones de la API (nombre, RUC, usuario, contraseña, datos del administrador) no tienen mensaje propio en esta pantalla y muestran «Error al registrar la empresa».
 
 **Llamadas a la API**
 
 | Cuándo | Método | Verbo y URL | Permiso |
 |---|---|---|---|
-| Enviar | `EmpresaService.register` (`src/app/pages/empresa/services/empresa.service.ts:39-42`, `withCredentials`) | `POST /api/v1/empresas/registrar` con `RegistrarEmpresaRequest` (`empresa.model.ts:34-43`); respuesta `{ token }` | Anónimo, política `SignUpPolicy` (`EmpresasController.cs:21`) |
+| Enviar | `EmpresaService.register` (`src/app/pages/empresa/services/empresa.service.ts:39-42`, `withCredentials`) | `POST /api/v1/empresas/registrar` con `RegistrarEmpresaRequest` (`empresa.model.ts:34-44`: `nombreEmpresa`, `ruc`, `adminNombres`, `adminApellidoPaterno`, `adminApellidoMaterno`, `adminEmail`, `direccionSede`, `usuario`, `password`); respuesta `{ token }` | Anónimo, política `SignUpPolicy` (`EmpresasController.cs:21`) |
 
 **Comportamientos particulares:** al registrar se guarda el token (`AuthService.storeToken`) y se entra directo a `/dashboard`; no hay pantalla de confirmación ni verificación de correo en el SPA.
+
+**La sede principal que crea el registro** (backend, `sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:85-91`): la pantalla no envía nombre de sede ni licencia, así que el backend crea la sucursal con el nombre «Sede Principal», la dirección escrita (con `Trim()`) y el número de licencia **vacío** (`Sucursal.CreateSedePrincipal`, `sofia-apis/src/SOFIA.Domain/Entities/Sucursal.cs:56-76`). Antes de `9dd1705` y `41f0a05` la dirección y la licencia se rellenaban con el texto «Por definir». El texto de ayuda del campo indica que la dirección aparecerá en el encabezado de las boletas (`register.direccionSedeHint`); el resto de la cadena de impresión no se verificó aquí. La licencia pasa a ser obligatoria cuando se edita esa sucursal (ver [19b §2.2](19b-administracion.md)). La API también acepta `NombreSede` y `NumeroLicencia` opcionales (`RegistrarEmpresaCommand.cs`), que este formulario no usa. Por contrato de la API la dirección es obligatoria (`RegistrarEmpresaCommandValidator.cs:49-51`: no vacía y hasta 255 caracteres).
 
 **Observaciones:** el formulario tiene `autocomplete="off"` y no `novalidate` (`.html:45`). El panel de marca de esta pantalla no reutiliza `app-auth-brand-panel`.
 
@@ -332,7 +354,7 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 - **Alcance de los datos (lo decide el servidor, `sofia-apis/src/SOFIA.Application/Dashboard/Common/DashboardScopeResolver.cs:19-31`):** si el usuario no tiene restricción de sucursal (rol Admin) el alcance es **toda la empresa** (`empresaCompleta = true`); si no, las sucursales a las que tiene acceso. Con más de una sucursal (`multiSucursal`) aparece la tabla «Ventas por sucursal» y se **ocultan** los botones «Ver ventas de hoy», «Ver mis ventas» y «Ver ventas en espera» (la lista de ventas solo cubre la sucursal propia, comentario en `.ts:139`). Con una sola sucursal, la vista es de esa sucursal y los botones aparecen.
 - **Mis ventas / Mi caja:** dependen de que el token traiga el id de empleado; si no, `mias` y `miSesion` llegan nulos y no se muestran (`GetDashboardVentasQueryHandler.cs:87-92`, `GetDashboardCajaQueryHandler.cs:42-49`).
 - **Qué cuenta como «vendido»** (servidor): ventas de las sucursales del alcance que no estén anuladas ni pendientes, monto bruto (`GetDashboardVentasQueryHandler.cs:25-28`); las pendientes se cuentan aparte, de cualquier día (`:41-44`); el desglose por método descuenta vuelto y cobertura de seguro (`:101-130`).
-- **Efectivo esperado:** lo calcula `ArqueoCajaCalculator.CalcularEfectivoEsperadoAsync` (`GetDashboardCajaQueryHandler.cs:69`). **En curso (sin commitear):** `sofia-apis/src/SOFIA.Application/POS/Common/ArqueoCajaCalculator.cs` tiene cambios locales que suman/restan las ventas anuladas desde otra caja; la versión del commit solo considera las ventas cobradas de la sesión no anuladas, menos los reembolsos en efectivo.
+- **Efectivo esperado:** lo calcula `ArqueoCajaCalculator.CalcularEfectivoEsperadoAsync` (`GetDashboardCajaQueryHandler.cs:69`) como apertura + efectivo neto de las ventas cobradas en la sesión − efectivo neto de las ventas de otras cajas que se anularon desde esta sesión − reembolsos en efectivo de devoluciones de la sesión (`sofia-apis/src/SOFIA.Application/POS/Common/ArqueoCajaCalculator.cs:10-53`). «Efectivo neto» es el efectivo pagado menos el vuelto. Una venta de esta sesión anulada desde esta misma sesión no cuenta; una venta de esta sesión anulada desde otra caja sigue contando (`ArqueoCajaCalculator.cs:17-21,50`). Comportamiento commiteado en `358935e` (antes del commit, el cálculo ignoraba las ventas anuladas de cualquier caja).
 
 ### 3.3 Estados de carga, vacío y error
 
@@ -513,7 +535,7 @@ Registro: guards en `src/app/app.routes.ts:33-38`; interceptores en `src/app/app
   - En `/auth/login` solo propaga el error (la pantalla muestra «Credenciales inválidas…»). En `/auth/refresh` y `/auth/logout` borra la sesión local sin más llamadas y propaga (`:40-46`).
   - En cualquier otro endpoint: pide una renovación (`refreshAccessToken`) y, si funciona, **repite la petición original** con el token nuevo sin avisar al usuario; si la renovación falla, ejecuta `auth.logout()` (§4.4: borra datos locales y va a `/auth/login`) y propaga el error (`:51-64`). No hay aviso de «sesión expirada» (la clave `errors.unauthorized` no se usa en el código).
 - **No hay renovación proactiva:** no existe temporizador; el token se renueva al navegar con el token vencido (§5.1) o al recibir el primer 401.
-- Los demás errores (400, 403 normales, 404, 409, 429, 5xx, sin conexión) **no tienen tratamiento global**: cada pantalla decide el mensaje con su propio mapa de códigos y su mensaje genérico (ver cada ficha; el login distingue la caída del servidor con `auth.serviceUnavailable`, §1.1). No existe un traductor global de códigos de error. La única utilidad compartida es `saveErrorKey` (`src/app/shared/utils/save-error-key.util.ts:11-15`): busca el código en el mapa de la pantalla; si no está, busca `Db.Duplicado` → «Ya existe un registro con ese mismo valor. Revisa los datos e inténtalo de nuevo.» (`errors.dbDuplicado`), `Db.ReferenciaInvalida` → «El registro hace referencia a datos que ya no existen o todavía está en uso.» (`errors.dbReferenciaInvalida`) y `Db.ValorInvalido` → «Uno de los valores está fuera del rango permitido.» (`errors.dbValorInvalido`); si tampoco, devuelve el mensaje genérico que le pasa la pantalla. Se llama desde 34 puntos de `src/app` (conteo de referencias fuera de la utilidad y de las pruebas). El código `Concurrency.Conflict` lo mapea cada pantalla que lo declara a «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» (`errors.concurrencyConflict`), por ejemplo `aperturar-caja-dialog.component.ts:15`.
+- Los demás errores (400, 403 normales, 404, 409, 429, 5xx, sin conexión) **no tienen tratamiento global**: cada pantalla decide el mensaje con su propio mapa de códigos y su mensaje genérico (ver cada ficha; el login distingue la caída del servidor con `auth.serviceUnavailable`, §1.1). No existe un traductor global de códigos de error. La única utilidad compartida es `saveErrorKey` (`src/app/shared/utils/save-error-key.util.ts:11-15`): busca el código en el mapa de la pantalla; si no está, busca `Db.Duplicado` → «Ya existe un registro con ese mismo valor. Revisa los datos e inténtalo de nuevo.» (`errors.dbDuplicado`), `Db.ReferenciaInvalida` → «El registro hace referencia a datos que ya no existen o todavía está en uso.» (`errors.dbReferenciaInvalida`) y `Db.ValorInvalido` → «Uno de los valores está fuera del rango permitido.» (`errors.dbValorInvalido`); si tampoco, devuelve el mensaje genérico que le pasa la pantalla. Se llama desde 36 puntos de `src/app` (conteo de referencias fuera de la utilidad y de las pruebas). El código `Concurrency.Conflict` lo mapea cada pantalla que lo declara a «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» (`errors.concurrencyConflict`), por ejemplo `aperturar-caja-dialog.component.ts:15`.
 
 ### 5.5 `CSLoadingInterceptor` — barra de carga
 
@@ -546,7 +568,7 @@ Carpeta `src/app/shared/components`. Comprobación de uso hecha buscando el sele
 - **Archivos:** `shared/components/autocomplete-input/autocomplete-input.component.ts`, `.html`, `.css`.
 - **Entradas principales** (`.ts:35-46`): `fetch` (función que recibe el texto y devuelve opciones), `displayWith`, `control`, `placeholder`, `initialText`, `autoSelectOnExact` (verdadero), `allowFreeText` (verdadero), `maxLength`, `minLength` (por defecto 2), `clearOnInvalidSelection` (falso), `errorSource`. Salidas: `selectedChanges` (opción elegida o `null`) y `blurEvent`.
 - **Comportamiento:** campo de búsqueda con espera de 500 ms tras escribir (`debounceTime(500)`, `.ts:100-104`); no busca hasta alcanzar `minLength` caracteres; mientras busca muestra una opción deshabilitada «Cargando...» (**texto en duro**, `.html:21-23`). Al elegir una opción pone su texto en el campo y emite la opción. Con `clearOnInvalidSelection` verdadero, al salir del campo con un texto que no corresponde a una opción lo vacía y emite `null` (`.ts:173-193`). Métodos públicos `clear()` y `restoreValue()` para que la pantalla lo reinicie. Si `errorSource` está inválido y tocado/sucio, dibuja el borde de error.
-- **Dónde se usa:** `cuentas-detail` (empleado, rol, sucursal; tres instancias) y `sucursales-detail` (gerente, solo en edición).
+- **Dónde se usa:** `cuentas-detail` (empleado, rol, sucursal; tres instancias) y `sucursales-detail` (gerente, al crear y al editar: se dibuja con `isEditMode()`, `sucursales-detail.component.html:66-67`).
 - **Sin uso:** existe otra variante, `AutocompleteInputMultipleComponent` (`shared/components/autocomplete-input-multiple/`), con el **mismo selector** `csw-autocomplete-input`; ninguna plantilla ni `.ts` importa su clase (sin uso, §6.13).
 
 ### 6.4 `RangeSliderFieldComponent` (`app-range-slider-field`) — filtro numérico con deslizador de rango
@@ -667,8 +689,8 @@ Archivo: `src/app/core/services/shared/error-notifier.service.ts` (servicio raí
 
 | Método | Qué muestra | Duración | Usos en `src/app` (sin pruebas) | Fuente |
 |---|---|---|---|---|
-| `showError(message, duration = 5000)` | El texto recibido, estilo de error | 5 s (configurable) | 153 | `error-notifier.service.ts:26-28` |
-| `showSuccess(message, duration = 3000)` | El texto recibido, estilo de éxito | 3 s (configurable; reset-password y cambiar-clave usan 6 s) | 68 | `:30-32` |
+| `showError(message, duration = 5000)` | El texto recibido, estilo de error | 5 s (configurable) | 155 | `error-notifier.service.ts:26-28` |
+| `showSuccess(message, duration = 3000)` | El texto recibido, estilo de éxito | 3 s (configurable; reset-password y cambiar-clave usan 6 s) | 69 | `:30-32` |
 | `showServerError(err, friendlyMessage)` | Si el error es una respuesta HTTP con `traceId` (en `error.traceId` o `error.extensions.traceId`), abre `ServerErrorSnackbarComponent` con el mensaje y la referencia (§6.11); si no, equivale a `showError(friendlyMessage)` | 10 s con referencia; 5 s sin ella | 19 | `:34-46` |
 | `showSmartErrors(errors, opts?)` | Une con « \| » el `errorMessage` (o `errorCode`) de cada elemento; si la lista está vacía muestra `opts.fallback` o «Ocurrió un error desconocido. Por favor, inténtalo de nuevo más tarde.» (`errors.unknownError`) | 5 s | **0: sin uso** (solo la definición y su prueba) | `:18-24` |
 
@@ -704,7 +726,7 @@ Carpeta `src/app/shared/directives`.
 
 ### 7.1 `*appPermiso` (`PermisoDirective`)
 
-- **Archivo:** `shared/directives/permiso.directive.ts` (selector `[appPermiso]`, standalone). Es la **única directiva compartida en uso**: 47 plantillas la usan (84 usos según `docs/_inventario/app-permiso-usos.csv`).
+- **Archivo:** `shared/directives/permiso.directive.ts` (selector `[appPermiso]`, standalone). Es la **única directiva compartida en uso**: 47 plantillas la usan, con 85 usos en el árbol actual (`docs/_inventario/app-permiso-usos.csv` es de la línea base y lista 84; el uso nuevo es `*appPermiso="'RegistrarPrecioProveedor'"` en `proveedores-detail.component.html:134`, que documenta la parte de proveedores).
 - **Qué hace:** dibuja su plantilla solo si el usuario tiene el permiso; si no lo tiene (o aún no se cargó el perfil), no dibuja nada. Falla cerrada (`permiso.directive.ts:19-25`).
 - **Sintaxis de la expresión** (cadena obligatoria, `appPermiso.input.required<string>()`):
   - `'Modulo:Accion'` — por ejemplo `'POS:AperturarCaja'` (usado en el dashboard, §3.1): comprueba ese módulo y esa acción.
@@ -838,7 +860,7 @@ Cuáles de estas claves usa cada pantalla lo indica su ficha; todas tienen al me
 
 | Clave | Texto | Uso |
 |---|---|---|
-| `general.errors.required` | Este campo es obligatorio | En uso (20 archivos) |
+| `general.errors.required` | Este campo es obligatorio | En uso (21 archivos) |
 | `general.errors.minValue` | El valor mínimo es {{min}} | Sin uso |
 | `general.errors.maxLength` | La longitud máxima es de {{max}} caracteres | En uso (`cuentas-detail`) |
 | `generic-labels.yes` | Sí | En uso |
@@ -1023,11 +1045,7 @@ Se resuelven dinámicamente con `tipos-documento.<tipo>` (`src/app/shared/utils/
 
 **En curso (sin commitear)**
 
-| Afirmación | Archivo con cambios locales | Diferencia con el commit |
-|---|---|---|
-| El «Efectivo esperado» de «Mi caja» del dashboard (§3.1, §3.2) lo calcula `ArqueoCajaCalculator` | `sofia-apis/src/SOFIA.Application/POS/Common/ArqueoCajaCalculator.cs` | La versión local suma/resta además las ventas anuladas desde otra caja (`SesionAnulacionId`); la del commit (visto con `git diff`, solo lectura) solo cuenta las ventas cobradas de la sesión no anuladas, menos los reembolsos en efectivo |
-
-El resto de este documento no se apoya en archivos con cambios locales (`pages/dashboard` y el layout no están afectados).
+Ninguna. Al 2026-10-14 no hay cambios sin commitear en `sofia-apis` (`43f5529`) ni en `sofia-web-spa` (`eeffbb6`). La marca de la versión 1.0 sobre `ArqueoCajaCalculator.cs` se retiró porque ese cambio ya está commiteado (`358935e`).
 
 **No verificado**
 
@@ -1039,6 +1057,7 @@ El resto de este documento no se apoya en archivos con cambios locales (`pages/d
 | Contenido de `layouts/full/horizontal/sidebar/sidebar-data.ts` (§4.7) | El layout horizontal no se muestra a ningún usuario |
 | Aspecto visual (colores, posición exacta) de cabecera, menú y tarjetas del dashboard | Solo se leyó el código; el CSS se consultó puntualmente (§4.1) |
 | Qué endpoints envían `traceId` en sus errores (§6.12) | Se documenta lo que lee el SPA, no lo que envía cada endpoint |
+| Que la dirección de la sede principal aparezca realmente en el encabezado de las boletas (texto de ayuda `empresa.register.direccionSedeHint`, §1.2) | Es texto de la traducción; no se revisó la impresión del comprobante en esta parte |
 
 **Pendientes / hallazgos para otras partes**
 - `showSmartErrors` y las claves `errors.forbidden`, `errors.unauthorized`, `errors.notFound`, `errors.serverError`, `errors.networkError`, `errors.alert.*` no tienen ningún uso (confirmado, §6.12, §8.7).
@@ -1115,20 +1134,22 @@ El resto de este documento no se apoya en archivos con cambios locales (`pages/d
 | `auth` | Ninguna | Las 42 claves se usan |
 | `cambiar-clave` | Ninguna | |
 | `dashboard` | Ninguna | `metodo.Efectivo`, `metodo.YapePlin`, `metodo.Tarjeta` y `metodo.Transferencia` se resuelven con `'metodo.' + MetodoPago[...]` (`dashboard.component.html:147`) |
-| `empresa` (parte de registro: `register.*`, validaciones de `form.*`, `notifications.register*`, `rucDuplicado`, `usuarioDuplicado`) | Ninguna | Para las pantallas de búsqueda y detalle de empresa, las claves sin referencia literal (candidatas para la parte que las cubre) son: `searchPlaceholder`, `estado.0` a `estado.3`, `cols.fechaVencimiento`, `cols.cantidadSucursales`, `form.titleView`, `form.estado`, `form.fechaVencimiento`, `notifications.loadError`, `help.nombre`, `help.ruc`, `help.estado`, `noData`, `showing`, `detail.title-edit`, `fields.estaVigente`; algunas pueden resolverse de forma dinámica |
+| `empresa` (parte de registro: `register.*` incluidas `register.direccionSede`, `register.direccionSedePlaceholder` y `register.direccionSedeHint`; validaciones de `form.*` incluida `form.maxLength255`; `notifications.register*`, `rucDuplicado`, `usuarioDuplicado`, `direccionSedeInvalida`) | Ninguna (las 5 claves nuevas de la versión 1.1 están en uso: `empresa-register.component.html:80,85,87,95` y `.ts:25`) | Para las pantallas de búsqueda y detalle de empresa, las claves sin referencia literal (candidatas para la parte que las cubre) son: `searchPlaceholder`, `estado.0` a `estado.3`, `cols.fechaVencimiento`, `cols.cantidadSucursales`, `form.titleView`, `form.estado`, `form.fechaVencimiento`, `notifications.loadError`, `help.nombre`, `help.ruc`, `help.estado`, `noData`, `showing`, `detail.title-edit`, `fields.estaVigente`; algunas pueden resolverse de forma dinámica |
 | `login` | Las 8 claves (`title`, `subtitle`, `username`, `password`, `usernameRequired`, `passwordRequired`, `submit`, `error`) | Scope completo sin uso (§1.1) |
 | Raíz | Ver §8: `nav.inventario`; `actions.view/update/create/clean/return/add/ok/reject/continue/upload-files/download/select/back`; `general.errors.minValue`; `header.reloadPermissions/roles/notifications`; `CONFIRMATION.RELOAD_PERMISSIONS_*`; `errors.forbidden/unauthorized/notFound/serverError/networkError/alert.*`; `carga-masiva.row-number/status-valid/status-error/saving` (y `upload-file/upload-success/upload-error` solo en un componente sin uso) | `errors.unknownError` solo la usa `showSmartErrors` |
 
 ## 11. Fuentes
 
 SPA (`sofia-web-spa/`):
-- Rutas y arranque: `src/app/app.routes.ts`, `src/app/app.config.ts`, `src/app/app.component.*`, `src/environments/environment.ts`, `environment.model.ts`.
+- Rutas y arranque: `src/app/app.routes.ts`, `src/app/app.config.ts`, `src/app/app.component.*`, `src/environments/environment.ts`, `environment.prod.ts`, `environment.model.ts`, `src/index.html`, `public/environment.js`, `angular.json`.
 - Núcleo: `src/app/core/auth/{auth.service,auth.guard,password-change.guard,permission.guard,route-permissions,user-storage}.ts`, `src/app/core/interceptors/auth.interceptor.ts`, `src/app/core/services/shared/{error-notifier,search-state,timezone}.service.ts`, `src/app/core/services/logger.service.ts`, `src/app/core/responses/common-error-response.ts`, `src/app/core/transloco/transloco-loader.ts`.
 - Pantallas: `src/app/pages/auth/**`, `src/app/pages/cambiar-clave/**`, `src/app/pages/dashboard/**` (componente, plantilla, servicio, modelo, `dashboard-links.ts`), `src/app/pages/empresa/empresa-register/**`, `src/app/pages/empresa/services/empresa.service.ts`, `src/app/pages/empresa/models/empresa.model.ts`, `src/app/pages/*/*-carga-masiva/*.component.ts`, `src/app/pages/*/*.routes.ts` (rutas de carga masiva), plantillas de `cuentas-detail`, `sucursales-detail`, `jerarquias-search`, `proveedores-search`, `roles-search`.
 - Layout: `src/app/matdash/layouts/full/**` (full, vertical/header, vertical/sidebar, nav-item, branding, shared/breadcrumb, shared/customizer, horizontal/header), `src/app/matdash/{config.ts,services/core.service.ts,services/nav.service.ts}`.
 - Compartidos: `src/app/shared/components/**`, `src/app/shared/directives/**`, `src/app/shared/pipes/**`, `src/app/shared/services/**`, `src/app/shared/date/**`, `src/app/shared/utils/{save-error-key,tipo-documento}.util.ts`, `src/app/shared/models/carga-masiva.model.ts`.
 - Textos: `public/i18n/es.json`, `public/i18n/{auth,cambiar-clave,dashboard,empresa,login}/es.json`.
 
-Backend (`sofia-apis/src/`, solo para describir los indicadores y los permisos de endpoint): `SOFIA.API/Controllers/DashboardController.cs`, `SOFIA.Application/Dashboard/**` (handlers de ventas, caja, inventario, cuarentena y devoluciones; `DashboardScopeResolver.cs`, `DashboardDias.cs`), `SOFIA.Application/POS/Common/ArqueoCajaCalculator.cs` (con `git diff`, solo lectura).
+Backend (`sofia-apis/src/`, solo para describir los indicadores y los permisos de endpoint): `SOFIA.API/Controllers/DashboardController.cs`, `SOFIA.Application/Dashboard/**` (handlers de ventas, caja, inventario, cuarentena y devoluciones; `DashboardScopeResolver.cs`, `DashboardDias.cs`), `SOFIA.Application/POS/Common/ArqueoCajaCalculator.cs`; para el registro de empresa: `SOFIA.Application/Empresas/Commands/RegistrarEmpresa/{RegistrarEmpresaCommand,RegistrarEmpresaCommandHandler,RegistrarEmpresaCommandValidator}.cs`, `SOFIA.Domain/Entities/Sucursal.cs`, `SOFIA.Application/Common/Behaviors/ValidationBehavior.cs`.
+
+Solo pruebas (sin pantalla): `src/app/shared/testing/delete-in-use-testing.ts` (ayuda para las pruebas de eliminación en uso, agregada en `01b8260`); no forma parte de la interfaz.
 
 Inventarios base: `docs/_inventario/{rutas-spa.csv,componentes-pages.txt,dialogos.txt,app-permiso-usos.csv,endpoints.csv,i18n-scopes.csv}`.
