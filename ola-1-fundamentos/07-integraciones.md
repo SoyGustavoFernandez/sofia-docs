@@ -3,11 +3,26 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-06 |
-| **Backend** | `sofia-apis`, rama `main`, commit `00991bc` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `31af681` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-10-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código, scripts DbUp, archivos de configuración versionados (`appsettings*.json`, `docker-compose.yml`, `.env.example`, `angular.json`, `staticwebapp.config.json`) y archivos i18n. No se llamó a ningún servicio externo, no se usó el navegador ni la API local, y no se abrió ningún archivo `.env` real ni secretos de usuario. |
+
+## Historial de cambios
+
+### Versión 1.1 (2026-10-14)
+
+Reconciliación con el código actual (`sofia-apis` `00991bc` → `43f5529`, `sofia-web-spa` `31af681` → `eeffbb6`). Ninguna integración externa cambió: no hay clientes HTTP, servicios ni dominios nuevos; los cambios son marcas «En curso» que ya se commitearon y líneas desplazadas.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 5.1, anulación de comprobantes | Citaba `AnularVentaCommandHandler.cs` líneas 61-69 del commit y 70-76 del árbol de trabajo (**En curso**). | Líneas 68-76 del commit actual (el handler suma la resolución de la caja de anulación y el comprobante se anula igual). Sin marca. | `358935e` |
+| 5.3, textos de `pos/es.json` | Líneas del commit anterior (238, 239, 241, 357 a 361, 344, 118), con la marca **En curso**. | Líneas 239, 240, 242, 358 a 362, 345 y 119 (el archivo ganó la clave `anularSinSesionAbierta` en la línea 103 y ya está commiteado). Los textos no cambiaron. | `0310dad` |
+| 5.3, diálogo de comprobante | `comprobante-dialog.component.html:128-133` para «Estado SUNAT» del comprobante impreso. | `:142-147` (el comprobante impreso agrega vuelto y presentación de venta); `:5` y `:15-20` no cambian. | `063817c` |
+| 8.2 (recursos del navegador) | `index.html` agregaba localmente `<script src="environment.js">`; `angular.json` tenía cambios locales (**En curso**). | Ambos commiteados: `index.html:18` carga `environment.js` (mismo origen, no es un recurso externo); `angular.json` cambia la configuración por defecto de compilación a `production` y los patrones de lint. Las líneas citadas de `angular.json` (`:28-32`, `:47`, `:69-76`) no se movieron. | `8f36125` |
+| 2.1 y 2.5 (lector de recetas) | `nueva-venta.component.ts:150-151`, `:747`, `:750-765`, `:760-763`. | `:149-150`, `:746`, `:749-764`, `:759-762`. | `063817c` |
+| 11.3 «En curso (sin commitear)» | Cuatro archivos con cambios locales. | Ninguno: `git status --short` está limpio en los dos repositorios. | `8f36125`, `358935e` |
 
 Este documento describe **solo lo que existe hoy** en el código: toda salida de SOFIA hacia fuera de su propio proceso (servicios de terceros, microservicios propios, correo, recursos que el navegador descarga de otros dominios) y las integraciones que se suelen dar por hechas pero **no** existen (SUNAT, DIGEMID en línea). No contiene propuestas.
 
@@ -102,9 +117,9 @@ Pantallas del SPA que lo invocan (las dos llaman a `analizar(imagen)` **sin** `e
 | Pantalla | Dónde | Fuente |
 |---|---|---|
 | «Lector de Recetas IA» (clave `scanner.title` de `sofia-web-spa/public/i18n/recetas-medicas/es.json:56`), ruta `/recetas-medicas/escanear` | Botón «Interpretar receta» (`scanner.btn-interpret`, `es.json:62`) | Ruta: `sofia-web-spa/src/app/pages/recetas-medicas/recetas-medicas.routes.ts:8`; permiso de ruta `Analizar`: `sofia-web-spa/src/app/core/auth/route-permissions.ts:30`; llamada: `sofia-web-spa/src/app/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.ts:70-87` |
-| Punto de venta, nueva venta (pestaña de escaneo, visible solo con `Recetas:Analizar`) | Método `interpretarReceta()` | `sofia-web-spa/src/app/pages/pos/nueva-venta/nueva-venta.component.ts:150-151` y `:750-765` |
+| Punto de venta, nueva venta (pestaña de escaneo, visible solo con `Recetas:Analizar`) | Método `interpretarReceta()` | `sofia-web-spa/src/app/pages/pos/nueva-venta/nueva-venta.component.ts:149-150` y `:749-764` |
 
-En ambos casos los `input` de archivo declaran `accept="image/*"` (`sofia-web-spa/src/app/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.html:6-14`, `sofia-web-spa/src/app/pages/pos/nueva-venta/nueva-venta.component.html:242-250`) y el arrastre solo acepta archivos cuyo tipo empiece por `image/` (`recetas-scanner.component.ts:109`, `nueva-venta.component.ts:747`). Es un filtro del navegador; el backend no valida el tipo de archivo (ver 2.5).
+En ambos casos los `input` de archivo declaran `accept="image/*"` (`sofia-web-spa/src/app/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.html:6-14`, `sofia-web-spa/src/app/pages/pos/nueva-venta/nueva-venta.component.html:242-250`) y el arrastre solo acepta archivos cuyo tipo empiece por `image/` (`recetas-scanner.component.ts:109`, `nueva-venta.component.ts:746`). Es un filtro del navegador; el backend no valida el tipo de archivo (ver 2.5).
 
 ### 2.2 Componentes
 
@@ -245,7 +260,7 @@ sequenceDiagram
 | El JSON de la llamada 2 no se puede interpretar | Se registra el error y se devuelve lista vacía (respuesta `200` sin medicamentos) | `GeminiRecetaAnalyzer.cs:182-197` |
 | Falla Presidio | Se aborta antes de la llamada 2 (ver 3.5); resultado `500` | `sofia-apis/src/SOFIA.Infrastructure/Services/PresidioPrivacyService.cs:36-41` |
 
-Lo que ve el usuario ante cualquier error: «Error al interpretar la receta. Intenta nuevamente.» (clave `scanner.error`, `sofia-web-spa/public/i18n/recetas-medicas/es.json:76`; usada en `recetas-scanner.component.ts:82-85` y `nueva-venta.component.ts:760-763`). Si la lista llega vacía: «No se detectaron medicamentos en la imagen. Intenta con una foto más nítida.» (`scanner.no-results`, `es.json:75`).
+Lo que ve el usuario ante cualquier error: «Error al interpretar la receta. Intenta nuevamente.» (clave `scanner.error`, `sofia-web-spa/public/i18n/recetas-medicas/es.json:76`; usada en `recetas-scanner.component.ts:82-85` y `nueva-venta.component.ts:759-762`). Si la lista llega vacía: «No se detectaron medicamentos en la imagen. Intenta con una foto más nítida.» (`scanner.no-results`, `es.json:75`).
 
 ### 2.6 Local frente a producción
 
@@ -571,7 +586,7 @@ El propio código lo dice en un comentario (`VentaComprobanteGenerator.cs:49`): 
 
 Al procesar una devolución se emite una **nota de crédito** interna con la misma mecánica: correlativo local, mismos datos de cliente que el comprobante de origen, hash y rutas en `null` y estado `NoEnviado` (`sofia-apis/src/SOFIA.Application/Devoluciones/Commands/ProcesarDevolucion/ProcesarDevolucionCommandHandler.cs:196-216`).
 
-Al anular una venta, sus comprobantes no anulados pasan a estado `Anulado` con `SunatComprobanteEmitido.Anular()` (`sofia-apis/src/SOFIA.Domain/Entities/SunatComprobanteEmitido.cs:155-162`; en el commit documentado, `git show HEAD:src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs`, líneas 61-69). **En curso (sin commitear)**: `AnularVentaCommandHandler.cs` tiene cambios locales; en el árbol de trabajo esas mismas instrucciones están en las líneas 70-76. La anulación es solo un cambio de estado local: no se comunica una baja a SUNAT.
+Al anular una venta, sus comprobantes no anulados pasan a estado `Anulado` con `SunatComprobanteEmitido.Anular()` (`sofia-apis/src/SOFIA.Domain/Entities/SunatComprobanteEmitido.cs:155-162`; `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs:68-76`). La anulación es solo un cambio de estado local: no se comunica una baja a SUNAT.
 
 Tabla `SUNAT_Comprobantes_Emitidos` (`sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql:559-586`):
 
@@ -612,22 +627,22 @@ El prefijo `SUNAT_` de las tablas `SUNAT_Series_Fiscales` y `SUNAT_Comprobantes_
 
 ### 5.3 Qué muestra el SPA
 
-Textos exactos de `sofia-web-spa/public/i18n/pos/es.json` en el commit documentado (`git show HEAD:public/i18n/pos/es.json`). **En curso (sin commitear)**: ese archivo tiene cambios locales que no tocan estas claves, pero desplazan una línea la numeración en el árbol de trabajo.
+Textos exactos de `sofia-web-spa/public/i18n/pos/es.json` en el commit `eeffbb6`.
 
-| Clave | Texto | Línea (HEAD) |
+| Clave | Texto | Línea |
 |---|---|---|
-| `comprobante.title` | «Venta Procesada Exitosamente» | 238 |
-| `comprobante.subtitle` | «Comprobante registrado. Pendiente de envío a SUNAT.» | 239 |
-| `comprobante.estadoSunat` | «Estado SUNAT:» | 241 |
-| `estadoComprobante.NoEnviado` | «Pendiente de envío a SUNAT» | 357 |
-| `estadoComprobante.Pendiente` | «Pendiente de envío a SUNAT» | 358 |
-| `estadoComprobante.Aceptado` | «Aceptado por SUNAT» | 359 |
-| `estadoComprobante.Rechazado` | «Rechazado por SUNAT» | 360 |
-| `estadoComprobante.Anulado` | «Anulado» | 361 |
-| `messages.serieBoletaNoConfigurada` | «Esta sucursal no tiene una serie de boletas activa. Configúrala en SUNAT > Series Fiscales para poder cobrar.» | 344 |
-| `devolucion.motivoLabel` | «Motivo SUNAT» | 118 |
+| `comprobante.title` | «Venta Procesada Exitosamente» | 239 |
+| `comprobante.subtitle` | «Comprobante registrado. Pendiente de envío a SUNAT.» | 240 |
+| `comprobante.estadoSunat` | «Estado SUNAT:» | 242 |
+| `estadoComprobante.NoEnviado` | «Pendiente de envío a SUNAT» | 358 |
+| `estadoComprobante.Pendiente` | «Pendiente de envío a SUNAT» | 359 |
+| `estadoComprobante.Aceptado` | «Aceptado por SUNAT» | 360 |
+| `estadoComprobante.Rechazado` | «Rechazado por SUNAT» | 361 |
+| `estadoComprobante.Anulado` | «Anulado» | 362 |
+| `messages.serieBoletaNoConfigurada` | «Esta sucursal no tiene una serie de boletas activa. Configúrala en SUNAT > Series Fiscales para poder cobrar.» | 345 |
+| `devolucion.motivoLabel` | «Motivo SUNAT» | 119 |
 
-Dónde se muestran: el diálogo de comprobante tras la venta (`sofia-web-spa/src/app/pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.html:5`, `:15-20`, `:128-133`) y el detalle de venta (`sofia-web-spa/src/app/pages/pos/venta-detail/venta-detail.component.html:113`). El menú lateral tiene un grupo «SUNAT» con la opción «Series Fiscales» (`sofia-web-spa/public/i18n/es.json:61-62`; ruta `series-fiscales` en `sofia-web-spa/src/app/app.routes.ts:171-173`), que es un mantenimiento local de series.
+Dónde se muestran: el diálogo de comprobante tras la venta (`sofia-web-spa/src/app/pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.html:5`, `:15-20`, `:142-147`) y el detalle de venta (`sofia-web-spa/src/app/pages/pos/venta-detail/venta-detail.component.html:113`). El menú lateral tiene un grupo «SUNAT» con la opción «Series Fiscales» (`sofia-web-spa/public/i18n/es.json:61-62`; ruta `series-fiscales` en `sofia-web-spa/src/app/app.routes.ts:171-173`), que es un mantenimiento local de series.
 
 Como el backend solo asigna `NoEnviado` y `Anulado`, los textos «Aceptado por SUNAT» y «Rechazado por SUNAT» no pueden aparecer hoy con datos generados por la aplicación. La impresión del comprobante se hace en el navegador (`sofia-web-spa/src/app/pages/pos/services/receipt-print.service.ts:72`), sin servicio externo.
 
@@ -747,7 +762,7 @@ Lo que sí sale del navegador hacia terceros son recursos estáticos:
 
 | Recurso | Dominio | Dónde se declara | Datos que salen |
 |---|---|---|---|
-| Fuente Manrope | `fonts.googleapis.com` (hoja de estilos) y `fonts.gstatic.com` (archivos de fuente) | `sofia-web-spa/src/index.html:11-14` (commit `31af681`); `sofia-web-spa/src/assets/scss/_variables.scss:1` | IP y agente de usuario del navegador. Ningún dato de la aplicación |
+| Fuente Manrope | `fonts.googleapis.com` (hoja de estilos) y `fonts.gstatic.com` (archivos de fuente) | `sofia-web-spa/src/index.html:11-14`; `sofia-web-spa/src/assets/scss/_variables.scss:1` | IP y agente de usuario del navegador. Ningún dato de la aplicación |
 | Fuente de iconos Material Icons | `fonts.googleapis.com` y `fonts.gstatic.com` | `sofia-web-spa/src/index.html:15-17` | Ídem |
 | Iconos Iconify (clases `iconify` con `data-icon`, por ejemplo `solar:bell-line-duotone`) | La librería `@iconify/iconify` 2.0.3 va empaquetada en la aplicación; los datos de cada icono se piden en tiempo de ejecución a la API pública de Iconify. La política de seguridad de contenido autoriza `https://api.iconify.design`, `https://api.simplesvg.com` y `https://api.unisvg.com` | `sofia-web-spa/package.json:29`; `sofia-web-spa/angular.json:47`; `sofia-web-spa/public/staticwebapp.config.json:3`; uso en `sofia-web-spa/src/app/matdash/layouts/full/vertical/header/header.component.html:5-20` | IP, agente de usuario y nombres de los iconos pedidos. Ningún dato de la aplicación |
 
@@ -756,7 +771,7 @@ Notas:
 - No hay colecciones de iconos incluidas en el paquete (no se usa `addCollection` ni paquetes `@iconify-json`), por lo que sin acceso a la API de Iconify esos iconos no se dibujan. **No verificado** por ejecución.
 - La compilación de producción tiene `optimization.fonts: true` (`sofia-web-spa/angular.json:69-76`). **No verificado** por ejecución qué parte de las fuentes queda incrustada en el HTML final.
 - La cabecera `Referrer-Policy: strict-origin-when-cross-origin` limita lo que se envía como referente (`staticwebapp.config.json:6`).
-- **En curso (sin commitear)**: `sofia-web-spa/src/index.html` agrega localmente `<script src="environment.js"></script>`. Es un archivo del mismo origen (`sofia-web-spa/public/environment.js:1`), no un recurso externo. `sofia-web-spa/angular.json` también tiene cambios locales (configuración por defecto de compilación y patrones de lint) que no afectan a las integraciones.
+- `sofia-web-spa/src/index.html` carga `<script src="environment.js"></script>` (`sofia-web-spa/src/index.html:18`). Es un archivo del mismo origen (`sofia-web-spa/public/environment.js:1`), no un recurso externo. `sofia-web-spa/angular.json` también cambió (configuración de compilación por defecto `production` en la línea 95 y patrones de lint en las líneas 141-148); no afectan a las integraciones. Ambos cambios están commiteados (`8f36125`).
 
 No hay analítica ni seguimiento: la búsqueda de Google Analytics, Tag Manager, Hotjar, Sentry, Application Insights, Firebase, mapas, reCAPTCHA y pasarelas de pago en `sofia-web-spa/src`, `sofia-web-spa/public` y `package.json` no da resultados.
 
@@ -849,12 +864,14 @@ En el backend, la única configuración relacionada es CORS: en `Development` se
 
 ### 11.3 «En curso (sin commitear)»
 
+Ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en `sofia-apis` (`43f5529`) ni en `sofia-web-spa` (`eeffbb6`). En la versión 1.0 este apartado listaba cuatro archivos con cambios locales; ya están commiteados y sus citas se volvieron a comprobar:
+
 | Archivo | Afirmación afectada | Apartado |
 |---|---|---|
-| `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs` | Paso a `Anulado` de los comprobantes al anular la venta. Se citó el commit `00991bc` (líneas 61-69); en el árbol de trabajo son las líneas 70-76 | 5.1 |
-| `sofia-web-spa/public/i18n/pos/es.json` | Textos de SUNAT. Se citaron las líneas del commit `31af681`; los cambios locales no tocan esas claves, pero desplazan la numeración una línea | 5.3 |
-| `sofia-web-spa/src/index.html` | El cambio local agrega `<script src="environment.js">` (mismo origen). Las fuentes de Google citadas no cambian | 8.2 |
-| `sofia-web-spa/angular.json` | Los cambios locales (configuración por defecto y patrones de lint) no afectan a las líneas citadas (`:28-32`, `:47`, `:69-76`) | 8.2 |
+| `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs` | Paso a `Anulado` de los comprobantes al anular la venta: líneas 68-76 | 5.1 |
+| `sofia-web-spa/public/i18n/pos/es.json` | Textos de SUNAT: líneas 119, 239-242, 345 y 358-362 | 5.3 |
+| `sofia-web-spa/src/index.html` | `<script src="environment.js">` en la línea 18 (mismo origen). Las fuentes de Google citadas (`:11-17`) no cambian | 8.2 |
+| `sofia-web-spa/angular.json` | Configuración por defecto y patrones de lint: no afectan a las líneas citadas (`:28-32`, `:47`, `:69-76`) | 8.2 |
 
 ## 12. Tabla de cobertura
 
@@ -922,7 +939,7 @@ Backend (`sofia-apis`, commit `00991bc`):
 - `src/SOFIA.Application/Security/Commands/ForgotPassword/ForgotPasswordCommand.cs`, `ForgotPasswordCommandHandler.cs`, `ForgotPasswordCommandValidator.cs`
 - `src/SOFIA.Application/Security/PasswordRecoveryEmail.cs`, `TokenHasher.cs`, `Templates/PasswordRecovery.html`, `Templates/PasswordRecovery.txt`
 - `src/SOFIA.Application/Ventas/Common/VentaComprobanteGenerator.cs`, `Ventas/Events/VentaCompletadaEvent.cs`
-- `src/SOFIA.Application/Ventas/Commands/CreateVenta/CreateVentaCommandHandler.cs`, `CompletarVenta/CompletarVentaCommandHandler.cs`, `AnularVenta/AnularVentaCommandHandler.cs` (versión del commit con `git show`)
+- `src/SOFIA.Application/Ventas/Commands/CreateVenta/CreateVentaCommandHandler.cs`, `CompletarVenta/CompletarVentaCommandHandler.cs`, `AnularVenta/AnularVentaCommandHandler.cs`
 - `src/SOFIA.Application/Ventas/Queries/GetVentaById/GetVentaByIdQueryHandler.cs`
 - `src/SOFIA.Application/Devoluciones/Commands/ProcesarDevolucion/ProcesarDevolucionCommandHandler.cs`
 - `src/SOFIA.Domain/Entities/SunatComprobanteEmitido.cs`, `SistemaOutboxEvento.cs`, `SistemaNotificacionInterna.cs`, `RegistroPrivacidadPresidio.cs`, `RecetaDigitalizadaIA.cs`, `Cuenta.cs`
@@ -938,7 +955,7 @@ Backend (`sofia-apis`, commit `00991bc`):
 
 Frontend (`sofia-web-spa`, commit `31af681`):
 
-- `package.json`, `angular.json` y `src/index.html` (versión del commit con `git show`)
+- `package.json`, `angular.json` y `src/index.html`
 - `public/staticwebapp.config.json`, `public/environment.js`
 - `src/environments/environment.ts`, `environment.prod.ts`, `environment.model.ts`
 - `src/assets/scss/_variables.scss`
@@ -949,7 +966,7 @@ Frontend (`sofia-web-spa`, commit `31af681`):
 - `src/app/pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.html`, `venta-detail/venta-detail.component.html`, `services/receipt-print.service.ts`
 - `src/app/pages/auth/forgot-password/forgot-password.component.ts`, `reset-password/reset-password.component.ts`, `login/login.component.html`
 - `src/app/matdash/layouts/full/vertical/header/header.component.html`
-- `public/i18n/es.json`, `public/i18n/auth/es.json`, `public/i18n/recetas-medicas/es.json`, `public/i18n/pos/es.json` (versión del commit con `git show`)
+- `public/i18n/es.json`, `public/i18n/auth/es.json`, `public/i18n/recetas-medicas/es.json`, `public/i18n/pos/es.json`
 
 Inventarios de `docs/_inventario` consultados como lista de control: `endpoints.csv`, `permisos.csv`, `tablas.csv`, `codigos-error.csv`, `commands-queries.csv`.
 
