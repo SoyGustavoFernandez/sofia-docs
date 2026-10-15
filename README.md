@@ -35,6 +35,7 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Arquitectura de software](ola-1-fundamentos/02-arquitectura.md) | Modelo C4, capas, CQRS, pipeline de MediatR, multiempresa, manejo de errores, configuración y requisitos no funcionales implementados |
 | [Modelo de datos: maestros y seguridad](ola-1-fundamentos/03-modelo-de-datos/03a-maestros-y-seguridad.md) | Diccionario de datos de 27 tablas, diagramas entidad-relación y discrepancias entre scripts y EF |
 | [Modelo de datos: transaccionales e historial](ola-1-fundamentos/03-modelo-de-datos/03b-transaccionales-e-historial.md) | Diccionario de datos de las 23 tablas de inventario, recetas, caja, ventas, comprobantes, devoluciones y módulos solo API, diagramas entidad-relación e historial de los 28 scripts |
+| [Autenticación y controles de seguridad](ola-1-fundamentos/05-seguridad/05a-autenticacion-y-controles.md) | Inicio de sesión, renovación y rotación de tokens, cierre de sesión, recuperación de contraseña, aislamiento por empresa y sucursal, auditoría, protección de la API, datos personales y OWASP Top 10 |
 | [Matriz de permisos](ola-1-fundamentos/05-seguridad/05b-matriz-de-permisos.md) | Módulo × acción × endpoint × pantalla, permisos necesarios por pantalla y roles base |
 | [Integraciones externas](ola-1-fundamentos/07-integraciones.md) | Gemini, Presidio, correo, y el estado real de SUNAT y DIGEMID |
 | [Guía del desarrollador](ola-1-fundamentos/08-guia-del-desarrollador.md) | Requisitos, entorno local, configuración, comandos de calidad, hooks de commit y convenciones |
@@ -72,7 +73,6 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 ## En preparación
 
-- Seguridad: autenticación y controles.
 - Catálogo de códigos de error y referencia de la API.
 - Pruebas automatizadas, despliegue y operación, estado del sistema y deuda técnica.
 - Historias de usuario, casos de uso, procesos de negocio y manual de usuario.
