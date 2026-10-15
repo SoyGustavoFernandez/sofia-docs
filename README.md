@@ -53,6 +53,14 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 | [Inventario y atención](ola-1-fundamentos/19-inventario-de-pantallas/19e-inventario-y-atencion.md) | Lotes, stock por sucursal, pacientes, profesionales de salud y recetas médicas (incluye el escáner con IA) |
 | [Punto de venta](ola-1-fundamentos/19-inventario-de-pantallas/19f-punto-de-venta.md) | Sesiones de caja (apertura, cierre y arqueo), nueva venta, cobro, comprobante, búsqueda y detalle de ventas, anulación y devolución |
 
+### Manual de usuario
+
+Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pantalla. Se publica capítulo por capítulo.
+
+| Capítulo | Contenido |
+|---|---|
+| [1. Primeros pasos](ola-2-funcional/manual-usuario/capitulo-01-primeros-pasos.md) | Registrar la empresa, conocer la pantalla principal, iniciar y cerrar sesión, cambiar y recuperar la contraseña |
+
 ### Inventarios base
 
 La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas por script desde el código (endpoints, permisos, tablas, códigos de error, rutas del SPA, pruebas). Son la lista de control contra la que se validan las tablas de cobertura.
