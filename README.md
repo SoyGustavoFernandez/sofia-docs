@@ -40,6 +40,7 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Carga masiva y exportación](ola-1-fundamentos/20-carga-masiva-y-exportacion.md) | Las 12 cargas masivas (plantilla, validaciones por fila y guardado) y las 22 exportaciones a Excel |
 | [Glosario](ola-1-fundamentos/06-glosario.md) | 133 términos de SUNAT, DIGEMID, caja, inventario, organización e IA, con lo que significan en el sistema y dónde aparecen |
 | [Pruebas automatizadas del SPA](ola-1-fundamentos/09-pruebas/09b-spa.md) | Estrategia, catálogo de los 75 specs, cobertura por pantalla y huecos |
+| [Despliegue y operación](ola-1-fundamentos/10-despliegue-y-operacion.md) | Componentes desplegables, docker-compose, configuración por entorno, base de datos, operación, CI y lo pendiente para Azure |
 
 ### Inventario de pantallas
 
@@ -62,6 +63,7 @@ Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pa
 |---|---|
 | [1. Primeros pasos](ola-2-funcional/manual-usuario/capitulo-01-primeros-pasos.md) | Registrar la empresa, conocer la pantalla principal, iniciar y cerrar sesión, cambiar y recuperar la contraseña |
 | [2. Empresa, sucursales y series fiscales](ola-2-funcional/manual-usuario/capitulo-02-empresa-sucursales-series.md) | Datos de la empresa, sede principal y nuevas sucursales, búsqueda, exportación, eliminación y carga masiva, y series de boleta y nota de crédito |
+| [3. Tu equipo y sus accesos](ola-2-funcional/manual-usuario/capitulo-03-empleados-roles-cuentas.md) | Empleados, roles y permisos (con los permisos recomendados para un cajero), cuentas de usuario, sucursales y el primer ingreso del cajero |
 
 ### Inventarios base
 
