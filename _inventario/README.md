@@ -22,6 +22,6 @@ El árbol de trabajo tenía cambios sin commitear al generarlos (ver `REGLAS-AGE
 | `app-permiso-usos.csv` | Cada uso de la directiva `*appPermiso` con su expresión | 85 |
 | `i18n-scopes.csv` | Scopes de traducción y número de claves en español | 34 |
 | `pruebas-backend.csv` | Archivos de prueba del backend con su número de atributos `[Fact]`/`[Theory]` | 186 archivos |
-| `pruebas-spa.csv` | Specs del SPA con su número de casos `it(` | 69 |
+| `pruebas-spa.csv` | Specs del SPA con su número de casos `it(` | 75 specs, 492 casos |
 
 Limitaciones del script: detecta códigos de error solo en llamadas `Error.<Tipo>(...)`; las rutas de endpoints conservan el nombre del controlador tal como está en la clase (ASP.NET no distingue mayúsculas en la ruta).
