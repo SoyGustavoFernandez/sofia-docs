@@ -39,6 +39,7 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Guía del desarrollador](ola-1-fundamentos/08-guia-del-desarrollador.md) | Requisitos, entorno local, configuración, comandos de calidad, hooks de commit y convenciones |
 | [Carga masiva y exportación](ola-1-fundamentos/20-carga-masiva-y-exportacion.md) | Las 12 cargas masivas (plantilla, validaciones por fila y guardado) y las 22 exportaciones a Excel |
 | [Glosario](ola-1-fundamentos/06-glosario.md) | 133 términos de SUNAT, DIGEMID, caja, inventario, organización e IA, con lo que significan en el sistema y dónde aparecen |
+| [Pruebas automatizadas del SPA](ola-1-fundamentos/09-pruebas/09b-spa.md) | Estrategia, catálogo de los 75 specs, cobertura por pantalla y huecos |
 
 ### Inventario de pantallas
 
