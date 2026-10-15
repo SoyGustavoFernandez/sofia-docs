@@ -66,6 +66,7 @@ Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pa
 | [1. Primeros pasos](ola-2-funcional/manual-usuario/capitulo-01-primeros-pasos.md) | Registrar la empresa, conocer la pantalla principal, iniciar y cerrar sesión, cambiar y recuperar la contraseña |
 | [2. Empresa, sucursales y series fiscales](ola-2-funcional/manual-usuario/capitulo-02-empresa-sucursales-series.md) | Datos de la empresa, sede principal y nuevas sucursales, búsqueda, exportación, eliminación y carga masiva, y series de boleta y nota de crédito |
 | [3. Tu equipo y sus accesos](ola-2-funcional/manual-usuario/capitulo-03-empleados-roles-cuentas.md) | Empleados, roles y permisos (con los permisos recomendados para un cajero), cuentas de usuario, sucursales y el primer ingreso del cajero |
+| [4. Catálogos básicos](ola-2-funcional/manual-usuario/capitulo-04-catalogos-basicos.md) | Unidades de medida, laboratorios, ingredientes activos y catálogo DIGEMID, con su carga masiva |
 
 ### Inventarios base
 
