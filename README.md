@@ -58,6 +58,12 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 | [Inventario y atención](ola-1-fundamentos/19-inventario-de-pantallas/19e-inventario-y-atencion.md) | Lotes, stock por sucursal, pacientes, profesionales de salud y recetas médicas (incluye el escáner con IA) |
 | [Punto de venta](ola-1-fundamentos/19-inventario-de-pantallas/19f-punto-de-venta.md) | Sesiones de caja (apertura, cierre y arqueo), nueva venta, cobro, comprobante, búsqueda y detalle de ventas, anulación y devolución |
 
+### Procesos de negocio
+
+| Documento | Contenido |
+|---|---|
+| [Procesos de punta a punta](ola-2-funcional/14-procesos-de-negocio.md) | Alta de empresa, configuración inicial, catálogo e inventario, venta (recetas, pagos, venta en espera), devolución y anulación, caja y arqueo, recetas con IA, dashboard y procesos que solo existen en la API, con diagramas |
+
 ### Manual de usuario
 
 Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pantalla. Se publica capítulo por capítulo.
