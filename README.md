@@ -60,6 +60,7 @@ Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pa
 | Capítulo | Contenido |
 |---|---|
 | [1. Primeros pasos](ola-2-funcional/manual-usuario/capitulo-01-primeros-pasos.md) | Registrar la empresa, conocer la pantalla principal, iniciar y cerrar sesión, cambiar y recuperar la contraseña |
+| [2. Empresa, sucursales y series fiscales](ola-2-funcional/manual-usuario/capitulo-02-empresa-sucursales-series.md) | Datos de la empresa, sede principal y nuevas sucursales, búsqueda, exportación, eliminación y carga masiva, y series de boleta y nota de crédito |
 
 ### Inventarios base
 
