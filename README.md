@@ -64,6 +64,12 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 |---|---|
 | [Procesos de punta a punta](ola-2-funcional/14-procesos-de-negocio.md) | Alta de empresa, configuración inicial, catálogo e inventario, venta (recetas, pagos, venta en espera), devolución y anulación, caja y arqueo, recetas con IA, dashboard y procesos que solo existen en la API, con diagramas |
 
+### Historias de usuario
+
+| Documento | Contenido |
+|---|---|
+| [Acceso y administración](ola-2-funcional/12-historias-de-usuario/12a-acceso-y-administracion.md) | 50 historias con criterios de aceptación en Gherkin: registro, sesión, contraseñas, empresa, sucursales, series, empleados, roles, cuentas y reglas transversales |
+
 ### Manual de usuario
 
 Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pantalla. Se publica capítulo por capítulo.
