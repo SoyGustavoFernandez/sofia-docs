@@ -39,6 +39,7 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Matriz de permisos](ola-1-fundamentos/05-seguridad/05b-matriz-de-permisos.md) | Módulo × acción × endpoint × pantalla, permisos necesarios por pantalla y roles base |
 | [Integraciones externas](ola-1-fundamentos/07-integraciones.md) | Gemini, Presidio, correo, y el estado real de SUNAT y DIGEMID |
 | [Guía del desarrollador](ola-1-fundamentos/08-guia-del-desarrollador.md) | Requisitos, entorno local, configuración, comandos de calidad, hooks de commit y convenciones |
+| [Catálogo de códigos de error](ola-1-fundamentos/21-catalogo-codigos-error.md) | Los 347 códigos de error con su HTTP, cuándo salen, la regla que los define y el mensaje que ve el usuario; códigos de validación dinámicos y códigos sin traducción |
 | [Carga masiva y exportación](ola-1-fundamentos/20-carga-masiva-y-exportacion.md) | Las 12 cargas masivas (plantilla, validaciones por fila y guardado) y las 22 exportaciones a Excel |
 | [Glosario](ola-1-fundamentos/06-glosario.md) | 133 términos de SUNAT, DIGEMID, caja, inventario, organización e IA, con lo que significan en el sistema y dónde aparecen |
 | [Pruebas automatizadas del backend](ola-1-fundamentos/09-pruebas/09a-backend.md) | Estrategia, catálogo de las 193 clases de prueba (1254 pruebas), cobertura por módulo y huecos |
@@ -89,7 +90,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 ## En preparación
 
-- Catálogo de códigos de error y referencia de la API.
+- Referencia de la API.
 - Historias de usuario, casos de uso, procesos de negocio y manual de usuario.
 - Casos de prueba funcionales y matriz de trazabilidad.
 
