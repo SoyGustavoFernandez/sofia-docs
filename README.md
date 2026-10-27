@@ -44,6 +44,7 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Pruebas automatizadas del backend](ola-1-fundamentos/09-pruebas/09a-backend.md) | Estrategia, catálogo de las 193 clases de prueba (1254 pruebas), cobertura por módulo y huecos |
 | [Pruebas automatizadas del SPA](ola-1-fundamentos/09-pruebas/09b-spa.md) | Estrategia, catálogo de los 75 specs, cobertura por pantalla y huecos |
 | [Despliegue y operación](ola-1-fundamentos/10-despliegue-y-operacion.md) | Componentes desplegables, docker-compose, configuración por entorno, base de datos, operación, CI y lo pendiente para Azure |
+| [Estado del sistema y deuda técnica](ola-1-fundamentos/11-estado-y-deuda-tecnica.md) | Estado de los 29 módulos, 23 funcionalidades pendientes o parciales, 82 elementos de deuda técnica verificados, decisiones de negocio frente al código y hallazgos ya resueltos |
 
 ### Inventario de pantallas
 
@@ -89,7 +90,6 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 ## En preparación
 
 - Catálogo de códigos de error y referencia de la API.
-- Estado del sistema y deuda técnica.
 - Historias de usuario, casos de uso, procesos de negocio y manual de usuario.
 - Casos de prueba funcionales y matriz de trazabilidad.
 
