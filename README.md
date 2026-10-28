@@ -79,6 +79,7 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 | Documento | Contenido |
 |---|---|
 | [Acceso y administración](ola-2-funcional/13-casos-de-uso/13a-acceso-y-administracion.md) | 37 casos de uso con actores, precondiciones, flujo principal, alternativos, excepciones con sus códigos de error y postcondiciones |
+| [Catálogos, inventario y atención](ola-2-funcional/13-casos-de-uso/13b-catalogos-inventario-atencion.md) | 66 casos de uso de catálogos, proveedores y precios, aseguradoras, DIGEMID, lotes, stock, pacientes, profesionales y recetas, con su carga masiva |
 
 ### Manual de usuario
 
