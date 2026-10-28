@@ -80,6 +80,7 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 |---|---|
 | [Acceso y administración](ola-2-funcional/13-casos-de-uso/13a-acceso-y-administracion.md) | 37 casos de uso con actores, precondiciones, flujo principal, alternativos, excepciones con sus códigos de error y postcondiciones |
 | [Catálogos, inventario y atención](ola-2-funcional/13-casos-de-uso/13b-catalogos-inventario-atencion.md) | 66 casos de uso de catálogos, proveedores y precios, aseguradoras, DIGEMID, lotes, stock, pacientes, profesionales y recetas, con su carga masiva |
+| [Punto de venta y caja](ola-2-funcional/13-casos-de-uso/13c-punto-de-venta-y-caja.md) | 76 casos de uso de ventas, cobro, venta en espera, anulación, caja y arqueo, devoluciones, dashboard y módulos que solo existen en la API |
 
 ### Manual de usuario
 
@@ -99,7 +100,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 ## En preparación
 
 - Referencia de la API.
-- Historias de usuario, casos de uso, procesos de negocio y manual de usuario.
+- Manual de usuario (capítulos 5 a 11).
 - Casos de prueba funcionales y matriz de trazabilidad.
 
 ## Estructura
