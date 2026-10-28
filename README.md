@@ -72,6 +72,7 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 |---|---|
 | [Acceso y administración](ola-2-funcional/12-historias-de-usuario/12a-acceso-y-administracion.md) | 50 historias con criterios de aceptación en Gherkin: registro, sesión, contraseñas, empresa, sucursales, series, empleados, roles, cuentas y reglas transversales |
 | [Catálogos, inventario y atención](ola-2-funcional/12-historias-de-usuario/12b-catalogos-inventario-atencion.md) | 66 historias: catálogos, proveedores y precios, aseguradoras, DIGEMID, lotes, stock, pacientes, profesionales y recetas con escáner |
+| [Punto de venta y caja](ola-2-funcional/12-historias-de-usuario/12c-punto-de-venta-y-caja.md) | 76 historias: ventas y comprobantes, caja y arqueo, devoluciones, dashboard y módulos que solo existen en la API |
 
 ### Casos de uso
 
