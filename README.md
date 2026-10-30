@@ -101,6 +101,7 @@ Casos funcionales para ejecutar a mano en el SPA (o con un cliente HTTP en los m
 | Documento | Contenido |
 |---|---|
 | [Acceso y administración](ola-3-calidad/16-casos-de-prueba/16a-acceso-y-administracion.md) | 413 casos (166 de prioridad alta) que cubren los 424 escenarios de las historias de acceso y administración, con suite de humo de 26 casos |
+| [Catálogos, inventario y atención](ola-3-calidad/16-casos-de-prueba/16b-catalogos-inventario-atencion.md) | 321 casos (98 de prioridad alta) que cubren los 416 escenarios de catálogos, proveedores, aseguradoras, DIGEMID, lotes, stock, pacientes, profesionales y recetas (incluido el escáner con IA), con suite de humo de 30 casos |
 
 ### Inventarios base
 
