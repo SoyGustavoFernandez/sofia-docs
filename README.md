@@ -102,6 +102,7 @@ Casos funcionales para ejecutar a mano en el SPA (o con un cliente HTTP en los m
 |---|---|
 | [Acceso y administración](ola-3-calidad/16-casos-de-prueba/16a-acceso-y-administracion.md) | 413 casos (166 de prioridad alta) que cubren los 424 escenarios de las historias de acceso y administración, con suite de humo de 26 casos |
 | [Catálogos, inventario y atención](ola-3-calidad/16-casos-de-prueba/16b-catalogos-inventario-atencion.md) | 321 casos (98 de prioridad alta) que cubren los 416 escenarios de catálogos, proveedores, aseguradoras, DIGEMID, lotes, stock, pacientes, profesionales y recetas (incluido el escáner con IA), con suite de humo de 30 casos |
+| [Punto de venta y caja](ola-3-calidad/16-casos-de-prueba/16c-punto-de-venta-y-caja.md) | 510 casos (180 de prioridad alta) que cubren los 566 escenarios de ventas, cobro, anulación, caja y arqueo, devoluciones, dashboard y módulos que solo existen en la API, con suite de humo de 28 casos |
 
 ### Inventarios base
 
@@ -111,7 +112,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 - Referencia de la API.
 - Manual de usuario (capítulos 5 a 10).
-- Casos de prueba funcionales y matriz de trazabilidad.
+- Matriz de trazabilidad.
 
 ## Estructura
 
