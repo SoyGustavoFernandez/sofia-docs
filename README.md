@@ -94,6 +94,14 @@ Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pa
 | [4. Catálogos básicos](ola-2-funcional/manual-usuario/capitulo-04-catalogos-basicos.md) | Unidades de medida, laboratorios, ingredientes activos y catálogo DIGEMID, con su carga masiva |
 | [11. Problemas frecuentes](ola-2-funcional/manual-usuario/capitulo-11-problemas-frecuentes.md) | Situaciones sin mensaje de error, mensajes de error por tarea con su causa y qué hacer, cuándo pedir ayuda e índice alfabético de mensajes |
 
+### Casos de prueba
+
+Casos funcionales para ejecutar a mano en el SPA (o con un cliente HTTP en los módulos que solo existen en la API), con datos, pasos y resultado esperado exacto, y su trazabilidad a historias, casos de uso y reglas. Todavía no ejecutados.
+
+| Documento | Contenido |
+|---|---|
+| [Acceso y administración](ola-3-calidad/16-casos-de-prueba/16a-acceso-y-administracion.md) | 413 casos (166 de prioridad alta) que cubren los 424 escenarios de las historias de acceso y administración, con suite de humo de 26 casos |
+
 ### Inventarios base
 
 La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas por script desde el código (endpoints, permisos, tablas, códigos de error, rutas del SPA, pruebas). Son la lista de control contra la que se validan las tablas de cobertura.
@@ -110,6 +118,6 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 _inventario/           Listas base generadas desde el código
 ola-1-fundamentos/     Reglas, arquitectura, datos, seguridad, integraciones, guía y pantallas
 ola-2-funcional/       Historias, casos de uso, procesos y manual de usuario (en preparación)
-ola-3-derivados/       Casos de prueba y trazabilidad (en preparación)
+ola-3-calidad/         Casos de prueba y trazabilidad (en preparación)
 ola-4-cierre/          Revisión de consistencia (en preparación)
 ```
