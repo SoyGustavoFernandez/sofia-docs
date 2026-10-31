@@ -92,6 +92,7 @@ Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pa
 | [2. Empresa, sucursales y series fiscales](ola-2-funcional/manual-usuario/capitulo-02-empresa-sucursales-series.md) | Datos de la empresa, sede principal y nuevas sucursales, búsqueda, exportación, eliminación y carga masiva, y series de boleta y nota de crédito |
 | [3. Tu equipo y sus accesos](ola-2-funcional/manual-usuario/capitulo-03-empleados-roles-cuentas.md) | Empleados, roles y permisos (con los permisos recomendados para un cajero), cuentas de usuario, sucursales y el primer ingreso del cajero |
 | [4. Catálogos básicos](ola-2-funcional/manual-usuario/capitulo-04-catalogos-basicos.md) | Unidades de medida, laboratorios, ingredientes activos y catálogo DIGEMID, con su carga masiva |
+| [5. Productos y proveedores](ola-2-funcional/manual-usuario/capitulo-05-productos-y-proveedores.md) | Medicamentos y su condición de venta, jerarquías de unidades, presentaciones de venta, formulaciones, proveedores con sus precios de compra y aseguradoras, con su carga masiva y qué ve el cajero |
 | [11. Problemas frecuentes](ola-2-funcional/manual-usuario/capitulo-11-problemas-frecuentes.md) | Situaciones sin mensaje de error, mensajes de error por tarea con su causa y qué hacer, cuándo pedir ayuda e índice alfabético de mensajes |
 
 ### Casos de prueba
@@ -111,7 +112,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 ## En preparación
 
 - Referencia de la API.
-- Manual de usuario (capítulos 5 a 10).
+- Manual de usuario (capítulos 6 a 10).
 - Matriz de trazabilidad.
 
 ## Estructura
