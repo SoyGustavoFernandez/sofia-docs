@@ -118,6 +118,12 @@ Casos funcionales para ejecutar a mano en el SPA (o con un cliente HTTP en los m
 | [Catálogos, inventario y atención](ola-3-calidad/16-casos-de-prueba/16b-catalogos-inventario-atencion.md) | 321 casos (98 de prioridad alta) que cubren los 416 escenarios de catálogos, proveedores, aseguradoras, DIGEMID, lotes, stock, pacientes, profesionales y recetas (incluido el escáner con IA), con suite de humo de 30 casos |
 | [Punto de venta y caja](ola-3-calidad/16-casos-de-prueba/16c-punto-de-venta-y-caja.md) | 510 casos (180 de prioridad alta) que cubren los 566 escenarios de ventas, cobro, anulación, caja y arqueo, devoluciones, dashboard y módulos que solo existen en la API, con suite de humo de 28 casos |
 
+### Trazabilidad
+
+| Documento | Contenido |
+|---|---|
+| [Matriz de trazabilidad](ola-3-calidad/17-matriz-de-trazabilidad.md) | Cruce por script de las 789 reglas, 192 historias, 179 casos de uso, 1244 casos de prueba y 241 endpoints con pantallas, pruebas automatizadas, procesos y manual; resumen de cobertura por módulo y huecos explicados |
+
 ### Inventarios base
 
 La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas por script desde el código (endpoints, permisos, tablas, códigos de error, rutas del SPA, pruebas). Son la lista de control contra la que se validan las tablas de cobertura.
@@ -125,7 +131,6 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 ## En preparación
 
 - Manual de usuario (capítulos 7 a 10).
-- Matriz de trazabilidad.
 
 ## Estructura
 
