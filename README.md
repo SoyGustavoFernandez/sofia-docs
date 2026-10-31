@@ -55,6 +55,7 @@ Una ficha por endpoint con permiso, cuerpo, respuesta, errores posibles y un eje
 |---|---|
 | [Convenciones y administración](ola-1-fundamentos/04-referencia-api/04a-convenciones-y-administracion.md) | Convenciones comunes (autenticación, CSRF, errores, paginación, enumerados, límites) y 66 endpoints de autenticación, empresas, sucursales, empleados, roles, cuentas, series fiscales, dashboard y auditoría |
 | [Catálogos básicos](ola-1-fundamentos/04-referencia-api/04b-catalogos-basicos.md) | 50 endpoints de unidades de medida, jerarquías de unidades, laboratorios, ingredientes activos y DIGEMID (catálogo, cuarentena y actas), todos con ejemplo real |
+| [Productos, proveedores y personas](ola-1-fundamentos/04-referencia-api/04c-productos-proveedores-personas.md) | 61 endpoints de medicamentos, presentaciones de venta, formulaciones, proveedores y sus precios, aseguradoras, pacientes y profesionales de salud, todos con ejemplo real, incluidos los bloqueos al eliminar y la carga masiva |
 | [Ventas, caja y devoluciones](ola-1-fundamentos/04-referencia-api/04e-ventas-caja-devoluciones.md) | 18 endpoints del punto de venta, ventas y devoluciones con ejemplo real, y un recorrido completo de apertura, ventas, anulación, devolución y cierre con el arqueo calculado a mano y comprobado contra la API |
 
 ### Inventario de pantallas
