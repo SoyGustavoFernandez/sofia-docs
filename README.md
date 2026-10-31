@@ -106,6 +106,7 @@ Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pa
 | [4. Catálogos básicos](ola-2-funcional/manual-usuario/capitulo-04-catalogos-basicos.md) | Unidades de medida, laboratorios, ingredientes activos y catálogo DIGEMID, con su carga masiva |
 | [5. Productos y proveedores](ola-2-funcional/manual-usuario/capitulo-05-productos-y-proveedores.md) | Medicamentos y su condición de venta, jerarquías de unidades, presentaciones de venta, formulaciones, proveedores con sus precios de compra y aseguradoras, con su carga masiva y qué ve el cajero |
 | [6. Inventario](ola-2-funcional/manual-usuario/capitulo-06-inventario.md) | Lotes con sus validaciones, búsqueda, edición y eliminación, ingreso y ajuste de stock por sucursal, exportación y qué ve el cajero |
+| [7. Pacientes, profesionales y recetas](ola-2-funcional/manual-usuario/capitulo-07-pacientes-y-recetas.md) | Pacientes y profesionales de salud con su carga masiva, registro y búsqueda de recetas, el lector de recetas con IA y qué ve el cajero |
 | [11. Problemas frecuentes](ola-2-funcional/manual-usuario/capitulo-11-problemas-frecuentes.md) | Situaciones sin mensaje de error, mensajes de error por tarea con su causa y qué hacer, cuándo pedir ayuda e índice alfabético de mensajes |
 
 ### Casos de prueba
@@ -130,7 +131,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 ## En preparación
 
-- Manual de usuario (capítulos 7 a 10).
+- Manual de usuario (capítulos 8 a 10).
 
 ## Estructura
 
