@@ -47,6 +47,14 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Despliegue y operación](ola-1-fundamentos/10-despliegue-y-operacion.md) | Componentes desplegables, docker-compose, configuración por entorno, base de datos, operación, CI y lo pendiente para Azure |
 | [Estado del sistema y deuda técnica](ola-1-fundamentos/11-estado-y-deuda-tecnica.md) | Estado de los 29 módulos, 23 funcionalidades pendientes o parciales, 82 elementos de deuda técnica verificados, decisiones de negocio frente al código y hallazgos ya resueltos |
 
+### Referencia de la API
+
+Una ficha por endpoint con permiso, cuerpo, respuesta, errores posibles y un ejemplo real capturado de la API local. Las convenciones comunes (autenticación, errores, paginación, límites) van en la parte de administración.
+
+| Documento | Contenido |
+|---|---|
+| [Catálogos básicos](ola-1-fundamentos/04-referencia-api/04b-catalogos-basicos.md) | 50 endpoints de unidades de medida, jerarquías de unidades, laboratorios, ingredientes activos y DIGEMID (catálogo, cuarentena y actas), todos con ejemplo real |
+
 ### Inventario de pantallas
 
 Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes y llamadas a la API.
