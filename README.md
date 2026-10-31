@@ -54,6 +54,7 @@ Una ficha por endpoint con permiso, cuerpo, respuesta, errores posibles y un eje
 | Documento | Contenido |
 |---|---|
 | [Catálogos básicos](ola-1-fundamentos/04-referencia-api/04b-catalogos-basicos.md) | 50 endpoints de unidades de medida, jerarquías de unidades, laboratorios, ingredientes activos y DIGEMID (catálogo, cuarentena y actas), todos con ejemplo real |
+| [Ventas, caja y devoluciones](ola-1-fundamentos/04-referencia-api/04e-ventas-caja-devoluciones.md) | 18 endpoints del punto de venta, ventas y devoluciones con ejemplo real, y un recorrido completo de apertura, ventas, anulación, devolución y cierre con el arqueo calculado a mano y comprobado contra la API |
 
 ### Inventario de pantallas
 
