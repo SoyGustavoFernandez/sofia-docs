@@ -108,6 +108,7 @@ Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pa
 | [6. Inventario](ola-2-funcional/manual-usuario/capitulo-06-inventario.md) | Lotes con sus validaciones, búsqueda, edición y eliminación, ingreso y ajuste de stock por sucursal, exportación y qué ve el cajero |
 | [7. Pacientes, profesionales y recetas](ola-2-funcional/manual-usuario/capitulo-07-pacientes-y-recetas.md) | Pacientes y profesionales de salud con su carga masiva, registro y búsqueda de recetas, el lector de recetas con IA y qué ve el cajero |
 | [8. Caja y nueva venta](ola-2-funcional/manual-usuario/capitulo-08-caja-y-venta.md) | Abrir la caja, vender con efectivo, tarjeta, Yape / Plin, transferencia o pago dividido, vender medicamentos con receta y controlados, ventas en espera, el comprobante y qué ve el cajero |
+| [9. Ventas, anulación, devolución y cierre](ola-2-funcional/manual-usuario/capitulo-09-ventas-devoluciones-y-cierre.md) | Buscar ventas y ver su detalle, anular una venta, devolver con nota de crédito, cerrar la caja con arqueo y consultar las sesiones de caja |
 | [11. Problemas frecuentes](ola-2-funcional/manual-usuario/capitulo-11-problemas-frecuentes.md) | Situaciones sin mensaje de error, mensajes de error por tarea con su causa y qué hacer, cuándo pedir ayuda e índice alfabético de mensajes |
 
 ### Casos de prueba
@@ -132,7 +133,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 ## En preparación
 
-- Manual de usuario (capítulos 9 y 10).
+- Manual de usuario (capítulo 10).
 
 ## Estructura
 
