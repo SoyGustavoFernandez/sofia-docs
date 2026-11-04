@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-26 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de los documentos validados (reglas de negocio 01c1, 01c2 v1.1, 01c3 y 01d; inventario de pantallas 19a y 19f; matriz de permisos 05b; procesos de negocio 4, 5, 6, 8 y 9; glosario; manual de usuario capítulos 3 y 5) y comprobación puntual en el código y en los `es.json` del SPA. `git status --short` está limpio en ambos repositorios. No se usó el navegador ni se llamó a la API: los mensajes salen de los documentos fuente y de los archivos `es.json`. |
@@ -3883,7 +3883,7 @@ Escenario: Sin validador
   Entonces no se validan campos antes del handler y los errores de campos salen con códigos de la entidad, por ejemplo "ServicioAgenda.EstadoCita"
 ```
 
-> **Brecha conocida.** La tabla `Servicios_Agenda` del script `0001` no tiene las columnas `LastModifiedAt`, `LastModifiedBy`, `DeletedAt` ni `DeletedBy` que EF mapea: si la base se creó solo con scripts, agendar, listar, consultar y eliminar citas fallarían con un error 500 (RN-SRV-019, **No verificado** en ejecución). Los textos de `servicios/es.json` describen un catálogo de servicios con precio que no existe.
+> **Brecha conocida.** La tabla `Servicios_Agenda` del script `0001` no tiene las columnas `LastModifiedAt`, `LastModifiedBy`, `DeletedAt` ni `DeletedBy` que EF mapea: si la base se creó solo con scripts, agendar, listar, consultar y eliminar citas fallarían con un error 500 (RN-SRV-019). En la base de desarrollo agendar respondió 200 (`04d` §7); por qué funciona allí es **No verificado**. Los textos de `servicios/es.json` describen un catálogo de servicios con precio que no existe.
 
 ### HU-OPS-015 — Registrar una inmunización
 
