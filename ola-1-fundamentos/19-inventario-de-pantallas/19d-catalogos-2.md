@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-13 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron controladores, validadores, manejadores y entidades necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Al empezar, `git status --short` salió vacío en ambos repos (sin cambios sin commitear); `git diff --stat 01b8260..HEAD -- src/app/pages` en el SPA no muestra cambios en las carpetas de este documento (los commits `8f36125` y `eeffbb6` solo tocan README, `angular.json` e `index.html`). |
@@ -795,7 +795,7 @@ El texto «Vigente» depende solo de que `fechaFinVigencia` sea nula; el SPA no 
 - **Estados:** sin precios y sin estar cargando, «Este proveedor aún no tiene precios registrados.» (`precios.empty`, `.html:191-193`); mientras carga, la fila vacía queda sin texto. Error de carga: «Error al cargar los precios del proveedor» (`precios.load-error`, `.ts:101`).
 - **Llamadas:** `GET /api/v1/proveedores/{id}/precios?pageNumber&pageSize` (`Proveedores:Leer`, `ProveedoresController.cs:52`; respuesta paginada de `PrecioProveedorDto(Id, ProductoId, ProductoNombre, CostoPorUnidadBase, FechaInicioVigencia, FechaFinVigencia, Vigente)`; proveedor inexistente: 404 `Proveedor.NotFound`) y, desde el diálogo, `POST /api/v1/proveedores/precios` (`Proveedores:RegistrarPrecioProveedor`, `:29`).
 - **Qué hace el servidor al registrar** (`sofia-apis/src/SOFIA.Application/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs`): comprueba que existan el proveedor (404 `Proveedor.NotFound`, `:16`) y el medicamento (404 `Medicamento.NotFound`, `:22`); calcula el costo neto como precio × (1 − descuento/100) redondeado a 4 decimales (`:26`); crea un registro del historial con inicio de vigencia en el instante actual (UTC) y sin fin (`:28`); cierra en ese mismo instante los precios abiertos del mismo proveedor y producto (`:36-48`); guarda y devuelve el identificador. Así, cada producto tiene un solo precio vigente con ese proveedor y los anteriores quedan con fecha de fin. El plazo de entrega se guarda en 0 y la cantidad mínima de compra en su valor por defecto (1) (`HistorialPrecioProveedor.Create`).
-- **Actualiza 01b:** RN-PRV-018 a RN-PRV-020 describían un registro que "no guarda nada"; con `606cb69` sí persiste. Los guards de RN-PRV-021 a RN-PRV-024 siguen vigentes.
+- **01b ya está actualizado:** RN-PRV-018 a RN-PRV-020 describían un registro que "no guarda nada"; con `606cb69` sí persiste y 01b lo corrigió en su versión 1.1. Los guards de la entidad de RN-PRV-021 a RN-PRV-024 existen (`HistorialPrecioProveedor.cs:30-63`), pero desde el registro de precio son inalcanzables porque el validador responde antes (RN-PRV-018); solo `CerrarVigencia` repite el control de fechas (RN-PRV-023, `:132-137`). `HistorialPrecioProveedor.Update` sigue sin invocarse desde ningún comando.
 
 ### 4.4 `/proveedores/carga-masiva` — Carga Masiva (proveedores)
 
@@ -1093,7 +1093,7 @@ Cualquier 409 distinto de los citados mostraría igualmente el texto «en uso» 
 **Documentos hermanos que el código actual contradice** (para la pasada de reconciliación):
 - 01b RN-MED-013: dice que eliminar un medicamento no valida dependencias; con `27597cd` sí lo hace (`DeleteMedicamentoCommandHandler.cs:20-42`).
 - 01b RN-PRV-010: idem para proveedores (`DeleteProveedorCommandHandler.cs:23-31`).
-- 01b RN-PRV-018 a RN-PRV-020: dicen que el registro de precio de proveedor no guarda nada; con `606cb69` guarda y cierra el precio anterior; además existe `GET /api/v1/Proveedores/{id}/precios` (no listado en 05b).
+- 01b RN-PRV-018 a RN-PRV-020 decían que el registro de precio de proveedor no guarda nada; con `606cb69` guarda y cierra el precio anterior (01b lo corrigió en la versión 1.1); además existe `GET /api/v1/Proveedores/{id}/precios`, que 05b lista desde su revisión de cierre.
 - 01b RN-PRV-003 y RN-PRV-004 fijan 50 y 100 caracteres; el formulario del SPA permite 30 y 500 (§4.2).
 - 05b: anterior al endpoint `GET /api/v1/Proveedores/{id}/precios` (`Proveedores:Leer`).
 
