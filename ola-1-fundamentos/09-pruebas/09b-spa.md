@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los specs de empleados, roles y cuentas están reconciliados con `37d053d` y `7070e1a` |
 | **Método** | Lectura de código (specs, `karma.conf.js`, `angular.json`, `package.json`, hooks) y de los inventarios `docs/_inventario`. No se ejecutó ninguna prueba ni compilación. `git status --short` sin cambios en ambos repos al 2026-10-15 |
 
 Este documento describe qué pruebas automatizadas tiene el SPA (`sofia-web-spa`), cómo están hechas y qué queda sin cubrir. Los comandos y las particularidades de Windows para correrlas están en la [guía del desarrollador, sección 4.2](../08-guia-del-desarrollador.md#42-spa); aquí solo se resumen (sección 5). Para saber qué hace cada pantalla, consulta los inventarios [19a](../19-inventario-de-pantallas/19a-acceso-layout-y-compartidos.md), [19b](../19-inventario-de-pantallas/19b-administracion.md), [19e](../19-inventario-de-pantallas/19e-inventario-y-atencion.md) y [19f](../19-inventario-de-pantallas/19f-punto-de-venta.md).
@@ -31,7 +31,7 @@ Este documento describe qué pruebas automatizadas tiene el SPA (`sofia-web-spa`
 | Dato | Valor | Fuente |
 |---|---|---|
 | Archivos `*.spec.ts` en `sofia-web-spa/src` | 75 (coincide con las 75 filas de `docs/_inventario/pruebas-spa.csv`; el README del inventario dice 69, quedó desactualizado) | `pruebas-spa.csv`; recuento en disco |
-| Casos `it(` contados por el inventario | 492 en los 69 specs con casos | suma de la columna `casos_it` de `pruebas-spa.csv` |
+| Casos `it(` contados por el inventario | 492 en los 69 specs con casos (503 con los 11 que agregan `sofia-web-spa` `37d053d` y `7070e1a`, contados sobre el diff de esos commits y no con el script del inventario: 1 en Empleados, 3 en Roles y 7 en Cuentas) | suma de la columna `casos_it` de `pruebas-spa.csv` |
 | Specs con 0 `it(` literales | 6, todos `*.delete.spec.ts`: sus casos los registra la función compartida `describeDeleteInUse` (2 casos por spec, 12 en total) | `shared/testing/delete-in-use-testing.ts:34-76` |
 | Casos desactivados (`xit`, `fit`, `pending`, `xdescribe`) | Ninguno | búsqueda en `src/**/*.spec.ts` |
 | Specs que renderizan el DOM (`nativeElement`, `querySelector`, `debugElement`) | 24 de 75; el resto prueba la clase (señales y métodos), servicios o funciones puras | búsqueda en `src/**/*.spec.ts` |
@@ -163,15 +163,15 @@ Pantallas descritas en [19b](../19-inventario-de-pantallas/19b-administracion.md
 
 | Spec | Bajo prueba | Casos | Qué verifica |
 |---|---|---|---|
-| `pages/empleados/empleados-detail/empleados-detail.component.spec.ts` | `EmpleadosDetailComponent` | 5 | Segundo apellido opcional: nombres y primer apellido obligatorios, segundo no; al crear envía `null` si queda vacío; lo envía recortado si se da; en modo vista lo muestra vacío si no existe; al editar puede borrarse enviando `null` |
+| `pages/empleados/empleados-detail/empleados-detail.component.spec.ts` | `EmpleadosDetailComponent` | 6 | Segundo apellido opcional: nombres y primer apellido obligatorios, segundo no; al crear envía `null` si queda vacío; lo envía recortado si se da; en modo vista lo muestra vacío si no existe; al editar puede borrarse enviando `null`. Desde `37d053d`: muestra el mensaje propio cuando el usuario intenta cambiar su propia sucursal base |
 | `pages/empleados/empleados-search/empleados-search.component.spec.ts` | `EmpleadosSearchComponent` | 2 | Pinta el nombre sin hueco y la celda del segundo apellido vacía si no existe; envía el filtro de segundo apellido solo si tiene valor |
 | `pages/empleados/services/empleado.service.spec.ts` | `EmpleadoService` | 3 | `search()` envía todos los filtros dados; `getById/create/update/delete` golpean los endpoints esperados; `exportar()` pide un blob con los filtros |
 | `pages/roles/roles-search/roles-search.component.spec.ts` | `RolesSearchComponent` | 2 | Crea con resultados ocultos y sin HTTP hasta `search()`; `search()` envía los límites de `nivelJerarquia` solo si difieren de los valores por defecto del deslizador |
-| `pages/roles/roles-detail/roles-detail.component.spec.ts` | `RolesDetailComponent` | 16 | **Nueva:** abre en edición sin cargar datos. **Vista:** carga el rol, sus permisos y sus sucursales en paralelo. **Etiquetas de permisos:** traduce módulo y acción y recurre al nombre crudo si la API añade uno nuevo; ordena por la etiqueta que lee el usuario; dibuja etiquetas traducidas (nunca una clave); activa/desactiva por los nombres crudos del backend. **Gestión:** oculta Editar a quien solo lee; ofrece Editar con `Seguridad:Actualizar` y Eliminar solo con `Seguridad:Eliminar`; permisos y sucursales quedan de solo lectura al editar sin `Seguridad:GestionarPermisos` y se habilitan con él; `save()` actualiza solo los datos del rol sin ese permiso y envía además sucursales y cambios de permisos con él. **Vista previa del menú:** marca visible una pantalla solo si el rol puede leer su módulo, como el menú lateral; se actualiza al alternar permisos antes de guardar; el rol `Admin` ve todo; usa los mismos nombres traducidos de grupos y pantallas que el menú |
+| `pages/roles/roles-detail/roles-detail.component.spec.ts` | `RolesDetailComponent` | 19 (desde `37d053d`: mensaje propio si el nombre del rol ya existe, mensaje genérico si el código no tiene uno propio y mensaje propio si el rol aún tiene cuentas vinculadas) | **Nueva:** abre en edición sin cargar datos. **Vista:** carga el rol, sus permisos y sus sucursales en paralelo. **Etiquetas de permisos:** traduce módulo y acción y recurre al nombre crudo si la API añade uno nuevo; ordena por la etiqueta que lee el usuario; dibuja etiquetas traducidas (nunca una clave); activa/desactiva por los nombres crudos del backend. **Gestión:** oculta Editar a quien solo lee; ofrece Editar con `Seguridad:Actualizar` y Eliminar solo con `Seguridad:Eliminar`; permisos y sucursales quedan de solo lectura al editar sin `Seguridad:GestionarPermisos` y se habilitan con él; `save()` actualiza solo los datos del rol sin ese permiso y envía además sucursales y cambios de permisos con él. **Vista previa del menú:** marca visible una pantalla solo si el rol puede leer su módulo, como el menú lateral; se actualiza al alternar permisos antes de guardar; el rol `Admin` ve todo; usa los mismos nombres traducidos de grupos y pantallas que el menú |
 | `pages/roles/models/menu-preview.spec.ts` | `buildMenuPreview` + `navItems`, `appRoutes`, `ROUTE_PERMISSIONS` | 5 | Conserva todas las pantallas de todos los grupos y marca las que el rol no puede abrir; sobre el menú real: todas las rutas listadas existen en las rutas del shell; todas (salvo `/dashboard`) tienen módulo de permiso; grupos y pantallas llevan las claves `breadcrumbs.*` y `nav.*` que usa el menú; lo visible en la vista previa coincide exactamente con lo que lista el menú para los mismos permisos |
 | `pages/roles/roles-i18n.spec.ts` | `public/i18n/roles/{es,en}.json` | 2 | Todo módulo detrás de una pantalla tiene etiqueta en ambos idiomas; módulos y acciones iguales en español e inglés |
 | `pages/roles/services/rol.service.spec.ts` | `RolService` | 6 | Filtros de `nivelJerarquia` solo si no son nulos; `getById/create/update/delete`; `exportar()`; catálogo de permisos; `getPermisos/assignPermiso/revokePermiso`; `getSucursales/setSucursales` |
-| `pages/seguridad/cuentas-detail/cuentas-detail.component.spec.ts` | `CuentasDetailComponent` | 18 | **Roles:** vista sin error y texto de «sin rol» si la cuenta no tiene; muestra el nombre del rol; el autocompletado de rol recibe texto inicial vacío si no hay rol; `save()` sin rol actual solo asigna el nuevo, con rol distinto quita el actual y asigna el nuevo, con el mismo rol no hace nada. **Botones:** oculta Editar a quien solo lee; Editar con `Seguridad:Actualizar` y Eliminar solo con `Seguridad:Eliminar`; el rol queda de solo lectura al editar sin `Seguridad:AsignarRoles` y se ofrece el selector con él. **Bloqueo:** «No» si no está bloqueada o el bloqueo venció, «Sí» mientras rige. **Sucursales:** lista las asignadas; asigna la elegida y recarga la cuenta; ignora una selección vaciada; quita una sucursal y recarga; excluye del autocompletado las ya asignadas |
+| `pages/seguridad/cuentas-detail/cuentas-detail.component.spec.ts` | `CuentasDetailComponent` | 25 (desde `37d053d`: mensaje propio si el empleado ya tiene cuenta, mensaje propio si el usuario ya existe y genérico para otros códigos; desde `7070e1a`: carga encendido y bloqueado si la cuenta ya requiere el cambio de clave, apagado y editable si no, conserva el bloqueo tras cancelar la edición y no envía la marca al guardar) | **Roles:** vista sin error y texto de «sin rol» si la cuenta no tiene; muestra el nombre del rol; el autocompletado de rol recibe texto inicial vacío si no hay rol; `save()` sin rol actual solo asigna el nuevo, con rol distinto quita el actual y asigna el nuevo, con el mismo rol no hace nada. **Botones:** oculta Editar a quien solo lee; Editar con `Seguridad:Actualizar` y Eliminar solo con `Seguridad:Eliminar`; el rol queda de solo lectura al editar sin `Seguridad:AsignarRoles` y se ofrece el selector con él. **Bloqueo:** «No» si no está bloqueada o el bloqueo venció, «Sí» mientras rige. **Sucursales:** lista las asignadas; asigna la elegida y recarga la cuenta; ignora una selección vaciada; quita una sucursal y recarga; excluye del autocompletado las ya asignadas |
 | `pages/series-fiscales/series-fiscales-detail/series-fiscales-detail.component.spec.ts` | `SeriesFiscalesDetailComponent` | 4 | Nueva: abre en edición y rechaza un prefijo que no corresponde al tipo de documento; `save()` envía (POST) una serie válida. Detalle: carga en solo lectura y solo desbloquea el estado cuando ya se emitieron documentos; desbloquea todos los campos mientras la serie no tiene documentos |
 | `pages/series-fiscales/series-fiscales-search/series-fiscales-search.component.spec.ts` | `SeriesFiscalesSearchComponent` | 3 | Resultados ocultos al inicio; `search()` envía los filtros (prefijo en mayúsculas) y muestra resultados; `clear()` limpia y oculta |
 | `pages/series-fiscales/services/serie-fiscal.service.spec.ts` | `SerieFiscalService`, `esPrefijoValido` | 6 | Filtros solo si se dan; envía tipo Factura aunque su valor de enum parezca falso; `create()` devuelve el id; `update()` y `delete()`; `exportar()` envía etiquetas traducidas y filtros como blob; `esPrefijoValido` aplica la regla de letras SUNAT por tipo de documento |
@@ -613,7 +613,7 @@ En consecuencia, las pruebas del SPA solo se ejecutan cuando un desarrollador la
 ### 6.1 No verificado
 
 - **Que las pruebas pasen hoy.** No se ejecutó ninguna prueba ni compilación (lo prohíbe el encargo). Todo lo descrito sale de la lectura de los specs, no de una corrida.
-- **Número real de casos ejecutados.** Las cifras (492 `it(`) son apariciones de texto; los casos generados en bucles (p. ej. `permission.guard.spec.ts:96`, `nueva-venta.component.spec.ts:400,437,648,763`) y los 12 de `describeDeleteInUse` hacen que el total ejecutado sea distinto.
+- **Número real de casos ejecutados.** Las cifras (503 `it(`, 492 en la versión 1.0) son apariciones de texto; los casos generados en bucles (p. ej. `permission.guard.spec.ts:96`, `nueva-venta.component.spec.ts:400,437,648,763`) y los 12 de `describeDeleteInUse` hacen que el total ejecutado sea distinto.
 - **Cobertura de líneas o ramas.** No se midió; las columnas «Alcance» y «NO está probado» salen de cruzar nombres de métodos con el texto de los specs (un método llamado desde otro método probado queda cubierto aunque no aparezca por nombre, y un nombre que aparece en un spec no implica que se pruebe a fondo).
 - **Contenido de los 39 componentes sin spec y de los inventarios 19c y 19d** (catálogos): se usaron solo para saber el nombre de las pantallas; no se contrastaron sus apartados con huecos concretos de esas pantallas.
 - **Uso real de `shared/utils/catalog-item-autocomplete.util.ts`** (si se usa en alguna pantalla).
@@ -659,7 +659,7 @@ Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó 
 | `pages/dashboard/dashboard-links.spec.ts` | 6 | 2.5 |
 | `pages/dashboard/dashboard.component.spec.ts` | 15 | 2.5 |
 | `pages/dashboard/services/dashboard.service.spec.ts` | 4 | 2.5 |
-| `pages/empleados/empleados-detail/empleados-detail.component.spec.ts` | 5 | 2.6 |
+| `pages/empleados/empleados-detail/empleados-detail.component.spec.ts` | 6 | 2.6 |
 | `pages/empleados/empleados-search/empleados-search.component.spec.ts` | 2 | 2.6 |
 | `pages/empleados/services/empleado.service.spec.ts` | 3 | 2.6 |
 | `pages/empresa/empresa-register/empresa-register.component.spec.ts` | 8 | 2.5 |
@@ -691,11 +691,11 @@ Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó 
 | `pages/recetas-medicas/recetas-medicas.routes.spec.ts` | 5 | 2.8 |
 | `pages/recetas-medicas/recetas-search/recetas-search.component.spec.ts` | 7 | 2.8 |
 | `pages/roles/models/menu-preview.spec.ts` | 5 | 2.6 |
-| `pages/roles/roles-detail/roles-detail.component.spec.ts` | 16 | 2.6 |
+| `pages/roles/roles-detail/roles-detail.component.spec.ts` | 19 | 2.6 |
 | `pages/roles/roles-i18n.spec.ts` | 2 | 2.6 |
 | `pages/roles/roles-search/roles-search.component.spec.ts` | 2 | 2.6 |
 | `pages/roles/services/rol.service.spec.ts` | 6 | 2.6 |
-| `pages/seguridad/cuentas-detail/cuentas-detail.component.spec.ts` | 18 | 2.6 |
+| `pages/seguridad/cuentas-detail/cuentas-detail.component.spec.ts` | 25 | 2.6 |
 | `pages/series-fiscales/series-fiscales-detail/series-fiscales-detail.component.spec.ts` | 4 | 2.6 |
 | `pages/series-fiscales/series-fiscales-search/series-fiscales-search.component.spec.ts` | 3 | 2.6 |
 | `pages/series-fiscales/services/serie-fiscal.service.spec.ts` | 6 | 2.6 |
