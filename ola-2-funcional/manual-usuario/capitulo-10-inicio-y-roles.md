@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
+| **Versión del documento** | 1.1 |
 | **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` (más nuevo que la línea base `43f5529`; sin cambios locales al empezar) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` (más nuevo que la línea base `eeffbb6`; sin cambios locales al empezar) |
@@ -386,7 +386,7 @@ Resumen: el administrador ve **24 opciones en 8 grupos**; el cajero del ejemplo 
 
 No se encontró ninguna diferencia entre la aplicación y la documentación técnica (19a §3, `RN-DAS-001` a `RN-DAS-024`): las cifras coincidieron con lo esperado y los textos de la pantalla coinciden con `public/i18n/dashboard/es.json`.
 
-Una precisión sobre el capítulo 1: en su sección 4.5 se listan los botones **Ver ventas de hoy**, **Ver mis ventas** y **Ver ventas en espera** como parte del Inicio sin decir que desaparecen cuando ves más de una sucursal (`RN-DAS-014`; sección 4 de este capítulo). La condición manda.
+Una precisión sobre el capítulo 1: su sección 4.5 lista los botones **Ver ventas de hoy**, **Ver mis ventas** y **Ver ventas en espera** como parte del Inicio y ya dice que se ocultan cuando el usuario ve más de una sucursal, con remisión a este capítulo para la condición completa (`RN-DAS-014`; sección 4 de este capítulo). No hay diferencia entre ambos capítulos.
 
 ## 10. Pendientes y «No verificado»
 
