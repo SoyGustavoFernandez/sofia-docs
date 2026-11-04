@@ -3,13 +3,23 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; la tabla DIGEMID y los scripts `0003`, `0004` y `0005` están reconciliados con `34089ec` y `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código: scripts DbUp `0001`–`0028` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio. No se consultó la base de datos ni la API. |
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-04)
+
+Revisión de consistencia (`18-revision-de-consistencia.md`) y reconciliación con `sofia-apis` `34089ec` y `9c16f35`.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 6.8 `DIGEMID_Catalogo_Productos` (introducción, columnas, citas a `0003`, datos sembrados) y 14 (conteo de columnas) | La tabla es por empresa; sin las columnas `Forma_Farmaceutica_Simplificada`, `Presentacion` y `Fecha_Vencimiento_Registro` (17 columnas); citas a `0003:1-20` y `0003:6-19`. | Mezcla filas de empresa y un catálogo compartido sin empresa que ven todas las empresas y ninguna modifica; tres columnas que EF no mapea (20 columnas); citas a `0003:1-23`, `0003:6-22` y al índice en `0003:26`. | `34089ec`, `9c16f35` |
+| 10.2 Catálogo DIGEMID (`0004`), NV-1 y 12 | Copia condicional desde `SofiaDb` (47 líneas, conteo desconocido); filas invisibles para toda empresa. | Seed de 29 698 filas dentro del script (29 886 líneas), todo o nada y autoverificado; sigue sin empresa, pero ahora visible para todas. | `34089ec`, `9c16f35` |
+| Citas a `0005` en 3.2, 5, 6 y siguientes | `0005:33-35`, `:37-39`, `:44-45`, `:50-51`, `:54-70`, `:75-84`. | `:34-36`, `:39-41`, `:47-48`, `:54-55`, `:59-75`, `:81-90` (el commit separó el script en lotes con `GO`). | `34089ec` |
 
 ### Versión 1.1 (2026-10-14)
 
@@ -66,8 +76,8 @@ La columna de multiempresa se llama `TenantId` (`UNIQUEIDENTIFIER NULL`, sin val
 | Origen | Tablas de este documento | Fuente |
 |---|---|---|
 | Declarada en el `CREATE TABLE` | `Empresas`, `RefreshTokens` | `0005:15`, `0006:9` |
-| `ALTER TABLE` explícito | `Sucursales`, `Empleados`, `Seguridad_Cuentas`, `Presentaciones_Venta` | `0005:33-35`, `0005:44-45`, `0005:50-51`, `0011:3` |
-| SQL dinámico del `0005`: agrega `TenantId` a toda tabla que en ese momento tenía columna `IsDeleted` y aún no tenía `TenantId` | `Seguridad_Roles`, `Seguridad_Permisos_Rol`, `Auditoria_Eventos_Seguridad`, `Registro_Privacidad_Presidio`, `Sistema_Notificaciones_Internas`, `Sistema_Outbox_Eventos`, `Unidades_Medida`, `Jerarquia_UoM`, `Laboratorios`, `Ingredientes_Activos`, `Medicamentos`, `Formulacion_Clinica`, `Proveedores_Dist`, `Historial_Precios_Prov`, `Aseguradoras_Medicas`, `DIGEMID_Catalogo_Productos`, `Pacientes_Clientes`, `Profesionales_Salud` | `0005:54-70` |
+| `ALTER TABLE` explícito | `Sucursales`, `Empleados`, `Seguridad_Cuentas`, `Presentaciones_Venta` | `0005:34-36`, `0005:47-48`, `0005:54-55`, `0011:3` |
+| SQL dinámico del `0005`: agrega `TenantId` a toda tabla que en ese momento tenía columna `IsDeleted` y aún no tenía `TenantId` | `Seguridad_Roles`, `Seguridad_Permisos_Rol`, `Auditoria_Eventos_Seguridad`, `Registro_Privacidad_Presidio`, `Sistema_Notificaciones_Internas`, `Sistema_Outbox_Eventos`, `Unidades_Medida`, `Jerarquia_UoM`, `Laboratorios`, `Ingredientes_Activos`, `Medicamentos`, `Formulacion_Clinica`, `Proveedores_Dist`, `Historial_Precios_Prov`, `Aseguradoras_Medicas`, `DIGEMID_Catalogo_Productos`, `Pacientes_Clientes`, `Profesionales_Salud` | `0005:59-75` |
 | No tienen `TenantId` (no tienen `IsDeleted` y ningún script se lo agrega) | `Seguridad_Cuentas_Roles`, `Seguridad_CuentasSucursales`, `Seguridad_Roles_Sucursales` | `0001:826-834`, `0007:4-12`, `0008:1-7` |
 
 En la aplicación, toda entidad que hereda de `BaseEntity` recibe dos filtros globales de consulta: borrado lógico (`IsDeleted = 0`) y empresa (`TenantId` igual a la empresa del usuario). El filtro de empresa es estricto: si no hay empresa en el contexto, o la fila tiene `TenantId` nulo, la fila no aparece (`DbContext:82-86`, `DbContext:91-110`). Al insertar, si la entidad no trae `TenantId` se le asigna la empresa del usuario (`DbContext:168-178`).
@@ -89,7 +99,7 @@ El patrón estándar son siete columnas, que la aplicación rellena en `SaveChan
 Variaciones respecto de ese patrón (todas verificadas en los scripts):
 
 - `Empresas` y `Presentaciones_Venta` usan `NVARCHAR(100)` en `CreatedBy`, `LastModifiedBy` y `DeletedBy` (`0005:17-22`, `0010:12-17`).
-- `DIGEMID_Catalogo_Productos` usa `NVARCHAR(100)` y además `CreatedBy` es `NOT NULL` (`0003:13-19`).
+- `DIGEMID_Catalogo_Productos` usa `NVARCHAR(100)` y además `CreatedBy` es `NOT NULL` (`0003:16-22`).
 - `RefreshTokens` usa `NVARCHAR(256)` (`0006:11-16`).
 - `Sistema_Notificaciones_Internas` solo tiene `CreatedAt` e `IsDeleted`; le faltan las otras cinco (`0001:780-781`).
 - `Seguridad_Cuentas_Roles` y `Seguridad_CuentasSucursales` no tienen el patrón: solo llevan fecha y usuario de asignación. `Seguridad_Roles_Sucursales` no tiene ninguna columna de auditoría.
@@ -201,8 +211,8 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:17` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:18` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:19` |
-| `Empresa_ID` | `UNIQUEIDENTIFIER` | Sí | — | Empresa a la que pertenece la sucursal. | `0005:33-34` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. El dominio la iguala a `Empresa_ID` al crear (`Ent/Sucursal.cs:51-52`, y `:73-74` en `CreateSedePrincipal`). | `0005:33-35` |
+| `Empresa_ID` | `UNIQUEIDENTIFIER` | Sí | — | Empresa a la que pertenece la sucursal. | `0005:34-35` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. El dominio la iguala a `Empresa_ID` al crear (`Ent/Sucursal.cs:51-52`, y `:73-74` en `CreateSedePrincipal`). | `0005:34-36` |
 
 **Clave primaria:** `Sucursal_ID` (sin nombre en el script).
 
@@ -211,7 +221,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | Constraint | Columna | Referencia | ON DELETE | Script |
 |---|---|---|---|---|
 | `FK_Sucursal_Gerente` | `Gerente_ID` | `Empleados.Empleado_ID` | No definido (sin acción) | `0001:40-41` |
-| `FK_Sucursales_Empresa` | `Empresa_ID` | `Empresas.Empresa_ID` | No definido (sin acción) | `0005:37-39` |
+| `FK_Sucursales_Empresa` | `Empresa_ID` | `Empresas.Empresa_ID` | No definido (sin acción) | `0005:39-41` |
 
 **Referenciada por:** `Empleados.Sucursal_Base_ID`, `Seguridad_CuentasSucursales.SucursalId`, `Seguridad_Roles_Sucursales.Sucursal_ID`, `Sistema_Notificaciones_Internas.Sucursal_Destino_ID`; y de la Parte B: `Inventario_Sucursal`, `Transferencias_Cab` (origen y destino), `POS_Sesiones_Caja`, `Ventas_Cabecera`, `SUNAT_Series_Fiscales`, `DIGEMID_Inventario_Cuarentena`, `Magistrales_Ordenes_Produccion`.
 
@@ -219,7 +229,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 
 | Nombre | Tipo | Columnas | Filtro / definición | Script |
 |---|---|---|---|---|
-| `UX_Sucursales_Empresa_Licencia` | Índice único no agrupado, filtrado | `Empresa_ID`, `Numero_Licencia` | `WHERE IsDeleted = 0 AND Empresa_ID IS NOT NULL` | `0005:75-84` |
+| `UX_Sucursales_Empresa_Licencia` | Índice único no agrupado, filtrado | `Empresa_ID`, `Numero_Licencia` | `WHERE IsDeleted = 0 AND Empresa_ID IS NOT NULL` | `0005:81-90` |
 
 **Multiempresa, borrado lógico, auditoría, RowVersion:** `TenantId` sí (además de `Empresa_ID`); `IsDeleted` sí; auditoría completa; `RowVersion` no.
 **Datos sembrados:** ninguno.
@@ -246,7 +256,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:34` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:35` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:36` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:44-45` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:47-48` |
 | `Email` | `VARCHAR(254)` | Sí | — | Correo del empleado; es el destino de los enlaces de recuperación de contraseña (`0022:1`, `Ent/Empleado.cs:23-24`). El dominio lo guarda sin espacios y en minúsculas (`Ent/Empleado.cs:124-126`). Único por empresa cuando tiene valor. | `0022:2-3` |
 
 **Clave primaria:** `Empleado_ID` (sin nombre en el script).
@@ -299,7 +309,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:806` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:807` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:808` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:50-51` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-55` |
 
 **Clave primaria:** `Cuenta_ID` (sin nombre en el script).
 
@@ -397,7 +407,7 @@ Nota de nomenclatura: esta tabla nombra sus columnas `CuentaId`, `SucursalId`, `
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:821` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:822` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:823` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña del rol. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña del rol. | `0005:59-75` |
 
 **Clave primaria:** `Rol_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -431,7 +441,7 @@ Nota de nomenclatura: esta tabla nombra sus columnas `CuentaId`, `SucursalId`, `
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:845` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:846` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:847` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Permiso_ID` (sin nombre en el script).
 
@@ -542,7 +552,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:497` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:498` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:499` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Evento_ID` (sin nombre en el script).
 
@@ -579,7 +589,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:532` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:533` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:534` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Anonimizacion_ID` (sin nombre en el script).
 
@@ -617,7 +627,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `Fecha_Lectura` | `DATETIME` | Sí | — | Fecha y hora de lectura. | `0001:779` |
 | `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0001:780` |
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:781` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Notificacion_ID` (sin nombre en el script).
 
@@ -655,7 +665,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:515` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:516` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:517` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Evento_Outbox_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -685,7 +695,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:67` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:68` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:69` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `UoM_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -720,7 +730,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:101` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:102` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:103` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Conversion_ID` (sin nombre en el script).
 
@@ -760,7 +770,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:54` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:55` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:56` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Laboratorio_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -794,7 +804,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:120` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:121` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:122` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Ingrediente_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -831,7 +841,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:83` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:84` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:85` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `Precio_Venta_Base` | `DECIMAL(10,2)` | Sí | — | Precio de referencia para vender el producto suelto, por su unidad base (sin presentación de venta). Admite `NULL` porque ya existían medicamentos sin precio; al crear o editar, la aplicación siempre exige un valor (`0014:1-3`, `Ent/Medicamento.cs:16-18`). No puede ser negativo. | `0014:4` → `0020:139-140` |
 
 **Clave primaria:** `Producto_ID` (sin nombre en el script).
@@ -876,7 +886,7 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:138` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:139` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:140` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `Unidad_Medida_ID` | `UNIQUEIDENTIFIER` | No | — | Unidad de medida en la que se expresa la concentración. Se agregó como `NULL`, se rellenó y luego pasó a `NOT NULL`. | `0009:4` → `0009:26` |
 
 **Columna eliminada:** `Unidad_Dosis_Clinica VARCHAR(20) NOT NULL` (`0001:132`) era la unidad de la dosis como texto libre. El `0009` la sustituyó por la clave foránea `Unidad_Medida_ID`: rellenó la nueva columna buscando el texto antiguo en `Unidades_Medida.Codigo_UoM`, se detiene con error si alguna fila no pudo emparejarse, y después elimina la columna (`0009:1-23`).
@@ -951,9 +961,11 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 
 **Propósito.** Copia del catálogo de productos farmacéuticos de DIGEMID (código, nombre, concentración, forma farmacéutica, registro sanitario, titular). Sirve de referencia para buscar productos; no tiene claves foráneas con el maestro de medicamentos.
 **Entidad.** `DigemidCatalogoProducto` (`Ent/DigemidCatalogoProducto.cs:5`), configurada en `Cfg/DigemidCatalogoProductoConfiguration.cs`. `DbSet` en `DbContext:51`; en uso (mantenimiento y carga masiva en `SOFIA.Application/DIGEMID`, y el buscador `sofia-apis/src/SOFIA.Infrastructure/Services/BuscadorFuzzyService.cs:26`).
-**Creada en** `0003:1-20`; modificada en `0005`, `0015` y `0020`.
+**Creada en** `0003:1-23`; modificada en `0005`, `0015` y `0020`.
 
-Importante: aunque el catálogo de DIGEMID es de alcance nacional, en SOFIA la tabla es **por empresa**. La entidad hereda de `BaseEntity`, así que recibe el filtro de empresa, y ninguna de sus consultas lo desactiva (los usos de `IgnoreQueryFilters` del backend están en `Empresas`, seguridad, vigencia y outbox, no en DIGEMID). El índice único también es por empresa.
+Importante: la tabla mezcla filas **de una empresa** (con `TenantId`) y filas **compartidas** sin empresa (`TenantId` nulo), que son el catálogo nacional sembrado por el `0004`. La entidad hereda de `BaseEntity` y desde `sofia-apis` `9c16f35` implementa `IGlobalReadEntity` (`Ent/DigemidCatalogoProducto.cs:5`): el filtro de empresa deja pasar las filas con `TenantId` nulo a cualquier empresa (`sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:109-113`) y la entidad las trata como de solo lectura (`IsGlobal`, `Ent/DigemidCatalogoProducto.cs:19`; editar o eliminar responde 403 `DigemidCatalogo.Global.SoloLectura`). Ninguna consulta desactiva el filtro (los usos de `IgnoreQueryFilters` del backend están en `Empresas`, seguridad, vigencia y outbox, no en DIGEMID). El índice único es por empresa: `(TenantId, Cod_Prod)`. La versión 1.0 de este documento decía que las filas sin empresa no eran visibles para nadie; eso dejó de ser cierto con `9c16f35`.
+
+**Columnas de la tabla que EF no mapea.** Desde `34089ec` el script `0003` crea tres columnas más —`Forma_Farmaceutica_Simplificada`, `Presentacion` y `Fecha_Vencimiento_Registro`— que el seed `0004` llena y que `Cfg/DigemidCatalogoProductoConfiguration.cs` no mapea (búsqueda de esos nombres en `sofia-apis/src`: ninguna coincidencia fuera de los scripts). La aplicación no las lee ni las escribe.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
 |---|---|---|---|---|---|
@@ -962,18 +974,21 @@ Importante: aunque el catálogo de DIGEMID es de alcance nacional, en SOFIA la t
 | `Nom_Prod` | `NVARCHAR(255)` | No | — | Nombre del producto. | `0003:4` |
 | `Concent` | `NVARCHAR(255)` | Sí | — | Concentración. | `0003:5` |
 | `Forma_Farmaceutica` | `NVARCHAR(150)` | Sí | — | Forma farmacéutica. | `0003:6` |
-| `Fraccion` | `NVARCHAR(100)` | Sí | — | Fracción. El comentario del `0004` asocia esta columna al campo de origen `Fra_Accion` (`0004:27`). | `0003:7` |
-| `Registro_Sanitario` | `NVARCHAR(50)` | Sí | — | Registro sanitario. | `0003:8` |
-| `Titular` | `NVARCHAR(255)` | Sí | — | Titular del registro. | `0003:9` |
-| `Estado` | `NVARCHAR(50)` | No | — | Estado del producto, como texto libre (sin `CHECK` ni enum). La migración del `0004` escribe `Activo` (`0004:30`). | `0003:10` |
-| `CreatedBy` | `NVARCHAR(100)` | No | — | Auditoría: usuario creador. Aquí es obligatorio. | `0003:13` |
-| `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0003:14` |
-| `LastModifiedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario de la última modificación. | `0003:15` |
-| `LastModifiedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: última modificación. | `0003:16` |
-| `DeletedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0003:17` |
-| `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0003:18` |
-| `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0003:19` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `Forma_Farmaceutica_Simplificada` | `NVARCHAR(150)` | Sí | — | Forma farmacéutica agrupada (por ejemplo `TABLETA`, `SUSPENSION`) que llena el seed; sin campo en la entidad. | `0003:7` |
+| `Presentacion` | `NVARCHAR(255)` | Sí | — | Presentación comercial (por ejemplo «Frasco X 60 mL»); sin campo en la entidad. | `0003:8` |
+| `Fraccion` | `NVARCHAR(100)` | Sí | — | Fracción. | `0003:9` |
+| `Registro_Sanitario` | `NVARCHAR(50)` | Sí | — | Registro sanitario. | `0003:10` |
+| `Fecha_Vencimiento_Registro` | `NVARCHAR(50)` | Sí | — | Fecha de vencimiento del registro sanitario, como texto; sin campo en la entidad. | `0003:11` |
+| `Titular` | `NVARCHAR(255)` | Sí | — | Titular del registro. | `0003:12` |
+| `Estado` | `NVARCHAR(50)` | No | — | Estado del producto, como texto libre (sin `CHECK` ni enum). El seed del `0004` escribe `Activo` en todas las filas. | `0003:13` |
+| `CreatedBy` | `NVARCHAR(100)` | No | — | Auditoría: usuario creador. Aquí es obligatorio. | `0003:16` |
+| `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0003:17` |
+| `LastModifiedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario de la última modificación. | `0003:18` |
+| `LastModifiedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: última modificación. | `0003:19` |
+| `DeletedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0003:20` |
+| `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0003:21` |
+| `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0003:22` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila; nulo en el catálogo compartido sembrado. | `0005:59-75` |
 
 **Clave primaria:** `Catalogo_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -982,11 +997,11 @@ Importante: aunque el catálogo de DIGEMID es de alcance nacional, en SOFIA la t
 
 | Nombre | Tipo | Columnas | Filtro / definición | Script |
 |---|---|---|---|---|
-| `IX_DIGEMID_Catalogo_Productos_Nom_Prod` | Índice no único | `Nom_Prod` | Sin filtro | `0003:23` |
+| `IX_DIGEMID_Catalogo_Productos_Nom_Prod` | Índice no único | `Nom_Prod` | Sin filtro | `0003:26` |
 | `UX_DIGEMID_Catalogo_Productos_Tenant_Cod_Prod` | Índice único filtrado | `TenantId`, `Cod_Prod` | `WHERE IsDeleted = 0` | `0015:8` → `0020:10-11` |
 
 **Multiempresa, borrado lógico, auditoría, RowVersion:** `TenantId` sí; `IsDeleted` sí; auditoría completa (con `CreatedBy` obligatorio); `RowVersion` no.
-**Datos sembrados:** carga condicional del `0004` desde otra base de datos (ver [sección 10](#10-datos-sembrados-y-modificados-por-scripts)).
+**Datos sembrados:** 29 698 filas insertadas por el `0004` desde el CSV oficial (ver [sección 10](#10-datos-sembrados-y-modificados-por-scripts)).
 
 ---
 
@@ -1013,7 +1028,7 @@ Importante: aunque el catálogo de DIGEMID es de alcance nacional, en SOFIA la t
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:239` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:240` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:241` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Proveedor_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -1053,7 +1068,7 @@ Importante: aunque el catálogo de DIGEMID es de alcance nacional, en SOFIA la t
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:257` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:258` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:259` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Cotizacion_ID` (sin nombre en el script).
 
@@ -1095,7 +1110,7 @@ No tiene ningún índice aparte de la clave primaria: ni por producto (que es po
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:439` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:440` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:441` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Aseguradora_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -1134,7 +1149,7 @@ No tiene ningún índice aparte de la clave primaria: ni por producto (que es po
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:277` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:278` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:279` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `Tipo_Doc_Identidad` | `VARCHAR(1)` | Sí | — | Tipo de documento de identidad, guardado como **texto** con el código del catálogo 06 de SUNAT. Valores permitidos por el `CHECK` (`0023:7`) y por las constantes de `sofia-apis/src/SOFIA.Domain/Enums/TipoDocumentoIdentidad.cs:9-14`: `1` DNI, `4` carné de extranjería, `6` RUC, `7` pasaporte. `NULL` solo en pacientes registrados antes de que existiera la columna (`0023:1`, `Ent/PacienteCliente.cs:10-11`). | `0023:2-3` |
 
 **Clave primaria:** `Cliente_ID` (sin nombre en el script).
@@ -1170,7 +1185,7 @@ No tiene ningún índice aparte de la clave primaria: ni por producto (que es po
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:291` |
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:292` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:293` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Medico_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
@@ -1514,14 +1529,14 @@ Dos observaciones que se desprenden de los scripts y del código:
 
 ### 10.2 Catálogo DIGEMID (`0004`)
 
-El `0004` **no trae las filas del catálogo dentro del script** (el archivo tiene 47 líneas). Es una copia condicional desde otra base de datos del mismo servidor:
+Desde `sofia-apis` `34089ec` el `0004` **trae las filas del catálogo dentro del script** (29 886 líneas; en la versión 1.0 de este documento era una copia condicional de 47 líneas desde una base externa `SofiaDb`, que ya no existe en el script):
 
-- Solo actúa si existe una base llamada `SofiaDb` (`0004:3`) y si `DIGEMID_Catalogo_Productos` está vacía (`0004:5`). Si no, solo imprime un mensaje (`0004:38-46`).
-- Copia desde `[SofiaDb].[dbo].[DigemidCatalogo]` (`0004:34`) tres datos: `Cod_Prod` (o `'UNKNOWN-'` más un GUID si viene nulo, `0004:23`), `Nom_Prod` (o `'SIN NOMBRE'`, `0004:24`) y `Concent` (`0004:25`).
-- Deja en `NULL` `Forma_Farmaceutica`, `Fraccion`, `Registro_Sanitario` y `Titular` (`0004:26-29`); pone `Estado = 'Activo'` (`0004:30`), `CreatedBy = 'SYSTEM-MIGRATION'` (`0004:31`), `Catalogo_ID = NEWID()` e `IsDeleted = 0`.
-- No asigna `TenantId` (la columna aún no existía), así que las filas copiadas quedan con `TenantId` nulo y, por el filtro de empresa (`DbContext:98-109`), no son visibles para ninguna empresa en las consultas normales. Cada empresa carga su propio catálogo con la carga masiva (`sofia-apis/src/SOFIA.Application/DIGEMID/Commands/CargaMasivaDigemid/CargaMasivaDigemidCommandHandler.cs:16-34`).
+- Es una transacción de todo o nada (`SET XACT_ABORT ON` y `BEGIN TRANSACTION`, `0004:2-3`) con 60 sentencias `INSERT` por lotes y 29 698 filas en total (la primera en `0004:5`; el total es el de las líneas que empiezan con `(NEWID()`).
+- Cada fila lleva `Catalogo_ID = NEWID()`, `Cod_Prod`, `Nom_Prod`, `Concent`, `Forma_Farmaceutica`, `Forma_Farmaceutica_Simplificada`, `Presentacion`, `Fraccion`, `Registro_Sanitario`, `Fecha_Vencimiento_Registro`, `Titular`, `Estado = 'Activo'` (las 29 698), `CreatedBy = 'System'`, `CreatedAt = SYSDATETIMEOFFSET()` e `IsDeleted = 0`.
+- Al final se autoverifica antes de confirmar: lanza el error 50001 si la tabla no tiene exactamente 29 698 filas (`0004:29883`) y el 50002 si algún texto contiene caracteres de codificación corrupta (`0004:29884`); después `COMMIT TRANSACTION` (`0004:29885`). No hay guarda de «tabla vacía»: ejecutarlo sobre una tabla con datos fallaría la verificación de conteo.
+- No asigna `TenantId` (la columna aún no existía; la agrega el `0005` sin valor), así que las filas quedan con `TenantId` nulo. Desde `9c16f35` eso las convierte en el **catálogo compartido** que ven todas las empresas y ninguna puede modificar (ver 6.8). Cada empresa puede, además, crear sus propios productos y cargarlos en masa (`sofia-apis/src/SOFIA.Application/DIGEMID/Commands/CargaMasivaDigemid/CargaMasivaDigemidCommandHandler.cs:16-34`).
 
-**Conteo de filas: No verificado.** Depende del contenido de la base externa `SofiaDb`, que no es parte del repositorio; en un servidor sin esa base el script no inserta nada.
+**Que las filas de una base real tengan `TenantId` nulo: No verificado** (no se consultó ninguna base). El número de filas sale del propio script.
 
 ### 10.3 Permiso `Ventas` + `Anular` (`0017`)
 
@@ -1571,7 +1586,7 @@ Los scripts son la fuente de verdad del esquema: la base se crea con DbUp, no co
 
 | # | Qué | Por qué |
 |---|---|---|
-| NV-1 | Número de filas del catálogo DIGEMID cargadas por el `0004`. | El script copia desde una base externa (`SofiaDb`) que no está en el repositorio; este documento se hizo sin consultar ninguna base de datos. |
+| NV-1 | Que una base real tenga las 29 698 filas del catálogo DIGEMID con `TenantId` nulo tras el `0004` y el `0005`. | El número sale del propio script; este documento se hizo sin consultar ninguna base de datos. |
 | NV-2 | Nombres reales de las claves primarias, `DEFAULT` y `UNIQUE` sin nombre. | SQL Server los genera automáticamente y varían por base de datos. |
 | NV-3 | Texto exacto del filtro de `UX_Empleados_Tenant_Licencia_Prof` tal como quedó guardado. | El `0015` lo copia del catálogo del sistema (`filter_definition`), donde SQL Server lo guarda en forma normalizada; la condición lógica es la del índice original (`0001:855-857`). |
 | NV-4 | Efecto en ejecución de la discrepancia D-01 (columnas de auditoría inexistentes en `Sistema_Notificaciones_Internas`). | No se ejecutó la aplicación y ningún código usa la entidad. |
@@ -1585,7 +1600,7 @@ Los scripts son la fuente de verdad del esquema: la base se crea con DbUp, no co
 - `Historial_Precios_Prov`: la aplicación la lee y la escribe (registro de precio, desde la versión 1.1), pero no existe vía para editar ni borrar un precio ya registrado, el plazo de entrega y la cantidad mínima no se pueden informar (quedan en 0 y 1) y la regla de un solo precio abierto por proveedor y producto la impone solo el handler: no hay índice único en la base.
 - `Auditoria_Eventos_Seguridad`: la aplicación solo escribe; no se encontró código que consulte la tabla.
 - `Seguridad_Permisos_Rol`: la unicidad `UQ_Rol_Modulo_Accion` no ignora las filas borradas lógicamente, a diferencia del resto de claves de negocio.
-- Los roles base del `0002` y las filas DIGEMID del `0004` quedan con `TenantId` nulo y fuera del alcance del filtro de empresa.
+- Los roles base del `0002` quedan con `TenantId` nulo y fuera del alcance del filtro de empresa. Las filas DIGEMID del `0004` también quedan con `TenantId` nulo, pero desde `9c16f35` el filtro de empresa sí las deja pasar (catálogo compartido de solo lectura, 6.8).
 
 **En curso (sin commitear):** ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en los repositorios. El script `0028`, que en la versión 1.0 estaba sin commitear, ya está commiteado y no toca ninguna de las 27 tablas.
 
@@ -1620,7 +1635,7 @@ En «Índices» se cuentan los índices y restricciones `UNIQUE` distintos de la
 | 19 | `Medicamentos` | 15 | 2 | 1 | 2 | `0001`, `0005`, `0014`, `0015`, `0020` | 6.5 |
 | 20 | `Formulacion_Clinica` | 14 | 3 | 1 | 0 | `0001`, `0005`, `0009`, `0020` | 6.6 |
 | 21 | `Presentaciones_Venta` | 14 | 2 | 1 | 2 | `0010`, `0011`, `0013`, `0020` | 6.7 |
-| 22 | `DIGEMID_Catalogo_Productos` | 17 | 0 | 2 | 0 | `0003`, `0004`, `0005`, `0015`, `0020` | 6.8 |
+| 22 | `DIGEMID_Catalogo_Productos` | 20 | 0 | 2 | 0 | `0003`, `0004`, `0005`, `0015`, `0020` | 6.8 |
 | 23 | `Proveedores_Dist` | 14 | 0 | 2 | 0 | `0001`, `0005`, `0015`, `0020` | 7.1 |
 | 24 | `Historial_Precios_Prov` | 16 | 2 | 0 | 3 | `0001`, `0005`, `0020` | 7.2 |
 | 25 | `Aseguradoras_Medicas` | 11 | 0 | 1 | 0 | `0001`, `0005`, `0015`, `0020` | 7.3 |
