@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` (el de la línea base y de los documentos fuente; en esta tarea no se ejecutan comandos git, por lo que no se comprobó si hay commits más nuevos) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` (ídem) |
 | **Método** | Lectura de documentos validados y comprobación puntual en el código; casos no ejecutados |
@@ -63,9 +63,11 @@ Los datos siguen los del [manual de usuario, capítulo 3](../../ola-2-funcional/
 | Sucursal base | «Sede Principal» |
 | Segunda sucursal | «Sucursal Demo Norte» |
 | Admin | «Ana Demo Prueba», rol `Admin`, sucursal base «Sede Principal» |
-| Cajero | «Carlos Cajero Demo» (usuario `carlos.cajero`), rol «Cajero» con los **19 permisos recomendados** del [manual, capítulo 3, sección 5.3](../../ola-2-funcional/manual-usuario/capitulo-03-empleados-roles-cuentas.md): `Ventas:Leer`, `Ventas:Crear`, `Ventas:Actualizar`, `Ventas:Anular`, `POS:Leer`, `POS:AperturarCaja`, `POS:CerrarCaja`, `Devoluciones:ProcesarDevolucion`, `Devoluciones:Leer`, `Inventario:Leer`, `DIGEMID:Leer`, `Medicamentos:Leer`, `Pacientes:Leer`, `Aseguradoras:Leer`, `Recetas:Leer`, `Recetas:Analizar`, `Recetas:Crear`, `ProfesionalesSalud:Leer` y `Empleados:Leer` |
+| Cajero | «Carlos Cajero Demo» (usuario `carlos.cajero`), rol «Cajero» con los **19 permisos recomendados** del [manual, capítulo 3, sección 5.3](../../ola-2-funcional/manual-usuario/capitulo-03-empleados-roles-cuentas.md): `Ventas:Leer`, `Ventas:Crear`, `Ventas:Actualizar`, `Ventas:Anular`, `POS:Leer`, `POS:AperturarCaja`, `POS:CerrarCaja`, `Devoluciones:ProcesarDevolucion`, `Devoluciones:Leer`, `Inventarios:Leer`, `DIGEMID:Leer`, `Medicamentos:Leer`, `Pacientes:Leer`, `Seguros:Leer`, `Recetas:Leer`, `Recetas:Analizar`, `Recetas:Crear`, `ProfesionalesSalud:Leer` y `Empleados:Leer` |
 | Segundo cajero | «Nora Norte Demo», mismo rol, sucursal base «Sucursal Demo Norte» |
 | Cajero reducido | Un rol «Cajero sin dinero» con los mismos permisos menos `Ventas:Anular`, `Devoluciones:ProcesarDevolucion` y `POS:CerrarCaja` (para los casos de permisos); se crea con el administrador de roles |
+
+**Clave técnica y texto de pantalla.** Los permisos se escriben aquí con su clave técnica `Módulo:Acción` (la que declaran los controladores y usan las historias y las reglas). La pantalla de roles muestra el módulo con otro texto: `Inventarios` se ve como «Inventario» (`roles.modulo.Inventarios`, `public/i18n/roles/es.json:69`) y `Seguros` como «Aseguradoras» (`roles.modulo.Seguros`, `:81`); por eso el manual escribe «Inventario › Leer» y «Aseguradoras › Leer». Equivalen a `Inventarios:Leer` (`LotesInventarioController`, `StockPorSucursalController`, entre otros) y `Seguros:Leer` (`SegurosController`).
 
 Cada caso dice qué usuario lo ejecuta. Cuando un caso pide quitar un permiso, se hace sobre el rol «Cajero sin dinero» o una copia, nunca sobre el rol «Cajero» de las demás pruebas.
 
@@ -4843,7 +4845,7 @@ Los nombres de los campos de `POST /api/v1/Magistrales/iniciar` se deducen de lo
 
 ### 8.4 Servicios e inmunizaciones
 
-La historia HU-OPS-014 advierte que la tabla `Servicios_Agenda` del script `0001` no tiene las columnas `LastModifiedAt`, `LastModifiedBy`, `DeletedAt` ni `DeletedBy` que EF mapea: si la base se creó solo con scripts, agendar, listar, consultar y eliminar citas podrían fallar con un error 500 (RN-SRV-019, **No verificado** en ejecución). Antes de ejecutar estos casos revisa en tu base si esas columnas existen; si no, el resultado esperado de los casos de citas pasa a ser ese error.
+La historia HU-OPS-014 advierte que la tabla `Servicios_Agenda` del script `0001` no tiene las columnas `LastModifiedAt`, `LastModifiedBy`, `DeletedAt` ni `DeletedBy` que EF mapea: si la base se creó solo con scripts, agendar, listar, consultar y eliminar citas podrían fallar con un error 500 (RN-SRV-019); en la base de desarrollo agendar respondió 200 (`04d` §7), y por qué funciona allí es **No verificado**. Antes de ejecutar estos casos revisa en tu base si esas columnas existen; si no, el resultado esperado de los casos de citas pasa a ser ese error.
 
 ### HU-OPS-014 — Agendar un servicio
 
@@ -5405,7 +5407,7 @@ Ninguno. Las historias (12c, 2026-10-26) y los casos de uso (13c, 2026-10-27) de
 
 ### 9.5 Observaciones sobre las fuentes y sobre los datos de prueba
 
-- El manual (capítulo 3, sección 5.3) rotula el permiso del dashboard de inventario «Inventario › Leer», mientras las historias y las reglas lo escriben `Inventarios:Leer`; en la sección 2.2 se copió el rótulo del manual y en los casos del Inicio se usa `Inventarios:Leer`. Comprueba cuál es el nombre vigente en la matriz de roles ([05b](../../ola-1-fundamentos/05-seguridad/05b-matriz-de-permisos.md)).
+- El manual (capítulo 3, sección 5.3) rotula el permiso del dashboard de inventario «Inventario › Leer», que es el texto de pantalla de la clave técnica `Inventarios:Leer` (resuelto en la versión 1.1: `roles.modulo.Inventarios` = «Inventario», `public/i18n/roles/es.json:69`; la sección 2.2 usa ahora la clave técnica y lo explica).
 - Los casos de uso no numeran sus excepciones; los casos citan «excepción, paso N» más la situación.
 - Varios casos necesitan datos que el entorno por defecto no trae: una empresa de prueba sin RUC y sin serie de boletas, una empresa en modo flexible (`ExigirRegistroReceta` en falso, solo por base de datos), una sucursal sin serie de nota de crédito, cuentas con token sin sucursal o sin empleado, más de 10 000 ventas o sesiones para los casos de límite de exportación, y ventas anteriores a los scripts `0016` y `0028`. Si no puedes prepararlos, el caso queda «Bloqueado por datos» en tu ejecución, no «Fallido».
 - Los casos de concurrencia se ejecutan con dos clientes HTTP en paralelo; su resultado es probabilístico y debe repetirse varias veces antes de darlo por pasado.
