@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; las pruebas de DIGEMID y de aislamiento de empresa están reconciliadas con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código (los tres proyectos de prueba, sus `.csproj`, `.husky`, `.github`) y de los inventarios `sofia-docs/_inventario`; los cruces de cobertura se calcularon con un script de solo lectura. No se ejecutó ninguna prueba ni compilación. `git status --short` sin cambios en `sofia-apis` al 2026-10-15 |
 
@@ -34,10 +34,12 @@ Convención de conteo: «pruebas» = métodos con `[Fact]` o `[Theory]` (así lo
 
 | Proyecto | Archivos de prueba | Pruebas (`[Fact]`/`[Theory]`) | Archivos de apoyo (sin pruebas) |
 |---|---|---|---|
-| `SOFIA.UnitTests` | 160 | 1 079 | 3: `UT/Security/CuentaFactory.cs`, `UT/Security/EmpresaFactory.cs`, `UT/Ventas/Common/EmisorMocks.cs` |
-| `SOFIA.IntegrationTests` | 32 | 172 | 7 en `IT/Infrastructure/` (más `xunit.runner.json`) |
+| `SOFIA.UnitTests` | 162 | 1 087 | 3: `UT/Security/CuentaFactory.cs`, `UT/Security/EmpresaFactory.cs`, `UT/Ventas/Common/EmisorMocks.cs` |
+| `SOFIA.IntegrationTests` | 32 | 173 | 7 en `IT/Infrastructure/` (más `xunit.runner.json`) |
 | `SOFIA.ArchitectureTests` | 1 | 3 | — |
-| **Total** | **193** | **1 254** | 10 |
+| **Total** | **195** | **1 263** | 10 |
+
+Versión 1.1: las cifras incluyen los 9 métodos de prueba (2 archivos nuevos) que agregó `sofia-apis` `9c16f35` (catálogo DIGEMID compartido): `DeleteDigemidProductoCommandHandlerTests` (3), `DigemidCatalogoProductoTests` (4), una prueba más en `UpdateDigemidProductoCommandHandlerTests` y una más en `TenantIsolationIntegrationTests`. Recuento hecho sobre el diff del commit (`git show 9c16f35`), no con el script del inventario CSV.
 
 Fuente: `sofia-docs/_inventario/pruebas-backend.csv` (193 filas de datos; el `README.md` del inventario dice «186 archivos», cifra desfasada: el CSV tiene 193) y recuento de archivos `.cs` fuera de `bin`/`obj` (203 = 193 + 10 de apoyo). Ninguna prueba está marcada con `Skip`: la búsqueda de `Skip =` en `UnitTests` e `IntegrationTests` no devolvió resultados.
 
@@ -131,7 +133,7 @@ Resumen por módulo:
 |---|---|---|
 | Auditoria | 1 | 1 |
 | Common | 6 | 38 |
-| DIGEMID | 7 | 23 |
+| DIGEMID | 9 | 31 |
 | Dashboard | 4 | 21 |
 | Delivery | 2 | 10 |
 | Devoluciones | 4 | 28 |
@@ -187,7 +189,9 @@ Resumen por módulo:
 | `Commands/CargaMasivaDigemid/CargaMasivaDigemidCommandHandlerTests.cs` | `CargaMasivaDigemidCommandHandler` | 2 | Omite filas cuya clave existe en la base o antes en el archivo; guarda la fila si la clave solo pertenece a una fila eliminada lógicamente. |
 | `Commands/CreateDigemidProducto/CreateDigemidProductoCommandHandlerTests.cs` | `CreateDigemidProductoCommandHandler` | 2 | Conflict sin guardar si `CodProd` ya existe; crea si solo existe en una fila eliminada. |
 | `Commands/GenerarActaDestruccion/GenerarActaDestruccionCommandHandlerTests.cs` | `GenerarActaDestruccionCommandHandler` | 2 | Crea el acta si el regente es de la empresa; NotFound si no lo es. |
-| `Commands/UpdateDigemidProducto/UpdateDigemidProductoCommandHandlerTests.cs` | `UpdateDigemidProductoCommandHandler` | 3 | Guarda si conserva su propio `CodProd`; Conflict si pertenece a otra fila; guarda si solo pertenece a una eliminada. |
+| `Commands/DeleteDigemidProducto/DeleteDigemidProductoCommandHandlerTests.cs` | `DeleteDigemidProductoCommandHandler` | 3 | (`9c16f35`) Elimina una fila de la empresa; devuelve Forbidden sin eliminar si la fila es del catálogo compartido; NotFound si no existe. |
+| `Commands/UpdateDigemidProducto/UpdateDigemidProductoCommandHandlerTests.cs` | `UpdateDigemidProductoCommandHandler` | 4 | Guarda si conserva su propio `CodProd`; Conflict si pertenece a otra fila; guarda si solo pertenece a una eliminada; (`9c16f35`) Forbidden sin cambiar nada si la fila es del catálogo compartido. |
+| `Domain/DigemidCatalogoProductoTests.cs` | `DigemidCatalogoProducto` (entidad) | 4 | (`9c16f35`) `Create` sin empresa es global y con empresa no lo es; `Update` falla conservando los valores si es global y funciona si pertenece a una empresa. |
 | `Domain/DigemidInventarioCuarentenaTests.cs` | `DigemidInventarioCuarentena` (entidad) | 3 | `Create` y `Update` rechazan un estado de resolución desconocido; `Create` acepta uno conocido. |
 
 ### 3.4 Dashboard
@@ -498,7 +502,7 @@ Resumen: 32 archivos, 172 pruebas; 26 archivos usan contenedor SQL Server y 6 no
 | `Security/JwtOptionsTests.cs` | Unidad de opciones (sin contenedor) | 3 | `JwtOptions.EnsureValid` | Válida con clave de 32 bytes, emisor y audiencia; lanza si la clave falta o mide menos de 32 bytes; lanza si emisor o audiencia están vacíos. |
 | `Security/MemoryPermissionCacheTests.cs` | Unidad de la caché (sin contenedor) | 3 | `MemoryPermissionCache` | Devuelve lo guardado ignorando mayúsculas del rol; otra empresa con el mismo nombre de rol no comparte la caché; `Invalidate` quita solo la empresa y el rol indicados. |
 | `Security/RateLimitingIntegrationTests.cs` | HTTP, base real | 6 | `POST /api/v1/auth/login` y `/auth/refresh` con IP simuladas | 429 si una misma IP excede el límite de autenticación; otra IP no se limita; el refresh no se limita al agotar la cuota de login; la partición por empresa aísla empresas con la misma IP, comparte la cuota dentro de una misma empresa y cae a la IP si el usuario no tiene empresa. |
-| `Security/TenantIsolationIntegrationTests.cs` | MediatR y `DbContext`, base real | 9 | Dos empresas; filas con y sin inquilino | `SaveChanges` asigna el inquilino actual; el filtro oculta filas de otro inquilino y las filas sin inquilino para cualquier empresa y contexto anónimo; el índice único de documento permite el mismo documento en inquilinos distintos; dos registros de empresa crean cada uno su rol Admin; el inicio de sesión funciona con cuenta de un inquilino en contexto anónimo; login y refresh ignoran roles enlazados de otro inquilino o sin inquilino; la caché de permisos no se comparte con un rol del mismo nombre en otra empresa; `UpdateEmpleado` rechaza una sucursal base de otro inquilino. |
+| `Security/TenantIsolationIntegrationTests.cs` | MediatR y `DbContext`, base real | 10 | Dos empresas; filas con y sin inquilino | `SaveChanges` asigna el inquilino actual; el filtro oculta filas de otro inquilino y las filas sin inquilino para cualquier empresa y contexto anónimo, salvo el catálogo DIGEMID, cuyas filas sin inquilino las ve toda empresa y las propias siguen privadas (`9c16f35`); el índice único de documento permite el mismo documento en inquilinos distintos; dos registros de empresa crean cada uno su rol Admin; el inicio de sesión funciona con cuenta de un inquilino en contexto anónimo; login y refresh ignoran roles enlazados de otro inquilino o sin inquilino; la caché de permisos no se comparte con un rol del mismo nombre en otra empresa; `UpdateEmpleado` rechaza una sucursal base de otro inquilino. |
 
 ### 4.4 Maestros y catálogos
 
@@ -556,7 +560,7 @@ Formato `con prueba / total`.
 | Dashboard | 0/0 | 3/3 | 0/0 | 0/5 | 4 / 0+5 | 21 |
 | Delivery | 1/4 | 0/2 | 1/1 | 0/2 | 0 / 0+0 | 10 |
 | Devoluciones | 1/1 | 1/2 | 1/2 | 0/2 | 0 / 0+0 | 28 |
-| DIGEMID | 5/6 | 2/4 | 1/4 | 0/5 | 0 / 0+0 | 23 |
+| DIGEMID | 6/6 | 2/4 | 2/4 | 0/5 | 0 / 0+0 | 31 |
 | Empleados | 3/3 | 2/3 | 1/1 | 0/2 | 2 / 2+2 | 61 |
 | Empresas | 1/2 | 1/2 | 1/1 | 0/2 | 3 / 1+0 | 57 |
 | FormulacionesClinicas | 3/3 | 2/2 | 1/1 | 0/3 | 1 / 1+1 | 40 |
@@ -582,9 +586,9 @@ Formato `con prueba / total`.
 | UnidadesMedida | 4/4 | 1/3 | 0/1 | 0/3 | 0 / 0+0 | 12 |
 | Ventas | 4/4 | 4/4 | 2/4 | 0/5 | 3 / 2+3 | 180 |
 | `Common` (sin módulo de Application) | — | — | — | — | — | 38 |
-| **Total** | **90/113** | **45/83** | **23/50** | **1/90** | — | **1 079** |
+| **Total** | **91/113** | **45/83** | **24/50** | **1/90** | — | **1 087** |
 
-Lectura rápida: los commands están bien cubiertos por pruebas de handler (80 %); los validadores un poco más de la mitad (54 %); las entidades con prueba de dominio dedicada, menos de la mitad (46 %, aunque varias de las restantes son líneas hijas que se prueban dentro de su agregado); los handlers de consulta casi nada, por convención (1.7). Catorce módulos no tienen ninguna prueba de integración que nombre sus commands o queries: Auditoria, Delivery, Devoluciones, DIGEMID, Inventarios, JerarquiasUoM, Magistrales, PresentacionesVenta, Recetas, Seguros, SeriesFiscales, Servicios, Transferencias y UnidadesMedida (ver 6).
+Lectura rápida (versión 1.1, con `9c16f35`): los commands están bien cubiertos por pruebas de handler (81 %); los validadores un poco más de la mitad (54 %); las entidades con prueba de dominio dedicada, menos de la mitad (48 %, aunque varias de las restantes son líneas hijas que se prueban dentro de su agregado); los handlers de consulta casi nada, por convención (1.7). Catorce módulos no tienen ninguna prueba de integración que nombre sus commands o queries: Auditoria, Delivery, Devoluciones, DIGEMID, Inventarios, JerarquiasUoM, Magistrales, PresentacionesVenta, Recetas, Seguros, SeriesFiscales, Servicios, Transferencias y UnidadesMedida (ver 6).
 
 Notas sobre la tabla:
 
@@ -602,11 +606,10 @@ De las 90 queries, 1 tiene prueba de handler unitaria (`PreviewImportMedicamento
 
 Todo lo que sigue sale del cruce del apartado 5 y de las pruebas catalogadas en 3 y 4. «Sin prueba» significa «ninguna prueba nombra la clase»; puede haber cobertura indirecta que el método no ve (por ejemplo, una entidad ejercitada dentro de otra). Los IDs `RN-…` son los de [01-reglas-de-negocio](../01-reglas-de-negocio/).
 
-### 6.1 Commands sin prueba de handler (23 de 113)
+### 6.1 Commands sin prueba de handler (22 de 113)
 
 | Módulo | Commands |
 |---|---|
-| DIGEMID | `DeleteDigemidProductoCommand` |
 | Delivery | `DeleteDespachoDeliveryCommand`, `UpdateDeliveryEstadoCommand`, `UpdateDespachoDeliveryCommand` (la transición de estado sí se prueba en la entidad `DespachoDelivery`) |
 | Empresas | `UpdateEmpresaCommand` |
 | Inventarios | `CreateLoteInventarioCommand`, `UpdateLoteInventarioCommand` (sus validadores sí tienen prueba) |
@@ -726,7 +729,7 @@ Los otros jobs del workflow (OWASP Dependency Check y gitleaks) no ejecutan prue
 
 **No verificado**
 
-1. **No se ejecutó ninguna prueba ni compilación** (prohibido en este encargo). No se sabe si hoy las 1 254 pruebas pasan; el documento describe lo que el código dice que verifican.
+1. **No se ejecutó ninguna prueba ni compilación** (prohibido en este encargo). No se sabe si hoy las 1 263 pruebas pasan; el documento describe lo que el código dice que verifican.
 2. Las cifras de pruebas son **métodos con `[Fact]`/`[Theory]`**, no casos: las 357 filas `[InlineData]` ejecutan más casos de los que cuentan.
 3. La cobertura del apartado 5 es **por nombre de clase**, no de líneas ni de ramas; no se ejecutó `coverlet`. Una clase cubierta por nombre puede tener ramas sin probar, y una clase «sin prueba» puede ejercitarse indirectamente.
 4. Los recuentos de subgrupos entre paréntesis de 3 (por ejemplo «(5)») se obtuvieron leyendo los nombres de los métodos, no ejecutando; los totales por archivo sí coinciden con el CSV.
@@ -748,7 +751,7 @@ Los otros jobs del workflow (OWASP Dependency Check y gitleaks) no ejecutan prue
 
 ### 9.1 Archivos de `pruebas-backend.csv`
 
-Los 193 archivos del inventario, con el apartado donde están documentados (el apartado 3.N es la sección del módulo; el 4.N, el área de integración).
+Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado donde están documentados (el apartado 3.N es la sección del módulo; el 4.N, el área de integración).
 
 | Archivo (`pruebas-backend.csv`) | Pruebas | Apartado |
 |---|---|---|
@@ -764,7 +767,9 @@ Los 193 archivos del inventario, con el apartado donde están documentados (el a
 | `SOFIA.UnitTests/DIGEMID/Commands/CargaMasivaDigemid/CargaMasivaDigemidCommandHandlerTests.cs` | 2 | 3.3 DIGEMID |
 | `SOFIA.UnitTests/DIGEMID/Commands/CreateDigemidProducto/CreateDigemidProductoCommandHandlerTests.cs` | 2 | 3.3 DIGEMID |
 | `SOFIA.UnitTests/DIGEMID/Commands/GenerarActaDestruccion/GenerarActaDestruccionCommandHandlerTests.cs` | 2 | 3.3 DIGEMID |
-| `SOFIA.UnitTests/DIGEMID/Commands/UpdateDigemidProducto/UpdateDigemidProductoCommandHandlerTests.cs` | 3 | 3.3 DIGEMID |
+| `SOFIA.UnitTests/DIGEMID/Commands/DeleteDigemidProducto/DeleteDigemidProductoCommandHandlerTests.cs` | 3 | 3.3 DIGEMID |
+| `SOFIA.UnitTests/DIGEMID/Commands/UpdateDigemidProducto/UpdateDigemidProductoCommandHandlerTests.cs` | 4 | 3.3 DIGEMID |
+| `SOFIA.UnitTests/DIGEMID/Domain/DigemidCatalogoProductoTests.cs` | 4 | 3.3 DIGEMID |
 | `SOFIA.UnitTests/DIGEMID/Domain/DigemidInventarioCuarentenaTests.cs` | 3 | 3.3 DIGEMID |
 | `SOFIA.UnitTests/Dashboard/Common/DashboardDiasTests.cs` | 7 | 3.4 Dashboard |
 | `SOFIA.UnitTests/Dashboard/Common/DashboardScopeTests.cs` | 4 | 3.4 Dashboard |
@@ -941,11 +946,11 @@ Los 193 archivos del inventario, con el apartado donde están documentados (el a
 | `SOFIA.IntegrationTests/Security/JwtOptionsTests.cs` | 3 | 4.3 |
 | `SOFIA.IntegrationTests/Security/MemoryPermissionCacheTests.cs` | 3 | 4.3 |
 | `SOFIA.IntegrationTests/Security/RateLimitingIntegrationTests.cs` | 6 | 4.3 |
-| `SOFIA.IntegrationTests/Security/TenantIsolationIntegrationTests.cs` | 9 | 4.3 |
+| `SOFIA.IntegrationTests/Security/TenantIsolationIntegrationTests.cs` | 10 | 4.3 |
 | `SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs` | 6 | 4.5 |
 | `SOFIA.IntegrationTests/Ventas/PosLookupsIntegrationTests.cs` | 9 | 4.5 |
 | `SOFIA.ArchitectureTests/ArchitectureTests.cs` | 3 | 2 |
-| **Total** | **1254** (193 archivos) | |
+| **Total** | **1263** (195 archivos) | |
 
 ### 9.2 Otros elementos del encargo y del inventario
 
