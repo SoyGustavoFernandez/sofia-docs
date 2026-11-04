@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
+| **Versión del documento** | 1.1 |
 | **Fecha** | 2026-10-14 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
@@ -191,7 +191,7 @@ Al registrarte o iniciar sesión llegas al **Inicio** (`/dashboard`, opción «D
 Lo que ves, de arriba hacia abajo, en una empresa recién creada (todo en cero):
 
 - Una tarjeta de cabecera con el saludo «Hola, Ana Demo Prueba» (tu nombre), «Este es el resumen de hoy.», «Actualizado a las {hora}» y el botón **Actualizar**, que vuelve a pedir los datos (el Inicio no se refresca solo).
-- **Ventas de hoy**: «Vendido hoy» (S/ 0.00), «Ayer», «Comprobantes», «Ticket promedio», «Mis ventas de hoy», «Ventas en espera» y «Cobrado por método de pago» (Efectivo, Yape / Plin, Tarjeta, Transferencia), con los botones **Ver ventas de hoy**, **Ver mis ventas** y **Ver ventas en espera**.
+- **Ventas de hoy**: «Vendido hoy» (S/ 0.00), «Ayer», «Comprobantes», «Ticket promedio», «Mis ventas de hoy», «Ventas en espera» y «Cobrado por método de pago» (Efectivo, Yape / Plin, Tarjeta, Transferencia), con los botones **Ver ventas de hoy**, **Ver mis ventas** y **Ver ventas en espera**. Esos tres botones se ocultan cuando el usuario ve más de una sucursal; la condición completa está en el [capítulo 10](capitulo-10-inicio-y-roles.md).
 - **Caja**: «No tienes una caja abierta», con el botón **Abrir caja**.
 - **Inventario**: lotes vencidos, lotes que vencen en 30 días o menos, entre 31 y 60 y entre 61 y 90, productos sin stock, productos con stock bajo y lotes en cuarentena.
 - **Ventas de los últimos 7 días** y **Productos más vendidos en 7 días** («Aún no hay ventas en los últimos 7 días.»).
