@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` (recorrido); los avisos de roles, cuentas y empleados están reconciliados con `37d053d` y `7070e1a` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -108,6 +108,7 @@ Errores que puedes ver al guardar un empleado:
 | «Ingresa un correo electrónico válido.» | El correo no tiene forma de correo | Corrígelo |
 | «Ya existe un empleado con ese correo electrónico en tu empresa.» | Otro empleado de tu empresa ya usa ese correo (no distingue mayúsculas) | Usa otro correo |
 | «Ya existe un empleado con esa licencia profesional.» | Otro empleado de tu empresa ya tiene esa licencia | Revisa el número |
+| «No puedes cambiar tu propia sucursal base.» | Intentaste cambiar la sucursal base de tu propio empleado (desde `sofia-web-spa` `37d053d`; No verificado en la aplicación) | Pídele a otro administrador que lo haga |
 | «Error al guardar el empleado» | Cualquier otro problema (por ejemplo, la sucursal ya no existe) | Revisa los datos e inténtalo de nuevo |
 
 (El de la licencia repetida se comprueba en la sección 9.1. «Error al guardar el empleado» no verificado en la aplicación: no se pudo provocar; viene del inventario 19b §3.2.)
@@ -201,7 +202,7 @@ La pantalla muestra la flecha de volver, el título «Roles», las migas, tres c
 **Antes de guardar, prueba los errores** (comprobado en la aplicación):
 
 1. Con el formulario como se abre, haz clic en **Guardar**: aparece «Este campo es obligatorio» bajo «Nombre del Rol» y bajo «Nivel de Jerarquía».
-2. Escribe `Admin` como nombre y `5` como nivel y haz clic en **Guardar**: aparece el aviso rojo «Error al guardar el rol» y te quedas en la pantalla. Esa es la forma en que SOFIA avisa que **el nombre ya existe** (no lo dice con más detalle).
+2. Escribe `Admin` como nombre y `5` como nivel y haz clic en **Guardar**: aparece el aviso rojo «Ya existe un rol con ese nombre.» y te quedas en la pantalla (desde `sofia-web-spa` `37d053d`; cuando se recorrió este capítulo, con `eeffbb6`, el aviso era solo «Error al guardar el rol», sin más detalle; el aviso nuevo es **No verificado en la aplicación**).
 
 **Guardar el rol «Cajero»:** escribe `Cajero`, nivel `30` y la descripción de la tabla, y haz clic en **Guardar**. Aparece el aviso «Rol guardado correctamente» y el sistema te lleva a la lista de roles (`/roles`, sin tabla hasta que hagas clic en **Buscar**). Ahora la lista muestra:
 
@@ -393,8 +394,8 @@ Comprobado: el filtro «Bloqueado» = «Sí» trae solo las cuentas bloqueadas (
 1. Con el formulario vacío haz clic en **Guardar**: aparece «Este campo es obligatorio» bajo los tres campos.
 2. Escribe un usuario de más de 50 caracteres: aparece «La longitud máxima es de 100 caracteres».
 3. Escribe una contraseña de 7 caracteres y un usuario válido: no aparece ningún mensaje y no se guarda. Usa 8 o más caracteres.
-4. Escribe un usuario que ya existe (por ejemplo `ana.manual`): aparece el aviso rojo «Error al guardar la cuenta».
-5. Elige un empleado que ya tiene cuenta: aparece «Error al guardar la cuenta».
+4. Escribe un usuario que ya existe (por ejemplo `ana.manual`): aparece el aviso rojo «Ya existe una cuenta con ese nombre de usuario.» (desde `sofia-web-spa` `37d053d`; con `eeffbb6`, cuando se recorrió este capítulo, aparecía «Error al guardar la cuenta»).
+5. Elige un empleado que ya tiene cuenta: aparece «Este empleado ya tiene una cuenta de usuario vinculada.» (desde `37d053d`; con `eeffbb6` aparecía «Error al guardar la cuenta»). Los dos avisos nuevos son **No verificados en la aplicación**.
 
 **Qué contraseña inicial usar.** Genera una contraseña de al menos 12 caracteres con mayúsculas, minúsculas, números y un símbolo, y entrégasela a la persona por un medio privado. SOFIA no la vuelve a mostrar y la persona **tendrá que cambiarla** en su primer ingreso (sección 8). Para el cajero del ejemplo se usó el usuario `carlos.cajero` con una contraseña generada para esta prueba (no se escribe en el manual).
 
@@ -441,7 +442,7 @@ Al hacer clic en **Editar** la ficha muestra «Nombre de Usuario» y «Empleado�
 | Control | Qué hace |
 |---|---|
 | **Cuenta Activa** (interruptor) | Empieza con el valor actual. Apagado, la cuenta queda «Inactiva»: la persona **no puede iniciar sesión** ni renovar su sesión; el resto de su ficha no se borra. Sirve para suspender un acceso sin eliminar la cuenta (por ejemplo, vacaciones largas o una investigación). Se vuelve a activar con el mismo interruptor |
-| **Forzar Cambio de Contraseña** (interruptor) | Empieza siempre apagado. Si lo enciendes y guardas, la ficha muestra «Requiere Cambio de Clave: Sí» y en su próximo ingreso la persona tendrá que cambiar su contraseña (sección 8). Úsalo, por ejemplo, cuando sospeches que otras personas conocen la contraseña. No hay forma de apagarlo a mano: se apaga solo cuando la persona cambia su contraseña |
+| **Forzar Cambio de Contraseña** (interruptor) | Empieza apagado (con `sofia-web-spa` `eeffbb6`, cuando se recorrió este capítulo, empezaba siempre apagado). Desde `7070e1a`, si la cuenta ya requiere el cambio, el interruptor se abre **encendido y deshabilitado** con la nota «Ya requiere cambio de clave; se quita cuando el usuario la cambie.» (**No verificado en la aplicación**). Si lo enciendes y guardas, la ficha muestra «Requiere Cambio de Clave: Sí» y en su próximo ingreso la persona tendrá que cambiar su contraseña (sección 8). Úsalo, por ejemplo, cuando sospeches que otras personas conocen la contraseña. No hay forma de apagarlo a mano: se apaga solo cuando la persona cambia su contraseña |
 | **Resetear Intentos Fallidos** (casilla) | Empieza siempre desmarcada. Si la marcas y guardas, los intentos fallidos vuelven a 0 y **se quita el bloqueo**. Es la única forma de desbloquear una cuenta antes de que pasen los 15 minutos |
 
 Los tres se aplican con **Guardar**; aparece «Cuenta guardada correctamente» y la ficha vuelve al modo ver, en la misma pantalla. **Cancelar** descarta lo que cambiaste.
@@ -545,7 +546,7 @@ Para probar estas acciones sin tocar a tu equipo real se crearon, solo para esto
 
 Comprobado en la aplicación: se agregó el apellido materno «Borrar» a «Pedro Prueba» y se guardó. Registrar un empleado con la licencia de otro (`QF-DEMO-0001`, que ya tiene Nora) mostró «Ya existe un empleado con esa licencia profesional.»
 
-Dos reglas que no verás en la pantalla: **nadie puede cambiar su propia sucursal base** (si lo intentas con tu propio empleado aparece solo «Error al guardar el empleado»), y cuando le cambias la sucursal base a un empleado con cuenta, SOFIA le cierra la sesión actual. (No verificado en la aplicación: vienen de las reglas RN-EPL-011 y RN-EPL-012.)
+Dos reglas que no verás en la pantalla: **nadie puede cambiar su propia sucursal base** (si lo intentas con tu propio empleado aparece «No puedes cambiar tu propia sucursal base.» desde `sofia-web-spa` `37d053d`; con `eeffbb6` aparecía solo «Error al guardar el empleado»; No verificado en la aplicación), y cuando le cambias la sucursal base a un empleado con cuenta, SOFIA le cierra la sesión actual. (No verificado en la aplicación: vienen de las reglas RN-EPL-011 y RN-EPL-012.)
 
 **Eliminar.**
 
@@ -586,7 +587,7 @@ Eliminar la cuenta **no** elimina al empleado: la persona sigue en la lista de e
 2. Se abre un cuadro «Confirmar eliminación» con el mensaje «¿Estás seguro de que deseas eliminar este rol?» y los botones **Cancelar** y **Confirmar**. **Cancelar** cierra el cuadro y te deja en el modo editar (comprobado).
 3. **Confirmar**: aparece «Rol eliminado correctamente» y vuelves a la lista de roles.
 
-**Qué impide eliminar un rol: que tenga cuentas.** Comprobado: se asignó «Rol Prueba Eliminar» a la cuenta de prueba y se intentó eliminar; apareció el aviso rojo «Error al eliminar el rol» (sin más explicación) y el rol siguió existiendo. Para poder eliminarlo, cambia primero el rol de esas cuentas a otro (sección 7.3); después sí aparece «Rol eliminado correctamente». El aviso es el mismo para cualquier otro fallo al eliminar.
+**Qué impide eliminar un rol: que tenga cuentas.** Comprobado: se asignó «Rol Prueba Eliminar» a la cuenta de prueba y se intentó eliminar; apareció el aviso rojo «Error al eliminar el rol» (sin más explicación, con `eeffbb6`; desde `sofia-web-spa` `37d053d` el aviso es «No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.», **No verificado en la aplicación**) y el rol siguió existiendo. Para poder eliminarlo, cambia primero el rol de esas cuentas a otro (sección 7.3); después sí aparece «Rol eliminado correctamente». El aviso es el mismo para cualquier otro fallo al eliminar.
 
 El rol «Admin» no tiene una protección especial en la pantalla: no lo elimines mientras alguna cuenta lo use. Si borraras el rol «Admin» sin cuentas, tu empresa perdería su acceso total. Por tanto, **no elimines el rol «Admin»**.
 
@@ -673,8 +674,8 @@ Lo que hace la aplicación coincidió con el inventario `19b-administracion.md` 
 | 4 | 19b §5.2 (cuenta, mensaje de longitud) | El aviso de longitud máxima del usuario dice 100 y el validador es 50 | Coincide: con más de 50 caracteres aparece «La longitud máxima es de 100 caracteres» |
 | 5 | 19b §5.2 y RN-CTA-004 (contraseña) | Pide de 8 a 128 caracteres pero solo avisa si está vacía | Coincide: con 7 caracteres no aparece ningún mensaje y no se guarda |
 | 6 | 19b §4.2 y RN-ROL-004 (nivel) | El formulario exige mínimo 1 y muestra «Este campo es obligatorio» | Coincide: el valor inicial `0` da «Este campo es obligatorio» |
-| 7 | 19b §4.2 (nombre del rol) | El formulario admite 100 caracteres y la API 50; el nombre duplicado y los de 51 a 100 dan «Error al guardar el rol» | Coincide (se comprobó con `Admin` repetido y con un nombre de 60 caracteres) |
-| 8 | 19b §4.2 (eliminar rol con cuentas) | Cualquier error, incluido el rol en uso, muestra «Error al eliminar el rol» | Coincide (comprobado con un rol asignado a una cuenta) |
+| 7 | 19b §4.2 (nombre del rol) | El formulario admite 100 caracteres y la API 50; el nombre duplicado y los de 51 a 100 dan «Error al guardar el rol» | Coincidía con `eeffbb6` (se comprobó con `Admin` repetido y con un nombre de 60 caracteres); desde `37d053d` el nombre duplicado da «Ya existe un rol con ese nombre.» y el de 51 a 100 sigue dando el genérico |
+| 8 | 19b §4.2 (eliminar rol con cuentas) | Cualquier error, incluido el rol en uso, muestra «Error al eliminar el rol» | Coincidía con `eeffbb6` (comprobado con un rol asignado a una cuenta); desde `37d053d` el rol en uso muestra «No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.» |
 | 9 | 19b §5.2 (rol de la cuenta) | La pantalla trabaja con un solo rol; el buscador trae el rol actual como texto inicial | Coincide. Matiz comprobado: como el texto inicial filtra la lista, para cambiar de rol hay que borrar el texto y escribir el nombre del rol nuevo |
 | 10 | 05b §6.5 (permisos de un cajero) | «No es una configuración existente ni una recomendación de negocio» | Se tomó como insumo; el conjunto de 19 permisos de la sección 5.3 se verificó en la aplicación: con él cargaron sin error de permisos el dashboard, las sesiones de caja, la lista de ventas y la pantalla de venta nueva. Se agregaron `Profesionales de Salud › Leer` (para registrar una receta) y `Empleados › Leer` (filtro de la lista de ventas), que 05b §5 lista como lecturas adicionales |
 | 11 | 19a §2 (cambio obligatorio de contraseña) | Cualquier opción del menú rebota a `/cambiar-clave` | Coincide, sin ningún aviso. Matiz: el mensaje de ingreso fallido aparece dentro de la propia pantalla de ingreso, no como aviso inferior |
@@ -706,7 +707,7 @@ Hallazgos de la aplicación que conviene conocer (no son errores del manual):
 - El aviso «Error al cargar la cuenta» puede mostrarse como `cuentas.detail.load-error` (clave sin traducir) al abrir la ficha por dirección directa.
 - Una cuenta recién creada no pide rol ni sucursales en el formulario; quien la crea tiene que recordar asignarlos (queda «Sin roles asignados»).
 - El correo se valida en pantalla de forma laxa (`persona@dominio` sin punto pasa) y recién el servidor lo rechaza.
-- Los avisos de rol duplicado, nombre demasiado largo o rol en uso son todos el mismo genérico «Error al guardar el rol» / «Error al eliminar el rol», sin decir la causa.
+- Con `eeffbb6`, los avisos de rol duplicado, nombre demasiado largo o rol en uso eran todos el mismo genérico «Error al guardar el rol» / «Error al eliminar el rol», sin decir la causa. Desde `sofia-web-spa` `37d053d` el rol duplicado («Ya existe un rol con ese nombre.») y el rol en uso («No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.») tienen mensaje propio; el nombre demasiado largo sigue con el genérico.
 - El cajero con `Empleados › Leer` ve los correos de todos los empleados.
 
 ## 14. Tabla de cobertura
@@ -790,8 +791,8 @@ Cada elemento de las fichas de `19b-administracion.md` de Empleados (§3), Roles
 | Cuadro «Confirmar eliminación» («¿Estás seguro de que deseas eliminar este rol?») | 9.3 (verificado) |
 | «Rol guardado correctamente» | 5.1, 5.4, 6 (verificado) |
 | «No se pueden ampliar los permisos de un rol que la propia cuenta tiene asignado» | 6 (No verificado, ver 13 #3) |
-| «Error al guardar el rol» (duplicado, nombre largo) | 5.1 (verificado) |
-| «Rol eliminado correctamente»; «Error al eliminar el rol» (rol con cuentas) | 9.3 (verificado) |
+| «Error al guardar el rol» (duplicado, nombre largo) | 5.1 (verificado con `eeffbb6`; desde `37d053d` el duplicado cambia a «Ya existe un rol con ese nombre.», No verificado) |
+| «Rol eliminado correctamente»; «Error al eliminar el rol» (rol con cuentas) | 9.3 (verificado con `eeffbb6`; desde `37d053d` el rol en uso cambia de aviso, No verificado) |
 | «Error al cargar el rol», «Error al cargar los permisos», «Error al cargar las sucursales» | 5.2, 5.5 (No verificado, ver 13 #7) |
 | Nivel de jerarquía: solo ordena, no limita nada | 5.1 |
 | Permisos recomendados de un cajero (19 permisos) | 5.3, 5.4 (verificado) |
@@ -832,14 +833,14 @@ Cada elemento de las fichas de `19b-administracion.md` de Empleados (§3), Roles
 | Contraseña inicial definida por el administrador; cuenta nace con cambio obligatorio | 7.2, 8.1 (verificado) |
 | Datos en modo ver (Nombre de Usuario, Empleado, Intentos Fallidos, Cuenta Activa, Bloqueado, Requiere Cambio de Clave, Bloqueado Hasta, Creado el) | 7.4 (verificado) |
 | Interruptor **Cuenta Activa** | 7.5 (verificado) |
-| Interruptor **Forzar Cambio de Contraseña** | 7.5 (verificado) |
+| Interruptor **Forzar Cambio de Contraseña** | 7.5 (verificado con `eeffbb6`; el estado encendido y deshabilitado de `7070e1a` es No verificado) |
 | Casilla **Resetear Intentos Fallidos** y desbloqueo | 7.5, 7.6 (verificado) |
 | Tarjeta «Roles Asignados» (subtítulo, «Agregar rol...», «Sin roles asignados», un solo rol, no se puede vaciar) | 7.3 (verificado) |
 | Tarjeta «Sucursales Asignadas» (subtítulo, «Agregar sucursal...», «Sin sucursales adicionales asignadas», icono «Quitar sucursal», cambios inmediatos) | 7.7 (verificado) |
 | Botones **Editar**, **Cancelar**, **Guardar**, **Eliminar** | 7.3, 7.5, 9.2 (verificado) |
 | Cuadro «Eliminar cuenta» y mensaje «¿Estás seguro de que deseas eliminar esta cuenta de usuario? Esta acción no se puede deshacer.» con **Confirmar** y **Cancelar** | 9.2 (verificado) |
 | «Cuenta guardada correctamente» | 7.2, 7.3, 7.5 (verificado) |
-| «Error al guardar la cuenta» (usuario repetido, empleado con cuenta) | 7.2 (verificado) |
+| «Error al guardar la cuenta» (usuario repetido, empleado con cuenta) | 7.2 (verificado con `eeffbb6`; desde `37d053d` esos dos casos tienen aviso propio, No verificado) |
 | «Cuenta eliminada correctamente» | 9.2 (verificado) |
 | «Sucursal asignada correctamente» y «Sucursal eliminada correctamente» | 7.7 (verificado) |
 | «Una cuenta no puede modificar sus propios roles», «Solo un administrador puede asignar o quitar el rol Admin», «Solo un administrador puede modificar o eliminar la cuenta de un administrador», «La cuenta no existe», «La sucursal no existe» | 7.3, 7.7, 9.2 (No verificado, ver 13 #3 y #7) |
