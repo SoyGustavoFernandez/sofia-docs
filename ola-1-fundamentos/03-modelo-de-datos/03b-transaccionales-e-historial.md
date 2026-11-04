@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; el historial de scripts (`0003`, `0004`, `0005`) está reconciliado con `34089ec` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código: scripts DbUp `0001`–`0028` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio; historial de commits con `git log` de solo lectura. No se consultó la base de datos ni la API. |
 
@@ -31,7 +31,7 @@ Igual que en la Parte A ([secciones 1.2 y 2](03a-maestros-y-seguridad.md#12-cóm
 ## 2. Convenciones comunes (enlazadas a la Parte A)
 
 - Claves primarias `UNIQUEIDENTIFIER` con `DEFAULT NEWSEQUENTIALID()` y sin nombre en el script: [Parte A, 2.1](03a-maestros-y-seguridad.md#21-claves-primarias). Las claves foráneas de estas tablas, salvo indicación, **no definen `ON DELETE`** (sin acción).
-- `TenantId`: [Parte A, 2.2](03a-maestros-y-seguridad.md#22-multiempresa-columna-tenantid). Las 23 tablas de esta Parte B tenían `IsDeleted` cuando corrió el `0005`, así que **las 23 recibieron `TenantId UNIQUEIDENTIFIER NULL`** del SQL dinámico (`0005:54-70`), sin clave foránea y sin valor por defecto. Por eso `TenantId` no se repite en cada tabla de columnas: figura en la línea «Multiempresa, borrado lógico, auditoría, RowVersion» de cada una.
+- `TenantId`: [Parte A, 2.2](03a-maestros-y-seguridad.md#22-multiempresa-columna-tenantid). Las 23 tablas de esta Parte B tenían `IsDeleted` cuando corrió el `0005`, así que **las 23 recibieron `TenantId UNIQUEIDENTIFIER NULL`** del SQL dinámico (`0005:59-75`), sin clave foránea y sin valor por defecto. Por eso `TenantId` no se repite en cada tabla de columnas: figura en la línea «Multiempresa, borrado lógico, auditoría, RowVersion» de cada una.
 - Borrado lógico y auditoría: [Parte A, 2.3](03a-maestros-y-seguridad.md#23-borrado-lógico-y-auditoría). `RowVersion`: [Parte A, 2.4](03a-maestros-y-seguridad.md#24-concurrencia-rowversion).
 - Unicidad por empresa y sensible al borrado lógico: [Parte A, 2.6](03a-maestros-y-seguridad.md#26-unicidad-por-empresa-y-sensible-al-borrado-lógico).
 
@@ -65,7 +65,7 @@ Igual que en la Parte A ([secciones 1.2 y 2](03a-maestros-y-seguridad.md#12-cóm
 | `Servicios_Agenda` | Sí | Sí (solo `IsDeleted`) | Parcial: solo `CreatedAt` y `CreatedBy` (`0001:760-762`) | No |
 | `Servicios_Clinicos_Inmunizacion` | Sí | Sí | Completa | No |
 
-(Fuentes de la tabla: `0001` para cada `CREATE TABLE`, `0005:54-70`, `0019:2-16`.)
+(Fuentes de la tabla: `0001` para cada `CREATE TABLE`, `0005:59-75`, `0019:2-16`.)
 
 ### 2.2 Columnas de auditoría estándar de las tablas de esta Parte B
 
@@ -93,7 +93,7 @@ Varias columnas de fecha de estas tablas son `DATETIME` (sin zona horaria). El `
 | `Fecha_Fabricacion` | `DATETIMEOFFSET` | Sí | — | Fecha de fabricación. | `0001:152` |
 | `Fecha_Caducidad` | `DATETIMEOFFSET` | No | — | Fecha de caducidad. | `0001:153` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | `CreatedAt`, `CreatedBy`, `LastModifiedAt`, `LastModifiedBy`, `IsDeleted`, `DeletedAt`, `DeletedBy`. | `0001:154-160` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Lote_ID` (sin nombre en el script).
 
@@ -124,7 +124,7 @@ Varias columnas de fecha de estas tablas son `DATETIME` (sin zona horaria). El `
 | `Lote_ID` | `UNIQUEIDENTIFIER` | No | — | Lote almacenado. | `0001:171` |
 | `Cantidad_Fisica` | `DECIMAL(12,4)` | No | — | Cantidad física en unidad base. No puede ser negativa (`CHK_Inventario_Positivo`). | `0001:172` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:173-179` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `RowVersion` | `ROWVERSION` | No | automático | Concurrencia optimista: evita que dos ventas o transferencias simultáneas pisen la misma cantidad. | `0019:2-4` |
 
 **Clave primaria:** `Registro_Inv_ID`.
@@ -161,7 +161,7 @@ El comentario del `0018` dice que ese índice estaba «declarado por el modelo d
 | `Fecha_Despacho` | `DATETIME` | No | — | Fecha de despacho. | `0001:192` |
 | `Fecha_Recepcion` | `DATETIME` | Sí | — | Fecha de recepción. | `0001:193` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:194-200` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `RowVersion` | `ROWVERSION` | No | automático | Concurrencia optimista. | `0019:10-12` |
 
 **Clave primaria:** `Transferencia_ID`.
@@ -177,7 +177,7 @@ El comentario del `0018` dice que ese índice estaba «declarado por el modelo d
 |---|---|---|---|
 | `CHK_Estado_Logistico` | `CHECK` | `Estado_Logistico IN ('Iniciada', 'Aprobada', 'En_Transito', 'Recibida_Parcial', 'Completada', 'Cancelada')` | `0001:201` |
 
-No hay índices adicionales. Nada impide en la base que origen y destino sean la misma sucursal.
+No hay índices adicionales. La base no tiene ningún `CHECK` que impida que origen y destino sean la misma sucursal, pero el dominio sí lo rechaza al crear la transferencia (`sofia-apis/src/SOFIA.Domain/Entities/Transferencia.cs:47-50`, error `Transferencia.SucursalDestinoId`).
 **Multiempresa, borrado lógico, auditoría, RowVersion:** `TenantId` sí; `IsDeleted` sí; auditoría completa; `RowVersion` sí.
 **Datos sembrados:** ninguno.
 
@@ -195,7 +195,7 @@ No hay índices adicionales. Nada impide en la base que origen y destino sean la
 | `Cantidad_Enviada` | `DECIMAL(12,4)` | No | — | Cantidad despachada; debe ser mayor que cero. | `0001:212` |
 | `Cantidad_Recibida` | `DECIMAL(12,4)` | Sí | — | Cantidad recibida; entre 0 y la enviada. | `0001:213` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:214-220` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Detalle_Transf_ID`.
 
@@ -234,7 +234,7 @@ El catálogo `DIGEMID_Catalogo_Productos` es de la [Parte A](03a-maestros-y-segu
 | `Estado_Resolucion` | `VARCHAR(20)` | Sí | `'Retenido'` | Estado de la resolución. Sin `CHECK` en la base; el dominio restringe a `Retenido`, `Liberado`, `Destruido`, `Devuelto` (`sofia-apis/src/SOFIA.Domain/Enums/EstadoResolucionCuarentena.cs`). | `0001:640` |
 | `Empleado_Registra_ID` | `UNIQUEIDENTIFIER` | No | — | Empleado que registra el aislamiento. | `0001:641` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:642-648` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Registro_Cuarentena_ID`.
 
@@ -265,7 +265,7 @@ El catálogo `DIGEMID_Catalogo_Productos` es de la [Parte A](03a-maestros-y-segu
 | `Regente_Responsable_ID` | `UNIQUEIDENTIFIER` | No | — | Empleado regente responsable. | `0001:661` |
 | `Ruta_Acta_Firmada_PDF` | `VARCHAR(500)` | Sí | — | Ruta del PDF firmado. | `0001:662` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:663-669` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Acta_ID`.
 
@@ -295,7 +295,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Registro_Cuarentena_ID` | `UNIQUEIDENTIFIER` | No | — | Registro de cuarentena destruido. | `0001:676` |
 | `Cantidad_Destruida` | `DECIMAL(12,4)` | No | — | Cantidad destruida. | `0001:677` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:678-684` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Detalle_Acta_ID`.
 
@@ -327,7 +327,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Repeticiones_Max` | `INT` | Sí | `0` | Máximo de repeticiones. | `0001:301` |
 | `Indicaciones_Uso` | `VARCHAR(MAX)` | Sí | — | Indicaciones de uso. | `0001:302` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:303-309` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `Numero_Receta` | `VARCHAR(30)` | Sí | — | Número de la receta tal como figura en el documento; el `0025` lo agrega «el número de receta que necesitan los productos controlados» (`0025:1`). | `0025:18-19` |
 
 **Clave primaria:** `Receta_ID`.
@@ -358,7 +358,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Requiere_Revision_Humana` | `BIT` | Sí | `1` | Marca de revisión humana pendiente. | `0001:419` |
 | `Fecha_Procesamiento` | `DATETIME` | Sí | `CURRENT_TIMESTAMP` | Fecha de procesamiento. | `0001:420` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:421-427` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Procesamiento_ID`.
 
@@ -391,7 +391,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Diferencia_Arqueo` | `DECIMAL(10,2)` | Sí | — | Diferencia entre declarado y calculado. | `0001:323` |
 | `Estado_Sesion` | `VARCHAR(20)` | No | `'Abierta'` | Estado. Valores permitidos por el `CHECK`: `Abierta`, `Cerrada`, `Cuadrada`; coinciden con las descripciones del enum `EstadoSesion` (`sofia-apis/src/SOFIA.Domain/Enums/EstadoSesion.cs`). | `0001:324` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:325-331` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `RowVersion` | `ROWVERSION` | No | automático | Concurrencia optimista. | `0019:14-16` |
 
 **Clave primaria:** `Sesion_ID`.
@@ -430,7 +430,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Estado` | `VARCHAR(20)` | No | `'Completada'` | Estado. Valores permitidos por el `CHECK`: `Completada`, `Anulada`, `Devuelta`, `Pendiente`; son los nombres del enum `EstadoVenta` (`sofia-apis/src/SOFIA.Domain/Enums/EstadoVenta.cs`). | `0001:345` |
 | `Motivo_Anulacion` | `VARCHAR(255)` | Sí | — | Motivo de anulación. | `0001:346` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:347-353` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `RowVersion` | `ROWVERSION` | No | automático | Concurrencia optimista (dos operaciones simultáneas sobre la misma venta). | `0019:6-8` |
 | `Empleado_Verifica_Receta_ID` | `UNIQUEIDENTIFIER` | Sí | — | Empleado que verificó la receta al cobrar (rastro de la verificación). | `0025:6-7` |
 | `Fecha_Verificacion_Receta` | `DATETIME` | Sí | — | Fecha y hora de esa verificación. | `0025:10-11` |
@@ -474,7 +474,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Precio_Fijado_Unidad` | `DECIMAL(10,2)` | No | — | Precio unitario fijado al vender; no puede ser negativo. | `0001:367` |
 | `Costo_Unitario_Historico` | `DECIMAL(10,2)` | No | — | Costo unitario al momento de la venta. | `0001:368` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:369-375` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `Presentacion_ID` | `UNIQUEIDENTIFIER` | Sí | — | Presentación de venta elegida; nula para ventas anteriores o hechas sin presentación (`0010:25-27`). | `0010:27` |
 | `Cantidad_En_Presentacion` | `DECIMAL(12,4)` | Sí | — | Cantidad expresada en la presentación vendida. | `0010:30` |
 
@@ -513,7 +513,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Referencia_Operacion` | `VARCHAR(100)` | Sí | — | Referencia de la operación (por ejemplo número de transferencia). | `0001:741` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:742-748` |
 | `Fecha_Pago` | `DATETIME` | Sí | `CURRENT_TIMESTAMP` | Fecha del pago (declarada después de las columnas de auditoría). | `0001:749` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Pago_ID`.
 
@@ -545,7 +545,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Estado_Reclamo` | `VARCHAR(50)` | No | — | Estado del reclamo; sin `CHECK`. El único valor que escribe el código es `Aprobado`. | `0001:450` |
 | `Codigo_Autorizacion` | `VARCHAR(100)` | Sí | — | Código de autorización. | `0001:451` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:452-458` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Reclamo_ID`.
 
@@ -577,7 +577,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Correlativo_Actual` | `INT` | No | `0` | Último número emitido de la serie. | `0001:546` |
 | `Estado_Serie` | `VARCHAR(10)` | Sí | `'Activa'` | Estado. Sin `CHECK`; el dominio solo acepta `Activa` o `Inactiva` (`Ent/SunatSerieFiscal.cs:9-10,29`). | `0001:547` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:548-554` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Serie_ID`.
 
@@ -622,7 +622,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 | `Ruta_Archivo_CDR` | `VARCHAR(500)` | Sí | — | Ruta de la constancia de recepción. | `0001:575` |
 | `URL_Publica_Verificacion` | `VARCHAR(500)` | Sí | — | URL pública de verificación. | `0001:576` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:577-583` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Comprobante_ID`.
 
@@ -663,7 +663,7 @@ Las escribe `ProcesarDevolucionCommandHandler`. No hay ruta de listado ni detall
 | `Sustento_Descriptivo` | `VARCHAR(255)` | No | — | Sustento en texto. | `0001:597` |
 | `Fecha_Devolucion` | `DATETIME` | Sí | `CURRENT_TIMESTAMP` | Fecha de la devolución. | `0001:598` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:599-605` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 | `Sesion_ID` | `UNIQUEIDENTIFIER` | Sí | — | Sesión de caja desde la que se reembolsó, para que el arqueo reste los reembolsos en efectivo (`0016:1`). | `0016:2-3` |
 | `Monto_Reembolsado` | `DECIMAL(12,2)` | Sí | — | Monto devuelto al cliente; no puede ser negativo. | `0016:4` |
 | `Metodo_Reembolso` | `VARCHAR(50)` | Sí | — | Medio del reembolso (descripción del enum `MetodoPago`, `Cfg/DevolucionCabeceraConfiguration.cs:53-56`). | `0016:5` |
@@ -701,7 +701,7 @@ Las escribe `ProcesarDevolucionCommandHandler`. No hay ruta de listado ni detall
 | `Cantidad_Devuelta` | `DECIMAL(8,2)` | No | — | Cantidad devuelta (unidad base); mayor que cero. | `0001:615` |
 | `Destino_Fisico_Logico` | `VARCHAR(30)` | No | — | Destino del producto. Valores del `CHECK`: `Reingreso_Venta`, `Cuarentena_DIGEMID` (enum `DestinoDevolucion`, `sofia-apis/src/SOFIA.Domain/Enums/DestinoDevolucion.cs`). | `0001:616` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:617-623` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Detalle_Dev_ID`.
 
@@ -743,7 +743,7 @@ Ninguno de estos módulos tiene pantalla enrutada (**Solo API (sin pantalla)**; 
 | `Repartidor_Nombre` | `VARCHAR(150)` | Sí | — | Nombre del repartidor. | `0001:470` |
 | `Evidencia_Fotografica_URL` | `VARCHAR(500)` | Sí | — | URL de la evidencia. | `0001:471` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:472-478` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Despacho_ID`.
 
@@ -777,7 +777,7 @@ Ninguno de estos módulos tiene pantalla enrutada (**Solo API (sin pantalla)**; 
 | `Fecha_Preparacion` | `DATETIME` | Sí | `CURRENT_TIMESTAMP` | Fecha de preparación. | `0001:700` |
 | `Estado_Produccion` | `VARCHAR(20)` | Sí | `'En_Proceso'` | Estado, sin `CHECK`. El código usa `Iniciada` y `Completada` (`Ent/MagistralOrdenProduccion.cs:9-10`), no el `En_Proceso` que declara la base como valor por defecto. | `0001:701` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:702-708` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Orden_Produccion_ID`.
 
@@ -807,7 +807,7 @@ Ninguno de estos módulos tiene pantalla enrutada (**Solo API (sin pantalla)**; 
 | `Cantidad_Consumida` | `DECIMAL(12,4)` | No | — | Cantidad consumida. Sin `CHECK`. | `0001:720` |
 | `Unidad_Medida` | `VARCHAR(20)` | No | — | Unidad como **texto libre** (no es clave foránea a `Unidades_Medida`). | `0001:721` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:722-728` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Consumo_ID`.
 
@@ -837,7 +837,7 @@ Ninguno de estos módulos tiene pantalla enrutada (**Solo API (sin pantalla)**; 
 | `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0001:760` |
 | `CreatedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario creador. | `0001:761` |
 | `IsDeleted` | `BIT` | No | `0` | Borrado lógico. | `0001:762` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Columnas que EF mapea y el script no crea (confirmado):** `LastModifiedAt`, `LastModifiedBy`, `DeletedAt`, `DeletedBy`. El `CREATE TABLE` (`0001:753-766`) solo declara `CreatedAt`, `CreatedBy` e `IsDeleted` de las siete columnas estándar, y ningún script posterior las agrega; la configuración de EF las mapea (`Cfg/ServicioAgendaConfiguration.cs:41-42,44-45`). Ver la discrepancia D-01.
 
@@ -877,7 +877,7 @@ Ninguno de estos módulos tiene pantalla enrutada (**Solo API (sin pantalla)**; 
 | `Fecha_Entrega_VIS` | `DATE` | Sí | — | Fecha de entrega de la hoja de información de la vacuna (VIS). | `0001:395` |
 | `Modalidad_Registro` | `VARCHAR(20)` | No | — | Modalidad. Valores del `CHECK`: `Corriente`, `Historica` (enum `ModalidadRegistro`). | `0001:396` |
 | Auditoría estándar (7 columnas) | ver 2.2 | — | — | | `0001:397-403` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-70` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:59-75` |
 
 **Clave primaria:** `Evento_Clinico_ID`.
 
@@ -1271,7 +1271,7 @@ Notas de los diagramas:
 
 ## 11. Datos sembrados y modificados por scripts
 
-**Ninguno de los 28 scripts inserta, actualiza ni borra filas de las 23 tablas de esta Parte B.** Lo comprobé leyendo cada script completo: las únicas sentencias de datos son el `INSERT` de roles (`0002`, Parte A), la copia del catálogo DIGEMID (`0004`, Parte A), el `UPDATE` de `Formulacion_Clinica` (`0009`), el `DELETE` de `Presentaciones_Venta` (`0013`), el `INSERT` de permisos (`0017`) y el `UPDATE` de `Laboratorios` (`0020`); todas tocan tablas de la Parte A (ver su [sección 10](03a-maestros-y-seguridad.md#10-datos-sembrados-y-modificados-por-scripts) y la tabla de scripts de la sección 13 de este documento). Las 23 tablas nacen vacías. Tampoco existe un sembrador en el código del backend para ellas (la Parte A buscó «seed» en `SOFIA.API`, `SOFIA.Infrastructure`, `SOFIA.Application` y `SOFIA.DbUp` sin resultados en `.cs`).
+**Ninguno de los 28 scripts inserta, actualiza ni borra filas de las 23 tablas de esta Parte B.** Lo comprobé leyendo cada script completo: las únicas sentencias de datos son el `INSERT` de roles (`0002`, Parte A), el seed del catálogo DIGEMID (`0004`, Parte A), el `UPDATE` de `Formulacion_Clinica` (`0009`), el `DELETE` de `Presentaciones_Venta` (`0013`), el `INSERT` de permisos (`0017`) y el `UPDATE` de `Laboratorios` (`0020`); todas tocan tablas de la Parte A (ver su [sección 10](03a-maestros-y-seguridad.md#10-datos-sembrados-y-modificados-por-scripts) y la tabla de scripts de la sección 13 de este documento). Las 23 tablas nacen vacías. Tampoco existe un sembrador en el código del backend para ellas (la Parte A buscó «seed» en `SOFIA.API`, `SOFIA.Infrastructure`, `SOFIA.Application` y `SOFIA.DbUp` sin resultados en `.cs`).
 
 Lo que sí hacen los scripts sobre estas tablas es **cambiar su estructura sobre filas ya existentes**, con efecto potencial sobre datos:
 
@@ -1320,9 +1320,9 @@ El commit `ed9a464` (2026-05-25, «chore(infra): restructure project directories
 |---|---|---|---|---|---|---|
 | 0001 | `0001_Initial_Schema.sql` (857) | Creado `01e4100` (2026-05-03). **Editado después en el mismo archivo** por `6578414` (05-03), `77a0e26` (05-04), `c166f90` (05-05), `5b14dd7` (05-06) y `513ca79` (08-28) | Crea **44 tablas** (`CREATE TABLE` en el script): las 23 de esta Parte B y 21 de la Parte A, con sus claves, `CHECK` y claves foráneas; más los índices `UX_Lotes_Producto_NumeroLote` (`:164`), `IX_Lotes_Caducidad` (`:166`), `IX_Agenda_Fecha` (`:768`), `IX_Cuentas_Login` (`:852`) y `UX_Empleados_LicenciaProf` (`:855`). | `01e4100`: «implement DbUp for database schema management and initial script». Las ediciones: `6578414` «implementar modulo completo de seguridad y rbac» (agregó `Recovery_Token`, `Recovery_Token_Expiry` y las columnas de auditoría de roles y permisos); `77a0e26` «implementar módulo LoteInventario con CRUD completo…» (las fechas de lote pasaron de `DATE` a `DATETIMEOFFSET`); `c166f90` «validar duplicidad en lotes y consolidar esquema inicial» (agregó `UX_Lotes_Producto_NumeroLote`); `5b14dd7` «implementar modulo de ventas y correccion de claims» (agregó `Estado`, `Motivo_Anulacion` y `CHK_Venta_Estado` a `Ventas_Cabecera`); `513ca79` «add CRUD commands, multi-tenant schema and unit test fixes» (quitó el `UNIQUE` global de `Sucursales.Numero_Licencia` y de `Empleados.Licencia_Prof` y agregó `UX_Empleados_LicenciaProf`). El motivo de cada columna o tabla del esquema inicial: Motivo no documentado. | No | No toca datos |
 | 0002 | `0002_SeedBaseRoles.sql` (39) | `f0680a9` (2026-05-03) | Inserta 6 roles base en `Seguridad_Roles` (`Admin`, `Gerente`, `Farmaceutico`, `Tecnico`, `Cajero`, `Auditor`) si no existen por nombre. | Encabezado: «SEED BASE ROLES FOR RBAC»; commit: «finalize RBAC module and fix JWT validation issues». | Sí (`IF NOT EXISTS` por rol, `:5,11,17,23,29,35`) | **Inserta** datos (Parte A) |
-| 0003 | `0003_Digemid_Catalogo.sql` (24) | `ec0f91f` (2026-05-24) | Crea `DIGEMID_Catalogo_Productos` y el índice `IX_DIGEMID_Catalogo_Productos_Nom_Prod`. | Commit: «add digemid operations and security auditing». El script no trae comentario de motivo. | No | No toca datos |
-| 0004 | `0004_Seed_Digemid_Catalogo.sql` (47) | `ec0f91f` (2026-05-24) | Si existe la base `SofiaDb` y la tabla está vacía, copia a `DIGEMID_Catalogo_Productos` el contenido de `[SofiaDb].[dbo].[DigemidCatalogo]`. | Comentario: «Migrar datos desde la base de datos origen [SofiaDb] hacia nuestra nueva tabla». | Sí (`IF EXISTS`/`IF NOT EXISTS`, `:3,5`) | **Inserta** datos copiados de otra base (Parte A) |
-| 0005 | `0005_Empresa_MultiTenant.sql` (84) | `513ca79` (2026-08-28) | Crea `Empresas` y `IX_Empresas_RUC`; agrega `Empresa_ID`, `TenantId` y `FK_Sucursales_Empresa` a `Sucursales`; `TenantId` a `Empleados` y `Seguridad_Cuentas`; con SQL dinámico agrega `TenantId` a toda tabla con `IsDeleted` que no la tenga (**las 23 de esta Parte B**); crea `UX_Sucursales_Empresa_Licencia`. | Encabezado: «EMPRESA - MULTI-TENANT SUPPORT. Creates the Empresas table and adds multi-tenant columns to existing tables». | Parcial: el SQL dinámico y el índice final están protegidos (`:60-64`, `:75-79`); `CREATE TABLE` y los `ALTER TABLE ADD` no | No rellena `TenantId` de las filas existentes (quedan `NULL`) |
+| 0003 | `0003_Digemid_Catalogo.sql` (27) | `ec0f91f` (2026-05-24). **Editado** en `34089ec` (2026-10-28) | Crea `DIGEMID_Catalogo_Productos` (con las columnas `Forma_Farmaceutica_Simplificada`, `Presentacion` y `Fecha_Vencimiento_Registro`, agregadas por `34089ec`) y el índice `IX_DIGEMID_Catalogo_Productos_Nom_Prod`. | Commit: «add digemid operations and security auditing». El script no trae comentario de motivo. | No | No toca datos |
+| 0004 | `0004_Seed_Digemid_Catalogo.sql` (29 886) | `ec0f91f` (2026-05-24). **Reescrito** en `34089ec` (2026-10-28) | Inserta en `DIGEMID_Catalogo_Productos` las 29 698 filas del catálogo oficial, en 60 lotes dentro de una transacción, y verifica el conteo y los caracteres antes de confirmar (la versión original copiaba desde la base `SofiaDb` si existía). | Comentario: «Seed of the DIGEMID catalog from the official CSV export, all-or-nothing and self-verified before commit». | No: no tiene guarda de «tabla vacía»; sobre una tabla con datos falla la verificación de conteo (`:29883`) y la transacción se revierte | **Inserta** el catálogo oficial (Parte A) |
+| 0005 | `0005_Empresa_MultiTenant.sql` (92) | `513ca79` (2026-08-28). **Editado** en `34089ec` (2026-10-28): se separó en lotes con `GO` | Crea `Empresas` y `IX_Empresas_RUC`; agrega `Empresa_ID`, `TenantId` y `FK_Sucursales_Empresa` a `Sucursales`; `TenantId` a `Empleados` y `Seguridad_Cuentas`; con SQL dinámico agrega `TenantId` a toda tabla con `IsDeleted` que no la tenga (**las 23 de esta Parte B**); crea `UX_Sucursales_Empresa_Licencia`. | Encabezado: «EMPRESA - MULTI-TENANT SUPPORT. Creates the Empresas table and adds multi-tenant columns to existing tables». | Parcial: el SQL dinámico y el índice final están protegidos (`:65-69`, `:81-85`); `CREATE TABLE` y los `ALTER TABLE ADD` no | No rellena `TenantId` de las filas existentes (quedan `NULL`) |
 | 0006 | `0006_RefreshTokens.sql` (23) | Creado `6c5cc2b` (2026-08-28). **Editado** en `b11f950` (2026-08-31) | Crea `RefreshTokens` con sus dos índices. | Comentario: «Refresh token store for short-lived JWT rotation»; commit `6c5cc2b`: «add refresh token rotation with explicit revocation on logout». La edición `b11f950` cambió la clave foránea de `[dbo].[Cuentas]([Id])` a `[dbo].[Seguridad_Cuentas]([Cuenta_ID])` (diff del commit); su asunto («implement core domain entities, controllers, and CQRS handlers for DIGEMID, patient, professional, and corporate management modules») no menciona ese cambio. | No | No toca datos |
 | 0007 | `0007_CuentasSucursales.sql` (11) | `3bee107` (2026-09-06) | Crea `Seguridad_CuentasSucursales`. | Commit: «user accounts CRUD with branch assignment and tenant-scoped creation». Sin comentario en el script. | No | No toca datos |
 | 0008 | `0008_RolesSucursales.sql` (7) | `3bee107` (2026-09-06) | Crea `Seguridad_Roles_Sucursales`. | Mismo commit que el `0007`; sin comentario en el script. | No | No toca datos |
@@ -1347,7 +1347,7 @@ El commit `ed9a464` (2026-05-25, «chore(infra): restructure project directories
 | 0027 | `0027_VentasPagos_Transaccion_Index.sql` (5) | `00991bc` (2026-10-02) | Crea `IX_Ventas_Pagos_Transaccion`. | Comentario: los pagos «are always read by sale (receipt, cash count, dashboard), which otherwise scans the whole table»; commit: «add dashboard summary endpoints with branch scope and real figures». | Sí | No toca datos |
 | 0028 | `0028_Ventas_Sesion_Anulacion.sql` (8) | `358935e` (2026-10-08) | Agrega `Ventas_Cabecera.Sesion_Anulacion_ID` y `FK_VentaCab_Sesion_Anulacion`. | Comentario: sesión de caja desde la que se anuló una venta cobrada, «so the cash handed back is counted in the drawer it left»; commit: «require an open cash session to void a charged sale and count the refund there». | Sí | No toca datos |
 
-**Resumen:** idempotentes con guardas explícitas: `0002`, `0004`, `0015` y `0017` a `0028` (15 scripts). Parcialmente: `0005` (1). No idempotentes: `0001`, `0003`, `0006` a `0014` y `0016` (12). Scripts que modifican o eliminan datos existentes: `0009` (relleno y borrado de columna), `0013` (borra todas las presentaciones de venta) y `0020` (`UPDATE` de laboratorios); insertan filas `0002`, `0004` y `0017`. Los scripts `0009`, `0013` y `0020` tocan solo tablas de la Parte A.
+**Resumen:** idempotentes con guardas explícitas: `0002`, `0015` y `0017` a `0028` (14 scripts; el `0004` dejó de serlo en `34089ec`). Parcialmente: `0005` (1). No idempotentes: `0001`, `0003`, `0004`, `0006` a `0014` y `0016` (13). Scripts que modifican o eliminan datos existentes: `0009` (relleno y borrado de columna), `0013` (borra todas las presentaciones de venta) y `0020` (`UPDATE` de laboratorios); insertan filas `0002`, `0004` y `0017`. Los scripts `0009`, `0013` y `0020` tocan solo tablas de la Parte A.
 
 ---
 
@@ -1402,7 +1402,7 @@ La guía del desarrollador ya explica cómo ejecutar DbUp y cómo agregar un scr
 - `SUNAT_Series_Fiscales.Correlativo_Actual` no tiene `RowVersion`; la unicidad del número emitido la garantiza `UX_SUNAT_Comprobantes_Emitidos_Serie_Correlativo`, que no ignora las filas con borrado lógico.
 - Ocho `CHECK` de la base no están declarados en EF (D-02) y varias relaciones de la base no existen en el modelo de EF (D-06).
 - `Magistrales_Consumo_Insumos.Unidad_Medida` es texto libre, sin relación con `Unidades_Medida`.
-- Nada en el repositorio impide que `Transferencias_Cab` tenga la misma sucursal de origen y de destino.
+- La base no impide que `Transferencias_Cab` tenga la misma sucursal de origen y de destino (sin `CHECK`), pero el dominio sí lo rechaza (`Transferencia.cs:47-50`).
 
 **En curso (sin commitear):** ninguno. `git status --short` no muestra cambios locales ni en `sofia-apis` ni en `sofia-web-spa`; nada de este documento depende de archivos sin commitear.
 
