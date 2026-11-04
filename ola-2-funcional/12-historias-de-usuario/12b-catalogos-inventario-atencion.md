@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-26 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; las historias HU-CAT-042 y HU-CAT-044 (DIGEMID) están reconciliadas con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de los documentos validados (reglas de negocio 01b v1.1 y 01c1, inventario de pantallas 19c, 19d y 19e, carga masiva 20, matriz de permisos 05b, glosario, procesos 3 y 7, manual de usuario capítulos 4 y 5) y comprobación puntual en el código y en los `es.json`. No se ejecutó la aplicación ni se llamó a la API: los mensajes exactos salen de los documentos fuente, que los comprobaron en la aplicación local o en el código. |
 
@@ -405,8 +405,9 @@ Escenario: Lista de filas fuera de rango (solo API)
   Y la pantalla lo muestra como "El archivo supera el máximo de 5000 filas. Divídelo en varios archivos."
 
 Escenario: Vista previa sin archivo (solo API)
-  Dado que llamo a "POST /api/v1/UnidadesMedida/previsualizar" sin archivo o con un archivo vacío
-  Entonces la API responde 400 con el texto "Debe adjuntar un archivo Excel."
+  Dado que llamo a "POST /api/v1/UnidadesMedida/previsualizar" sin el campo de archivo o con un archivo vacío
+  Entonces sin el campo de archivo la API responde 400 con un ProblemDetails de validación (errors.file)
+  Y con un archivo de 0 bytes responde 400 con el texto "Debe adjuntar un archivo Excel."
   Y la pantalla nunca lo provoca: siempre envía un archivo
 ```
 
@@ -2318,10 +2319,12 @@ Tabla local de productos DIGEMID de la empresa (código, nombre, concentración,
 **Criterios de aceptación**
 
 ```gherkin
-Escenario: Una empresa nueva tiene el catálogo vacío
+Escenario: Una empresa nueva ve el catálogo compartido
   Dado que registré mi empresa y aún no cargué productos
   Cuando hago clic en "Buscar" sin filtros
-  Entonces veo "Resultados (0)"
+  Entonces veo los productos del catálogo nacional compartido (los que siembra el script 0004, sin empresa), no "Resultados (0)"
+  Y con "sofia-apis" 43f5529, antes de 9c16f35, la misma búsqueda mostraba "Resultados (0)" (comprobado)
+  Y el comportamiento actual es "No verificado en la aplicación"
 
 Escenario: Buscar por código y por nombre
   Dado que cargué cinco productos, entre ellos "DEMO-0001" y los "TABLETA"
@@ -2423,7 +2426,7 @@ Escenario: Un texto demasiado largo pasa la vista previa y rechaza todo el guard
 | **Endpoint(s)** | `POST /api/v1/DIGEMID/catalogo`, `PUT /api/v1/DIGEMID/catalogo/{id}`, `DELETE /api/v1/DIGEMID/catalogo/{id}` |
 | **Permiso** | `DIGEMID:Crear`, `DIGEMID:Actualizar`, `DIGEMID:Eliminar` |
 | **Reglas** | [RN-DIG-001, RN-DIG-002, RN-DIG-003, RN-DIG-004, RN-DIG-005, RN-DIG-006, RN-DIG-007, RN-DIG-008](../../ola-1-fundamentos/01-reglas-de-negocio/01b-catalogos.md) |
-| **Estado** | Solo API |
+| **Estado** | Solo API (el 403 del catálogo compartido viene de `sofia-apis` `9c16f35`; No verificado en vivo) |
 
 **Criterios de aceptación**
 
@@ -2437,7 +2440,7 @@ Escenario: Código y nombre obligatorios
   Entonces la API responde 400 con "DIGEMID.CodProd" o "DIGEMID.NomProd"
 
 Escenario: Código repetido
-  Dado que ya existe un producto no eliminado con ese código en mi empresa
+  Dado que ya existe un producto no eliminado con ese código, en mi empresa o en el catálogo compartido
   Entonces la API responde 409 "DigemidCatalogo.CodProd.Duplicado"
   Y al editar se excluye el propio producto
 
@@ -2445,9 +2448,10 @@ Escenario: Editar o eliminar un producto inexistente
   Dado que el producto no existe o está eliminado
   Cuando llamo a "PUT" o "DELETE"
   Entonces la API responde 404 "DigemidCatalogo.NotFound"
+  Y si el producto es del catálogo compartido (sin empresa) responde 403 "DigemidCatalogo.Global.SoloLectura" y no cambia nada
 
 Escenario: Eliminar
-  Dado que el producto existe
+  Dado que el producto existe y es de mi empresa
   Cuando llamo a "DELETE /api/v1/DIGEMID/catalogo/{id}"
   Entonces la API responde 204, la eliminación es lógica y no valida dependencias
 ```
