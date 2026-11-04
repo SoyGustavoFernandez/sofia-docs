@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-31 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
 | **Método** | Cruce por script de los identificadores citados en los documentos publicados |
 
 Esta matriz responde a una pregunta: **de cada regla de negocio, ¿qué historia, caso de uso, caso de prueba, endpoint, pantalla, prueba automatizada, proceso y capítulo del manual la tocan, y qué quedó sin tocar?** No describe el sistema ni repite reglas: solo relaciona los identificadores que ya citan los documentos publicados (`RN-…`, `HU-…`, `CU-…`, `TC-…` y `METHOD /ruta`). No lee el código fuente: lo que afirma cada documento de origen se da por válido (esos documentos pasaron su propia validación) y aquí solo se cruza.
@@ -57,19 +57,19 @@ El eslabón central es la **historia de usuario**: cada una declara en su tabla 
 | Pantalla | Rutas del SPA de esas historias (las 2 más citadas y cuántas más hay) | Fila «Pantalla» de esas historias |
 | Prueba automatizada | `BE`: estado según la [parte A de pruebas automatizadas](../ola-1-fundamentos/09-pruebas/09a-backend.md) (backend). `SPA`: estado de la pantalla según la [parte B](../ola-1-fundamentos/09-pruebas/09b-spa.md) | Ver 1.4 |
 | Proceso | `P1` a `P9`: procesos de [14-procesos-de-negocio](../ola-2-funcional/14-procesos-de-negocio.md) cuyas secciones 3 a 11 citan la regla | Ver la leyenda en 1.5 |
-| Manual | Capítulos del [manual de usuario](../ola-2-funcional/manual-usuario/) que citan la regla | Capítulos 1 a 6 y 11, publicados |
+| Manual | Capítulos del [manual de usuario](../ola-2-funcional/manual-usuario/) que citan la regla | Capítulos 1 a 11, publicados |
 
 ### 1.3 Qué significan «—», «Pendiente» y «Solo API»
 
 | Marca | Significado | Dónde aparece |
 |---|---|---|
 | **—** | El documento de esa columna **no cita** el elemento. No prueba que no exista la cosa en el mundo real: solo que esa fuente no la relaciona. Con `BE` quiere decir «el documento 09a no menciona la regla», no «no hay pruebas» | Todas las columnas |
-| **Pendiente** | El elemento pertenece a un módulo cuyo capítulo del manual todavía no existe. El README del manual solo publica los capítulos 1 a 6 y 11; los capítulos 7 a 10 figuran «en preparación». Se marcan `PAC`, `PRO`, `REC`, `VEN`, `CMP`, `CAJ`, `DEV` y `DAS`: los módulos con pantalla que **no** aparecen en la tabla de contenidos de los capítulos 1 a 6 del [README](../README.md). Las reglas transversales (`GEN`) no se marcan «Pendiente»: sin cita muestran «—». Una regla de esos módulos que sí cite alguno de los capítulos publicados muestra el capítulo, no «Pendiente». **Pendiente no es un hueco** | Columna Manual |
+| **Pendiente** | El elemento pertenece a un módulo cuyo capítulo del manual todavía no existe. Desde la versión 1.1 de esta matriz (2026-11-04) los once capítulos del manual están publicados, así que **ninguna regla queda en «Pendiente»**: las que ningún capítulo cita muestran «—». En la versión 1.0 se marcaban `PAC`, `PRO`, `REC`, `VEN`, `CMP`, `CAJ`, `DEV` y `DAS`, a la espera de los capítulos 7 a 10 | Columna Manual |
 | **Solo API** | El elemento no tiene pantalla en el SPA: la regla pertenece a un módulo del documento [01d](../ola-1-fundamentos/01-reglas-de-negocio/01d-modulos-solo-api.md) (Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, Cuarentena y actas DIGEMID, Auditoría), o todas las historias que la citan declaran «Solo API», «Ninguna» o «Sin pantalla» como pantalla. En el manual significa que no se escribirá un capítulo de usuario | Columnas Pantalla y Manual |
 
 ### 1.4 Reglas de extracción
 
-- **Rangos.** Los documentos abrevian con «RN-X-001 a RN-X-005» o «RN-X-002 a 006». El script los **expande** (ambos extremos incluidos) en las historias, los casos de uso, los casos de prueba, los procesos, las pruebas automatizadas y el manual. Se encontraron 685 ocurrencias de rango en los documentos revisados, todos del mismo prefijo y en orden ascendente. Con el mismo criterio, el documento de procesos declara 373 IDs explícitos y 475 al expandir; el script obtiene las mismas cifras (ver 8.2). Para decidir si un ID existe solo se miran los IDs escritos (los extremos de cada rango), no los intermedios.
+- **Rangos.** Los documentos abrevian con «RN-X-001 a RN-X-005» o «RN-X-002 a 006». El script los **expande** (ambos extremos incluidos) en las historias, los casos de uso, los casos de prueba, los procesos, las pruebas automatizadas y el manual. Se encontraron 718 ocurrencias de rango en los documentos revisados, todos del mismo prefijo y en orden ascendente. Con el mismo criterio, el documento de procesos declara 373 IDs explícitos y 475 al expandir; el script obtiene las mismas cifras (ver 8.2). Para decidir si un ID existe solo se miran los IDs escritos (los extremos de cada rango), no los intermedios.
 - **Celdas largas.** Una celda con más de 4 elementos muestra el número y los 3 primeros seguidos de «…» (por ejemplo `12: TC-ADM-001, TC-ADM-002, TC-ADM-003…`). En la matriz de historias la celda de casos de prueba muestra además las prioridades: `A` Alta, `M` Media, `B` Baja. El detalle completo está en los documentos de origen.
 - **Rutas de endpoints.** Se normalizan: no distingue mayúsculas, se quita el prefijo `/api/v1`, el `?` y el `/` final, y cada `{x}` equivale a `{id}`. Un comodín como `GET /api/v1/dashboard/*` equivale a todos los endpoints con ese prefijo y método. `GET /health` se deja como está.
 - **Casos de prueba de un endpoint.** Dos orígenes: los casos que cubren una historia (o caso de uso) que usa el endpoint, y los casos que lo escriben de forma explícita en sus pasos. La matriz de endpoints separa ambos números (`directos`).
@@ -128,15 +128,15 @@ Cada celda es «n (porcentaje del total de reglas del prefijo)». «Prueba autom
 | PRV | Proveedores | 28 | 28 (100.0%) | 28 (100.0%) | 28 (100.0%) | 0 (0.0%) | 22 (78.6%) | 12 (42.9%) | 5 (17.9%) | 0 | 0 |
 | ASE | Aseguradoras | 12 | 12 (100.0%) | 12 (100.0%) | 12 (100.0%) | 0 (0.0%) | 8 (66.7%) | 0 (0.0%) | 0 (0.0%) | 0 | 0 |
 | DIG | Catálogo DIGEMID | 13 | 13 (100.0%) | 13 (100.0%) | 13 (100.0%) | 0 (0.0%) | 0 (0.0%) | 0 (0.0%) | 2 (15.4%) | 0 | 0 |
-| PAC | Pacientes | 17 | 17 (100.0%) | 17 (100.0%) | 17 (100.0%) | 0 (0.0%) | 10 (58.8%) | 0 (0.0%) | 0 (0.0%) | 17 | 0 |
-| PRO | Profesionales de salud | 12 | 12 (100.0%) | 12 (100.0%) | 12 (100.0%) | 0 (0.0%) | 7 (58.3%) | 0 (0.0%) | 0 (0.0%) | 12 | 0 |
+| PAC | Pacientes | 17 | 17 (100.0%) | 17 (100.0%) | 17 (100.0%) | 0 (0.0%) | 10 (58.8%) | 0 (0.0%) | 17 (100.0%) | 0 | 0 |
+| PRO | Profesionales de salud | 12 | 12 (100.0%) | 12 (100.0%) | 12 (100.0%) | 0 (0.0%) | 7 (58.3%) | 0 (0.0%) | 12 (100.0%) | 0 | 0 |
 | LOT | Lotes de inventario | 19 | 19 (100.0%) | 19 (100.0%) | 19 (100.0%) | 0 (0.0%) | 18 (94.7%) | 11 (57.9%) | 19 (100.0%) | 0 | 0 |
 | STK | Stock por sucursal | 18 | 18 (100.0%) | 18 (100.0%) | 18 (100.0%) | 0 (0.0%) | 2 (11.1%) | 13 (72.2%) | 18 (100.0%) | 0 | 0 |
-| REC | Recetas médicas | 31 | 31 (100.0%) | 31 (100.0%) | 31 (100.0%) | 0 (0.0%) | 21 (67.7%) | 23 (74.2%) | 1 (3.2%) | 30 | 0 |
-| VEN | Ventas | 83 | 83 (100.0%) | 83 (100.0%) | 81 (97.6%) | 18 (21.7%) | 75 (90.4%) | 71 (85.5%) | 38 (45.8%) | 45 | 0 |
-| CMP | Comprobantes emitidos | 15 | 15 (100.0%) | 15 (100.0%) | 15 (100.0%) | 3 (20.0%) | 15 (100.0%) | 11 (73.3%) | 4 (26.7%) | 11 | 0 |
-| CAJ | Caja | 27 | 27 (100.0%) | 27 (100.0%) | 26 (96.3%) | 4 (14.8%) | 27 (100.0%) | 23 (85.2%) | 3 (11.1%) | 24 | 0 |
-| DEV | Devoluciones | 37 | 37 (100.0%) | 37 (100.0%) | 37 (100.0%) | 7 (18.9%) | 35 (94.6%) | 28 (75.7%) | 0 (0.0%) | 37 | 0 |
+| REC | Recetas médicas | 31 | 31 (100.0%) | 31 (100.0%) | 31 (100.0%) | 0 (0.0%) | 21 (67.7%) | 23 (74.2%) | 31 (100.0%) | 0 | 0 |
+| VEN | Ventas | 83 | 83 (100.0%) | 83 (100.0%) | 81 (97.6%) | 18 (21.7%) | 75 (90.4%) | 71 (85.5%) | 62 (74.7%) | 0 | 0 |
+| CMP | Comprobantes emitidos | 15 | 15 (100.0%) | 15 (100.0%) | 15 (100.0%) | 3 (20.0%) | 15 (100.0%) | 11 (73.3%) | 6 (40.0%) | 0 | 0 |
+| CAJ | Caja | 27 | 27 (100.0%) | 27 (100.0%) | 26 (96.3%) | 4 (14.8%) | 27 (100.0%) | 23 (85.2%) | 26 (96.3%) | 0 | 0 |
+| DEV | Devoluciones | 37 | 37 (100.0%) | 37 (100.0%) | 37 (100.0%) | 7 (18.9%) | 35 (94.6%) | 28 (75.7%) | 28 (75.7%) | 0 | 0 |
 | DAS | Dashboard | 24 | 24 (100.0%) | 24 (100.0%) | 24 (100.0%) | 0 (0.0%) | 24 (100.0%) | 24 (100.0%) | 24 (100.0%) | 0 | 0 |
 | TRA | Transferencias | 30 | 30 (100.0%) | 30 (100.0%) | 30 (100.0%) | 0 (0.0%) | 0 (0.0%) | 26 (86.7%) | 0 (0.0%) | 0 | 30 |
 | DEL | Delivery | 18 | 18 (100.0%) | 18 (100.0%) | 18 (100.0%) | 0 (0.0%) | 0 (0.0%) | 15 (83.3%) | 0 (0.0%) | 0 | 18 |
@@ -144,13 +144,13 @@ Cada celda es «n (porcentaje del total de reglas del prefijo)». «Prueba autom
 | SRV | Servicios e inmunizaciones | 21 | 21 (100.0%) | 21 (100.0%) | 21 (100.0%) | 0 (0.0%) | 0 (0.0%) | 18 (85.7%) | 0 (0.0%) | 0 | 21 |
 | CUA | Cuarentena y actas DIGEMID | 23 | 23 (100.0%) | 23 (100.0%) | 23 (100.0%) | 0 (0.0%) | 2 (8.7%) | 17 (73.9%) | 0 (0.0%) | 0 | 23 |
 | AUD | Auditoría | 10 | 10 (100.0%) | 10 (100.0%) | 10 (100.0%) | 0 (0.0%) | 0 (0.0%) | 0 (0.0%) | 0 (0.0%) | 0 | 10 |
-| **Total** | | **789** | **789 (100.0%)** | **775 (98.2%)** | **786 (99.6%)** | **69 (8.7%)** | **484 (61.3%)** | **474 (60.1%)** | **183 (23.2%)** | **176** | **125** |
+| **Total** | | **789** | **789 (100.0%)** | **775 (98.2%)** | **786 (99.6%)** | **69 (8.7%)** | **484 (61.3%)** | **474 (60.1%)** | **319 (40.4%)** | **0** | **125** |
 
 ### 2.3 Lectura rápida
 
 - **Trazabilidad funcional casi completa:** 789 (100.0%) de las reglas tienen historia, 775 (98.2%) caso de uso y 786 (99.6%) caso de prueba. Los huecos son pocos y están explicados en 6.2 y 6.3.
 - **Prueba automatizada, el hueco grande:** solo 69 (8.7%) de las reglas figuran en 09a como cubiertas o parciales. Es un hueco de trazabilidad antes que de cobertura (1.4 y 6.4).
-- **Proceso y manual:** 474 (60.1%) de las reglas se citan en el documento de procesos y 183 (23.2%) en un capítulo publicado del manual; 176 más esperan a los capítulos 7 a 10 y 125 son de módulos sin pantalla.
+- **Proceso y manual:** 474 (60.1%) de las reglas se citan en el documento de procesos y 319 (40.4%) en un capítulo publicado del manual; 0 esperan a un capítulo todavía no publicado y 125 son de módulos sin pantalla.
 
 ## 3. Matriz principal: una fila por regla
 
@@ -633,7 +633,7 @@ Documento: [01b-catalogos.md](../ola-1-fundamentos/01-reglas-de-negocio/01b-cata
 | RN-DIG-005 Longitudes máximas | HU-CAT-043, HU-CAT-044 | CU-CAT-43, CU-CAT-44 | TC-CAT-197, TC-CAT-199 | 6: `DELETE /DIGEMID/catalogo/{id:guid}`, `GET /DIGEMID/catalogo/plantilla`, `POST /DIGEMID/catalogo`… | `/digemid-catalogo/carga-masiva`, `/digemid-catalogo/nueva` | SPA Sin pruebas | — | cap. 4 |
 | RN-DIG-006 No puede haber dos productos no eliminados con el mismo… | HU-CAT-043, HU-CAT-044 | CU-CAT-43, CU-CAT-44 | TC-CAT-197, TC-CAT-198, TC-CAT-201 | 6: `DELETE /DIGEMID/catalogo/{id:guid}`, `GET /DIGEMID/catalogo/plantilla`, `POST /DIGEMID/catalogo`… | `/digemid-catalogo/carga-masiva`, `/digemid-catalogo/nueva` | SPA Sin pruebas | — | — |
 | RN-DIG-007 Editar, eliminar o consultar un producto inexistente | HU-CAT-042, HU-CAT-044 | CU-CAT-42, CU-CAT-44 | TC-CAT-192, TC-CAT-193, TC-CAT-202 | 6: `DELETE /DIGEMID/catalogo/{id:guid}`, `GET /DIGEMID/catalogo`, `GET /DIGEMID/catalogo/{id:guid}`… | `/digemid-catalogo`, `/digemid-catalogo/:id` (+1) | SPA Sin pruebas | — | — |
-| RN-DIG-008 La eliminación es lógica, sin validación de… | HU-CAT-044 | CU-CAT-44 | TC-CAT-202 | `DELETE /DIGEMID/catalogo/{id:guid}`, `POST /DIGEMID/catalogo`, `PUT /DIGEMID/catalogo/{id:guid}` | `/digemid-catalogo/nueva` | — | — | — |
+| RN-DIG-008 Los productos del catálogo compartido | HU-CAT-044 | CU-CAT-44 | TC-CAT-202 | `DELETE /DIGEMID/catalogo/{id:guid}`, `POST /DIGEMID/catalogo`, `PUT /DIGEMID/catalogo/{id:guid}` | `/digemid-catalogo/nueva` | — | — | — |
 | RN-DIG-009 El listado filtra por código y por nombre de producto | HU-CAT-042 | CU-CAT-42 | TC-CAT-190, TC-CAT-191, TC-CAT-194 | `GET /DIGEMID/catalogo`, `GET /DIGEMID/catalogo/{id:guid}`, `POST /DIGEMID/catalogo/exportar` | `/digemid-catalogo`, `/digemid-catalogo/:id` | SPA Sin pruebas | — | cap. 4 |
 | RN-DIG-010 La plantilla de carga masiva tiene ocho columnas | HU-CAT-043 | CU-CAT-43 | TC-CAT-196 | `GET /DIGEMID/catalogo/plantilla`, `POST /DIGEMID/catalogo/carga-masiva`, `POST /DIGEMID/catalogo/previsualizar` | `/digemid-catalogo/carga-masiva` | SPA Sin pruebas | — | — |
 | RN-DIG-011 Vista previa | HU-CAT-043 | CU-CAT-43 | TC-CAT-197 | `GET /DIGEMID/catalogo/plantilla`, `POST /DIGEMID/catalogo/carga-masiva`, `POST /DIGEMID/catalogo/previsualizar` | `/digemid-catalogo/carga-masiva` | SPA Sin pruebas | — | — |
@@ -644,40 +644,40 @@ Documento: [01b-catalogos.md](../ola-1-fundamentos/01-reglas-de-negocio/01b-cata
 
 | Regla | Historias | Casos de uso | Casos de prueba | Endpoints | Pantalla | Prueba automatizada | Proceso | Manual |
 |---|---|---|---|---|---|---|---|---|
-| RN-PAC-001 Cada operación exige un permiso del módulo Pacientes | HU-INV-009, HU-INV-010, HU-INV-011 | CU-INV-09, CU-INV-10, CU-INV-11 | TC-INV-052 | 6: `DELETE /Pacientes/{id}`, `GET /Pacientes`, `GET /Pacientes/{id}`… | `/pacientes/:id`, `/pacientes` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-002 El tipo de documento es obligatorio al crear y editar y… | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | 5: TC-INV-052, TC-INV-053, TC-INV-055… | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-003 El número de documento es obligatorio | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-055, TC-INV-056, TC-INV-069 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-004 El número de documento debe cumplir el formato de su tipo | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | 5: TC-INV-052, TC-INV-054, TC-INV-056… | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-005 El nombre y apellidos es obligatorio | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-055, TC-INV-069 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-006 La fecha de nacimiento es obligatoria y no puede ser futura | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-055, TC-INV-058, TC-INV-068 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-007 El contacto primario es opcional y admite como máximo… | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-059 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-008 No puede haber dos pacientes no eliminados con el mismo… | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-057, TC-INV-069 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PAC-009 Editar o consultar un paciente inexistente devuelve… | HU-INV-009, HU-INV-011 | CU-INV-09, CU-INV-11 | TC-INV-061, TC-INV-064, TC-INV-066 | `DELETE /Pacientes/{id}`, `GET /Pacientes/{id}`, `POST /Pacientes`, `PUT /Pacientes/{id}` | `/pacientes/:id`, `/pacientes/nueva` | SPA Parcial | — | Pendiente |
-| RN-PAC-010 La eliminación de un paciente es lógica y valida… | HU-INV-011 | CU-INV-11 | TC-INV-064, TC-INV-065 | `DELETE /Pacientes/{id}` | `/pacientes/:id` | SPA Parcial | — | Pendiente |
-| RN-PAC-011 El listado filtra por tipo de documento | HU-INV-010 | CU-INV-10 | TC-INV-062, TC-INV-063 | `GET /Pacientes`, `POST /Pacientes/exportar` | `/pacientes` | SPA Sin pruebas | — | Pendiente |
-| RN-PAC-012 La plantilla de carga masiva tiene cinco columnas | HU-INV-012 | CU-INV-12 | TC-INV-067 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PAC-013 En la carga masiva el tipo de documento puede escribirse… | HU-INV-012 | CU-INV-12 | TC-INV-067 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PAC-014 En la carga masiva la fecha de nacimiento debe… | HU-INV-012 | CU-INV-12 | TC-INV-068 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PAC-015 Vista previa | HU-INV-012 | CU-INV-12 | TC-INV-069 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PAC-016 Longitudes máximas de las filas de carga masiva | HU-INV-012 | CU-INV-12 | TC-INV-067 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PAC-017 En la vista previa es obligatorio adjuntar un archivo no… | HU-INV-012 | CU-INV-12 | TC-INV-069 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | Pendiente |
+| RN-PAC-001 Cada operación exige un permiso del módulo Pacientes | HU-INV-009, HU-INV-010, HU-INV-011 | CU-INV-09, CU-INV-10, CU-INV-11 | TC-INV-052 | 6: `DELETE /Pacientes/{id}`, `GET /Pacientes`, `GET /Pacientes/{id}`… | `/pacientes/:id`, `/pacientes` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-002 El tipo de documento es obligatorio al crear y editar y… | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | 5: TC-INV-052, TC-INV-053, TC-INV-055… | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-003 El número de documento es obligatorio | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-055, TC-INV-056, TC-INV-069 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-004 El número de documento debe cumplir el formato de su tipo | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | 5: TC-INV-052, TC-INV-054, TC-INV-056… | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-005 El nombre y apellidos es obligatorio | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-055, TC-INV-069 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-006 La fecha de nacimiento es obligatoria y no puede ser futura | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-055, TC-INV-058, TC-INV-068 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-007 El contacto primario es opcional y admite como máximo… | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-052, TC-INV-059 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-008 No puede haber dos pacientes no eliminados con el mismo… | HU-INV-009, HU-INV-012 | CU-INV-09, CU-INV-12 | TC-INV-057, TC-INV-069 | 6: `GET /Pacientes/plantilla`, `GET /Pacientes/{id}`, `POST /Pacientes`… | `/pacientes/:id`, `/pacientes/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PAC-009 Editar o consultar un paciente inexistente devuelve… | HU-INV-009, HU-INV-011 | CU-INV-09, CU-INV-11 | TC-INV-061, TC-INV-064, TC-INV-066 | `DELETE /Pacientes/{id}`, `GET /Pacientes/{id}`, `POST /Pacientes`, `PUT /Pacientes/{id}` | `/pacientes/:id`, `/pacientes/nueva` | SPA Parcial | — | cap. 7 |
+| RN-PAC-010 La eliminación de un paciente es lógica y valida… | HU-INV-011 | CU-INV-11 | TC-INV-064, TC-INV-065 | `DELETE /Pacientes/{id}` | `/pacientes/:id` | SPA Parcial | — | cap. 7 |
+| RN-PAC-011 El listado filtra por tipo de documento | HU-INV-010 | CU-INV-10 | TC-INV-062, TC-INV-063 | `GET /Pacientes`, `POST /Pacientes/exportar` | `/pacientes` | SPA Sin pruebas | — | cap. 7 |
+| RN-PAC-012 La plantilla de carga masiva tiene cinco columnas | HU-INV-012 | CU-INV-12 | TC-INV-067 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PAC-013 En la carga masiva el tipo de documento puede escribirse… | HU-INV-012 | CU-INV-12 | TC-INV-067 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PAC-014 En la carga masiva la fecha de nacimiento debe… | HU-INV-012 | CU-INV-12 | TC-INV-068 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PAC-015 Vista previa | HU-INV-012 | CU-INV-12 | TC-INV-069 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PAC-016 Longitudes máximas de las filas de carga masiva | HU-INV-012 | CU-INV-12 | TC-INV-067 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PAC-017 En la vista previa es obligatorio adjuntar un archivo no… | HU-INV-012 | CU-INV-12 | TC-INV-069 | `GET /Pacientes/plantilla`, `POST /Pacientes/carga-masiva`, `POST /Pacientes/previsualizar` | `/pacientes/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
 
 #### PRO — Profesionales de salud (12)
 
 | Regla | Historias | Casos de uso | Casos de prueba | Endpoints | Pantalla | Prueba automatizada | Proceso | Manual |
 |---|---|---|---|---|---|---|---|---|
-| RN-PRO-001 Cada operación exige un permiso del módulo… | HU-INV-013, HU-INV-014, HU-INV-015 | CU-INV-13, CU-INV-14, CU-INV-15 | TC-INV-070 | 6: `DELETE /profesionalessalud/{id:guid}`, `GET /profesionalessalud`, `GET /profesionalessalud/{id:guid}`… | `/profesionales-salud/:id`, `/profesionales-salud` (+1) | SPA Parcial | — | Pendiente |
-| RN-PRO-002 El número de registro es obligatorio | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-070, TC-INV-071, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PRO-003 El nombre del prescriptor es obligatorio | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-070, TC-INV-071, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PRO-004 La dirección de la clínica es opcional y admite como… | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-070, TC-INV-071, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PRO-005 No puede haber dos profesionales no eliminados con el… | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-071, TC-INV-072, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | Pendiente |
-| RN-PRO-006 Editar, eliminar o consultar un profesional inexistente… | HU-INV-013, HU-INV-015 | CU-INV-13, CU-INV-15 | TC-INV-072, TC-INV-074 | `DELETE /profesionalessalud/{id:guid}`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`, `PUT /profesionalessalud/{id:guid}` | `/profesionales-salud/:id`, `/profesionales-salud/nueva` | SPA Parcial | — | Pendiente |
-| RN-PRO-007 La eliminación es lógica y valida dependencias | HU-INV-015 | CU-INV-15 | TC-INV-074, TC-INV-075 | `DELETE /profesionalessalud/{id:guid}` | `/profesionales-salud/:id` | SPA Parcial | — | Pendiente |
-| RN-PRO-008 El listado filtra por número de registro y por nombre… | HU-INV-014 | CU-INV-14 | TC-INV-073 | `GET /profesionalessalud`, `POST /profesionalessalud/exportar` | `/profesionales-salud` | SPA Sin pruebas | — | Pendiente |
-| RN-PRO-009 La plantilla de carga masiva tiene tres columnas | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PRO-010 Vista previa | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PRO-011 La carga masiva guarda solo las filas que pasan los… | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | Pendiente |
-| RN-PRO-012 En la vista previa es obligatorio adjuntar un archivo no… | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | Pendiente |
+| RN-PRO-001 Cada operación exige un permiso del módulo… | HU-INV-013, HU-INV-014, HU-INV-015 | CU-INV-13, CU-INV-14, CU-INV-15 | TC-INV-070 | 6: `DELETE /profesionalessalud/{id:guid}`, `GET /profesionalessalud`, `GET /profesionalessalud/{id:guid}`… | `/profesionales-salud/:id`, `/profesionales-salud` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PRO-002 El número de registro es obligatorio | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-070, TC-INV-071, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PRO-003 El nombre del prescriptor es obligatorio | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-070, TC-INV-071, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PRO-004 La dirección de la clínica es opcional y admite como… | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-070, TC-INV-071, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PRO-005 No puede haber dos profesionales no eliminados con el… | HU-INV-013, HU-INV-016 | CU-INV-13, CU-INV-16 | TC-INV-071, TC-INV-072, TC-INV-076 | 6: `GET /profesionalessalud/plantilla`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`… | `/profesionales-salud/:id`, `/profesionales-salud/carga-masiva` (+1) | SPA Parcial | — | cap. 7 |
+| RN-PRO-006 Editar, eliminar o consultar un profesional inexistente… | HU-INV-013, HU-INV-015 | CU-INV-13, CU-INV-15 | TC-INV-072, TC-INV-074 | `DELETE /profesionalessalud/{id:guid}`, `GET /profesionalessalud/{id:guid}`, `POST /profesionalessalud`, `PUT /profesionalessalud/{id:guid}` | `/profesionales-salud/:id`, `/profesionales-salud/nueva` | SPA Parcial | — | cap. 7 |
+| RN-PRO-007 La eliminación es lógica y valida dependencias | HU-INV-015 | CU-INV-15 | TC-INV-074, TC-INV-075 | `DELETE /profesionalessalud/{id:guid}` | `/profesionales-salud/:id` | SPA Parcial | — | cap. 7 |
+| RN-PRO-008 El listado filtra por número de registro y por nombre… | HU-INV-014 | CU-INV-14 | TC-INV-073 | `GET /profesionalessalud`, `POST /profesionalessalud/exportar` | `/profesionales-salud` | SPA Sin pruebas | — | cap. 7 |
+| RN-PRO-009 La plantilla de carga masiva tiene tres columnas | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PRO-010 Vista previa | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PRO-011 La carga masiva guarda solo las filas que pasan los… | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
+| RN-PRO-012 En la vista previa es obligatorio adjuntar un archivo no… | HU-INV-016 | CU-INV-16 | TC-INV-076 | `GET /profesionalessalud/plantilla`, `POST /profesionalessalud/carga-masiva`, `POST /profesionalessalud/previsualizar` | `/profesionales-salud/carga-masiva` | SPA Sin pruebas | — | cap. 7 |
 
 ### 3.3 01c1 — Catálogo de reglas de negocio — Parte C1: inventario y recetas (68 reglas)
 
@@ -734,37 +734,37 @@ Documento: [01c1-inventario-y-recetas.md](../ola-1-fundamentos/01-reglas-de-nego
 
 | Regla | Historias | Casos de uso | Casos de prueba | Endpoints | Pantalla | Prueba automatizada | Proceso | Manual |
 |---|---|---|---|---|---|---|---|---|
-| RN-REC-001 Cada operación exige un permiso del módulo Recetas | HU-INV-017, HU-INV-018, HU-INV-019, HU-INV-020 | CU-INV-17, CU-INV-18, CU-INV-19, CU-INV-20 | 5: TC-INV-077, TC-INV-089, TC-INV-096… | 7: `DELETE /Recetas/{id}`, `GET /Recetas`, `GET /Recetas/{id}`… | `/recetas-medicas`, `/recetas-medicas/:id` (+2) | SPA Probado | — | Pendiente |
-| RN-REC-002 El paciente de la receta es obligatorio | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-078 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-003 El médico de la receta es obligatorio | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-078 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-004 El paciente debe existir en la empresa | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-084, TC-INV-085 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-005 El médico debe existir en la empresa | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-084, TC-INV-085 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-006 La fecha de expedición es obligatoria | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-079 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-007 La fecha de expedición no puede ser futura | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-079, TC-INV-080 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-008 Las repeticiones máximas no pueden ser negativas | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-081 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-009 Las indicaciones de uso son opcionales y admiten como… | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-083 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-010 El número de receta es opcional y admite como máximo 30… | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-082 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | Pendiente |
-| RN-REC-011 Al editar, el identificador es obligatorio; la API lo… | HU-INV-017 | CU-INV-17 | TC-INV-085, TC-INV-087 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | — | Pendiente |
-| RN-REC-012 Editar, consultar o eliminar una receta que no existe | HU-INV-017, HU-INV-019 | CU-INV-17, CU-INV-19 | TC-INV-086, TC-INV-094, TC-INV-096 | `DELETE /Recetas/{id}`, `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | — | Pendiente |
-| RN-REC-013 No se puede eliminar una receta ya usada en una línea de… | HU-INV-019 | CU-INV-19 | TC-INV-095 | `DELETE /Recetas/{id}` | `/recetas-medicas/:id` | SPA Probado | — | Pendiente |
-| RN-REC-014 La eliminación es lógica | HU-INV-019 | CU-INV-19 | TC-INV-094 | `DELETE /Recetas/{id}` | `/recetas-medicas/:id` | SPA Probado | — | Pendiente |
-| RN-REC-015 Crear y editar responden 200 con el identificador de la… | HU-INV-017 | CU-INV-17 | TC-INV-077 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | — | Pendiente |
-| RN-REC-016 El listado filtra por paciente, por médico y por fecha… | HU-INV-018 | CU-INV-18 | TC-INV-090, TC-INV-091, TC-INV-093 | `GET /Recetas`, `POST /Recetas/exportar` | `/recetas-medicas` | SPA Probado | — | Pendiente |
-| RN-REC-017 La exportación a Excel usa los mismos filtros del… | HU-INV-018 | CU-INV-18 | TC-INV-092 | `GET /Recetas`, `POST /Recetas/exportar` | `/recetas-medicas` | SPA Probado | — | Pendiente |
-| RN-REC-018 Análisis con IA — acceso y límites | HU-INV-020 | CU-INV-20 | 5: TC-INV-097, TC-INV-098, TC-INV-099… | `POST /Recetas/analizar` | `/recetas-medicas`, `/recetas-medicas/escanear` | SPA Probado | P7 | Pendiente |
-| RN-REC-019 Análisis con IA — formato de la imagen | HU-INV-020 | CU-INV-20 | TC-INV-103 | `POST /Recetas/analizar` | `/recetas-medicas`, `/recetas-medicas/escanear` | BE Sin prueba; SPA Probado | P7 | Pendiente |
-| RN-REC-020 Análisis con IA — especialidad de contexto | HU-INV-020 | CU-INV-20 | TC-INV-104 | `POST /Recetas/analizar` | `/recetas-medicas`, `/recetas-medicas/escanear` | SPA Probado | P7 | Pendiente |
-| RN-REC-021 Análisis con IA — flujo y qué ocurre si falla | HU-INV-022 | CU-INV-20, CU-INV-22 | 5: TC-INV-098, TC-INV-114, TC-INV-115… | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-022 Análisis con IA — límites del resultado | HU-INV-021 | CU-INV-21 | TC-INV-113 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-023 Análisis con IA — validación contra DIGEMID | HU-INV-021 | CU-INV-21 | TC-INV-105, TC-INV-106 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | cap. 4 |
-| RN-REC-024 Análisis con IA — coincidencia con el catálogo de… | HU-INV-021 | CU-INV-21 | TC-INV-105, TC-INV-107 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-025 Análisis con IA — confianza | HU-INV-021 | CU-INV-21 | TC-INV-108, TC-INV-109 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-026 Análisis con IA — stock en la sucursal del usuario | HU-INV-021 | CU-INV-21 | TC-INV-110 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-027 Análisis con IA — equivalentes terapéuticos | HU-INV-021 | CU-INV-21 | TC-INV-111 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P3, P7 | Pendiente |
-| RN-REC-028 Análisis con IA — sugerencias | HU-INV-021 | CU-INV-21 | TC-INV-112 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-029 El análisis no guarda nada | HU-INV-022 | CU-INV-22 | TC-INV-118 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-030 Guards de la entidad RecetaDigitalizadaIA (inalcanzables) | HU-INV-022 | CU-INV-22 | TC-INV-118 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | SPA Sin pruebas | P7 | Pendiente |
-| RN-REC-031 Control de dispensaciones por condición de venta | HU-INV-017, HU-VEN-010 | CU-INV-17, CU-VEN-10 | TC-INV-088, TC-VEN-072 | 5: `GET /Recetas/{id}`, `POST /Recetas`, `POST /Ventas`… | `/pos/nueva`, `/recetas-medicas/:id` (+1) | SPA Probado | P4 | Pendiente |
+| RN-REC-001 Cada operación exige un permiso del módulo Recetas | HU-INV-017, HU-INV-018, HU-INV-019, HU-INV-020 | CU-INV-17, CU-INV-18, CU-INV-19, CU-INV-20 | 5: TC-INV-077, TC-INV-089, TC-INV-096… | 7: `DELETE /Recetas/{id}`, `GET /Recetas`, `GET /Recetas/{id}`… | `/recetas-medicas`, `/recetas-medicas/:id` (+2) | SPA Probado | — | cap. 7 |
+| RN-REC-002 El paciente de la receta es obligatorio | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-078 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-003 El médico de la receta es obligatorio | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-078 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-004 El paciente debe existir en la empresa | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-084, TC-INV-085 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-005 El médico debe existir en la empresa | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-084, TC-INV-085 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-006 La fecha de expedición es obligatoria | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-079 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-007 La fecha de expedición no puede ser futura | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-079, TC-INV-080 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-008 Las repeticiones máximas no pueden ser negativas | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-081 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-009 Las indicaciones de uso son opcionales y admiten como… | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-083 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-010 El número de receta es opcional y admite como máximo 30… | HU-INV-017 | CU-INV-17 | TC-INV-077, TC-INV-082 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | P7 | cap. 7 |
+| RN-REC-011 Al editar, el identificador es obligatorio; la API lo… | HU-INV-017 | CU-INV-17 | TC-INV-085, TC-INV-087 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | — | cap. 7 |
+| RN-REC-012 Editar, consultar o eliminar una receta que no existe | HU-INV-017, HU-INV-019 | CU-INV-17, CU-INV-19 | TC-INV-086, TC-INV-094, TC-INV-096 | `DELETE /Recetas/{id}`, `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | — | cap. 7 |
+| RN-REC-013 No se puede eliminar una receta ya usada en una línea de… | HU-INV-019 | CU-INV-19 | TC-INV-095 | `DELETE /Recetas/{id}` | `/recetas-medicas/:id` | SPA Probado | — | cap. 7 |
+| RN-REC-014 La eliminación es lógica | HU-INV-019 | CU-INV-19 | TC-INV-094 | `DELETE /Recetas/{id}` | `/recetas-medicas/:id` | SPA Probado | — | cap. 7 |
+| RN-REC-015 Crear y editar responden 200 con el identificador de la… | HU-INV-017 | CU-INV-17 | TC-INV-077 | `GET /Recetas/{id}`, `POST /Recetas`, `PUT /Recetas/{id}` | `/recetas-medicas/:id`, `/recetas-medicas/nueva` | SPA Probado | — | cap. 7 |
+| RN-REC-016 El listado filtra por paciente, por médico y por fecha… | HU-INV-018 | CU-INV-18 | TC-INV-090, TC-INV-091, TC-INV-093 | `GET /Recetas`, `POST /Recetas/exportar` | `/recetas-medicas` | SPA Probado | — | cap. 7 |
+| RN-REC-017 La exportación a Excel usa los mismos filtros del… | HU-INV-018 | CU-INV-18 | TC-INV-092 | `GET /Recetas`, `POST /Recetas/exportar` | `/recetas-medicas` | SPA Probado | — | cap. 7 |
+| RN-REC-018 Análisis con IA — acceso y límites | HU-INV-020 | CU-INV-20 | 5: TC-INV-097, TC-INV-098, TC-INV-099… | `POST /Recetas/analizar` | `/recetas-medicas`, `/recetas-medicas/escanear` | SPA Probado | P7 | cap. 7 |
+| RN-REC-019 Análisis con IA — formato de la imagen | HU-INV-020 | CU-INV-20 | TC-INV-103 | `POST /Recetas/analizar` | `/recetas-medicas`, `/recetas-medicas/escanear` | BE Sin prueba; SPA Probado | P7 | cap. 7 |
+| RN-REC-020 Análisis con IA — especialidad de contexto | HU-INV-020 | CU-INV-20 | TC-INV-104 | `POST /Recetas/analizar` | `/recetas-medicas`, `/recetas-medicas/escanear` | SPA Probado | P7 | cap. 7 |
+| RN-REC-021 Análisis con IA — flujo y qué ocurre si falla | HU-INV-022 | CU-INV-20, CU-INV-22 | 5: TC-INV-098, TC-INV-114, TC-INV-115… | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-022 Análisis con IA — límites del resultado | HU-INV-021 | CU-INV-21 | TC-INV-113 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-023 Análisis con IA — validación contra DIGEMID | HU-INV-021 | CU-INV-21 | TC-INV-105, TC-INV-106 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | cap. 4, 7 |
+| RN-REC-024 Análisis con IA — coincidencia con el catálogo de… | HU-INV-021 | CU-INV-21 | TC-INV-105, TC-INV-107 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-025 Análisis con IA — confianza | HU-INV-021 | CU-INV-21 | TC-INV-108, TC-INV-109 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-026 Análisis con IA — stock en la sucursal del usuario | HU-INV-021 | CU-INV-21 | TC-INV-110 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-027 Análisis con IA — equivalentes terapéuticos | HU-INV-021 | CU-INV-21 | TC-INV-111 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P3, P7 | cap. 7 |
+| RN-REC-028 Análisis con IA — sugerencias | HU-INV-021 | CU-INV-21 | TC-INV-112 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | BE Sin prueba; SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-029 El análisis no guarda nada | HU-INV-022 | CU-INV-22 | TC-INV-118 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-030 Guards de la entidad RecetaDigitalizadaIA (inalcanzables) | HU-INV-022 | CU-INV-22 | TC-INV-118 | `POST /Recetas/analizar` | `/recetas-medicas/escanear` | SPA Sin pruebas | P7 | cap. 7 |
+| RN-REC-031 Control de dispensaciones por condición de venta | HU-INV-017, HU-VEN-010 | CU-INV-17, CU-VEN-10 | TC-INV-088, TC-VEN-072 | 5: `GET /Recetas/{id}`, `POST /Recetas`, `POST /Ventas`… | `/pos/nueva`, `/recetas-medicas/:id` (+1) | SPA Probado | P4 | cap. 7, 8 |
 
 ### 3.4 01c2 — Catálogo de reglas de negocio — Parte C2: ventas y comprobantes (98 reglas)
 
@@ -776,11 +776,11 @@ Documento: [01c2-ventas-y-comprobantes.md](../ola-1-fundamentos/01-reglas-de-neg
 |---|---|---|---|---|---|---|---|---|
 | RN-VEN-001 Cada operación exige un permiso del módulo Ventas | HU-VEN-001, HU-VEN-002, HU-VEN-026, HU-VEN-027 | CU-VEN-01, CU-VEN-02, CU-VEN-26, CU-VEN-27 | 7: TC-VEN-001, TC-VEN-004, TC-VEN-007… | 9: `GET /Empleados`, `GET /Medicamentos`, `GET /Medicamentos/condiciones-venta`… | `/pos`, `/pos/nueva` (+1) | SPA Probado | P4 | cap. 11 |
 | RN-VEN-002 La sucursal y el empleado de la venta no se eligen | HU-VEN-001, HU-VEN-015, HU-VEN-022, HU-VEN-023 | CU-VEN-01, CU-VEN-15, CU-VEN-22, CU-VEN-23 | TC-VEN-001, TC-VEN-008, TC-VEN-116 | 5: `GET /POS/sesiones`, `GET /Ventas/configuracion`, `POST /Ventas`… | `/pos/nueva`, `/pos` (+1) | SPA Probado | P4 | cap. 11 |
-| RN-VEN-003 Para crear una venta —cobrada o en espera— se necesita… | HU-CAJ-002, HU-VEN-001, HU-VEN-020 | CU-CAJ-02, CU-VEN-01, CU-VEN-20 | 6: TC-CAJ-011, TC-VEN-002, TC-VEN-003… | `GET /POS/sesiones`, `GET /Ventas/configuracion`, `POST /POS/apertura`, `POST /Ventas` | `/pos/nueva`, `/pos` | SPA Probado | P2, P4 | cap. 11 |
-| RN-VEN-004 La sesión indicada debe existir | HU-VEN-001, HU-VEN-020 | CU-VEN-01, CU-VEN-20 | TC-VEN-005, TC-VEN-006, TC-VEN-146, TC-VEN-150 | `GET /POS/sesiones`, `GET /Ventas/configuracion`, `POST /Ventas` | `/pos/nueva`, `/pos` | SPA Probado | P4, P6 | cap. 11 |
-| RN-VEN-005 La sesión debe ser del propio cajero y de su sucursal | HU-VEN-001 | CU-VEN-01 | TC-VEN-006 | `GET /POS/sesiones`, `GET /Ventas/configuracion` | `/pos`, `/pos/nueva` | SPA Probado | P4, P6 | cap. 11 |
-| RN-VEN-006 Cobrar una venta en espera exige que quien cobra tenga… | HU-CAJ-004, HU-VEN-022 | CU-CAJ-04, CU-VEN-22 | TC-VEN-162, TC-VEN-163 | `GET /Dashboard/caja`, `POST /POS/cierre`, `PUT /Ventas/{id:guid}/completar` | `/sesiones-caja/:id` | SPA Parcial | P4, P6 | cap. 11 |
-| RN-VEN-007 Para cobrar la empresa debe tener RUC y la sucursal una… | HU-VEN-016, HU-VEN-022 | CU-VEN-16, CU-VEN-22 | 5: TC-VEN-124, TC-VEN-125, TC-VEN-126… | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P2, P4 | cap. 11 |
+| RN-VEN-003 Para crear una venta —cobrada o en espera— se necesita… | HU-CAJ-002, HU-VEN-001, HU-VEN-020 | CU-CAJ-02, CU-VEN-01, CU-VEN-20 | 6: TC-CAJ-011, TC-VEN-002, TC-VEN-003… | `GET /POS/sesiones`, `GET /Ventas/configuracion`, `POST /POS/apertura`, `POST /Ventas` | `/pos/nueva`, `/pos` | SPA Probado | P2, P4 | cap. 8, 11 |
+| RN-VEN-004 La sesión indicada debe existir | HU-VEN-001, HU-VEN-020 | CU-VEN-01, CU-VEN-20 | TC-VEN-005, TC-VEN-006, TC-VEN-146, TC-VEN-150 | `GET /POS/sesiones`, `GET /Ventas/configuracion`, `POST /Ventas` | `/pos/nueva`, `/pos` | SPA Probado | P4, P6 | cap. 8, 11 |
+| RN-VEN-005 La sesión debe ser del propio cajero y de su sucursal | HU-VEN-001 | CU-VEN-01 | TC-VEN-006 | `GET /POS/sesiones`, `GET /Ventas/configuracion` | `/pos`, `/pos/nueva` | SPA Probado | P4, P6 | cap. 8, 11 |
+| RN-VEN-006 Cobrar una venta en espera exige que quien cobra tenga… | HU-CAJ-004, HU-VEN-022 | CU-CAJ-04, CU-VEN-22 | TC-VEN-162, TC-VEN-163 | `GET /Dashboard/caja`, `POST /POS/cierre`, `PUT /Ventas/{id:guid}/completar` | `/sesiones-caja/:id` | SPA Parcial | P4, P6 | cap. 8, 11 |
+| RN-VEN-007 Para cobrar la empresa debe tener RUC y la sucursal una… | HU-VEN-016, HU-VEN-022 | CU-VEN-16, CU-VEN-22 | 5: TC-VEN-124, TC-VEN-125, TC-VEN-126… | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P2, P4 | cap. 8, 11 |
 | RN-VEN-008 Toda venta nueva y todo reemplazo de los detalles de una… | HU-VEN-003, HU-VEN-005, HU-VEN-020, HU-VEN-021 | CU-VEN-03, CU-VEN-05, CU-VEN-20, CU-VEN-21 | TC-VEN-033, TC-VEN-042, TC-VEN-167 | `GET /Ventas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/detalles` | `/pos/nueva`, `/pos` (+1) | SPA Probado | P4 | cap. 11 |
 | RN-VEN-009 Cada línea debe traer un lote | HU-VEN-003, HU-VEN-021 | CU-VEN-03, CU-VEN-21 | TC-VEN-033 | `GET /Ventas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` (+1) | SPA Probado | P4 | cap. 11 |
 | RN-VEN-010 La cantidad de cada línea debe ser mayor que 0 | HU-VEN-003, HU-VEN-021 | CU-VEN-03, CU-VEN-21 | TC-VEN-030, TC-VEN-033 | `GET /Ventas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` (+1) | SPA Probado | P4 | cap. 11 |
@@ -792,91 +792,91 @@ Documento: [01c2-ventas-y-comprobantes.md](../ola-1-fundamentos/01-reglas-de-neg
 | RN-VEN-016 Cobrar sin reenviar las líneas no vuelve a revisar el lote | HU-VEN-022 | CU-VEN-22 | TC-VEN-165 | `PUT /Ventas/{id:guid}/completar` | /pos/nueva?continuar={id} — botón «Procesar Venta» | — | P4 | cap. 11 |
 | RN-VEN-017 Unidad de la cantidad | HU-VEN-004 | CU-VEN-04 | TC-VEN-035 | `GET /Ventas/presentaciones`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 11 |
 | RN-VEN-018 Presentación de venta | HU-VEN-004 | CU-VEN-04 | TC-VEN-040 | `GET /Ventas/presentaciones`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 11 |
-| RN-VEN-019 De dónde sale el precio | HU-VEN-003, HU-VEN-004 | CU-VEN-03, CU-VEN-04 | 6: TC-VEN-015, TC-VEN-022, TC-VEN-023… | `GET /Ventas/presentaciones`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P3, P4, P7 | cap. 11 |
+| RN-VEN-019 De dónde sale el precio | HU-VEN-003, HU-VEN-004 | CU-VEN-03, CU-VEN-04 | 6: TC-VEN-015, TC-VEN-022, TC-VEN-023… | `GET /Ventas/presentaciones`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P3, P4, P7 | cap. 8, 11 |
 | RN-VEN-020 Redondeos y precisión | HU-VEN-003, HU-VEN-004 | CU-VEN-03, CU-VEN-04 | TC-VEN-030, TC-VEN-033 | `GET /Ventas/presentaciones`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 11 |
 | RN-VEN-021 Total de la venta | HU-VEN-003, HU-VEN-015 | CU-VEN-03, CU-VEN-15 | TC-VEN-022, TC-VEN-112 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 11 |
 | RN-VEN-022 Costo histórico | HU-VEN-003 | CU-VEN-03 | TC-VEN-033 | `POST /Ventas` | `/pos/nueva` | BE Parcial; SPA Probado | P3, P4 | cap. 11 |
-| RN-VEN-023 Descuentos: no existen | HU-VEN-003, HU-VEN-019 | CU-VEN-03, CU-VEN-19 | TC-VEN-034 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4 | cap. 11 |
+| RN-VEN-023 Descuentos: no existen | HU-VEN-003, HU-VEN-019 | CU-VEN-03, CU-VEN-19 | TC-VEN-034 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4 | cap. 8, 11 |
 | RN-VEN-024 Validaciones del SPA al agregar al carrito | HU-VEN-003, HU-VEN-005 | CU-VEN-03, CU-VEN-05 | 5: TC-VEN-024, TC-VEN-026, TC-VEN-027… | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 11 |
 | RN-VEN-025 El cliente es opcional | HU-VEN-007, HU-VEN-021 | CU-VEN-07, CU-VEN-21 | TC-VEN-048, TC-VEN-049 | `GET /Pacientes`, `GET /Ventas`, `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` (+1) | SPA Probado | P4 | cap. 11 |
 | RN-VEN-026 Cuándo el cliente es indispensable | HU-VEN-007, HU-VEN-008 | CU-VEN-07, CU-VEN-08 | TC-VEN-048, TC-VEN-054 | `GET /Pacientes`, `GET /Recetas`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 11 |
 | RN-VEN-027 Actualizar el cliente de una venta en espera | HU-VEN-007, HU-VEN-021, HU-VEN-022 | CU-VEN-07, CU-VEN-21, CU-VEN-22 | TC-VEN-051, TC-VEN-053 | 5: `GET /Pacientes`, `GET /Ventas`, `GET /Ventas/{id:guid}`… | `/pos`, `/pos/:id` (+1) | SPA Probado | P4 | cap. 11 |
-| RN-VEN-028 Política de la empresa ExigirRegistroReceta | HU-VEN-008, HU-VEN-009 | CU-VEN-01, CU-VEN-08, CU-VEN-09 | TC-VEN-009, TC-VEN-057, TC-VEN-065, TC-VEN-070 | `GET /Recetas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/pos/:id` | BE Parcial; SPA Probado | P4 | cap. 11 |
-| RN-VEN-029 Matriz de exigencia de receta por línea | HU-VEN-008, HU-VEN-009 | CU-VEN-08, CU-VEN-09 | 6: TC-VEN-054, TC-VEN-055, TC-VEN-057… | `GET /Recetas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/pos/:id` | BE Parcial; SPA Probado | P3, P4, P7 | cap. 11 |
+| RN-VEN-028 Política de la empresa ExigirRegistroReceta | HU-VEN-008, HU-VEN-009 | CU-VEN-01, CU-VEN-08, CU-VEN-09 | TC-VEN-009, TC-VEN-057, TC-VEN-065, TC-VEN-070 | `GET /Recetas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/pos/:id` | BE Parcial; SPA Probado | P4 | cap. 7, 8, 11 |
+| RN-VEN-029 Matriz de exigencia de receta por línea | HU-VEN-008, HU-VEN-009 | CU-VEN-08, CU-VEN-09 | 6: TC-VEN-054, TC-VEN-055, TC-VEN-057… | `GET /Recetas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/pos/:id` | BE Parcial; SPA Probado | P3, P4, P7 | cap. 7, 8, 11 |
 | RN-VEN-030 La receta indicada debe existir | HU-VEN-008 | CU-VEN-08 | TC-VEN-060, TC-VEN-062 | `GET /Recetas`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 11 |
 | RN-VEN-031 Receta de otro paciente | HU-VEN-008 | CU-VEN-08 | TC-VEN-054, TC-VEN-062 | `GET /Recetas`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 11 |
-| RN-VEN-032 Número de receta para controlados | HU-VEN-008 | CU-VEN-08 | TC-VEN-054, TC-VEN-056, TC-VEN-063 | `GET /Recetas`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 11 |
-| RN-VEN-033 Dispensaciones: cómo las cuenta la venta | HU-VEN-010 | CU-VEN-10 | 9: TC-VEN-072, TC-VEN-073, TC-VEN-074… | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 11 |
-| RN-VEN-034 Receta verificada: cuándo se exige | HU-VEN-009, HU-VEN-022 | CU-VEN-09, CU-VEN-22 | 6: TC-VEN-065, TC-VEN-067, TC-VEN-069… | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | cap. 11 |
+| RN-VEN-032 Número de receta para controlados | HU-VEN-008 | CU-VEN-08 | TC-VEN-054, TC-VEN-056, TC-VEN-063 | `GET /Recetas`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 8, 11 |
+| RN-VEN-033 Dispensaciones: cómo las cuenta la venta | HU-VEN-010 | CU-VEN-10 | 9: TC-VEN-072, TC-VEN-073, TC-VEN-074… | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 8, 11 |
+| RN-VEN-034 Receta verificada: cuándo se exige | HU-VEN-009, HU-VEN-022 | CU-VEN-09, CU-VEN-22 | 6: TC-VEN-065, TC-VEN-067, TC-VEN-069… | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | cap. 7, 8, 11 |
 | RN-VEN-035 Qué se guarda de la verificación | HU-VEN-009, HU-VEN-027 | CU-VEN-09, CU-VEN-27 | 5: TC-VEN-065, TC-VEN-066, TC-VEN-069… | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | cap. 11 |
 | RN-VEN-036 Una receta por venta en el POS | HU-VEN-008, HU-VEN-011 | CU-VEN-08, CU-VEN-11 | TC-VEN-054, TC-VEN-060, TC-VEN-084, TC-VEN-087 | `GET /Recetas`, `GET /Ventas/lotes-disponibles`, `POST /Recetas/analizar`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 11 |
 | RN-VEN-037 Bloqueos del POS por receta antes de cobrar | HU-VEN-008, HU-VEN-009 | CU-VEN-08, CU-VEN-09 | 5: TC-VEN-054, TC-VEN-055, TC-VEN-056… | `GET /Recetas`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/pos/:id` | SPA Probado | P4 | cap. 11 |
 | RN-VEN-038 Cobrar sin reenviar líneas: se vuelve a juzgar cada… | HU-VEN-022 | CU-VEN-22 | TC-VEN-165, TC-VEN-166 | `PUT /Ventas/{id:guid}/completar` | /pos/nueva?continuar={id} — botón «Procesar Venta» | — | P4 | cap. 11 |
-| RN-VEN-039 Al menos un pago para cobrar | HU-VEN-012, HU-VEN-014 | CU-VEN-12, CU-VEN-14 | TC-VEN-104, TC-VEN-111 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-040 Métodos de pago | HU-VEN-013 | CU-VEN-13 | TC-VEN-097, TC-VEN-101, TC-VEN-103 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-041 Monto mínimo y máximo de cada pago | HU-VEN-012, HU-VEN-014 | CU-VEN-12, CU-VEN-14 | TC-VEN-092, TC-VEN-095, TC-VEN-096, TC-VEN-104 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-042 Número de operación obligatorio para todo pago que no… | HU-VEN-013, HU-VEN-014 | CU-VEN-13, CU-VEN-14 | 6: TC-VEN-097, TC-VEN-098, TC-VEN-099… | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-043 La suma de los pagos debe cubrir el monto a pagar | HU-VEN-012, HU-VEN-014 | CU-VEN-12, CU-VEN-14 | 5: TC-VEN-088, TC-VEN-089, TC-VEN-090… | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-044 Vuelto solo sobre efectivo | HU-CAJ-004, HU-VEN-012, HU-VEN-014 | CU-CAJ-04, CU-VEN-12, CU-VEN-14 | 7: TC-CAJ-028, TC-CAJ-030, TC-VEN-088… | `GET /Dashboard/caja`, `POST /POS/cierre`, `POST /Ventas` | `/pos/nueva`, `/sesiones-caja/:id` | SPA Probado | P4 | Pendiente |
-| RN-VEN-045 Pago dividido | HU-VEN-005, HU-VEN-006, HU-VEN-014 | CU-VEN-05, CU-VEN-06, CU-VEN-14 | TC-VEN-044, TC-VEN-045, TC-VEN-110 | `GET /Pacientes/{id}`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-046 Cobrar fija el estado | HU-VEN-012, HU-VEN-022 | CU-VEN-12, CU-VEN-22 | TC-VEN-096, TC-VEN-162 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-047 Cobertura de aseguradora (implementada en la API; sin… | HU-CAJ-004, HU-VEN-019 | CU-CAJ-04, CU-VEN-19 | TC-CAJ-031, TC-VEN-141, TC-VEN-143, TC-VEN-144 | `GET /Dashboard/caja`, `POST /POS/cierre`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/sesiones-caja/:id` | SPA Probado | — | Pendiente |
-| RN-VEN-048 Guards y restricciones del reclamo de seguro… | HU-VEN-019 | CU-VEN-19 | TC-VEN-142 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-VEN-049 Estados | HU-VEN-015, HU-VEN-020 | CU-VEN-15, CU-VEN-20 | TC-VEN-112, TC-VEN-146 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-VEN-050 Crear una venta cobrada | HU-VEN-015 | CU-VEN-15 | TC-VEN-112, TC-VEN-115 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-051 El campo Estado del comando | HU-VEN-015, HU-VEN-020 | CU-VEN-15, CU-VEN-20 | TC-VEN-112, TC-VEN-123, TC-VEN-146 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-052 Venta en espera: qué reserva y qué no | HU-VEN-020, HU-VEN-024 | CU-VEN-20, CU-VEN-24 | TC-VEN-147, TC-VEN-148, TC-VEN-152, TC-VEN-181 | `POST /Ventas`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-053 Cómo se retoma una venta en espera | HU-VEN-006, HU-VEN-021 | CU-VEN-06, CU-VEN-21 | 5: TC-VEN-045, TC-VEN-047, TC-VEN-153… | `GET /Pacientes/{id}`, `GET /Ventas`, `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` (+1) | BE Parcial; SPA Probado | P4 | Pendiente |
-| RN-VEN-054 Actualizar los detalles de una venta en espera | HU-VEN-021 | CU-VEN-21 | TC-VEN-157, TC-VEN-158, TC-VEN-159, TC-VEN-161 | `GET /Ventas`, `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` | BE Parcial; SPA Probado | P4 | Pendiente |
-| RN-VEN-055 Efecto de reemplazar los detalles | HU-VEN-021 | CU-VEN-21 | TC-VEN-155, TC-VEN-158 | `GET /Ventas`, `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` | BE Parcial; SPA Probado | P4 | Pendiente |
-| RN-VEN-056 Cobrar una venta en espera | HU-VEN-022 | CU-VEN-22 | TC-VEN-162, TC-VEN-164, TC-VEN-169 | `PUT /Ventas/{id:guid}/completar` | /pos/nueva?continuar={id} — botón «Procesar Venta» | BE Parcial | P4 | Pendiente |
-| RN-VEN-057 Concurrencia sobre la venta | HU-VEN-015, HU-VEN-022 | CU-VEN-15, CU-VEN-22 | TC-VEN-120, TC-VEN-170 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4, P5 | Pendiente |
-| RN-VEN-058 Moneda y fecha | HU-VEN-015 | CU-VEN-15 | TC-VEN-116 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-VEN-059 Código de venta | HU-VEN-017, HU-VEN-020, HU-VEN-026, HU-VEN-027 | CU-VEN-17, CU-VEN-20, CU-VEN-26, CU-VEN-27 | TC-VEN-128, TC-VEN-132, TC-VEN-148, TC-VEN-196 | 6: `GET /Empleados`, `GET /Pacientes`, `GET /Ventas`… | `/pos/:id`, `/pos/nueva` (+1) | SPA Probado | P4 | Pendiente |
-| RN-VEN-060 Evento de dominio | HU-VEN-015, HU-VEN-022 | CU-VEN-15, CU-VEN-22 | TC-VEN-117, TC-VEN-148 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-061 Auditoría | HU-VEN-015, HU-VEN-023 | CU-VEN-15, CU-VEN-23 | TC-VEN-118, TC-VEN-173 | `POST /Ventas`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4, P5 | Pendiente |
-| RN-VEN-062 Quién puede anular | HU-VEN-023, HU-VEN-025 | CU-VEN-23, CU-VEN-25 | 5: TC-VEN-172, TC-VEN-177, TC-VEN-180… | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-VEN-063 Motivo obligatorio | HU-VEN-023, HU-VEN-025 | CU-VEN-23, CU-VEN-25 | TC-VEN-172, TC-VEN-178, TC-VEN-187, TC-VEN-188 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-VEN-064 La venta debe existir | HU-VEN-023, HU-VEN-025 | CU-VEN-23, CU-VEN-25 | TC-VEN-189 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-VEN-065 Estados que se pueden anular y estados que no | HU-VEN-024, HU-VEN-025 | CU-VEN-24, CU-VEN-25 | TC-VEN-181, TC-VEN-184, TC-VEN-185 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-VEN-066 Ventas con devoluciones: no se anulan | HU-DEV-001, HU-VEN-025 | CU-DEV-01, CU-VEN-25 | TC-DEV-011, TC-VEN-183, TC-VEN-184 | `POST /Devoluciones`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-VEN-067 Caja propia abierta para anular una venta cobrada | HU-CAJ-004, HU-VEN-023, HU-VEN-024 | CU-CAJ-04, CU-VEN-23, CU-VEN-24 | 6: TC-CAJ-029, TC-CAJ-032, TC-VEN-172… | `GET /Dashboard/caja`, `POST /POS/cierre`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id`, `/sesiones-caja/:id` | BE Sí; SPA Probado | P5, P6 | Pendiente |
-| RN-VEN-068 Qué se revierte al anular | HU-VEN-023, HU-VEN-024 | CU-VEN-23, CU-VEN-24 | TC-VEN-173, TC-VEN-181 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-VEN-069 Qué queda registrado | HU-VEN-023, HU-VEN-024 | CU-VEN-23, CU-VEN-24 | TC-VEN-173, TC-VEN-174, TC-VEN-181 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-VEN-070 Alcance del listado: la sucursal del token | HU-VEN-026 | CU-VEN-26 | TC-VEN-192 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | Pendiente |
-| RN-VEN-071 Cajero y administrador ven lo mismo | HU-VEN-026 | CU-VEN-26 | TC-VEN-193 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | Pendiente |
-| RN-VEN-072 Filtros del listado | HU-VEN-026 | CU-VEN-26 | TC-VEN-191, TC-VEN-194, TC-VEN-195 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | Pendiente |
-| RN-VEN-073 Orden, paginación y contenido de cada fila | HU-VEN-026 | CU-VEN-26 | TC-VEN-191, TC-VEN-196 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | Pendiente |
-| RN-VEN-074 Detalle de una venta | HU-DEV-007, HU-VEN-027 | CU-DEV-07, CU-VEN-27 | TC-DEV-052, TC-VEN-200, TC-VEN-202, TC-VEN-204 | `GET /Ventas/{id:guid}` | `/pos/:id` | BE Sin prueba; SPA Probado | — | Pendiente |
-| RN-VEN-075 Lotes disponibles para vender | HU-VEN-002, HU-VEN-011 | CU-VEN-02, CU-VEN-11 | 5: TC-VEN-010, TC-VEN-011, TC-VEN-017… | `GET /Medicamentos`, `GET /Medicamentos/condiciones-venta`, `GET /Ventas/lotes-disponibles`, `POST /Recetas/analizar` | `/pos/nueva` | SPA Probado | P4, P7 | Pendiente |
-| RN-VEN-076 Presentaciones de un producto | HU-VEN-004 | CU-VEN-04 | TC-VEN-035 | `GET /Ventas/presentaciones`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-VEN-077 Configuración de venta | HU-VEN-001, HU-VEN-008 | CU-VEN-01, CU-VEN-08 | TC-VEN-001, TC-VEN-009, TC-VEN-057 | `GET /POS/sesiones`, `GET /Recetas`, `GET /Ventas/configuracion`, `POST /Ventas` | `/pos/nueva`, `/pos` | SPA Probado | — | Pendiente |
-| RN-VEN-078 Exportación a Excel | HU-VEN-028 | CU-VEN-28 | TC-VEN-206 | `POST /Ventas/exportar` | `/pos` | BE Sin prueba; SPA Sin pruebas | — | Pendiente |
-| RN-VEN-079 Ventas_Cabecera | HU-VEN-015 | CU-VEN-15 | TC-VEN-121 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-VEN-080 Ventas_Detalle | HU-VEN-003, HU-VEN-015 | CU-VEN-03, CU-VEN-15 | TC-VEN-033, TC-VEN-121 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-VEN-081 Ventas_Pagos | HU-VEN-012, HU-VEN-013, HU-VEN-015 | CU-VEN-12, CU-VEN-13, CU-VEN-15 | TC-VEN-096, TC-VEN-099, TC-VEN-101, TC-VEN-121 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-VEN-082 Índices de rendimiento sin regla de negocio | HU-VEN-015 | CU-VEN-15 | — | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-VEN-083 Guards de la entidad Venta y reglas que dependen de otro… | HU-VEN-015 | CU-VEN-15 | — | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | Pendiente |
+| RN-VEN-039 Al menos un pago para cobrar | HU-VEN-012, HU-VEN-014 | CU-VEN-12, CU-VEN-14 | TC-VEN-104, TC-VEN-111 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | — |
+| RN-VEN-040 Métodos de pago | HU-VEN-013 | CU-VEN-13 | TC-VEN-097, TC-VEN-101, TC-VEN-103 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | — |
+| RN-VEN-041 Monto mínimo y máximo de cada pago | HU-VEN-012, HU-VEN-014 | CU-VEN-12, CU-VEN-14 | TC-VEN-092, TC-VEN-095, TC-VEN-096, TC-VEN-104 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | — |
+| RN-VEN-042 Número de operación obligatorio para todo pago que no… | HU-VEN-013, HU-VEN-014 | CU-VEN-13, CU-VEN-14 | 6: TC-VEN-097, TC-VEN-098, TC-VEN-099… | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 8 |
+| RN-VEN-043 La suma de los pagos debe cubrir el monto a pagar | HU-VEN-012, HU-VEN-014 | CU-VEN-12, CU-VEN-14 | 5: TC-VEN-088, TC-VEN-089, TC-VEN-090… | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 8 |
+| RN-VEN-044 Vuelto solo sobre efectivo | HU-CAJ-004, HU-VEN-012, HU-VEN-014 | CU-CAJ-04, CU-VEN-12, CU-VEN-14 | 7: TC-CAJ-028, TC-CAJ-030, TC-VEN-088… | `GET /Dashboard/caja`, `POST /POS/cierre`, `POST /Ventas` | `/pos/nueva`, `/sesiones-caja/:id` | SPA Probado | P4 | cap. 8 |
+| RN-VEN-045 Pago dividido | HU-VEN-005, HU-VEN-006, HU-VEN-014 | CU-VEN-05, CU-VEN-06, CU-VEN-14 | TC-VEN-044, TC-VEN-045, TC-VEN-110 | `GET /Pacientes/{id}`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 8 |
+| RN-VEN-046 Cobrar fija el estado | HU-VEN-012, HU-VEN-022 | CU-VEN-12, CU-VEN-22 | TC-VEN-096, TC-VEN-162 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4 | — |
+| RN-VEN-047 Cobertura de aseguradora (implementada en la API; sin… | HU-CAJ-004, HU-VEN-019 | CU-CAJ-04, CU-VEN-19 | TC-CAJ-031, TC-VEN-141, TC-VEN-143, TC-VEN-144 | `GET /Dashboard/caja`, `POST /POS/cierre`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/sesiones-caja/:id` | SPA Probado | — | — |
+| RN-VEN-048 Guards y restricciones del reclamo de seguro… | HU-VEN-019 | CU-VEN-19 | TC-VEN-142 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | — | — |
+| RN-VEN-049 Estados | HU-VEN-015, HU-VEN-020 | CU-VEN-15, CU-VEN-20 | TC-VEN-112, TC-VEN-146 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | — |
+| RN-VEN-050 Crear una venta cobrada | HU-VEN-015 | CU-VEN-15 | TC-VEN-112, TC-VEN-115 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | — |
+| RN-VEN-051 El campo Estado del comando | HU-VEN-015, HU-VEN-020 | CU-VEN-15, CU-VEN-20 | TC-VEN-112, TC-VEN-123, TC-VEN-146 | `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | — |
+| RN-VEN-052 Venta en espera: qué reserva y qué no | HU-VEN-020, HU-VEN-024 | CU-VEN-20, CU-VEN-24 | TC-VEN-147, TC-VEN-148, TC-VEN-152, TC-VEN-181 | `POST /Ventas`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | cap. 8 |
+| RN-VEN-053 Cómo se retoma una venta en espera | HU-VEN-006, HU-VEN-021 | CU-VEN-06, CU-VEN-21 | 5: TC-VEN-045, TC-VEN-047, TC-VEN-153… | `GET /Pacientes/{id}`, `GET /Ventas`, `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` (+1) | BE Parcial; SPA Probado | P4 | cap. 8 |
+| RN-VEN-054 Actualizar los detalles de una venta en espera | HU-VEN-021 | CU-VEN-21 | TC-VEN-157, TC-VEN-158, TC-VEN-159, TC-VEN-161 | `GET /Ventas`, `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` | BE Parcial; SPA Probado | P4 | — |
+| RN-VEN-055 Efecto de reemplazar los detalles | HU-VEN-021 | CU-VEN-21 | TC-VEN-155, TC-VEN-158 | `GET /Ventas`, `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/detalles` | `/pos`, `/pos/:id` | BE Parcial; SPA Probado | P4 | — |
+| RN-VEN-056 Cobrar una venta en espera | HU-VEN-022 | CU-VEN-22 | TC-VEN-162, TC-VEN-164, TC-VEN-169 | `PUT /Ventas/{id:guid}/completar` | /pos/nueva?continuar={id} — botón «Procesar Venta» | BE Parcial | P4 | — |
+| RN-VEN-057 Concurrencia sobre la venta | HU-VEN-015, HU-VEN-022 | CU-VEN-15, CU-VEN-22 | TC-VEN-120, TC-VEN-170 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4, P5 | — |
+| RN-VEN-058 Moneda y fecha | HU-VEN-015 | CU-VEN-15 | TC-VEN-116 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | — |
+| RN-VEN-059 Código de venta | HU-VEN-017, HU-VEN-020, HU-VEN-026, HU-VEN-027 | CU-VEN-17, CU-VEN-20, CU-VEN-26, CU-VEN-27 | TC-VEN-128, TC-VEN-132, TC-VEN-148, TC-VEN-196 | 6: `GET /Empleados`, `GET /Pacientes`, `GET /Ventas`… | `/pos/:id`, `/pos/nueva` (+1) | SPA Probado | P4 | cap. 8 |
+| RN-VEN-060 Evento de dominio | HU-VEN-015, HU-VEN-022 | CU-VEN-15, CU-VEN-22 | TC-VEN-117, TC-VEN-148 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P4 | — |
+| RN-VEN-061 Auditoría | HU-VEN-015, HU-VEN-023 | CU-VEN-15, CU-VEN-23 | TC-VEN-118, TC-VEN-173 | `POST /Ventas`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4, P5 | — |
+| RN-VEN-062 Quién puede anular | HU-VEN-023, HU-VEN-025 | CU-VEN-23, CU-VEN-25 | 5: TC-VEN-172, TC-VEN-177, TC-VEN-180… | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-VEN-063 Motivo obligatorio | HU-VEN-023, HU-VEN-025 | CU-VEN-23, CU-VEN-25 | TC-VEN-172, TC-VEN-178, TC-VEN-187, TC-VEN-188 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-VEN-064 La venta debe existir | HU-VEN-023, HU-VEN-025 | CU-VEN-23, CU-VEN-25 | TC-VEN-189 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-VEN-065 Estados que se pueden anular y estados que no | HU-VEN-024, HU-VEN-025 | CU-VEN-24, CU-VEN-25 | TC-VEN-181, TC-VEN-184, TC-VEN-185 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-VEN-066 Ventas con devoluciones: no se anulan | HU-DEV-001, HU-VEN-025 | CU-DEV-01, CU-VEN-25 | TC-DEV-011, TC-VEN-183, TC-VEN-184 | `POST /Devoluciones`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-VEN-067 Caja propia abierta para anular una venta cobrada | HU-CAJ-004, HU-VEN-023, HU-VEN-024 | CU-CAJ-04, CU-VEN-23, CU-VEN-24 | 6: TC-CAJ-029, TC-CAJ-032, TC-VEN-172… | `GET /Dashboard/caja`, `POST /POS/cierre`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id`, `/sesiones-caja/:id` | BE Sí; SPA Probado | P5, P6 | cap. 8, 9 |
+| RN-VEN-068 Qué se revierte al anular | HU-VEN-023, HU-VEN-024 | CU-VEN-23, CU-VEN-24 | TC-VEN-173, TC-VEN-181 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-VEN-069 Qué queda registrado | HU-VEN-023, HU-VEN-024 | CU-VEN-23, CU-VEN-24 | TC-VEN-173, TC-VEN-174, TC-VEN-181 | `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-VEN-070 Alcance del listado: la sucursal del token | HU-VEN-026 | CU-VEN-26 | TC-VEN-192 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | cap. 9 |
+| RN-VEN-071 Cajero y administrador ven lo mismo | HU-VEN-026 | CU-VEN-26 | TC-VEN-193 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | cap. 9 |
+| RN-VEN-072 Filtros del listado | HU-VEN-026 | CU-VEN-26 | TC-VEN-191, TC-VEN-194, TC-VEN-195 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | cap. 9 |
+| RN-VEN-073 Orden, paginación y contenido de cada fila | HU-VEN-026 | CU-VEN-26 | TC-VEN-191, TC-VEN-196 | `GET /Empleados`, `GET /Pacientes`, `GET /Ventas` | `/pos` | BE Sin prueba; SPA Sin pruebas | P4 | cap. 9 |
+| RN-VEN-074 Detalle de una venta | HU-DEV-007, HU-VEN-027 | CU-DEV-07, CU-VEN-27 | TC-DEV-052, TC-VEN-200, TC-VEN-202, TC-VEN-204 | `GET /Ventas/{id:guid}` | `/pos/:id` | BE Sin prueba; SPA Probado | — | cap. 9 |
+| RN-VEN-075 Lotes disponibles para vender | HU-VEN-002, HU-VEN-011 | CU-VEN-02, CU-VEN-11 | 5: TC-VEN-010, TC-VEN-011, TC-VEN-017… | `GET /Medicamentos`, `GET /Medicamentos/condiciones-venta`, `GET /Ventas/lotes-disponibles`, `POST /Recetas/analizar` | `/pos/nueva` | SPA Probado | P4, P7 | cap. 9 |
+| RN-VEN-076 Presentaciones de un producto | HU-VEN-004 | CU-VEN-04 | TC-VEN-035 | `GET /Ventas/presentaciones`, `POST /Ventas` | `/pos/nueva` | SPA Probado | P4 | cap. 9 |
+| RN-VEN-077 Configuración de venta | HU-VEN-001, HU-VEN-008 | CU-VEN-01, CU-VEN-08 | TC-VEN-001, TC-VEN-009, TC-VEN-057 | `GET /POS/sesiones`, `GET /Recetas`, `GET /Ventas/configuracion`, `POST /Ventas` | `/pos/nueva`, `/pos` | SPA Probado | — | cap. 9 |
+| RN-VEN-078 Exportación a Excel | HU-VEN-028 | CU-VEN-28 | TC-VEN-206 | `POST /Ventas/exportar` | `/pos` | BE Sin prueba; SPA Sin pruebas | — | cap. 9 |
+| RN-VEN-079 Ventas_Cabecera | HU-VEN-015 | CU-VEN-15 | TC-VEN-121 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | — |
+| RN-VEN-080 Ventas_Detalle | HU-VEN-003, HU-VEN-015 | CU-VEN-03, CU-VEN-15 | TC-VEN-033, TC-VEN-121 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | — |
+| RN-VEN-081 Ventas_Pagos | HU-VEN-012, HU-VEN-013, HU-VEN-015 | CU-VEN-12, CU-VEN-13, CU-VEN-15 | TC-VEN-096, TC-VEN-099, TC-VEN-101, TC-VEN-121 | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | — |
+| RN-VEN-082 Índices de rendimiento sin regla de negocio | HU-VEN-015 | CU-VEN-15 | — | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | — |
+| RN-VEN-083 Guards de la entidad Venta y reglas que dependen de otro… | HU-VEN-015 | CU-VEN-15 | — | `POST /Ventas` | `/pos/nueva` | SPA Probado | — | — |
 
 #### CMP — Comprobantes emitidos (15)
 
 | Regla | Historias | Casos de uso | Casos de prueba | Endpoints | Pantalla | Prueba automatizada | Proceso | Manual |
 |---|---|---|---|---|---|---|---|---|
-| RN-CMP-001 Cuándo y qué se emite | HU-VEN-017 | CU-VEN-17 | TC-VEN-128, TC-VEN-131, TC-VEN-132 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | Pendiente |
+| RN-CMP-001 Cuándo y qué se emite | HU-VEN-017 | CU-VEN-17 | TC-VEN-128, TC-VEN-131, TC-VEN-132 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | — |
 | RN-CMP-002 La empresa debe tener RUC | HU-VEN-016 | CU-VEN-16 | TC-VEN-124 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P2, P4 | cap. 2 |
 | RN-CMP-003 La sucursal debe tener una serie de boletas activa | HU-VEN-016 | CU-VEN-16 | TC-VEN-125 | `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva` | SPA Probado | P2, P4 | cap. 2 |
 | RN-CMP-004 Número del comprobante | HU-VEN-017 | CU-VEN-17 | TC-VEN-128, TC-VEN-134 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | BE Parcial; SPA Probado | P4 | cap. 2 |
-| RN-CMP-005 Cliente de la boleta | HU-VEN-007, HU-VEN-017 | CU-VEN-07, CU-VEN-17 | TC-VEN-048, TC-VEN-130, TC-VEN-131 | `GET /Pacientes`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/pos/:id` | SPA Probado | P4 | Pendiente |
-| RN-CMP-006 Importes de la boleta | HU-VEN-017 | CU-VEN-17 | TC-VEN-129 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | Pendiente |
+| RN-CMP-005 Cliente de la boleta | HU-VEN-007, HU-VEN-017 | CU-VEN-07, CU-VEN-17 | TC-VEN-048, TC-VEN-130, TC-VEN-131 | `GET /Pacientes`, `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/nueva`, `/pos/:id` | SPA Probado | P4 | — |
+| RN-CMP-006 Importes de la boleta | HU-VEN-017 | CU-VEN-17 | TC-VEN-129 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | cap. 8 |
 | RN-CMP-007 Estado SUNAT y campos de firma | HU-VEN-017 | CU-VEN-17 | TC-VEN-135 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | cap. 11 |
-| RN-CMP-008 Guards de la entidad SunatComprobanteEmitido | HU-VEN-017 | CU-VEN-17 | TC-VEN-135 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-CMP-009 Un número fiscal se emite una sola vez por serie | HU-VEN-017 | CU-VEN-17 | TC-VEN-134 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | BE Parcial; SPA Probado | — | Pendiente |
-| RN-CMP-010 Estructura de SUNAT_Comprobantes_Emitidos | HU-VEN-017 | CU-VEN-17 | TC-VEN-135 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | — | Pendiente |
-| RN-CMP-011 Datos del emisor | HU-VEN-017, HU-VEN-018 | CU-VEN-17, CU-VEN-18 | TC-VEN-133, TC-VEN-138 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-CMP-012 Anular la venta anula su comprobante | HU-VEN-018, HU-VEN-023 | CU-VEN-18, CU-VEN-23 | 6: TC-VEN-135, TC-VEN-138, TC-VEN-139… | `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | Pendiente |
-| RN-CMP-013 Cómo se lee el comprobante de una venta | HU-VEN-017, HU-VEN-027 | CU-VEN-17, CU-VEN-27 | TC-DEV-036, TC-VEN-200 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | Pendiente |
-| RN-CMP-014 Impresión y reimpresión | HU-VEN-018 | CU-VEN-18 | TC-VEN-136, TC-VEN-137, TC-VEN-138 | `GET /Ventas/{id:guid}` | `/pos/:id` | SPA Probado | P4 | Pendiente |
-| RN-CMP-015 Datos que comparte con la nota de crédito | HU-DEV-004, HU-VEN-017 | CU-DEV-04, CU-VEN-17 | TC-DEV-040 | `GET /Ventas/{id:guid}`, `POST /Devoluciones`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | — | Pendiente |
+| RN-CMP-008 Guards de la entidad SunatComprobanteEmitido | HU-VEN-017 | CU-VEN-17 | TC-VEN-135 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | — | — |
+| RN-CMP-009 Un número fiscal se emite una sola vez por serie | HU-VEN-017 | CU-VEN-17 | TC-VEN-134 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | BE Parcial; SPA Probado | — | — |
+| RN-CMP-010 Estructura de SUNAT_Comprobantes_Emitidos | HU-VEN-017 | CU-VEN-17 | TC-VEN-135 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | — | — |
+| RN-CMP-011 Datos del emisor | HU-VEN-017, HU-VEN-018 | CU-VEN-17, CU-VEN-18 | TC-VEN-133, TC-VEN-138 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | — |
+| RN-CMP-012 Anular la venta anula su comprobante | HU-VEN-018, HU-VEN-023 | CU-VEN-18, CU-VEN-23 | 6: TC-VEN-135, TC-VEN-138, TC-VEN-139… | `GET /Ventas/{id:guid}`, `PUT /Ventas/{id:guid}/anular` | `/pos/:id` | BE Sí; SPA Probado | P5 | cap. 9 |
+| RN-CMP-013 Cómo se lee el comprobante de una venta | HU-VEN-017, HU-VEN-027 | CU-VEN-17, CU-VEN-27 | TC-DEV-036, TC-VEN-200 | `GET /Ventas/{id:guid}`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P4 | — |
+| RN-CMP-014 Impresión y reimpresión | HU-VEN-018 | CU-VEN-18 | TC-VEN-136, TC-VEN-137, TC-VEN-138 | `GET /Ventas/{id:guid}` | `/pos/:id` | SPA Probado | P4 | — |
+| RN-CMP-015 Datos que comparte con la nota de crédito | HU-DEV-004, HU-VEN-017 | CU-DEV-04, CU-VEN-17 | TC-DEV-040 | `GET /Ventas/{id:guid}`, `POST /Devoluciones`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | — | — |
 
 ### 3.5 01c3 — Catálogo de reglas de negocio — Parte C3: caja, devoluciones y dashboard (88 reglas)
 
@@ -886,104 +886,104 @@ Documento: [01c3-caja-devoluciones-dashboard.md](../ola-1-fundamentos/01-reglas-
 
 | Regla | Historias | Casos de uso | Casos de prueba | Endpoints | Pantalla | Prueba automatizada | Proceso | Manual |
 |---|---|---|---|---|---|---|---|---|
-| RN-CAJ-001 Permisos | HU-CAJ-001, HU-CAJ-003 | CU-CAJ-01, CU-CAJ-03 | TC-CAJ-001, TC-CAJ-008, TC-CAJ-010, TC-CAJ-016 | `GET /POS/{id}`, `POST /POS/apertura`, `POST /POS/cierre` | `/sesiones-caja`, `/sesiones-caja/:id` (+1) | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-002 Cajero, sucursal y hora no se eligen | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | 5: TC-CAJ-001, TC-CAJ-002, TC-CAJ-007… | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | Pendiente |
-| RN-CAJ-003 Monto de apertura | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | 5: TC-CAJ-001, TC-CAJ-003, TC-CAJ-004… | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | Pendiente |
-| RN-CAJ-004 Una sola caja abierta por cajero | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | TC-CAJ-005, TC-CAJ-013 | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | Pendiente |
-| RN-CAJ-005 Resultado de la apertura | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | TC-CAJ-001, TC-CAJ-011 | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | Pendiente |
-| RN-CAJ-006 Guards de la entidad PosSesionCaja | HU-CAJ-001 | CU-CAJ-01 | — | `POST /POS/apertura` | `/sesiones-caja`, `/sesiones-caja/nueva` | SPA Parcial | — | Pendiente |
-| RN-CAJ-007 Quién puede cerrar: el titular o un administrador | HU-CAJ-003 | CU-CAJ-03 | TC-CAJ-016, TC-CAJ-022, TC-CAJ-023 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-008 La sesión debe existir | HU-CAJ-003, HU-CAJ-005 | CU-CAJ-03, CU-CAJ-05 | TC-CAJ-039 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-009 Monto declarado | HU-CAJ-003 | CU-CAJ-03 | TC-CAJ-021 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-010 Solo se cierra una sesión Abierta; no hay reapertura | HU-CAJ-003, HU-CAJ-005 | CU-CAJ-03, CU-CAJ-05 | TC-CAJ-019, TC-CAJ-024, TC-CAJ-038, TC-CAJ-040 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-011 Efectivo esperado (fórmula) | HU-CAJ-004, HU-DAS-004 | CU-CAJ-03, CU-CAJ-04, CU-DAS-04 | TC-CAJ-028, TC-CAJ-029, TC-DAS-017 | `GET /Dashboard/caja`, `POST /POS/cierre` | `/dashboard`, `/sesiones-caja/:id` | BE Parcial; SPA Probado | P6, P8 | Pendiente |
-| RN-CAJ-012 Qué ventas entran en el arqueo y con qué signo | HU-CAJ-004, HU-DAS-004, HU-VEN-023 | CU-CAJ-04, CU-DAS-04, CU-VEN-23 | 8: TC-CAJ-028, TC-CAJ-029, TC-CAJ-032… | `GET /Dashboard/caja`, `POST /POS/cierre`, `PUT /Ventas/{id:guid}/anular` | `/dashboard`, `/pos/:id` (+1) | BE Parcial; SPA Probado | P5, P6 | Pendiente |
-| RN-CAJ-013 Efectivo neto de una venta | HU-CAJ-004, HU-DAS-004 | CU-CAJ-04, CU-DAS-04 | TC-CAJ-028, TC-CAJ-030, TC-CAJ-031, TC-DAS-017 | `GET /Dashboard/caja`, `POST /POS/cierre` | `/dashboard`, `/sesiones-caja/:id` | BE Parcial; SPA Probado | P6 | Pendiente |
-| RN-CAJ-014 Reembolsos en efectivo | HU-CAJ-004, HU-DAS-004, HU-DEV-003 | CU-CAJ-04, CU-DAS-04, CU-DEV-03 | 6: TC-CAJ-029, TC-CAJ-034, TC-CAJ-035… | `GET /Dashboard/caja`, `POST /Devoluciones`, `POST /POS/cierre` | `/dashboard`, `/pos/:id` (+1) | BE Parcial; SPA Probado | P5, P6 | Pendiente |
-| RN-CAJ-015 Resultado del cierre: diferencia y estado | HU-CAJ-003, HU-CAJ-006 | CU-CAJ-03, CU-CAJ-06 | 5: TC-CAJ-016, TC-CAJ-017, TC-CAJ-018… | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-016 Un efectivo esperado negativo impide cerrar | HU-CAJ-005 | CU-CAJ-05 | TC-CAJ-037 | `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 11 |
-| RN-CAJ-017 Ventas en espera al cerrar | HU-CAJ-003, HU-CAJ-004 | CU-CAJ-03, CU-CAJ-04 | TC-CAJ-026, TC-CAJ-033 | `GET /Dashboard/caja`, `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | Pendiente |
-| RN-CAJ-018 El arqueo es una foto del momento del cierre | HU-CAJ-003, HU-CAJ-004 | CU-CAJ-03, CU-CAJ-04 | TC-CAJ-027 | `GET /Dashboard/caja`, `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | Pendiente |
-| RN-CAJ-019 Respuesta y auditoría del cierre | HU-CAJ-003 | CU-CAJ-03 | TC-CAJ-019 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-020 Alcance del listado y del detalle: las sucursales… | HU-CAJ-006, HU-CAJ-007 | CU-CAJ-06, CU-CAJ-07 | TC-CAJ-045, TC-CAJ-049 | `GET /POS/sesiones`, `GET /POS/{id}` | `/sesiones-caja`, `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | cap. 11 |
-| RN-CAJ-021 Filtros, orden y paginación del listado | HU-CAJ-007 | CU-CAJ-07 | TC-CAJ-047, TC-CAJ-048, TC-CAJ-052 | `GET /POS/sesiones` | `/sesiones-caja` | BE Sin prueba; SPA Parcial | P4 | Pendiente |
-| RN-CAJ-022 Contenido de cada fila y qué muestra la pantalla | HU-CAJ-007 | CU-CAJ-07 | TC-CAJ-047 | `GET /POS/sesiones` | `/sesiones-caja` | BE Sin prueba; SPA Parcial | — | Pendiente |
-| RN-CAJ-023 Detalle de una sesión | HU-CAJ-006 | CU-CAJ-06 | TC-CAJ-042, TC-CAJ-043, TC-CAJ-045, TC-CAJ-046 | `GET /POS/{id}` | `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | Pendiente |
-| RN-CAJ-024 Exportación a Excel | HU-CAJ-008 | CU-CAJ-08 | TC-CAJ-053, TC-CAJ-054 | `POST /POS/sesiones/exportar` | `/sesiones-caja` | BE Sin prueba; SPA Parcial | — | cap. 11 |
-| RN-CAJ-025 POS_Sesiones_Caja | HU-CAJ-001, HU-CAJ-005 | CU-CAJ-01, CU-CAJ-05 | TC-CAJ-009 | `POST /POS/apertura`, `POST /POS/cierre` | `/sesiones-caja`, `/sesiones-caja/:id` (+1) | SPA Parcial | — | Pendiente |
-| RN-CAJ-026 Una sesión abierta por empleado, también en la base | HU-CAJ-001 | CU-CAJ-01 | TC-CAJ-006, TC-CAJ-009 | `POST /POS/apertura` | `/sesiones-caja`, `/sesiones-caja/nueva` | SPA Parcial | P6 | Pendiente |
-| RN-CAJ-027 Quién referencia a una sesión | HU-CAJ-001, HU-CAJ-004 | CU-CAJ-01, CU-CAJ-04 | TC-CAJ-009, TC-CAJ-036 | `GET /Dashboard/caja`, `POST /POS/apertura`, `POST /POS/cierre` | `/sesiones-caja`, `/sesiones-caja/:id` (+1) | SPA Parcial | P6 | Pendiente |
+| RN-CAJ-001 Permisos | HU-CAJ-001, HU-CAJ-003 | CU-CAJ-01, CU-CAJ-03 | TC-CAJ-001, TC-CAJ-008, TC-CAJ-010, TC-CAJ-016 | `GET /POS/{id}`, `POST /POS/apertura`, `POST /POS/cierre` | `/sesiones-caja`, `/sesiones-caja/:id` (+1) | SPA Parcial | P6 | cap. 8 |
+| RN-CAJ-002 Cajero, sucursal y hora no se eligen | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | 5: TC-CAJ-001, TC-CAJ-002, TC-CAJ-007… | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | cap. 8 |
+| RN-CAJ-003 Monto de apertura | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | 5: TC-CAJ-001, TC-CAJ-003, TC-CAJ-004… | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | cap. 8 |
+| RN-CAJ-004 Una sola caja abierta por cajero | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | TC-CAJ-005, TC-CAJ-013 | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | cap. 8 |
+| RN-CAJ-005 Resultado de la apertura | HU-CAJ-001, HU-CAJ-002 | CU-CAJ-01, CU-CAJ-02 | TC-CAJ-001, TC-CAJ-011 | `POST /POS/apertura` | `/pos/nueva`, `/sesiones-caja` (+1) | SPA Probado | P6 | cap. 8 |
+| RN-CAJ-006 Guards de la entidad PosSesionCaja | HU-CAJ-001 | CU-CAJ-01 | — | `POST /POS/apertura` | `/sesiones-caja`, `/sesiones-caja/nueva` | SPA Parcial | — | — |
+| RN-CAJ-007 Quién puede cerrar: el titular o un administrador | HU-CAJ-003 | CU-CAJ-03 | TC-CAJ-016, TC-CAJ-022, TC-CAJ-023 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 8 |
+| RN-CAJ-008 La sesión debe existir | HU-CAJ-003, HU-CAJ-005 | CU-CAJ-03, CU-CAJ-05 | TC-CAJ-039 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 9 |
+| RN-CAJ-009 Monto declarado | HU-CAJ-003 | CU-CAJ-03 | TC-CAJ-021 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 9 |
+| RN-CAJ-010 Solo se cierra una sesión Abierta; no hay reapertura | HU-CAJ-003, HU-CAJ-005 | CU-CAJ-03, CU-CAJ-05 | TC-CAJ-019, TC-CAJ-024, TC-CAJ-038, TC-CAJ-040 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 9 |
+| RN-CAJ-011 Efectivo esperado (fórmula) | HU-CAJ-004, HU-DAS-004 | CU-CAJ-03, CU-CAJ-04, CU-DAS-04 | TC-CAJ-028, TC-CAJ-029, TC-DAS-017 | `GET /Dashboard/caja`, `POST /POS/cierre` | `/dashboard`, `/sesiones-caja/:id` | BE Parcial; SPA Probado | P6, P8 | cap. 8, 9 |
+| RN-CAJ-012 Qué ventas entran en el arqueo y con qué signo | HU-CAJ-004, HU-DAS-004, HU-VEN-023 | CU-CAJ-04, CU-DAS-04, CU-VEN-23 | 8: TC-CAJ-028, TC-CAJ-029, TC-CAJ-032… | `GET /Dashboard/caja`, `POST /POS/cierre`, `PUT /Ventas/{id:guid}/anular` | `/dashboard`, `/pos/:id` (+1) | BE Parcial; SPA Probado | P5, P6 | cap. 8, 9 |
+| RN-CAJ-013 Efectivo neto de una venta | HU-CAJ-004, HU-DAS-004 | CU-CAJ-04, CU-DAS-04 | TC-CAJ-028, TC-CAJ-030, TC-CAJ-031, TC-DAS-017 | `GET /Dashboard/caja`, `POST /POS/cierre` | `/dashboard`, `/sesiones-caja/:id` | BE Parcial; SPA Probado | P6 | cap. 8, 9 |
+| RN-CAJ-014 Reembolsos en efectivo | HU-CAJ-004, HU-DAS-004, HU-DEV-003 | CU-CAJ-04, CU-DAS-04, CU-DEV-03 | 6: TC-CAJ-029, TC-CAJ-034, TC-CAJ-035… | `GET /Dashboard/caja`, `POST /Devoluciones`, `POST /POS/cierre` | `/dashboard`, `/pos/:id` (+1) | BE Parcial; SPA Probado | P5, P6 | cap. 8, 9 |
+| RN-CAJ-015 Resultado del cierre: diferencia y estado | HU-CAJ-003, HU-CAJ-006 | CU-CAJ-03, CU-CAJ-06 | 5: TC-CAJ-016, TC-CAJ-017, TC-CAJ-018… | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 8, 9 |
+| RN-CAJ-016 Un efectivo esperado negativo impide cerrar | HU-CAJ-005 | CU-CAJ-05 | TC-CAJ-037 | `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 8, 9, 11 |
+| RN-CAJ-017 Ventas en espera al cerrar | HU-CAJ-003, HU-CAJ-004 | CU-CAJ-03, CU-CAJ-04 | TC-CAJ-026, TC-CAJ-033 | `GET /Dashboard/caja`, `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | cap. 8, 9 |
+| RN-CAJ-018 El arqueo es una foto del momento del cierre | HU-CAJ-003, HU-CAJ-004 | CU-CAJ-03, CU-CAJ-04 | TC-CAJ-027 | `GET /Dashboard/caja`, `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | cap. 9 |
+| RN-CAJ-019 Respuesta y auditoría del cierre | HU-CAJ-003 | CU-CAJ-03 | TC-CAJ-019 | `GET /POS/{id}`, `POST /POS/cierre` | `/sesiones-caja/:id` | SPA Parcial | P6 | cap. 9 |
+| RN-CAJ-020 Alcance del listado y del detalle: las sucursales… | HU-CAJ-006, HU-CAJ-007 | CU-CAJ-06, CU-CAJ-07 | TC-CAJ-045, TC-CAJ-049 | `GET /POS/sesiones`, `GET /POS/{id}` | `/sesiones-caja`, `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | cap. 9, 11 |
+| RN-CAJ-021 Filtros, orden y paginación del listado | HU-CAJ-007 | CU-CAJ-07 | TC-CAJ-047, TC-CAJ-048, TC-CAJ-052 | `GET /POS/sesiones` | `/sesiones-caja` | BE Sin prueba; SPA Parcial | P4 | cap. 9 |
+| RN-CAJ-022 Contenido de cada fila y qué muestra la pantalla | HU-CAJ-007 | CU-CAJ-07 | TC-CAJ-047 | `GET /POS/sesiones` | `/sesiones-caja` | BE Sin prueba; SPA Parcial | — | cap. 9 |
+| RN-CAJ-023 Detalle de una sesión | HU-CAJ-006 | CU-CAJ-06 | TC-CAJ-042, TC-CAJ-043, TC-CAJ-045, TC-CAJ-046 | `GET /POS/{id}` | `/sesiones-caja/:id` | BE Sin prueba; SPA Parcial | P6 | cap. 9 |
+| RN-CAJ-024 Exportación a Excel | HU-CAJ-008 | CU-CAJ-08 | TC-CAJ-053, TC-CAJ-054 | `POST /POS/sesiones/exportar` | `/sesiones-caja` | BE Sin prueba; SPA Parcial | — | cap. 9, 11 |
+| RN-CAJ-025 POS_Sesiones_Caja | HU-CAJ-001, HU-CAJ-005 | CU-CAJ-01, CU-CAJ-05 | TC-CAJ-009 | `POST /POS/apertura`, `POST /POS/cierre` | `/sesiones-caja`, `/sesiones-caja/:id` (+1) | SPA Parcial | — | cap. 9 |
+| RN-CAJ-026 Una sesión abierta por empleado, también en la base | HU-CAJ-001 | CU-CAJ-01 | TC-CAJ-006, TC-CAJ-009 | `POST /POS/apertura` | `/sesiones-caja`, `/sesiones-caja/nueva` | SPA Parcial | P6 | cap. 9 |
+| RN-CAJ-027 Quién referencia a una sesión | HU-CAJ-001, HU-CAJ-004 | CU-CAJ-01, CU-CAJ-04 | TC-CAJ-009, TC-CAJ-036 | `GET /Dashboard/caja`, `POST /POS/apertura`, `POST /POS/cierre` | `/sesiones-caja`, `/sesiones-caja/:id` (+1) | SPA Parcial | P6 | cap. 9 |
 
 #### DEV — Devoluciones (37)
 
 | Regla | Historias | Casos de uso | Casos de prueba | Endpoints | Pantalla | Prueba automatizada | Proceso | Manual |
 |---|---|---|---|---|---|---|---|---|
-| RN-DEV-001 Permisos y dónde se usan | HU-DEV-001 | CU-DEV-01 | TC-DEV-001, TC-DEV-009 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | Pendiente |
-| RN-DEV-002 El que procesa y la sucursal salen del token | HU-DEV-001, HU-DEV-006 | CU-DEV-01, CU-DEV-06 | TC-DEV-001, TC-DEV-003, TC-DEV-047 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-003 La venta debe existir | HU-DEV-006 | CU-DEV-06 | TC-DEV-047 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-004 Solo se devuelven ventas de la propia sucursal | HU-DEV-006 | CU-DEV-06 | TC-DEV-047, TC-DEV-050 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-005 Hace falta tu propia caja abierta | HU-DEV-003, HU-DEV-006 | CU-DEV-03, CU-DEV-06 | TC-DEV-032, TC-DEV-047, TC-DEV-048 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5, P6 | Pendiente |
-| RN-DEV-006 Debe haber una boleta o factura que acreditar | HU-DEV-004, HU-DEV-006 | CU-DEV-04, CU-DEV-06 | TC-DEV-037, TC-DEV-047, TC-DEV-049 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-007 Debe haber una serie de nota de crédito activa en la… | HU-DEV-004, HU-DEV-006 | CU-DEV-04, CU-DEV-06 | TC-DEV-038, TC-DEV-047 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P2, P5 | Pendiente |
-| RN-DEV-008 Solo se devuelven ventas Completada; no hay plazo | HU-DEV-006 | CU-DEV-06 | TC-DEV-009, TC-DEV-047, TC-DEV-049, TC-DEV-051 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-009 Al menos una línea | HU-DEV-001, HU-DEV-002 | CU-DEV-01, CU-DEV-02 | TC-DEV-001, TC-DEV-013, TC-DEV-015 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-010 Datos de cada línea | HU-DEV-001, HU-DEV-002 | CU-DEV-01, CU-DEV-02 | TC-DEV-001, TC-DEV-015 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-011 La línea debe pertenecer a la venta | HU-DEV-002 | CU-DEV-02 | TC-DEV-021 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-012 Cantidad máxima devolvible por línea | HU-DEV-002 | CU-DEV-02 | TC-DEV-013, TC-DEV-014 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-013 Líneas repetidas | HU-DEV-002 | CU-DEV-02 | TC-DEV-020 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-014 Motivo SUNAT | HU-DEV-005 | CU-DEV-05 | TC-DEV-042, TC-DEV-045 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-015 Sustento | HU-DEV-005 | CU-DEV-05 | TC-DEV-043, TC-DEV-044 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-016 Monto devuelto (el crédito) | HU-DEV-003 | CU-DEV-03 | TC-DEV-023, TC-DEV-028, TC-DEV-029, TC-DEV-030 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-017 Monto reembolsado al cliente | HU-DEV-003 | CU-DEV-03 | TC-DEV-023, TC-DEV-029 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-018 Método de reembolso | HU-DEV-003 | CU-DEV-03 | TC-CAJ-034, TC-DEV-024, TC-DEV-025, TC-DEV-026 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-019 Registro del reembolso y efecto en la caja | HU-DEV-003 | CU-DEV-03 | TC-CAJ-034, TC-DEV-023, TC-DEV-025, TC-DEV-027 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-020 Una nota de crédito por devolución, emitida al procesarla | HU-DEV-001, HU-DEV-004 | CU-DEV-01, CU-DEV-04 | TC-DEV-001, TC-DEV-033, TC-DEV-039 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | Pendiente |
-| RN-DEV-021 Importes de la nota de crédito | HU-DEV-004 | CU-DEV-04 | TC-DEV-029, TC-DEV-034 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | Pendiente |
-| RN-DEV-022 Cliente y vínculos de la nota de crédito | HU-DEV-004, HU-DEV-007 | CU-DEV-04, CU-DEV-07 | TC-DEV-035, TC-DEV-036 | `GET /Ventas/{id:guid}`, `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | Pendiente |
-| RN-DEV-023 Destino «Reingreso a venta» (Reingreso_Venta): la… | HU-DEV-002 | CU-DEV-02 | TC-DEV-017, TC-DEV-018 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | Pendiente |
-| RN-DEV-024 Destino «Cuarentena DIGEMID» (Cuarentena_DIGEMID): solo… | HU-DEV-002, HU-OPS-006 | CU-DEV-02, CU-OPS-06 | TC-DEV-019, TC-OPS-047 | `POST /Devoluciones`, `POST /DIGEMID/cuarentena` | `/pos/:id` | BE Parcial; SPA Probado | P5, P9 | Pendiente |
-| RN-DEV-025 Efecto en la venta | HU-DEV-001 | CU-DEV-01 | TC-DEV-001, TC-DEV-002 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | Pendiente |
-| RN-DEV-026 Efecto en la receta y la dispensación: ninguno | HU-DEV-001, HU-VEN-010 | CU-DEV-01, CU-VEN-10 | TC-DEV-004, TC-VEN-078 | `POST /Devoluciones`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P5 | Pendiente |
-| RN-DEV-027 Quién autorizó | HU-DEV-001 | CU-DEV-01 | TC-DEV-003 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-028 Todo o nada | HU-DEV-001 | CU-DEV-01 | TC-DEV-005, TC-DEV-006, TC-DEV-007, TC-DEV-039 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | Pendiente |
-| RN-DEV-029 Respuesta y auditoría | HU-DEV-001 | CU-DEV-01 | TC-DEV-008, TC-DEV-010 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | Pendiente |
-| RN-DEV-030 Listado de devoluciones — Solo API (sin pantalla) | HU-DEV-008 | CU-DEV-08 | TC-DEV-055, TC-DEV-056 | `GET /Devoluciones`, `GET /Devoluciones/{id}` | Solo API | BE Sin prueba | — | Pendiente |
-| RN-DEV-031 Detalle de una devolución — Solo API (sin pantalla) | HU-DEV-008 | CU-DEV-08 | TC-DEV-057, TC-DEV-058 | `GET /Devoluciones`, `GET /Devoluciones/{id}` | Solo API | BE Sin prueba | — | Pendiente |
-| RN-DEV-032 Dónde ve el usuario las devoluciones | HU-DEV-007, HU-DEV-008 | CU-DEV-07, CU-DEV-08 | TC-DEV-052, TC-DEV-053, TC-DEV-059 | `GET /Devoluciones`, `GET /Devoluciones/{id}`, `GET /Ventas/{id:guid}` | `/pos/:id` | SPA Probado | P5 | Pendiente |
-| RN-DEV-033 Guards de DevolucionCabecera | HU-DEV-004, HU-DEV-005 | CU-DEV-04, CU-DEV-05 | TC-DEV-033, TC-DEV-041, TC-DEV-045 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | Pendiente |
-| RN-DEV-034 Guards de DevolucionDetalle y de Venta.RegistrarDevolucion | HU-DEV-002 | CU-DEV-02 | TC-DEV-041 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | Pendiente |
-| RN-DEV-035 Devoluciones_Cabecera | HU-DEV-003, HU-DEV-004 | CU-DEV-03, CU-DEV-04 | TC-DEV-031, TC-DEV-041 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | Pendiente |
-| RN-DEV-036 Devoluciones_Detalle | HU-DEV-003, HU-DEV-004 | CU-DEV-03, CU-DEV-04 | TC-DEV-022, TC-DEV-031, TC-DEV-041 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | Pendiente |
-| RN-DEV-037 Filas de la nota de crédito en SUNAT_Comprobantes_Emitidos | HU-DEV-004 | CU-DEV-04 | TC-DEV-040 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | Pendiente |
+| RN-DEV-001 Permisos y dónde se usan | HU-DEV-001 | CU-DEV-01 | TC-DEV-001, TC-DEV-009 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | — |
+| RN-DEV-002 El que procesa y la sucursal salen del token | HU-DEV-001, HU-DEV-006 | CU-DEV-01, CU-DEV-06 | TC-DEV-001, TC-DEV-003, TC-DEV-047 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-003 La venta debe existir | HU-DEV-006 | CU-DEV-06 | TC-DEV-047 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-004 Solo se devuelven ventas de la propia sucursal | HU-DEV-006 | CU-DEV-06 | TC-DEV-047, TC-DEV-050 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-005 Hace falta tu propia caja abierta | HU-DEV-003, HU-DEV-006 | CU-DEV-03, CU-DEV-06 | TC-DEV-032, TC-DEV-047, TC-DEV-048 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5, P6 | cap. 9 |
+| RN-DEV-006 Debe haber una boleta o factura que acreditar | HU-DEV-004, HU-DEV-006 | CU-DEV-04, CU-DEV-06 | TC-DEV-037, TC-DEV-047, TC-DEV-049 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-007 Debe haber una serie de nota de crédito activa en la… | HU-DEV-004, HU-DEV-006 | CU-DEV-04, CU-DEV-06 | TC-DEV-038, TC-DEV-047 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P2, P5 | cap. 9 |
+| RN-DEV-008 Solo se devuelven ventas Completada; no hay plazo | HU-DEV-006 | CU-DEV-06 | TC-DEV-009, TC-DEV-047, TC-DEV-049, TC-DEV-051 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-009 Al menos una línea | HU-DEV-001, HU-DEV-002 | CU-DEV-01, CU-DEV-02 | TC-DEV-001, TC-DEV-013, TC-DEV-015 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-010 Datos de cada línea | HU-DEV-001, HU-DEV-002 | CU-DEV-01, CU-DEV-02 | TC-DEV-001, TC-DEV-015 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-011 La línea debe pertenecer a la venta | HU-DEV-002 | CU-DEV-02 | TC-DEV-021 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-012 Cantidad máxima devolvible por línea | HU-DEV-002 | CU-DEV-02 | TC-DEV-013, TC-DEV-014 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-013 Líneas repetidas | HU-DEV-002 | CU-DEV-02 | TC-DEV-020 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-014 Motivo SUNAT | HU-DEV-005 | CU-DEV-05 | TC-DEV-042, TC-DEV-045 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-015 Sustento | HU-DEV-005 | CU-DEV-05 | TC-DEV-043, TC-DEV-044 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-016 Monto devuelto (el crédito) | HU-DEV-003 | CU-DEV-03 | TC-DEV-023, TC-DEV-028, TC-DEV-029, TC-DEV-030 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-017 Monto reembolsado al cliente | HU-DEV-003 | CU-DEV-03 | TC-DEV-023, TC-DEV-029 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-018 Método de reembolso | HU-DEV-003 | CU-DEV-03 | TC-CAJ-034, TC-DEV-024, TC-DEV-025, TC-DEV-026 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-019 Registro del reembolso y efecto en la caja | HU-DEV-003 | CU-DEV-03 | TC-CAJ-034, TC-DEV-023, TC-DEV-025, TC-DEV-027 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-020 Una nota de crédito por devolución, emitida al procesarla | HU-DEV-001, HU-DEV-004 | CU-DEV-01, CU-DEV-04 | TC-DEV-001, TC-DEV-033, TC-DEV-039 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | cap. 9 |
+| RN-DEV-021 Importes de la nota de crédito | HU-DEV-004 | CU-DEV-04 | TC-DEV-029, TC-DEV-034 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | cap. 9 |
+| RN-DEV-022 Cliente y vínculos de la nota de crédito | HU-DEV-004, HU-DEV-007 | CU-DEV-04, CU-DEV-07 | TC-DEV-035, TC-DEV-036 | `GET /Ventas/{id:guid}`, `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | cap. 9 |
+| RN-DEV-023 Destino «Reingreso a venta» (Reingreso_Venta): la… | HU-DEV-002 | CU-DEV-02 | TC-DEV-017, TC-DEV-018 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | cap. 9 |
+| RN-DEV-024 Destino «Cuarentena DIGEMID» (Cuarentena_DIGEMID): solo… | HU-DEV-002, HU-OPS-006 | CU-DEV-02, CU-OPS-06 | TC-DEV-019, TC-OPS-047 | `POST /Devoluciones`, `POST /DIGEMID/cuarentena` | `/pos/:id` | BE Parcial; SPA Probado | P5, P9 | cap. 9 |
+| RN-DEV-025 Efecto en la venta | HU-DEV-001 | CU-DEV-01 | TC-DEV-001, TC-DEV-002 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | cap. 9 |
+| RN-DEV-026 Efecto en la receta y la dispensación: ninguno | HU-DEV-001, HU-VEN-010 | CU-DEV-01, CU-VEN-10 | TC-DEV-004, TC-VEN-078 | `POST /Devoluciones`, `POST /Ventas`, `PUT /Ventas/{id:guid}/completar` | `/pos/:id`, `/pos/nueva` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-027 Quién autorizó | HU-DEV-001 | CU-DEV-01 | TC-DEV-003 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | P5 | cap. 9 |
+| RN-DEV-028 Todo o nada | HU-DEV-001 | CU-DEV-01 | TC-DEV-005, TC-DEV-006, TC-DEV-007, TC-DEV-039 | `POST /Devoluciones` | `/pos/:id` | BE Parcial; SPA Probado | P5 | cap. 9 |
+| RN-DEV-029 Respuesta y auditoría | HU-DEV-001 | CU-DEV-01 | TC-DEV-008, TC-DEV-010 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | cap. 9 |
+| RN-DEV-030 Listado de devoluciones — Solo API (sin pantalla) | HU-DEV-008 | CU-DEV-08 | TC-DEV-055, TC-DEV-056 | `GET /Devoluciones`, `GET /Devoluciones/{id}` | Solo API | BE Sin prueba | — | — |
+| RN-DEV-031 Detalle de una devolución — Solo API (sin pantalla) | HU-DEV-008 | CU-DEV-08 | TC-DEV-057, TC-DEV-058 | `GET /Devoluciones`, `GET /Devoluciones/{id}` | Solo API | BE Sin prueba | — | — |
+| RN-DEV-032 Dónde ve el usuario las devoluciones | HU-DEV-007, HU-DEV-008 | CU-DEV-07, CU-DEV-08 | TC-DEV-052, TC-DEV-053, TC-DEV-059 | `GET /Devoluciones`, `GET /Devoluciones/{id}`, `GET /Ventas/{id:guid}` | `/pos/:id` | SPA Probado | P5 | — |
+| RN-DEV-033 Guards de DevolucionCabecera | HU-DEV-004, HU-DEV-005 | CU-DEV-04, CU-DEV-05 | TC-DEV-033, TC-DEV-041, TC-DEV-045 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | — |
+| RN-DEV-034 Guards de DevolucionDetalle y de Venta.RegistrarDevolucion | HU-DEV-002 | CU-DEV-02 | TC-DEV-041 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | — |
+| RN-DEV-035 Devoluciones_Cabecera | HU-DEV-003, HU-DEV-004 | CU-DEV-03, CU-DEV-04 | TC-DEV-031, TC-DEV-041 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | — |
+| RN-DEV-036 Devoluciones_Detalle | HU-DEV-003, HU-DEV-004 | CU-DEV-03, CU-DEV-04 | TC-DEV-022, TC-DEV-031, TC-DEV-041 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | — |
+| RN-DEV-037 Filas de la nota de crédito en SUNAT_Comprobantes_Emitidos | HU-DEV-004 | CU-DEV-04 | TC-DEV-040 | `POST /Devoluciones` | `/pos/:id` | SPA Probado | — | — |
 
 #### DAS — Dashboard (24)
 
 | Regla | Historias | Casos de uso | Casos de prueba | Endpoints | Pantalla | Prueba automatizada | Proceso | Manual |
 |---|---|---|---|---|---|---|---|---|
-| RN-DAS-001 Permisos y secciones visibles | HU-DAS-008 | CU-DAS-08 | TC-DAS-031, TC-DAS-034, TC-DAS-036, TC-DAS-037 | 6: `GET /Auth/me`, `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`… | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-002 Parámetro hoy (ventas, inventario, devoluciones) | HU-DAS-001, HU-DAS-009 | CU-DAS-01, CU-DAS-09 | TC-DAS-001, TC-DAS-007, TC-DAS-043 | 5: `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`, `GET /Dashboard/devoluciones`… | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-003 Alcance por sucursal | HU-DAS-002, HU-DAS-008 | CU-DAS-02, CU-DAS-08 | 6: TC-DAS-010, TC-DAS-012, TC-DAS-033… | 6: `GET /Auth/me`, `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`… | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-004 Día, zona horaria y ventanas | HU-DAS-001 | CU-DAS-01 | TC-DAS-001, TC-DAS-007 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-005 Qué ventas cuentan en las cifras de ventas | HU-DAS-001 | CU-DAS-01 | TC-DAS-004, TC-DAS-048 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-006 «Vendido hoy», «Ayer» y variación | HU-DAS-001 | CU-DAS-01 | TC-DAS-001, TC-DAS-002 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-007 «Comprobantes» y «Ticket promedio» | HU-DAS-001 | CU-DAS-01 | TC-DAS-003 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-008 «Mis ventas de hoy» | HU-DAS-001 | CU-DAS-01 | TC-DAS-005 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-009 «Ventas en espera» | HU-DAS-001 | CU-DAS-01 | TC-DAS-006 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-010 «Cobrado por método de pago» (hoy) | HU-DAS-002 | CU-DAS-02 | TC-DAS-008, TC-DAS-009 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-011 «Ventas por sucursal» | HU-DAS-002 | CU-DAS-02 | TC-DAS-010, TC-DAS-011 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-012 Ventas de los últimos 7 días | HU-DAS-003 | CU-DAS-03 | TC-DAS-013 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-013 Productos más vendidos en 7 días | HU-DAS-003 | CU-DAS-03 | TC-DAS-014, TC-DAS-016 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-014 Enlaces a los listados (solo SPA) | HU-DAS-010 | CU-DAS-10 | TC-DAS-027, TC-DAS-046, TC-DAS-047 | — | `/dashboard`, `/pos` (+2) | SPA Probado | P8 | cap. 11 |
-| RN-DAS-015 «Mi caja» | HU-DAS-004 | CU-DAS-04 | TC-DAS-017, TC-DAS-018, TC-DAS-019 | `GET /Dashboard/caja` | `/dashboard` | SPA Probado | P6, P8 | cap. 11 |
-| RN-DAS-016 «Cajas abiertas» | HU-DAS-004, HU-DAS-010 | CU-DAS-04, CU-DAS-10 | TC-DAS-020, TC-DAS-021, TC-DAS-049 | `GET /Dashboard/caja` | `/dashboard`, `/pos` (+2) | SPA Probado | P8 | cap. 11 |
-| RN-DAS-017 Filas que se cuentan | HU-DAS-005 | CU-DAS-05 | TC-DAS-022, TC-DAS-024 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-018 «Lotes vencidos con stock» | HU-DAS-005 | CU-DAS-05 | TC-DAS-022 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-019 «Lotes que vencen en 30 / 31 a 60 / 61 a 90 días» | HU-DAS-005 | CU-DAS-05 | TC-DAS-023 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-020 «Productos sin stock» (por sucursal) | HU-DAS-005 | CU-DAS-05 | TC-DAS-025 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-021 «Productos con stock bajo» (por sucursal) | HU-DAS-005 | CU-DAS-05 | TC-DAS-026 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-022 «Lotes en cuarentena» | HU-DAS-006 | CU-DAS-06 | TC-DAS-028, TC-DAS-029, TC-DAS-030 | `GET /Dashboard/cuarentena` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-023 «Devoluciones de hoy» | HU-DAS-007 | CU-DAS-07 | TC-DAS-032, TC-DAS-033, TC-DEV-054 | `GET /Dashboard/devoluciones` | `/dashboard` | SPA Probado | P8 | cap. 11 |
-| RN-DAS-024 Carga, errores y actualización | HU-DAS-009 | CU-DAS-09 | TC-DAS-044 | 5: `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`, `GET /Dashboard/devoluciones`… | `/dashboard` | SPA Probado | P8 | cap. 11 |
+| RN-DAS-001 Permisos y secciones visibles | HU-DAS-008 | CU-DAS-08 | TC-DAS-031, TC-DAS-034, TC-DAS-036, TC-DAS-037 | 6: `GET /Auth/me`, `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`… | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-002 Parámetro hoy (ventas, inventario, devoluciones) | HU-DAS-001, HU-DAS-009 | CU-DAS-01, CU-DAS-09 | TC-DAS-001, TC-DAS-007, TC-DAS-043 | 5: `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`, `GET /Dashboard/devoluciones`… | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-003 Alcance por sucursal | HU-DAS-002, HU-DAS-008 | CU-DAS-02, CU-DAS-08 | 6: TC-DAS-010, TC-DAS-012, TC-DAS-033… | 6: `GET /Auth/me`, `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`… | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-004 Día, zona horaria y ventanas | HU-DAS-001 | CU-DAS-01 | TC-DAS-001, TC-DAS-007 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-005 Qué ventas cuentan en las cifras de ventas | HU-DAS-001 | CU-DAS-01 | TC-DAS-004, TC-DAS-048 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-006 «Vendido hoy», «Ayer» y variación | HU-DAS-001 | CU-DAS-01 | TC-DAS-001, TC-DAS-002 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-007 «Comprobantes» y «Ticket promedio» | HU-DAS-001 | CU-DAS-01 | TC-DAS-003 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-008 «Mis ventas de hoy» | HU-DAS-001 | CU-DAS-01 | TC-DAS-005 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-009 «Ventas en espera» | HU-DAS-001 | CU-DAS-01 | TC-DAS-006 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-010 «Cobrado por método de pago» (hoy) | HU-DAS-002 | CU-DAS-02 | TC-DAS-008, TC-DAS-009 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-011 «Ventas por sucursal» | HU-DAS-002 | CU-DAS-02 | TC-DAS-010, TC-DAS-011 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-012 Ventas de los últimos 7 días | HU-DAS-003 | CU-DAS-03 | TC-DAS-013 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-013 Productos más vendidos en 7 días | HU-DAS-003 | CU-DAS-03 | TC-DAS-014, TC-DAS-016 | `GET /Dashboard/ventas` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-014 Enlaces a los listados (solo SPA) | HU-DAS-010 | CU-DAS-10 | TC-DAS-027, TC-DAS-046, TC-DAS-047 | — | `/dashboard`, `/pos` (+2) | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-015 «Mi caja» | HU-DAS-004 | CU-DAS-04 | TC-DAS-017, TC-DAS-018, TC-DAS-019 | `GET /Dashboard/caja` | `/dashboard` | SPA Probado | P6, P8 | cap. 10, 11 |
+| RN-DAS-016 «Cajas abiertas» | HU-DAS-004, HU-DAS-010 | CU-DAS-04, CU-DAS-10 | TC-DAS-020, TC-DAS-021, TC-DAS-049 | `GET /Dashboard/caja` | `/dashboard`, `/pos` (+2) | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-017 Filas que se cuentan | HU-DAS-005 | CU-DAS-05 | TC-DAS-022, TC-DAS-024 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-018 «Lotes vencidos con stock» | HU-DAS-005 | CU-DAS-05 | TC-DAS-022 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-019 «Lotes que vencen en 30 / 31 a 60 / 61 a 90 días» | HU-DAS-005 | CU-DAS-05 | TC-DAS-023 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-020 «Productos sin stock» (por sucursal) | HU-DAS-005 | CU-DAS-05 | TC-DAS-025 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-021 «Productos con stock bajo» (por sucursal) | HU-DAS-005 | CU-DAS-05 | TC-DAS-026 | `GET /Dashboard/inventario` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-022 «Lotes en cuarentena» | HU-DAS-006 | CU-DAS-06 | TC-DAS-028, TC-DAS-029, TC-DAS-030 | `GET /Dashboard/cuarentena` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-023 «Devoluciones de hoy» | HU-DAS-007 | CU-DAS-07 | TC-DAS-032, TC-DAS-033, TC-DEV-054 | `GET /Dashboard/devoluciones` | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
+| RN-DAS-024 Carga, errores y actualización | HU-DAS-009 | CU-DAS-09 | TC-DAS-044 | 5: `GET /Dashboard/caja`, `GET /Dashboard/cuarentena`, `GET /Dashboard/devoluciones`… | `/dashboard` | SPA Probado | P8 | cap. 10, 11 |
 
 ### 3.6 01d — Catálogo de reglas de negocio — Parte D: módulos que solo tienen API (sin pantalla) (125 reglas)
 
@@ -2412,7 +2412,7 @@ Veredicto: **esperable** para los endpoints con pantalla (el caso de prueba los 
 
 ### 6.8 IDs citados que no existen en su documento de origen
 
-Se revisaron los 36 documentos de la tabla siguiente, línea por línea: cada `RN-XXX-nnn` contra los seis documentos de reglas, cada `HU-…` contra 12a a 12c, cada `CU-…` contra 13a a 13c y cada `TC-…` contra 16a a 16c. Para los rangos se comprueban los dos extremos.
+Se revisaron los 40 documentos de la tabla siguiente, línea por línea: cada `RN-XXX-nnn` contra los seis documentos de reglas, cada `HU-…` contra 12a a 12c, cada `CU-…` contra 13a a 13c y cada `TC-…` contra 16a a 16c. Para los rangos se comprueban los dos extremos.
 
 **Resultado: 0 IDs inexistentes.** No hay nada que listar: ningún documento cita un ID que no esté definido en su documento de origen.
 
@@ -2432,7 +2432,7 @@ Comprobaciones de control, ejecutadas por el mismo script:
 
 | Historia o caso de uso | Endpoint citado | Documento | Línea | Qué es |
 |---|---|---|---|---|
-| HU-ADM-049 | `GET /health` | [12a-acceso-y-administracion.md](../ola-2-funcional/12-historias-de-usuario/12a-acceso-y-administracion.md) | 3266 | Ruta mínima registrada con `MapGet` en `sofia-apis/src/SOFIA.API/Program.cs:137`; no pertenece a ningún controlador, por eso no figura en el inventario |
+| HU-ADM-049 | `GET /health` | [12a-acceso-y-administracion.md](../ola-2-funcional/12-historias-de-usuario/12a-acceso-y-administracion.md) | 3269 | Ruta mínima registrada con `MapGet` en `sofia-apis/src/SOFIA.API/Program.cs:137`; no pertenece a ningún controlador, por eso no figura en el inventario |
 
 Revisión de los documentos escaneados:
 
@@ -2454,7 +2454,7 @@ Revisión de los documentos escaneados:
 | [16b-catalogos-inventario-atencion.md](../ola-3-calidad/16-casos-de-prueba/16b-catalogos-inventario-atencion.md) | 285 | 291 | 67 | 66 | 321 | 23 | 0 |
 | [16c-punto-de-venta-y-caja.md](../ola-3-calidad/16-casos-de-prueba/16c-punto-de-venta-y-caja.md) | 340 | 340 | 76 | 76 | 510 | 1 | 0 |
 | [04a-convenciones-y-administracion.md](../ola-1-fundamentos/04-referencia-api/04a-convenciones-y-administracion.md) | 190 | 218 | 0 | 0 | 0 | 31 | 0 |
-| [04b-catalogos-basicos.md](../ola-1-fundamentos/04-referencia-api/04b-catalogos-basicos.md) | 93 | 107 | 0 | 0 | 0 | 11 | 0 |
+| [04b-catalogos-basicos.md](../ola-1-fundamentos/04-referencia-api/04b-catalogos-basicos.md) | 94 | 107 | 0 | 0 | 0 | 11 | 0 |
 | [04c-productos-proveedores-personas.md](../ola-1-fundamentos/04-referencia-api/04c-productos-proveedores-personas.md) | 119 | 123 | 0 | 0 | 0 | 16 | 0 |
 | [04d-inventario-recetas-operaciones.md](../ola-1-fundamentos/04-referencia-api/04d-inventario-recetas-operaciones.md) | 159 | 171 | 0 | 0 | 0 | 14 | 0 |
 | [04e-ventas-caja-devoluciones.md](../ola-1-fundamentos/04-referencia-api/04e-ventas-caja-devoluciones.md) | 122 | 123 | 0 | 0 | 0 | 10 | 0 |
@@ -2462,7 +2462,7 @@ Revisión de los documentos escaneados:
 | [19a-acceso-layout-y-compartidos.md](../ola-1-fundamentos/19-inventario-de-pantallas/19a-acceso-layout-y-compartidos.md) | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | [19b-administracion.md](../ola-1-fundamentos/19-inventario-de-pantallas/19b-administracion.md) | 34 | 43 | 0 | 0 | 0 | 3 | 0 |
 | [19c-catalogos-1.md](../ola-1-fundamentos/19-inventario-de-pantallas/19c-catalogos-1.md) | 20 | 35 | 0 | 0 | 0 | 7 | 0 |
-| [19d-catalogos-2.md](../ola-1-fundamentos/19-inventario-de-pantallas/19d-catalogos-2.md) | 30 | 50 | 0 | 0 | 0 | 8 | 0 |
+| [19d-catalogos-2.md](../ola-1-fundamentos/19-inventario-de-pantallas/19d-catalogos-2.md) | 31 | 50 | 0 | 0 | 0 | 8 | 0 |
 | [19e-inventario-y-atencion.md](../ola-1-fundamentos/19-inventario-de-pantallas/19e-inventario-y-atencion.md) | 25 | 26 | 0 | 0 | 0 | 1 | 0 |
 | [19f-punto-de-venta.md](../ola-1-fundamentos/19-inventario-de-pantallas/19f-punto-de-venta.md) | 56 | 71 | 0 | 0 | 0 | 3 | 0 |
 | [09a-backend.md](../ola-1-fundamentos/09-pruebas/09a-backend.md) | 65 | 93 | 0 | 0 | 0 | 9 | 0 |
@@ -2473,6 +2473,10 @@ Revisión de los documentos escaneados:
 | [capitulo-04-catalogos-basicos.md](../ola-2-funcional/manual-usuario/capitulo-04-catalogos-basicos.md) | 6 | 6 | 0 | 0 | 0 | 0 | 0 |
 | [capitulo-05-productos-y-proveedores.md](../ola-2-funcional/manual-usuario/capitulo-05-productos-y-proveedores.md) | 4 | 5 | 0 | 0 | 0 | 1 | 0 |
 | [capitulo-06-inventario.md](../ola-2-funcional/manual-usuario/capitulo-06-inventario.md) | 29 | 37 | 0 | 0 | 0 | 8 | 0 |
+| [capitulo-07-pacientes-y-recetas.md](../ola-2-funcional/manual-usuario/capitulo-07-pacientes-y-recetas.md) | 55 | 63 | 0 | 0 | 0 | 17 | 0 |
+| [capitulo-08-caja-y-venta.md](../ola-2-funcional/manual-usuario/capitulo-08-caja-y-venta.md) | 26 | 35 | 0 | 0 | 0 | 6 | 0 |
+| [capitulo-09-ventas-devoluciones-y-cierre.md](../ola-2-funcional/manual-usuario/capitulo-09-ventas-devoluciones-y-cierre.md) | 18 | 66 | 0 | 0 | 0 | 6 | 0 |
+| [capitulo-10-inicio-y-roles.md](../ola-2-funcional/manual-usuario/capitulo-10-inicio-y-roles.md) | 24 | 24 | 0 | 0 | 0 | 4 | 0 |
 | [capitulo-11-problemas-frecuentes.md](../ola-2-funcional/manual-usuario/capitulo-11-problemas-frecuentes.md) | 10 | 66 | 0 | 0 | 0 | 2 | 0 |
 
 Las cifras de la tabla son IDs distintos por documento. Un documento de reglas cita también las reglas de otras partes (por ejemplo 01a cita reglas de ventas en su sección de hallazgos); el cruce lo comprueba igual.
@@ -2482,7 +2486,7 @@ Las cifras de la tabla son IDs distintos por documento. Un documento de reglas c
 - **Casos de prueba que citan una historia pero ningún caso de uso, o al revés:** 36 no citan ningún caso de uso y 6 no citan ninguna historia (TC-CAT-019, TC-CAT-026, TC-CAT-028, TC-CAT-033, TC-CAT-203, TC-INV-036). Ningún caso queda sin las dos cosas (0).
 - **Rutas de historias que 09b no lista:** `/digemid-catalogo/nueva` y `/delivery`. Las historias las mencionan para explicar que la ruta no existe, por lo que no es un error de las historias.
 - **Reglas sin proceso:** 315 de 789 no se citan en las secciones 3 a 11 del documento de procesos. Por prefijo: GEN 26/41, AUT 18/39, ROL 10/23, CTA 7/20, EMP 2/18, SUC 6/13, EPL 9/18, SER 6/14, IMP 11/17, UDM 9/17, JER 11/22, LAB 10/17, ING 9/15, MED 11/26, PRE 7/15, FOR 13/13, PRV 16/28, ASE 12/12, DIG 13/13, PAC 17/17, PRO 12/12, LOT 8/19, STK 5/18, REC 8/31, VEN 12/83, CMP 4/15, CAJ 4/27, DEV 9/37, TRA 4/30, DEL 3/18, MAG 4/23, SRV 3/21, CUA 6/23, AUD 10/10. Veredicto: **esperable** para `FOR`, `PAC`, `PRO`, `ASE`, `DIG` y `AUD`, que el propio documento 14 (13.2) declara fuera de sus procesos; para el resto, el documento cita las reglas que intervienen en el flujo y no el catálogo completo.
-- **Manual de usuario:** 176 reglas son «Pendiente» (módulos de los capítulos 7 a 10, que no existen aún) y 305 reglas de módulos con capítulo publicado no están citadas por ningún capítulo. Por prefijo: GEN 41/41, ROL 20/23, CTA 17/20, EMP 3/18, SUC 13/13, EPL 14/18, SER 12/14, IMP 17/17, UDM 17/17, JER 22/22, LAB 16/17, ING 13/15, MED 26/26, PRE 15/15, FOR 13/13, PRV 23/28, ASE 12/12, DIG 11/13. Veredicto: **conviene revisar**, pero con cuidado: los capítulos explican el comportamiento sin citar el ID, así que «—» aquí no prueba que el comportamiento falte en el manual; ver 7.
+- **Manual de usuario:** 0 reglas son «Pendiente» (ya están publicados los once capítulos) y 345 reglas de módulos con capítulo publicado no están citadas por ningún capítulo. Por prefijo: GEN 41/41, ROL 20/23, CTA 17/20, EMP 3/18, SUC 13/13, EPL 14/18, SER 12/14, IMP 17/17, UDM 17/17, JER 22/22, LAB 16/17, ING 13/15, MED 26/26, PRE 15/15, FOR 13/13, PRV 23/28, ASE 12/12, DIG 11/13, VEN 21/83, CMP 9/15, CAJ 1/27, DEV 9/37. Veredicto: **conviene revisar**, pero con cuidado: los capítulos explican el comportamiento sin citar el ID, así que «—» aquí no prueba que el comportamiento falte en el manual; ver 7.
 
 ## 7. Pendientes y «No verificado»
 
@@ -2497,17 +2501,17 @@ Ninguno. Este documento solo lee archivos de `sofia-docs`. De `sofia-apis` y `so
 | 1 | Que las pruebas automatizadas del backend verifiquen de verdad las reglas marcadas `BE Sí` o `BE Parcial` | La clasificación sale de la frase y la celda donde 09a nombra la regla (1.4); no se abrieron los archivos de prueba. 09a mismo declara (sección 8) que no contrastó cada regla contra el código de la prueba |
 | 2 | Que una regla «no citada en 09a» no tenga pruebas | 09a no cita reglas fuera de su sección 6 (93 reglas, 65 escritas); el código de pruebas no lleva IDs `RN-`. Hace falta un mapa pruebas → reglas que hoy no existe |
 | 3 | Que los specs de las pantallas (`SPA`) ejerciten las reglas de esa pantalla | 09b no cita reglas; el cruce es por ruta y es una señal débil (1.4) |
-| 4 | Qué módulos cubrirán los capítulos 7 a 10 del manual | El README solo dice «en preparación». El conjunto de módulos marcados «Pendiente» (`PAC`, `PRO`, `REC`, `VEN`, `CMP`, `CAJ`, `DEV`, `DAS`) sale de restar los módulos que listan los capítulos 1 a 6 del README; cuando se publiquen los capítulos, hay que volver a pasar el script |
+| 4 | Que los capítulos 7 a 10 cubran los módulos que en la versión 1.0 figuraban «Pendiente» (`PAC`, `PRO`, `REC`, `VEN`, `CMP`, `CAJ`, `DEV`, `DAS`) | Resuelto en la versión 1.1: los capítulos 7 a 10 están publicados y el script los cruza; ya no se marca ninguna regla «Pendiente» |
 | 5 | Que «—» en la columna Manual sea un hueco del manual | Los capítulos no siempre citan el ID de la regla; pueden describir el comportamiento sin citarlo |
 | 6 | Que un caso de prueba ejerza todos los endpoints de su historia | La relación endpoint → caso de prueba por historia atribuye a cada endpoint de la historia todos los casos que la cubren. Por eso se muestra aparte el número de casos que escriben el endpoint (`directos`) |
 | 7 | Reglas citadas en el cuerpo de una historia o de un caso de prueba pero no en su fila «Reglas» o «Cubre» | No cuentan en la matriz. Solo se miró el cuerpo de los casos de uso, y solo para explicar el hueco 6.2 |
 | 8 | Enlaces y anclas de los documentos de origen | El script solo comprueba IDs. Las anclas de esta matriz (`#hu-adm-001--…`, `#get-apiv1…`) se calcularon con la regla de títulos de GitHub y no se abrieron en un visor |
 | 9 | Que los documentos de origen coincidan con el código vigente | Se dan por validados; esta matriz no abre el código |
-| 10 | La diferencia de una regla entre las 373 citadas que cuenta el script y las 372 que declara 14 (13.2) | El documento no lista cuáles son; ver 8.2 |
+| 10 | La diferencia de una regla entre las 373 citadas que cuenta el script y las 372 que declaraba 14 (13.2) | Resuelto: 14 versión 1.1 declara 373 (revisión de consistencia, 2026-11-04) |
 
 ### 7.3 Pendientes
 
-1. Volver a ejecutar los scripts `17-…` cuando se publiquen los capítulos 7 a 10 del manual (las marcas «Pendiente» pasarán a capítulo o a «—») y cada vez que cambie un documento fuente.
+1. Volver a ejecutar los scripts `17-…` cada vez que cambie un documento fuente (los capítulos 7 a 10 del manual ya se cruzan desde la versión 1.1).
 2. Mapa pruebas automatizadas → reglas (cierra 6.4 y 6.5): 09a debería citar el ID en cada clase de prueba catalogada, o las pruebas deberían llevar el ID en su nombre.
 3. Añadir a la fila «Reglas» de los casos de uso las 14 reglas de 6.2 que hoy solo se citan en sus pasos.
 4. Hacer que los casos de prueba de los endpoints «Solo API» escriban método y ruta (6.7).
@@ -2535,7 +2539,7 @@ Resultado: **sin diferencias**; todas las reglas, historias, casos de uso y endp
 | Concepto | Lo que declara el documento | Lo que obtiene el script | Coincide |
 |---|---|---|---|
 | Reglas distintas que define el catálogo | 789 (14, 13.2) | 789 | Sí |
-| IDs de reglas escritos en el documento de procesos | 372 (14, 13.2); 373 según el encargo | 373 | No |
+| IDs de reglas escritos en el documento de procesos | 373 (14 v1.1, 13.2; la v1.0 decía 372) | 373 | Sí |
 | IDs de reglas del documento de procesos al expandir rangos | 475 (14, 13.2) | 475 | Sí |
 | Reglas que cita 09a (escritas) | unas 65 (encargo) | 65 | Sí |
 | Casos de prueba 16a | 413 (16a, 6.1) | 413 | Sí |
@@ -2546,7 +2550,7 @@ Resultado: **sin diferencias**; todas las reglas, historias, casos de uso y endp
 | Endpoints de `endpoints.csv` | 241 (README del inventario) | 241 | Sí |
 | Fichas `####` de la referencia de la API | 241 (suma de 04a a 04e) | 241 | Sí |
 
-Notas: el documento 14 declara 372 IDs escritos y el script cuenta 373, igual que el encargo; la diferencia es de un ID y el documento no lista cuáles son (No verificado, 7.2). Los 16b declarados en el registro del proyecto (321 casos) coinciden con los 321 del documento.
+Notas: el documento 14 (versión 1.1) declara 373 IDs escritos y el script cuenta 373; la versión 1.0 decía 372 y la diferencia de un ID no se pudo localizar. Los 16b declarados en el registro del proyecto (321 casos) coinciden con los 321 del documento.
 
 ## 9. Fuentes
 
@@ -2604,6 +2608,10 @@ Rutas relativas a `sofia-docs`. Todos los documentos se leyeron del disco, compl
 - [ola-2-funcional/manual-usuario/capitulo-04-catalogos-basicos.md](../ola-2-funcional/manual-usuario/capitulo-04-catalogos-basicos.md)
 - [ola-2-funcional/manual-usuario/capitulo-05-productos-y-proveedores.md](../ola-2-funcional/manual-usuario/capitulo-05-productos-y-proveedores.md)
 - [ola-2-funcional/manual-usuario/capitulo-06-inventario.md](../ola-2-funcional/manual-usuario/capitulo-06-inventario.md)
+- [ola-2-funcional/manual-usuario/capitulo-07-pacientes-y-recetas.md](../ola-2-funcional/manual-usuario/capitulo-07-pacientes-y-recetas.md)
+- [ola-2-funcional/manual-usuario/capitulo-08-caja-y-venta.md](../ola-2-funcional/manual-usuario/capitulo-08-caja-y-venta.md)
+- [ola-2-funcional/manual-usuario/capitulo-09-ventas-devoluciones-y-cierre.md](../ola-2-funcional/manual-usuario/capitulo-09-ventas-devoluciones-y-cierre.md)
+- [ola-2-funcional/manual-usuario/capitulo-10-inicio-y-roles.md](../ola-2-funcional/manual-usuario/capitulo-10-inicio-y-roles.md)
 - [ola-2-funcional/manual-usuario/capitulo-11-problemas-frecuentes.md](../ola-2-funcional/manual-usuario/capitulo-11-problemas-frecuentes.md)
 
 **Inventarios y reglas de trabajo**
