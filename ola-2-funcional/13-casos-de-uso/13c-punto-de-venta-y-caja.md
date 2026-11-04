@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-27 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de los documentos validados (reglas 01c1, 01c2 v1.1, 01c3 y 01d; inventario de pantallas 19a y 19f; matriz de permisos 05b; procesos de negocio 4, 5, 6, 8 y 9; historias de usuario 12c; catálogo de códigos de error 21) y comprobación puntual en el código (`VentasController`, `CreateVentaCommandHandler`, `ProcesarDevolucionCommandHandler`, `CerrarCajaCommandHandler`, `ArqueoCajaCalculator`, `ValidationBehavior`, `ResultExtensions`) y en `endpoints.csv`. `git status --short` está limpio en ambos repositorios. No se ejecutó la aplicación ni se llamó a la API: los mensajes salen de los `es.json` a través de los documentos fuente. |
@@ -3914,7 +3914,7 @@ Las reglas que describen estructura de base de datos o comprobaciones de entidad
 
 ## 13. Fuentes
 
-Documentos consultados (rutas relativas a `D:\Baufest\GIT\Sofia\sofia-docs\`):
+Documentos consultados (rutas relativas a la carpeta `sofia-docs`):
 
 - `_inventario/REGLAS-AGENTES.md`, `_inventario/README.md`, `_inventario/endpoints.csv`.
 - `ola-1-fundamentos/01-reglas-de-negocio/01c2-ventas-y-comprobantes.md` (v1.1), `01c3-caja-devoluciones-dashboard.md`, `01d-modulos-solo-api.md`, `01c1-inventario-y-recetas.md` (`RN-REC-031`) y, para las reglas transversales y de otras partes que se citan, `01a-administracion-y-seguridad.md` y `01b-catalogos.md`.
