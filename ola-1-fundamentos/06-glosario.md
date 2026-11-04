@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-13 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código (entidades, enums, handlers, scripts DbUp, componentes Angular y archivos `es.json`), contraste con los documentos validados de `ola-1-fundamentos` y 19 búsquedas web en fuentes oficiales peruanas (SUNAT, DIGEMID, gob.pe, El Peruano). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay trabajo sin commitear que afecte a este documento. |
@@ -1031,7 +1031,7 @@ Mapa de la familia: un **medicamento** pertenece a un **laboratorio**, tiene una
 
 **Definición.** Lo que el proveedor cobra a la farmacia por una unidad de producto. Definición general, no verificada en fuente oficial.
 
-**En SOFIA.** Se registra por proveedor y producto: precio de compra por unidad base (mayor que 0) y un descuento de 0 a 100 %; el **costo neto** es `precio × (1 − descuento / 100)` redondeado a 4 decimales (`APP/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs:26`) y es el valor que se guarda. **Aviso:** los documentos `01b` ([RN-PRV-020](01-reglas-de-negocio/01b-catalogos.md)) y `03a` anteriores dicen que el registro «no guarda nada»; el código actual (commit `43f5529`) sí guarda y cierra el precio anterior. Manda el código.
+**En SOFIA.** Se registra por proveedor y producto: precio de compra por unidad base (mayor que 0) y un descuento de 0 a 100 %; el **costo neto** es `precio × (1 − descuento / 100)` redondeado a 4 decimales (`APP/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs:26`) y es el valor que se guarda. Las versiones 1.0 de `01b` ([RN-PRV-020](01-reglas-de-negocio/01b-catalogos.md)) y `03a` decían que el registro «no guarda nada»; ambos documentos se corrigieron en su versión 1.1 y hoy el registro guarda y cierra el precio anterior (commit `606cb69`).
 
 **Dónde aparece.** Proveedores > «Registrar precio»: «Precio de compra por unidad base (S/)», «Descuento (%)» y «Costo neto por unidad base» (`I18N/proveedores/es.json:106`, `:122-124`). Permiso «Registrar precio de proveedor» (`I18N/roles/es.json`, `permisos.accion.RegistrarPrecioProveedor`). Reglas: [RN-PRV-018](01-reglas-de-negocio/01b-catalogos.md), [RN-PRV-019](01-reglas-de-negocio/01b-catalogos.md).
 
@@ -1654,7 +1654,7 @@ Se hicieron 19 búsquedas web (el máximo permitido era 25) y un intento de abri
 
 ### 10.4 Hallazgos para el orquestador
 
-1. **Documentos anteriores desactualizados frente al código.** RN-PRV-020 del [01b](01-reglas-de-negocio/01b-catalogos.md) y el modelo [03a](03-modelo-de-datos/03a-maestros-y-seguridad.md) dicen que registrar un precio de proveedor «no guarda nada»; el handler actual guarda el precio y cierra el anterior (`APP/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs:26-46`). RN-EMP-010 del [01a](01-reglas-de-negocio/01a-administracion-y-seguridad.md) da la dirección de la sede principal por opcional; el validador actual la exige (`RegistrarEmpresaCommandValidator.cs:49-51`). Varias reglas de borrado de maestros del 01b dicen «no valida dependencias» y el commit `27597cd` las agregó.
+1. **Documentos anteriores desactualizados frente al código (resuelto).** Las versiones 1.0 de [01b](01-reglas-de-negocio/01b-catalogos.md) (RN-PRV-020) y [03a](03-modelo-de-datos/03a-maestros-y-seguridad.md) decían que registrar un precio de proveedor «no guarda nada»; el handler guarda el precio y cierra el anterior (`APP/Proveedores/Commands/RegistrarPrecioProveedor/RegistrarPrecioProveedorCommandHandler.cs:26-46`). RN-EMP-010 del [01a](01-reglas-de-negocio/01a-administracion-y-seguridad.md) daba la dirección de la sede principal por opcional; el validador la exige (`RegistrarEmpresaCommandValidator.cs:49-51`). Varias reglas de borrado de maestros del 01b decían «no valida dependencias» y el commit `27597cd` las agregó. 01a, 01b y 03a se reconciliaron en su versión 1.1; este glosario conserva el aviso por si lees una copia antigua.
 2. **`enums.csv` no incluye `EstadoEmpresa`**, que se declara dentro de `DOM/Empresa.cs:6-12` y no en la carpeta `Enums`. Se documentó en «Estados de suscripción». Tampoco incluye enums del SPA (`TipoComprobante` numérico, `CondicionVenta` numérico).
 3. **Textos de interfaz sin pantalla:** los archivos `uom`, `servicios`, `transferencias`, `inventarios`, `seguridad`, `auditoria` y `login` (en `public/i18n`) no los usa ningún componente (búsqueda sin resultados en `sofia-web-spa/src`), y dentro de `pos/es.json` no se usan `dialogs.*`, `reportDialog.faltanteText`, `table.faltanteText` y `transferDialog.*`.
 4. **Texto de marketing:** «Reportes DIGEMID automatizados» (`I18N/auth/es.json:24`) no corresponde a ninguna función.
