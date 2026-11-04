@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-26 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
 | **Método** | Lectura de código (controladores y handlers de `sofia-apis`, verificados línea a línea para códigos de error y estados HTTP) y de los documentos validados: reglas 01a, seguridad 05a y 05b, pantallas 19a y 19b, carga masiva 20, procesos 14, manual de usuario (capítulos 1 a 3) e historias de usuario 12a. No se usó el navegador ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
 
 ## 1. Cómo leer este documento
@@ -718,7 +718,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | 1 | Falla la descarga de la plantilla | según el error | — | «Error al descargar la plantilla. Intenta de nuevo.» (`carga-masiva.download-error`) | Reintentar |
 | 3 | El nombre no termina en `.xlsx` o el contenido no es un libro Excel (extensión, firma ZIP, ZIP corrupto, libro ilegible) | `CargaMasiva.Archivo.Invalido` | 400 (antes, en el navegador) | «El archivo no es un Excel .xlsx válido. Descarga la plantilla y vuelve a intentarlo.» (`carga-masiva.errors.invalid-file`) | No se procesa |
 | 3 | Pesa más de 5 MB (RN-IMP-004, RN-GEN-039) | `Request.TooLarge` (si llega al servidor) | 413 | «El archivo supera el tamaño máximo de 5 MB.» (`carga-masiva.errors.too-large`) | Dividir el archivo |
-| 5 | Archivo ausente o vacío en la vista previa | sin code (texto plano «Debe adjuntar un archivo Excel.») | 400 | «Error al procesar el archivo» (`carga-masiva.preview-error`) | El SPA siempre envía un archivo |
+| 5 | Archivo ausente o vacío en la vista previa | sin code (ausente: `ProblemDetails` con `errors.file`; de 0 bytes: texto plano «Debe adjuntar un archivo Excel.») | 400 | «Error al procesar el archivo» (`carga-masiva.preview-error`) | El SPA siempre envía un archivo |
 | 5 | Descompresión excesiva | `CargaMasiva.Archivo.ExcedeDescompresion` | 400 | «El archivo excede los límites de contenido permitidos. Revisa que sea una plantilla válida.» (`carga-masiva.errors.decompression`) | Rehacer desde la plantilla |
 | 5 | Más de 5000 filas con datos | `CargaMasiva.Filas.Excedidas` | 400 | «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.» (`carga-masiva.errors.too-many-rows`) | Dividir el archivo |
 | 6 | Fila inválida (nombre, dirección o licencia vacíos o demasiado largos; licencia existente o repetida) | códigos de fila `required`, `max-length`, `duplicate`, `duplicate-in-file` (no son `code` HTTP) | 200 | Por fila: «El campo 'nombre' es obligatorio», «'nombre' no puede superar los 100 caracteres», «El valor '…' del campo 'numeroLicencia' ya existe en el sistema», «El valor '…' del campo 'numeroLicencia' está duplicado en el archivo» (`carga-masiva.validation.*`) | La fila no se guarda; el contador «N filas con error» sube |
@@ -1080,7 +1080,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | 1 | No se puede cargar el empleado | `Empleado.NotFound` u otro | 404 / 5xx | «Error al cargar el empleado» (`empleados.detail.load-error`) | — |
 | 4 | Formulario inválido | — (formulario) | — | Los de CU-ADM-22 paso 2 | No se envía |
 | 5 | El empleado no existe | `Empleado.NotFound` | 404 | Genérico: «Error al guardar el empleado» | — |
-| 5 | El empleado intenta cambiar su propia sucursal base | `Empleado.SucursalBase.AutoAsignacion` | 403 | Genérico: «Error al guardar el empleado» | Otro administrador debe hacerlo |
+| 5 | El empleado intenta cambiar su propia sucursal base | `Empleado.SucursalBase.AutoAsignacion` | 403 | «No puedes cambiar tu propia sucursal base.» (desde `sofia-web-spa` `37d053d`; antes el genérico «Error al guardar el empleado») | Otro administrador debe hacerlo |
 | 5 | La sucursal nueva no existe | `Sucursal.NotFound` | 404 | Genérico: «Error al guardar el empleado» | — |
 | 6 | Licencia o correo repetidos | `Empleado.LicenciaProf.Duplicado` / `Empleado.Email.Duplicado` | 409 | «Ya existe un empleado con esa licencia profesional.» / «Ya existe un empleado con ese correo electrónico en tu empresa.» | Corregir |
 | 6 | Validador o entidad | `UpdateEmpleadoCommand.<Campo>` / `Empleado.Email.Invalido` | 400 | Genérico / «Ingresa un correo electrónico válido.» | Corregir |
@@ -1090,7 +1090,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 - Éxito: fila de `Empleados` reemplazada con `LastModifiedBy`/`LastModifiedAt`; si cambió la sucursal base, nuevo `Security_Stamp` en sus cuentas.
 - Fallo: no cambia nada.
 
-**Brecha conocida.** El SPA no traduce `Empleado.SucursalBase.AutoAsignacion`: se ve el genérico (19b §3.2). Al cambiar la sucursal base de un empleado con cuenta, la sesión de esa persona se invalida y el SPA no lo anuncia (RN-EPL-012). Después de guardar, el SPA vuelve a la búsqueda y no se queda en la ficha.
+**Brecha conocida.** Desde `37d053d` el SPA traduce `Empleado.SucursalBase.AutoAsignacion` (19b §3.2). Al cambiar la sucursal base de un empleado con cuenta, la sesión de esa persona se invalida y el SPA no lo anuncia (RN-EPL-012). Después de guardar, el SPA vuelve a la búsqueda y no se queda en la ficha.
 
 ---
 
@@ -1212,7 +1212,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 |---|---|---|---|---|---|
 | 2 | Nombre vacío o nivel menor que 1 o vacío | — (formulario) | — | «Este campo es obligatorio» (también para nivel 0) | No se envía |
 | 4 | Nombre de 51 a 100 caracteres, descripción de más de 255 o nivel negativo | `CreateRolCommand.NombreRol` / `.Descripcion` / `.NivelJerarquia` | 400 | Genérico: «Error al guardar el rol» (`roles.detail.save-error`) | Se queda en el formulario |
-| 5 | Ya existe un rol con ese nombre | `Rol.DuplicateName` | 400 (tipo `Conflict`, estado 400) | Genérico: «Error al guardar el rol» | Elegir otro nombre |
+| 5 | Ya existe un rol con ese nombre | `Rol.DuplicateName` | 400 (tipo `Conflict`, estado 400) | «Ya existe un rol con ese nombre.» (desde `sofia-web-spa` `37d053d`; antes el genérico «Error al guardar el rol») | Elegir otro nombre |
 | 6 | Dos altas del mismo nombre compiten | `Db.Duplicado` | 409 | Genérico: «Error al guardar el rol» (la pantalla no usa `saveErrorKey`) | — |
 | 6 | Regla de la entidad | `Rol.Nombre` | 400 | Genérico: «Error al guardar el rol» | — |
 | 3 | Falta el permiso en el servidor | sin code | 403 | Genérico | — |
@@ -1305,7 +1305,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | 1 | Falla la carga de permisos | según el error | 4xx / 5xx | «Error al cargar los permisos» (`roles.permisos.load-error`, con referencia si trae `traceId`) | — |
 | 5 | El rol no existe | `Rol.NotFound` | 404 | Genérico: «Error al guardar el rol» | — |
 | 5 | Ampliar los permisos de un rol que el actor tiene asignado sin ser `Admin` | `Rol.PermisosPropios` | 403 | «No se pueden ampliar los permisos de un rol que la propia cuenta tiene asignado» (`roles.detail.permisos-propios-error`) | Pedirlo a un administrador |
-| 5 | El permiso ya está asignado al rol | `Permiso.Duplicate` | 400 (tipo `Conflict`, estado 400) | Genérico: «Error al guardar el rol» | La pantalla solo envía los permisos nuevos respecto de los cargados |
+| 5 | El permiso ya está asignado al rol | `Permiso.Duplicate` | 400 (tipo `Conflict`, estado 400) | «Ese permiso ya está asignado al rol.» (desde `sofia-web-spa` `37d053d`; antes el genérico) | La pantalla solo envía los permisos nuevos respecto de los cargados |
 | 5 | Datos de la entidad incompletos | `Permiso.RolId` / `Permiso.Modulo` / `Permiso.Accion` | 400 | Genérico: «Error al guardar el rol» | La pantalla solo ofrece los pares del catálogo |
 | 7 | El permiso no existe o ya estaba revocado | `Permiso.NotFound` | 404 | Genérico: «Error al guardar el rol» | — |
 | 4 | Falta `Seguridad:GestionarPermisos` en el servidor | sin code | 403 | Genérico | — |
@@ -1391,7 +1391,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
 |---|---|---|---|---|---|
 | 3 | El rol no existe | `Rol.NotFound` | 404 | «Error al eliminar el rol» (`roles.detail.delete-error`) | — |
-| 3 | El rol tiene cuentas no eliminadas vinculadas | `Rol.InUse` | 400 (tipo `Conflict`, estado 400) | «Error al eliminar el rol» (sin traducción del código) | No se borra |
+| 3 | El rol tiene cuentas no eliminadas vinculadas | `Rol.InUse` | 400 (tipo `Conflict`, estado 400) | «No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.» (desde `sofia-web-spa` `37d053d`; antes «Error al eliminar el rol») | No se borra |
 | 2 | Falta el permiso o error de red / 5xx | sin code | 403 / 0 / 5xx | «Error al eliminar el rol» | — |
 
 **Postcondiciones**
@@ -1438,7 +1438,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | 2 / 3 | Más de 5 MB | `Request.TooLarge` | 413 | «El archivo supera el tamaño máximo de 5 MB.» | Dividir |
 | 3 | Descompresión excesiva | `CargaMasiva.Archivo.ExcedeDescompresion` | 400 | «El archivo excede los límites de contenido permitidos. Revisa que sea una plantilla válida.» | Rehacer |
 | 3 | Más de 5000 filas | `CargaMasiva.Filas.Excedidas` | 400 | «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.» | Dividir |
-| 3 | Archivo ausente o vacío | sin code (texto plano) | 400 | «Error al procesar el archivo» (`carga-masiva.preview-error`) | — |
+| 3 | Archivo ausente o vacío | sin code (ausente: `ProblemDetails` con `errors.file`; de 0 bytes: texto plano) | 400 | «Error al procesar el archivo» (`carga-masiva.preview-error`) | — |
 | 4 | Fila inválida | códigos de fila `required`, `max-length`, `duplicate`, `duplicate-in-file`, `invalid-integer`, `min-value` (no son `code` HTTP) | 200 | Por fila: «El campo 'nombreRol' es obligatorio», «'nombreRol' no puede superar los 50 caracteres», «El valor '…' del campo 'nombreRol' ya existe en el sistema», «El valor '…' del campo 'nombreRol' está duplicado en el archivo», «'nivelJerarquia' debe ser un número entero», «'nivelJerarquia' debe ser mayor o igual a 1» | La fila no se guarda |
 | 7 | Lista vacía o de más de 5000 | `CargaMasivaRolesCommand.Rows` | 400 | «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.» | Dividir |
 | 7 | Una fila no cumple el validador (por ejemplo descripción de más de 255, que la vista previa no comprueba) | `CargaMasivaRolesCommand.Rows[i].NombreRol` / `.Descripcion` / `.NivelJerarquia` | 400 | «Algunas filas tienen datos inválidos. Vuelve a subir el archivo y revisa la vista previa.» | No se guarda ninguna fila |
@@ -1530,8 +1530,8 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | 2 | Contraseña de 1 a 7 caracteres o de más de 128 | — (formulario) | — | Ninguno: el formulario es inválido y «Guardar» no envía | Usar de 8 a 128 caracteres |
 | 4 | Validador de la API | `RegisterAccountCommand.EmpleadoId` / `.NombreUsuario` / `.Password` | 400 | Genérico: «Error al guardar la cuenta» (`cuentas.detail.save-error`) | — |
 | 5 | El empleado no existe | `Empleado.NotFound` | 404 | Genérico: «Error al guardar la cuenta» | — |
-| 5 | El empleado ya tiene una cuenta | `Auth.DuplicateAccount` | 409 | Genérico: «Error al guardar la cuenta» | Elegir otro empleado |
-| 5 | Usuario ya usado en cualquier empresa | `Auth.DuplicateUsername` | 409 | Genérico: «Error al guardar la cuenta» | Elegir otro usuario |
+| 5 | El empleado ya tiene una cuenta | `Auth.DuplicateAccount` | 409 | «Este empleado ya tiene una cuenta de usuario vinculada.» (desde `sofia-web-spa` `37d053d`; antes el genérico «Error al guardar la cuenta») | Elegir otro empleado |
+| 5 | Usuario ya usado en cualquier empresa | `Auth.DuplicateUsername` | 409 | «Ya existe una cuenta con ese nombre de usuario.» (desde `37d053d`; antes el genérico) | Elegir otro usuario |
 | 6 | Carrera contra el índice único (usuario o empleado) | `Db.Duplicado` | 409 | Genérico: «Error al guardar la cuenta» | — |
 | 6 | Regla de la entidad | `Cuenta.EmpleadoId` / `Cuenta.Usuario` / `Cuenta.Password` | 400 | Genérico | — |
 
@@ -1539,7 +1539,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 - Éxito: nueva fila en `Seguridad_Cuentas` (activa, `Requiere_Cambio_Clave` verdadero, 0 intentos); evento `CUENTA_REGISTRAR`.
 - Fallo: no se crea nada.
 
-**Brecha conocida.** En creación el SPA no traduce los códigos de la API (`ERROR_KEYS` solo se usa al editar, eliminar y gestionar sucursales): `Auth.DuplicateAccount` y `Auth.DuplicateUsername` se ven como «Error al guardar la cuenta» (19b §5.2). El mensaje de longitud dice 100 y el límite es 50; con menos de 8 caracteres no hay mensaje (RN-CTA-003, RN-CTA-004). La contraseña inicial la escribe quien crea la cuenta, no se muestra después y el formulario no avisa de que deberá cambiarse.
+**Brecha conocida.** Desde `sofia-web-spa` `37d053d` el alta traduce `Auth.DuplicateAccount` y `Auth.DuplicateUsername` (`ERROR_KEYS`, 19b §5.2); el resto de los códigos se ven como «Error al guardar la cuenta». El mensaje de longitud dice 100 y el límite es 50; con menos de 8 caracteres no hay mensaje (RN-CTA-003, RN-CTA-004). La contraseña inicial la escribe quien crea la cuenta, no se muestra después y el formulario no avisa de que deberá cambiarse.
 
 ---
 
@@ -1558,7 +1558,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 
 **Flujo principal**
 1. El actor abre la cuenta. El SPA pide `GET /api/v1/Cuentas/{id}` (RN-CTA-009) y muestra, de solo lectura: Nombre de Usuario, Empleado, Intentos Fallidos, Cuenta Activa, Bloqueado, Requiere Cambio de Clave, Bloqueado Hasta (solo si la cuenta tiene fecha de bloqueo) y Creado el.
-2. Con `Seguridad:Actualizar` pulsa «Editar». Usuario y Empleado quedan deshabilitados (no se pueden cambiar). Aparecen tres controles: «Cuenta Activa» (interruptor, con el valor actual), «Forzar Cambio de Contraseña» (interruptor, siempre apagado al abrir) y «Resetear Intentos Fallidos» (casilla, siempre desmarcada).
+2. Con `Seguridad:Actualizar` pulsa «Editar». Usuario y Empleado quedan deshabilitados (no se pueden cambiar). Aparecen tres controles: «Cuenta Activa» (interruptor, con el valor actual), «Forzar Cambio de Contraseña» (interruptor; apagado al abrir, salvo que la cuenta ya requiera el cambio: desde `sofia-web-spa` `7070e1a` se abre encendido y deshabilitado, con una nota) y «Resetear Intentos Fallidos» (casilla, siempre desmarcada).
 3. El actor ajusta uno o varios controles y pulsa «Guardar».
 4. El SPA envía `PUT /api/v1/Cuentas/{id}` con `{ cuentaActiva, forzarCambioClave, resetearIntentos }`.
 5. El sistema busca la cuenta de la empresa (RN-CTA-009) y, si tiene el rol `Admin`, exige que el actor también lo tenga (RN-CTA-010).
@@ -1960,7 +1960,7 @@ Ninguno. `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `so
 
 1. **Registro de empresa: 201, no 200.** `EmpresasController.Registrar` responde `StatusCode(201, new { token })` (`sofia-apis/src/SOFIA.API/Controllers/EmpresasController.cs:31`) y el handler devuelve `Result.Success(..., 201)` (`RegistrarEmpresaCommandHandler.cs:146`). El diagrama de secuencia del documento 14 (§3) escribe «200 con token de acceso y cookie refresh_token»; el código manda.
 2. **Tipo de error y estado HTTP no coinciden** en `Rol.DuplicateName`, `Rol.InUse` y `Permiso.Duplicate` (tipo `Conflict`, responden 400) y en `Auth.Empresa` (tipo `Unauthorized`, responde 400 al crear sucursales y cargarlas): ya señalado en 01a §12.3 hallazgo 1.
-3. **El usuario nunca ve el mensaje de la API.** Códigos de negocio de este alcance sin texto propio en su pantalla: `Rol.DuplicateName`, `Rol.InUse`, `Rol.NotFound`, `Permiso.Duplicate`, `Permiso.NotFound`, `Auth.DuplicateAccount` y `Auth.DuplicateUsername` (en Cuentas), `Empleado.NotFound`, `Cuenta.NotFound`, `Empresa.NotFound`, `Empresa.RUC.Duplicado` (en el detalle de empresa), `Empleado.SucursalBase.AutoAsignacion`, `Sucursal.NotFound` (en Sucursales, Empleados y Roles), `Export.TooManyRows`, `Auth.Empresa`, `Auth.Csrf`, `Auth.InvalidRefreshToken`, `Concurrency.Conflict` y `Db.*` fuera de Empleados y Sucursales.
+3. **El usuario nunca ve el mensaje de la API.** Códigos de negocio de este alcance sin texto propio en su pantalla (desde `sofia-web-spa` `37d053d` ya lo tienen `Rol.DuplicateName`, `Rol.InUse`, `Permiso.Duplicate`, `Auth.DuplicateAccount`, `Auth.DuplicateUsername` y `Empleado.SucursalBase.AutoAsignacion`): `Rol.NotFound`, `Permiso.NotFound`, `Empleado.NotFound`, `Cuenta.NotFound`, `Empresa.NotFound`, `Empresa.RUC.Duplicado` (en el detalle de empresa), `Sucursal.NotFound` (en Sucursales, Empleados y Roles), `Export.TooManyRows`, `Auth.Empresa`, `Auth.Csrf`, `Auth.InvalidRefreshToken`, `Concurrency.Conflict` y `Db.*` fuera de Empleados y Sucursales.
 4. **Tres pantallas deciden por estado y no por código al eliminar** (empleado, serie fiscal, sucursal): cualquier 409 muestra su texto específico.
 5. **Eliminar un empleado con cuenta** deja la cuenta oculta e inaccesible desde la pantalla, con el usuario ocupado (RN-EPL-015; manual, capítulo 3 §9.1).
 6. **Auditoría incompleta:** no generan evento de seguridad el registro de empresa, el inicio y cierre de sesión, la creación, edición y eliminación de sucursales y empleados, ni las cargas masivas (RN-GEN-013; procesos 14 §12.1 brechas 1 y 2).
