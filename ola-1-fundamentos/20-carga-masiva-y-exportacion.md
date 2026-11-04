@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-13 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código de ambos repositorios (sin navegador y sin llamar a la API). `git status --short` en ambos repos: sin cambios sin commitear, por lo que no hay afirmaciones marcadas «En curso (sin commitear)». |
@@ -107,7 +107,7 @@ sequenceDiagram
     S->>U: aviso de exito y vuelta a la lista
 ```
 
-1. **Vista previa** (`POST …/previsualizar`): recibe el archivo como `multipart/form-data` en el campo `file` (`IFormFile file`). Si el archivo falta o pesa 0 bytes, el controlador responde 400 con el texto plano «Debe adjuntar un archivo Excel.» (sin `code`; `RN-IMP-013`). Lee el archivo (§2.2), manda las filas a una consulta MediatR `PreviewImport<Módulo>Query` (no es un comando: no abre transacción y **no escribe nada**) y devuelve `200` con el resultado. Cada módulo valida cada fila contra los datos existentes de la empresa (las consultas están filtradas por empresa y excluyen eliminados por los filtros globales de `INF/Persistence/ApplicationDbContext.cs:91-110`).
+1. **Vista previa** (`POST …/previsualizar`): recibe el archivo como `multipart/form-data` en el campo `file` (`IFormFile file`). Si falta el campo `file`, la validación de modelo de ASP.NET responde 400 con un `ProblemDetails` (`errors.file`); si el archivo pesa 0 bytes, el controlador responde 400 con el texto plano «Debe adjuntar un archivo Excel.» (sin `code`; `RN-IMP-013`; comprobado en vivo en [04a](04-referencia-api/04a-convenciones-y-administracion.md)). Lee el archivo (§2.2), manda las filas a una consulta MediatR `PreviewImport<Módulo>Query` (no es un comando: no abre transacción y **no escribe nada**) y devuelve `200` con el resultado. Cada módulo valida cada fila contra los datos existentes de la empresa (las consultas están filtradas por empresa y excluyen eliminados por los filtros globales de `INF/Persistence/ApplicationDbContext.cs:91-110`).
 2. **Confirmación** (`POST …/carga-masiva`): el cuerpo es un **arreglo JSON** de filas (`[FromBody] List<XxxImportRow>`); el SPA envía el `data` de **solo las filas válidas** de la vista previa (`carga-masiva-page.component.ts:138-146`). El servidor **no recuerda la vista previa**: vuelve a validar y a aplicar las reglas de la entidad.
 3. El número de filas válidas lo calcula el SPA; el botón «Guardar válidos (N)» queda deshabilitado si no hay ninguna o mientras guarda (`carga-masiva-page.component.html:126-130`).
 
@@ -181,7 +181,7 @@ El SPA decide el texto en `cargaMasivaErrorKey` (`carga-masiva-page.component.ts
 | Cuerpo mayor de 5 MB (Kestrel rechaza antes de entrar a la acción) | `Request.TooLarge` (413) | 413 | «El archivo supera el tamaño máximo de 5 MB.» (`carga-masiva.errors.too-large`); el SPA lo muestra ante cualquier 413 (`:27`) | `GlobalExceptionHandler.cs:47-54` |
 | Lista vacía o de más de 5000 filas en el guardado | `CargaMasiva<X>Command.Rows` | 400 | Mismo texto de «too-many-rows» (también si la lista llega vacía, `:31`); el SPA no llega a enviar una lista vacía | `APP/Common/Excel/ImportRowsRuleExtensions.cs:8-11`; `ValidationBehavior.cs:30` |
 | Una fila del guardado no cumple el validador | `CargaMasiva<X>Command.Rows[i].<Propiedad>` (solo se informa la primera) | 400 | «Algunas filas tienen datos inválidos. Vuelve a subir el archivo y revisa la vista previa.» (`carga-masiva.errors.invalid-rows`, `:32`) | `ValidationBehavior.cs:30-31,41`; validador de cada módulo |
-| Archivo ausente o vacío en la vista previa | sin `code` (texto plano) | 400 | «Error al procesar el archivo» (`carga-masiva.preview-error`) | `BadRequest("Debe adjuntar un archivo Excel.")` en cada controlador |
+| Archivo ausente o vacío en la vista previa | sin `code`: ausente, `ProblemDetails` con `errors.file`; de 0 bytes, texto plano | 400 | «Error al procesar el archivo» (`carga-masiva.preview-error`) | `BadRequest("Debe adjuntar un archivo Excel.")` en cada controlador |
 | Falla la plantilla | — | — | «Error al descargar la plantilla. Intenta de nuevo.» (`carga-masiva.download-error`) | `carga-masiva-page.component.ts:134` |
 | Solo Aseguradoras: un código ya existente, en la base o repetido en el archivo, hace fallar el índice único | `Db.Duplicado` | 409 | Sin texto propio: «Error al guardar los registros» (`carga-masiva.save-error`) | `GlobalExceptionHandler.cs:36-39,95-108`; ver ficha 3.1 |
 
@@ -701,7 +701,7 @@ Nota: `NumberStyles.Number` permite separador de miles; con cultura invariante l
 - **Validador (rechaza todo):** lista 1 a 5000; `Nombre` obligatorio ≤ 100; `DireccionFisica` obligatoria ≤ 255; `NumeroLicencia` obligatoria ≤ 50.
 - Antes de procesar obtiene la empresa del token; si no hay, devuelve el error de empresa (`:15-19`).
 - **Omitidas en silencio:** `Sucursal.Create` falla (nombre, dirección o licencia vacíos, `DOM/Entities/Sucursal.cs`); la licencia ya existe entre las no eliminadas o en una fila anterior (`:22-24`, `:30`). Gana la primera.
-- **Valores por defecto:** sin gerente (`null`) y con la empresa del token (`:29`). Índice único `UX_Sucursales_Empresa_Licencia` (`DBUP/0005_Empresa_MultiTenant.sql:81-83`). Devuelve `{ savedCount }`.
+- **Valores por defecto:** sin gerente (`null`) y con la empresa del token (`:29`). Índice único `UX_Sucursales_Empresa_Licencia` (`DBUP/0005_Empresa_MultiTenant.sql:87-89`). Devuelve `{ savedCount }`.
 - **Diferencias con la vista previa:** ninguna (mismas longitudes y misma clave).
 
 **Etiquetas de columnas en pantalla:** `nombre` → «Nombre»; `direccionFisica` → «Dirección Física»; `numeroLicencia` → «Nº de Licencia».
