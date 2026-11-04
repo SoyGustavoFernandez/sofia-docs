@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; los casos TC-CAT-190, TC-CAT-201 y TC-CAT-202 (DIGEMID) están reconciliados con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de documentos validados y comprobación puntual en el código; casos no ejecutados |
 
@@ -503,7 +503,7 @@ Este módulo es el de referencia de los comportamientos comunes de búsqueda, de
 **Datos:** (a) `POST /api/v1/UnidadesMedida/carga-masiva` con lista vacía; (b) lo mismo con 5001 filas; (c) `POST /api/v1/UnidadesMedida/previsualizar` sin archivo; (d) lo mismo con un archivo vacío.
 **Pasos:** 1. Envía cada petición.
 
-**Resultado esperado:** (a) y (b): 400 `CargaMasivaUnidadesMedidaCommand.Rows` (la pantalla lo muestra como «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.»); (c) y (d): 400 con el texto «Debe adjuntar un archivo Excel.» La pantalla nunca provoca (c) ni (d): siempre envía un archivo.
+**Resultado esperado:** (a) y (b): 400 `CargaMasivaUnidadesMedidaCommand.Rows` (la pantalla lo muestra como «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.»); (c) y (d): 400; sin el campo `file` es un `ProblemDetails` de validación de modelo (`errors.file`) y solo con un archivo de 0 bytes es el texto «Debe adjuntar un archivo Excel.». La pantalla nunca provoca (c) ni (d): siempre envía un archivo.
 
 #### TC-CAT-033 — Si el servidor rechaza filas al guardar, no se guarda ninguna
 
@@ -821,7 +821,7 @@ Una jerarquía es una conversión de un producto («1 unidad mayor = N unidades 
 | Límite | Media | HU-CAT-008 «Reglas por fila en la vista previa»; 12b §1.3 «CM-5 Guardar solo las filas válidas»; CU-CAT-08 excepciones pasos 3 y 4; [RN-JER-016][rn-b], [RN-JER-022][rn-b] |
 
 **Datos:** `POST /api/v1/JerarquiasUoM/carga-masiva` con lista vacía y con 5001 filas; `POST /api/v1/JerarquiasUoM/previsualizar` sin archivo; carga con una fila cuyo `Producto` tiene 151 caracteres.
-**Resultado esperado:** lista vacía o de más de 5000: 400 `CargaMasivaJerarquiasUoMCommand.Rows`; vista previa sin archivo: 400 «Debe adjuntar un archivo Excel.»; fila larga: 400 `CargaMasivaJerarquiasUoMCommand.Rows[0].Producto`.
+**Resultado esperado:** lista vacía o de más de 5000: 400 `CargaMasivaJerarquiasUoMCommand.Rows`; vista previa sin archivo: 400 `ProblemDetails` de validación (`errors.file`; el texto «Debe adjuntar un archivo Excel.» solo sale con un archivo de 0 bytes); fila larga: 400 `CargaMasivaJerarquiasUoMCommand.Rows[0].Producto`.
 
 ### HU-CAT-009 — Conocer en qué unidades se puede vender un producto
 
@@ -1046,7 +1046,7 @@ Una jerarquía es una conversión de un producto («1 unidad mayor = N unidades 
 | Límite | Media | HU-CAT-013 «Reglas por fila en la vista previa»; CU-CAT-13 excepción paso 3 (validador y lista de filas); [RN-LAB-016][rn-b], [RN-LAB-017][rn-b] |
 
 **Datos:** `POST /api/v1/Laboratorios/carga-masiva` con lista vacía; con 5001 filas; con una fila de nombre de 151 caracteres. `POST /api/v1/Laboratorios/previsualizar` sin archivo.
-**Resultado esperado:** 400 `CargaMasivaLaboratoriosCommand.Rows` para la lista vacía y la de 5001; 400 `CargaMasivaLaboratoriosCommand.Rows[0].NombreCompania` para la fila larga; 400 «Debe adjuntar un archivo Excel.» para la vista previa sin archivo.
+**Resultado esperado:** 400 `CargaMasivaLaboratoriosCommand.Rows` para la lista vacía y la de 5001; 400 `CargaMasivaLaboratoriosCommand.Rows[0].NombreCompania` para la fila larga; 400 `ProblemDetails` de validación (`errors.file`) para la vista previa sin archivo (el texto «Debe adjuntar un archivo Excel.» solo sale con un archivo de 0 bytes).
 
 ## 7. Ingredientes activos
 
@@ -1200,7 +1200,7 @@ Una jerarquía es una conversión de un producto («1 unidad mayor = N unidades 
 **Datos:** tres filas: «Paracetamol» / `ZZ99`; «Ibuprofeno» / `M01AE01`; «Omeprazol» / `A02BC01`.
 **Pasos:** 1. Sube el archivo. 2. Haz clic en «Guardar válidos (3)».
 
-**Resultado esperado:** **Hallazgo:** las tres aparecen válidas; el servidor omite «Paracetamol» (y una repetida del archivo, conservando la primera); ves «Se guardaron 2 registros correctamente» y vuelves a la búsqueda. Solo API: lista vacía o de más de 5000 → 400 `CargaMasivaIngredientesActivosCommand.Rows`; fila inválida → `CargaMasivaIngredientesActivosCommand.Rows[i].DenominacionDci` o `.CodigoAtc`; vista previa sin archivo → «Debe adjuntar un archivo Excel.»
+**Resultado esperado:** **Hallazgo:** las tres aparecen válidas; el servidor omite «Paracetamol» (y una repetida del archivo, conservando la primera); ves «Se guardaron 2 registros correctamente» y vuelves a la búsqueda. Solo API: lista vacía o de más de 5000 → 400 `CargaMasivaIngredientesActivosCommand.Rows`; fila inválida → `CargaMasivaIngredientesActivosCommand.Rows[i].DenominacionDci` o `.CodigoAtc`; vista previa sin archivo → `ProblemDetails` de validación (`errors.file`; «Debe adjuntar un archivo Excel.» solo con un archivo de 0 bytes)
 
 ## 8. Medicamentos
 
@@ -1502,7 +1502,7 @@ El medicamento es el artículo que la botica vende: código nacional, nombre com
 | Límite | Media | HU-CAT-022 «Columnas de la plantilla»; CU-CAT-22 excepción paso 3 (validador y lista de filas); [RN-MED-025][rn-b], [RN-MED-026][rn-b] |
 
 **Datos:** `POST /api/v1/Medicamentos/carga-masiva` con lista vacía; con 5001 filas; con una fila de `CodigoNacional` de 51 caracteres. `POST /api/v1/Medicamentos/previsualizar` sin archivo.
-**Resultado esperado:** 400 `CargaMasivaMedicamentosCommand.Rows`; 400 `CargaMasivaMedicamentosCommand.Rows[0].CodigoNacional`; 400 «Debe adjuntar un archivo Excel.»
+**Resultado esperado:** 400 `CargaMasivaMedicamentosCommand.Rows`; 400 `CargaMasivaMedicamentosCommand.Rows[0].CodigoNacional`; 400 `ProblemDetails` de validación (`errors.file`) para la vista previa sin archivo (el texto «Debe adjuntar un archivo Excel.» solo sale con un archivo de 0 bytes).
 
 ### HU-CAT-023 — Ofrecer medicamentos al punto de venta con stock y los más vendidos
 
@@ -2043,7 +2043,7 @@ El proveedor es a quien la botica le compra: razón social, identificador tribut
 **Datos:** fila 1: razón social `Distribuidora Demo S.A.C.` con `TaxId` `20555555555`; fila 2: `Distribuidora Nueva Demo S.A.C.` con `TaxId` `20666666666`.
 **Pasos:** 1. Sube el archivo. 2. «Guardar válidos (2)».
 
-**Resultado esperado:** **Hallazgo (pendiente 3):** la vista previa muestra ambas válidas; el servidor omite la primera sin error y ves «Se guardaron 1 registros correctamente» (menos que las filas válidas). Solo API: lista vacía o de más de 5000, `CargaMasivaProveedoresCommand.Rows` (400); fila inválida, `CargaMasivaProveedoresCommand.Rows[0].RazonSocial` (400); vista previa sin archivo, «Debe adjuntar un archivo Excel.» (400). **No verificado:** que el guardado acepte los valores numéricos tal como los devuelve la vista previa (texto).
+**Resultado esperado:** **Hallazgo (pendiente 3):** la vista previa muestra ambas válidas; el servidor omite la primera sin error y ves «Se guardaron 1 registros correctamente» (menos que las filas válidas). Solo API: lista vacía o de más de 5000, `CargaMasivaProveedoresCommand.Rows` (400); fila inválida, `CargaMasivaProveedoresCommand.Rows[0].RazonSocial` (400); vista previa sin archivo, `ProblemDetails` de validación `errors.file` (400; «Debe adjuntar un archivo Excel.» solo con un archivo de 0 bytes). **No verificado:** que el guardado acepte los valores numéricos tal como los devuelve la vista previa (texto).
 
 ### HU-CAT-036 — Registrar el precio de compra de un producto con un proveedor
 
@@ -2334,16 +2334,16 @@ Tabla local de productos DIGEMID de la empresa (código, nombre, concentración,
 
 ### HU-CAT-042 — Buscar, ver y exportar el catálogo DIGEMID
 
-#### TC-CAT-190 — Una empresa nueva tiene el catálogo vacío
+#### TC-CAT-190 — Una empresa nueva ve el catálogo compartido
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Positivo | Baja | HU-CAT-042 «Una empresa nueva tiene el catálogo vacío»; CU-CAT-42 flujo básico; [RN-DIG-001][rn-b], [RN-DIG-009][rn-b] |
+| Positivo | Baja | HU-CAT-042 «Una empresa nueva ve el catálogo compartido»; CU-CAT-42 flujo básico; [RN-DIG-001][rn-b], [RN-DIG-009][rn-b] |
 
-**Precondiciones:** empresa recién registrada, sin cargar productos DIGEMID.
+**Precondiciones:** empresa recién registrada, sin cargar productos DIGEMID, en una base creada con los scripts de `sofia-apis` `34089ec` o posterior (seed `0004` con 29 698 productos).
 **Pasos:** 1. Abre «Catálogo DIGEMID» y haz clic en «Buscar».
 
-**Resultado esperado:** «Resultados (0)».
+**Resultado esperado:** ves productos del catálogo nacional compartido (sin empresa), no «Resultados (0)». Con `43f5529`, antes de `9c16f35`, el resultado comprobado era «Resultados (0)». El comportamiento actual es **No verificado en la aplicación**.
 
 #### TC-CAT-191 — Buscar el catálogo por código y por nombre
 
@@ -2471,8 +2471,8 @@ Tabla local de productos DIGEMID de la empresa (código, nombre, concentración,
 |---|---|---|
 | Negativo | Media | HU-CAT-044 «Código y nombre obligatorios»; «Código repetido»; CU-CAT-44 excepciones; [RN-DIG-002][rn-b], [RN-DIG-003][rn-b], [RN-DIG-006][rn-b] |
 
-**Datos:** (a) `POST` con `codProd` vacío o de solo espacios; (b) lo mismo con `nomProd`; (c) `POST` con `codProd` `DEMO-0010` ya existente; (d) `PUT` de otro producto cambiando su código a `DEMO-0010`; (e) `PUT` de un producto sin cambiar su código.
-**Resultado esperado:** (a) 400 `DIGEMID.CodProd`; (b) 400 `DIGEMID.NomProd`; (c) y (d) 409 `DigemidCatalogo.CodProd.Duplicado`; (e) se acepta (al editar se excluye el propio producto).
+**Datos:** (a) `POST` con `codProd` vacío o de solo espacios; (b) lo mismo con `nomProd`; (c) `POST` con `codProd` `DEMO-0010` ya existente; (d) `PUT` de otro producto cambiando su código a `DEMO-0010`; (e) `PUT` de un producto sin cambiar su código; (f) `POST` con un `codProd` que ya existe en el catálogo compartido (sin empresa).
+**Resultado esperado:** (a) 400 `DIGEMID.CodProd`; (b) 400 `DIGEMID.NomProd`; (c), (d) y (f) 409 `DigemidCatalogo.CodProd.Duplicado` ((f) desde `9c16f35`, **No verificado en vivo**); (e) se acepta (al editar se excluye el propio producto).
 
 #### TC-CAT-202 — Solo API: editar y eliminar un producto DIGEMID inexistente o existente
 
@@ -2480,8 +2480,8 @@ Tabla local de productos DIGEMID de la empresa (código, nombre, concentración,
 |---|---|---|
 | Negativo | Media | HU-CAT-044 «Editar o eliminar un producto inexistente»; «Eliminar»; CU-CAT-44 excepciones; [RN-DIG-007][rn-b], [RN-DIG-008][rn-b] |
 
-**Datos:** `PUT` y `DELETE` de `/api/v1/DIGEMID/catalogo/00000000-0000-0000-0000-000000000001`; luego `DELETE` de un producto existente; luego los mismos pedidos con un token sin `DIGEMID:Actualizar` / `DIGEMID:Eliminar`.
-**Resultado esperado:** 404 `DigemidCatalogo.NotFound` para el inexistente; 204 para el existente (eliminación lógica, sin validación de dependencias); 403 sin permiso. **Hallazgo (brecha):** no hay validadores de crear ni editar: la respuesta ante un texto más largo que la columna o sin estado es **No verificado**.
+**Datos:** `PUT` y `DELETE` de `/api/v1/DIGEMID/catalogo/00000000-0000-0000-0000-000000000001`; luego `DELETE` de un producto existente; luego los mismos pedidos con un token sin `DIGEMID:Actualizar` / `DIGEMID:Eliminar`; por último `PUT` y `DELETE` de un producto del catálogo compartido (sin empresa).
+**Resultado esperado:** 404 `DigemidCatalogo.NotFound` para el inexistente; 204 para el existente de la empresa (eliminación lógica, sin validación de dependencias); 403 sin permiso; 403 `DigemidCatalogo.Global.SoloLectura` para el producto compartido, sin cambios (desde `9c16f35`, **No verificado en vivo**). **Hallazgo (brecha):** no hay validadores de crear ni editar: la respuesta ante un texto más largo que la columna o sin estado es **No verificado**.
 
 ### Comportamientos comunes de error (aplican a todos los catálogos)
 
