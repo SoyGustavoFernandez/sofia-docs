@@ -3,13 +3,24 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; las fichas de Empleados, Roles y Cuentas están reconciliadas con `37d053d` y `7070e1a` |
 | **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores y validadores necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear. La versión 1.1 reconcilia el documento (escrito sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`) con el código actual. |
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-04)
+
+Revisión de consistencia (`18-revision-de-consistencia.md`) y reconciliación con `sofia-web-spa` `37d053d` y `7070e1a`.
+
+| # | Apartado o ID | Decía | Dice ahora | Commit |
+|---|---|---|---|---|
+| 1 | Empleados, mensajes y observaciones | `Empleado.SucursalBase.AutoAsignacion` caía en el mensaje genérico. | Se traduce a «No puedes cambiar tu propia sucursal base.» | `37d053d` |
+| 2 | Roles, mensajes | Un solo mensaje genérico al crear; `Rol.PermisosPropios` solo al editar; `Rol.InUse` sin mensaje propio; sin `saveErrorKey`. | `Rol.DuplicateName`, `Permiso.Duplicate`, `Rol.PermisosPropios` (también al crear) y `Rol.InUse` al eliminar tienen mensaje propio; los códigos `Db.*` se traducen. | `37d053d` |
+| 3 | Cuentas, mensajes | El alta no traducía ningún código de la API. | `Auth.DuplicateAccount` y `Auth.DuplicateUsername` tienen mensaje propio en el alta; el alta usa el mismo mapa que la edición. | `37d053d` |
+| 4 | Cuentas, campo «Forzar Cambio de Contraseña» | Iniciaba siempre apagado. | Refleja la cuenta: encendido y deshabilitado, con una nota, si ya requiere cambio de clave. | `7070e1a` |
 
 ### Versión 1.1 (2026-10-14)
 
@@ -362,7 +373,7 @@ El buscador del gerente llama a `GET /api/v1/empleados?pageNumber=1&pageSize=20&
 - **Para qué sirve:** cargar varias sucursales desde un Excel. El flujo común (descargar plantilla, elegir archivo, vista previa, guardar válidos) está en [19a §6.5](19a-acceso-layout-y-compartidos.md); aquí solo la configuración que pasa esta pantalla.
 - **Cómo se llega:** botón «Carga Masiva» de `/sucursales` (§2.1).
 - **Permiso de ruta:** `Sucursales:Leer` + `Sucursales:Crear` (segundo segmento `carga-masiva`, `route-permissions.ts:36,68-72`).
-- **Migas y cabecera:** título «Carga Masiva» (`carga-masiva.title`); migas «Inicio» / «Administración» / «Sucursales» (enlace a `/sucursales`) / «Carga Masiva» (`breadcrumbs.carga-masiva`, activa); botón volver a `/sucursales` (`.ts:23-28`).
+- **Migas y cabecera:** título «Carga Masiva» (`carga-masiva.title`); migas «Inicio» / «Administración» / «Sucursales» (enlace a `/sucursales`) / «Carga Masiva» (`breadcrumbs.carga-masiva`, activa); botón volver a `/sucursales` (`.ts:23-27`).
 
 **Configuración que pasa** (`CargaMasivaConfig`, `.ts:18-34`)
 
@@ -504,7 +515,8 @@ Detalle: el buscador de sucursal solo consulta cuando el usuario escribe (el cam
 | Código `Empleado.Email.Duplicado` | Error | «Ya existe un empleado con ese correo electrónico en tu empresa.» (`empleados.detail.duplicate-email`) | `.ts:21` |
 | Código `Empleado.Email.Invalido` | Error | «Ingresa un correo electrónico válido.» (`empleados.detail.invalid-email`) | `.ts:22` |
 | `Db.Duplicado` / `Db.ReferenciaInvalida` / `Db.ValorInvalido` | Error | Textos de `errors.dbDuplicado`, `errors.dbReferenciaInvalida`, `errors.dbValorInvalido` | `save-error-key.util.ts:4-9` |
-| Cualquier otro error al guardar (por ejemplo `Empleado.SucursalBase.AutoAsignacion`, RN-EPL-011, o `Sucursal.NotFound`) | Error | «Error al guardar el empleado» (`empleados.detail.save-error`) | `.ts:195` |
+| Código `Empleado.SucursalBase.AutoAsignacion` (RN-EPL-011; desde `sofia-web-spa` `37d053d`) | Error | «No puedes cambiar tu propia sucursal base.» (`empleados.detail.sucursal-base-auto-asignacion`, `public/i18n/empleados/es.json:15`) | `.ts:23` |
+| Cualquier otro error al guardar (por ejemplo `Sucursal.NotFound`) | Error | «Error al guardar el empleado» (`empleados.detail.save-error`) | `.ts:196` |
 | Eliminación correcta | Éxito | «Empleado eliminado correctamente» (`empleados.detail.delete-success`); navega a `/empleados` | `.ts:222` |
 | Eliminar con respuesta HTTP 409 (gerente de sucursal, RN-EPL-014) | Error | «No se puede eliminar un empleado que gerencia una sucursal. Asigna otro gerente primero.» (`empleados.detail.delete-manager`) | `.ts:227-231` |
 | Otro error al eliminar | Error | «Error al eliminar el empleado» (`empleados.detail.delete-error`) | `.ts:230` |
@@ -524,7 +536,7 @@ El cuerpo de crear y editar es el mismo: `{ sucursal_Base_ID, nombres, apellido_
 
 **Comportamientos particulares**
 - Tras guardar (también al editar) el SPA vuelve a la búsqueda; no se queda en la ficha, a diferencia de Sucursales y Empresa.
-- Un empleado no puede cambiar su propia sucursal base (RN-EPL-011): la API responde 403 `Empleado.SucursalBase.AutoAsignacion` y el SPA no lo traduce (mensaje genérico).
+- Un empleado no puede cambiar su propia sucursal base (RN-EPL-011): la API responde 403 `Empleado.SucursalBase.AutoAsignacion` y, desde `sofia-web-spa` `37d053d`, el SPA lo traduce a «No puedes cambiar tu propia sucursal base.» (antes mostraba el mensaje genérico). **No verificado en la aplicación.**
 - Al cambiar la sucursal base se invalida la sesión de las cuentas asociadas (RN-EPL-012); el SPA no avisa.
 
 **Observaciones**
@@ -663,15 +675,19 @@ Los pasos de guardado no son atómicos: si falla un paso intermedio, los anterio
 | Situación | Tipo | Texto exacto (clave) | Fuente |
 |---|---|---|---|
 | Crear o editar correctamente | Éxito | «Rol guardado correctamente» (`roles.detail.save-success`) | `.ts:276,291` |
-| Editar y la API responde `Rol.PermisosPropios` (no ampliar los permisos de un rol que tú tienes asignado) | Error | «No se pueden ampliar los permisos de un rol que la propia cuenta tiene asignado» (`roles.detail.permisos-propios-error`) | `.ts:301-304` |
-| Cualquier otro error al editar, y **cualquier** error al crear (por ejemplo nombre duplicado `Rol.DuplicateName`, permiso duplicado) | Error | «Error al guardar el rol» (`roles.detail.save-error`) | `.ts:281,303` |
-| Eliminación correcta | Éxito | «Rol eliminado correctamente» (`roles.detail.delete-success`); navega a `/roles` | `.ts:327` |
-| Error al eliminar (cualquiera, incluido `Rol.InUse` con cuentas vinculadas, RN-ROL-008) | Error | «Error al eliminar el rol» (`roles.detail.delete-error`) | `.ts:332` |
+| Al crear o editar, la API responde `Rol.PermisosPropios` (no ampliar los permisos de un rol que tú tienes asignado; desde `37d053d` también al crear) | Error | «No se pueden ampliar los permisos de un rol que la propia cuenta tiene asignado» (`roles.detail.permisos-propios-error`) | `.ts:23-27`, `:293`, `:313` |
+| Al crear o editar, la API responde `Rol.DuplicateName` (desde `37d053d`) | Error | «Ya existe un rol con ese nombre.» (`roles.detail.duplicate-name`, `public/i18n/roles/es.json:15`) | `.ts:23-27`, `:293`, `:313` |
+| Al crear o editar, la API responde `Permiso.Duplicate` (desde `37d053d`) | Error | «Ese permiso ya está asignado al rol.» (`roles.detail.permiso-duplicado`, `es.json:16`) | `.ts:23-27`, `:293`, `:313` |
+| `Db.Duplicado` / `Db.ReferenciaInvalida` / `Db.ValorInvalido` al guardar (vía `saveErrorKey`, desde `37d053d`) | Error | Textos de `errors.dbDuplicado`, `errors.dbReferenciaInvalida`, `errors.dbValorInvalido` | `save-error-key.util.ts:4-9` |
+| Cualquier otro error al crear o editar | Error | «Error al guardar el rol» (`roles.detail.save-error`) | `.ts:293`, `:313` |
+| Eliminación correcta | Éxito | «Rol eliminado correctamente» (`roles.detail.delete-success`); navega a `/roles` | `.ts:336` |
+| Error al eliminar con `Rol.InUse` (cuentas vinculadas, RN-ROL-008; desde `37d053d`) | Error | «No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.» (`roles.detail.delete-in-use`, `es.json:19`) | `.ts:30-32`, `:341` |
+| Otro error al eliminar | Error | «Error al eliminar el rol» (`roles.detail.delete-error`) | `.ts:341` |
 | Error al cargar el rol | Error | «Error al cargar el rol» (`roles.detail.load-error`) | `.ts:130` |
 | Error al cargar permisos | Error (con referencia de seguimiento si la respuesta trae `traceId`) | «Error al cargar los permisos» (`roles.permisos.load-error`) | `.ts:169` |
 | Error al cargar sucursales | Error (ídem) | «Error al cargar las sucursales» (`roles.configuracion.sucursales-load-error`) | `.ts:145` |
 
-No usa `saveErrorKey`: los códigos `Db.*` no se traducen aquí.
+Desde `37d053d` esta pantalla usa `saveErrorKey` (con los mapas `SAVE_ERROR_KEYS` y `DELETE_ERROR_KEYS`), de modo que los códigos `Db.*` sí se traducen al guardar y al eliminar. Las demás citas de línea de `roles-detail.component.ts` de esta ficha (fuera de la tabla de mensajes) corresponden a `eeffbb6`: ese commit las desplazó unas 9 a 12 líneas y no se recalcularon.
 
 **Llamadas a la API**
 
@@ -704,7 +720,7 @@ No usa `saveErrorKey`: los códigos `Db.*` no se traducen aquí.
 - **Para qué sirve:** cargar varios roles desde Excel. Flujo común en [19a §6.5](19a-acceso-layout-y-compartidos.md).
 - **Cómo se llega:** botón «Carga Masiva» de `/roles`.
 - **Permiso de ruta:** `Seguridad:Leer` + `Seguridad:Crear`.
-- **Migas y cabecera:** título «Carga Masiva» (`carga-masiva.title`); migas «Inicio» / «Administración» / «Roles & Permisos» (enlace a `/roles`) / «Carga Masiva» (activa); botón volver a `/roles` (`.ts:23-28`).
+- **Migas y cabecera:** título «Carga Masiva» (`carga-masiva.title`); migas «Inicio» / «Administración» / «Roles & Permisos» (enlace a `/roles`) / «Carga Masiva» (activa); botón volver a `/roles` (`.ts:23-27`).
 
 **Configuración que pasa** (`CargaMasivaConfig`, `.ts:18-34`)
 
@@ -828,7 +844,7 @@ La contraseña inicial **la define quien crea la cuenta**; no se genera, no se m
 | Etiqueta (clave) | `formControlName` | Control | Qué hace al guardar |
 |---|---|---|---|
 | Cuenta Activa (`cuentas.fields.cuentaActiva`) | `cuentaActiva` | Interruptor (`mat-slide-toggle`, color primario); inicia con el valor actual | Activa o desactiva la cuenta. Una cuenta desactivada no puede iniciar sesión ni renovar la sesión (RN-CTA-012) |
-| Forzar Cambio de Contraseña (`cuentas.fields.forzarCambioClave`) | `forzarCambioClave` | Interruptor (color de advertencia); inicia siempre apagado | Si queda encendido, el usuario tendrá que cambiar la clave en su próximo ingreso. Solo se puede encender: el SPA siempre reenvía el valor y la API lo apaga cuando el usuario cambia la clave (RN-CTA-011) |
+| Forzar Cambio de Contraseña (`cuentas.fields.forzarCambioClave`) | `forzarCambioClave` | Interruptor (color de advertencia). Desde `sofia-web-spa` `7070e1a` refleja la cuenta: inicia encendido y **deshabilitado** si la cuenta ya requiere cambio de clave (`requiereCambioClave`), con la nota «Ya requiere cambio de clave; se quita cuando el usuario la cambie.» (`cuentas.fields.forzarCambioClaveActivo`, `public/i18n/cuentas/es.json:34`; `cuentas-detail.component.html:234-245`, `.ts:148-159`); si no la requiere, inicia apagado | Si queda encendido, el usuario tendrá que cambiar la clave en su próximo ingreso. Solo se puede encender: la API lo apaga cuando el usuario cambia la clave (RN-CTA-011). Antes de `7070e1a` el interruptor siempre iniciaba apagado. **No verificado en la aplicación.** |
 | Resetear Intentos Fallidos (`cuentas.fields.resetearIntentos`) | `resetearIntentos` | Casilla; inicia siempre desmarcada | Pone los intentos fallidos en 0 y quita el bloqueo. Es la forma de **desbloquear** una cuenta |
 | Nombre de Usuario / Empleado | — | Texto deshabilitado | No se pueden cambiar |
 
@@ -849,13 +865,15 @@ La contraseña inicial **la define quien crea la cuenta**; no se genera, no se m
 
 **Diálogos que abre:** `ConfirmDialogComponent` (ancho por defecto) al pulsar «Eliminar»: título «Eliminar cuenta» (`cuentas.detail.confirm-delete-title`), mensaje «¿Estás seguro de que deseas eliminar esta cuenta de usuario? Esta acción no se puede deshacer.» (`cuentas.detail.confirm-delete-message`). Los textos de botón que pasa el componente (`confirmText`/`cancelText`, `.ts:233-234`) no coinciden con los campos que lee el diálogo (`confirmButtonText`/`cancelButtonText`, `confirm-dialog.component.ts:12-13`), por lo que el usuario ve los botones por defecto «Confirmar» y «Cancelar», no «Eliminar» y «Cancelar» de `cuentas.detail.confirm-delete-confirm` / `confirm-delete-cancel`. Confirmar → `DELETE /api/v1/cuentas/{id}`.
 
-**Mensajes al usuario.** Los errores usan `showServerError`: si la respuesta trae `traceId` se muestra el mensaje con la referencia de seguimiento ([19a §6.11](19a-acceso-layout-y-compartidos.md)); si no, un aviso de error simple. En creación **no** se traducen los códigos de la API; en editar, eliminar y sucursales se traducen los cinco códigos de `ERROR_KEYS` (`.ts:23-29`).
+**Mensajes al usuario.** Los errores usan `showServerError`: si la respuesta trae `traceId` se muestra el mensaje con la referencia de seguimiento ([19a §6.11](19a-acceso-layout-y-compartidos.md)); si no, un aviso de error simple. Desde `sofia-web-spa` `37d053d` el alta, la edición, la eliminación y las sucursales traducen los siete códigos de `ERROR_KEYS` (`.ts:23-31`; los dos nuevos son `Auth.DuplicateAccount` y `Auth.DuplicateUsername`).
 
 | Situación | Tipo | Texto exacto (clave) | Fuente |
 |---|---|---|---|
 | Crear o editar correctamente | Éxito | «Cuenta guardada correctamente» (`cuentas.detail.save-success`) | `.ts:181,210` |
-| Error al crear (cualquiera, incluido `Auth.DuplicateAccount` y `Auth.DuplicateUsername`) | Error | «Error al guardar la cuenta» (`cuentas.detail.save-error`) | `.ts:186` |
-| Error al editar o al cambiar el rol, código no mapeado | Error | «Error al guardar la cuenta» (`cuentas.detail.save-error`) | `.ts:216` |
+| Al crear, la API responde `Auth.DuplicateAccount` (el empleado ya tiene cuenta; desde `sofia-web-spa` `37d053d`) | Error | «Este empleado ya tiene una cuenta de usuario vinculada.» (`cuentas.errors.duplicate-account`, `public/i18n/cuentas/es.json:64`) | `.ts:29`, `:190` |
+| Al crear, la API responde `Auth.DuplicateUsername` (desde `37d053d`) | Error | «Ya existe una cuenta con ese nombre de usuario.» (`cuentas.errors.duplicate-username`, `es.json:65`) | `.ts:30`, `:190` |
+| Error al crear, código no mapeado (desde `37d053d` el alta usa el mismo mapa que la edición) | Error | «Error al guardar la cuenta» (`cuentas.detail.save-error`) | `.ts:190` |
+| Error al editar o al cambiar el rol, código no mapeado | Error | «Error al guardar la cuenta» (`cuentas.detail.save-error`) | `.ts:220` |
 | Código `Rol.AutoAsignacion` | Error | «Una cuenta no puede modificar sus propios roles» (`cuentas.errors.auto-asignacion`) | `.ts:24` |
 | Código `Rol.AdminReservado` | Error | «Solo un administrador puede asignar o quitar el rol Admin» (`cuentas.errors.admin-reservado`) | `.ts:25` |
 | Código `Cuenta.AdminProtegida` | Error | «Solo un administrador puede modificar o eliminar la cuenta de un administrador» (`cuentas.errors.admin-protegida`) | `.ts:26` |
