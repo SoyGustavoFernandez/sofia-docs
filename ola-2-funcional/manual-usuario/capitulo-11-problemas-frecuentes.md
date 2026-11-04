@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
+| **Versión del documento** | 1.1 |
 | **Fecha** | 2026-10-26 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de documentos validados (catálogo de códigos de error, inventario de pantallas 19a a 19f, reglas de negocio, matriz de permisos y capítulos 1 a 5 del manual). Este capítulo no se recorrió en la aplicación; los mensajes que sí se vieron en pantalla en los capítulos 1 a 5 se marcan «(Verificado en el capítulo N)» y los demás «(No verificado en la aplicación)» |
+| **Método** | Lectura de documentos validados (catálogo de códigos de error, inventario de pantallas 19a a 19f, reglas de negocio, matriz de permisos y capítulos 1 a 9 del manual). Este capítulo no se recorrió en la aplicación; los mensajes que sí se vieron en pantalla en los capítulos 1 a 9 se marcan «(Verificado en el capítulo N)» y los demás «(No verificado en la aplicación)» |
 
 ## 1. Cómo usar este capítulo
 
@@ -341,8 +341,8 @@ La pantalla de carga masiva es la misma para sucursales, roles, unidades, labora
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
 | «Ya existe un lote con ese número para el producto seleccionado» | Aviso inferior al guardar un lote (cuando el servidor responde con conflicto) | Ya hay un lote con ese número para ese producto | Revisa el número o abre el lote existente. (No verificado en la aplicación) |
-| «Error al guardar el lote» | Aviso inferior al guardar un lote | Genérico. Causas: el número de lote ya existe para ese producto (el servidor también lo responde así), la fecha de caducidad está en el pasado, la fecha de fabricación es posterior a hoy o a la caducidad, el número tiene más de 100 caracteres, el producto ya no existe | Revisa las fechas y el número. (No verificado en la aplicación) |
-| «No se puede eliminar un lote con stock o ventas registradas.» | Aviso inferior al eliminar un lote | El lote tiene una fila de stock en alguna sucursal (aunque sea 0) o una venta | No se puede eliminar. (No verificado en la aplicación) |
+| «Error al guardar el lote» | Aviso inferior al guardar un lote | Genérico. Causas: el número de lote ya existe para ese producto (el servidor también lo responde así), la fecha de caducidad está en el pasado, la fecha de fabricación es posterior a hoy o a la caducidad, el número tiene más de 100 caracteres, el producto ya no existe | Revisa las fechas y el número. (Verificado en el capítulo 6) |
+| «No se puede eliminar un lote con stock o ventas registradas.» | Aviso inferior al eliminar un lote | El lote tiene una fila de stock en alguna sucursal (aunque sea 0) o una venta | No se puede eliminar. (Verificado en el capítulo 6) |
 | «Error al eliminar el lote» / «Error al cargar el lote» / «Error al buscar lotes» | Eliminar / abrir / buscar o exportar | Fallo genérico | Recarga e inténtalo. (No verificado en la aplicación) |
 | «Error al registrar el stock» | Aviso inferior al registrar stock nuevo | Genérico. Causas: el lote o la sucursal ya no existen, cantidad negativa, dos personas registraron el mismo lote en la misma sucursal a la vez | Espera unos segundos y reintenta; revisa la cantidad. (No verificado en la aplicación) |
 | «No tienes permiso para operar el stock de esta sucursal» | Al registrar o ajustar stock | Esa sucursal no está entre las tuyas (sucursal base, asignadas a tu cuenta o a tu rol) | Pide al administrador que te asigne la sucursal. (No verificado en la aplicación) |
@@ -354,15 +354,15 @@ La pantalla de carga masiva es la misma para sucursales, roles, unidades, labora
 
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
-| «Ya existe un paciente con ese documento de identidad.» | Al guardar un paciente | Otro paciente de tu empresa usa ese número de documento (sin importar el tipo) | Abre el paciente existente. (No verificado en la aplicación) |
-| «El número no corresponde al tipo de documento (DNI: 8 dígitos, RUC: 11 dígitos, CE: hasta 12 y pasaporte: hasta 20 letras o números).» | Al guardar un paciente | El número no cumple el formato de su tipo | Corrige el número o el tipo. (No verificado en la aplicación) |
+| «Ya existe un paciente con ese documento de identidad.» | Al guardar un paciente | Otro paciente de tu empresa usa ese número de documento (sin importar el tipo) | Abre el paciente existente. (Verificado en el capítulo 7) |
+| «El número no corresponde al tipo de documento (DNI: 8 dígitos, RUC: 11 dígitos, CE: hasta 12 y pasaporte: hasta 20 letras o números).» | Al guardar un paciente | El número no cumple el formato de su tipo | Corrige el número o el tipo. (Verificado en el capítulo 7) |
 | «Selecciona un tipo de documento válido.» | Al guardar un paciente | El tipo no es DNI, carné de extranjería, RUC o pasaporte | Elige uno. (No verificado en la aplicación) |
-| «Error al guardar el paciente» | Al guardar | Genérico: nombre vacío o de más de 200 caracteres, fecha de nacimiento vacía o futura, contacto de más de 100 caracteres | Revisa los datos. (No verificado en la aplicación) |
-| «No puedes eliminar este paciente porque tiene recetas, ventas u otros registros asociados.» | Al eliminar | Tiene recetas, ventas, citas o inmunizaciones | No se puede eliminar. (No verificado en la aplicación) |
+| «Error al guardar el paciente» | Al guardar | Genérico: nombre vacío o de más de 200 caracteres, fecha de nacimiento vacía o futura, contacto de más de 100 caracteres | Revisa los datos. (Verificado en el capítulo 7) |
+| «No puedes eliminar este paciente porque tiene recetas, ventas u otros registros asociados.» | Al eliminar | Tiene recetas, ventas, citas o inmunizaciones | No se puede eliminar. (Verificado en el capítulo 7) |
 | «Error al eliminar el paciente» / «Error al cargar el paciente» / «Error al buscar pacientes» | Eliminar / abrir / buscar | Fallo genérico | Recarga e inténtalo. (No verificado en la aplicación) |
-| «Ya existe un profesional de salud con ese número de registro.» | Al guardar un profesional | El número de registro ya está en uso | Abre el existente. (No verificado en la aplicación) |
-| «Error al guardar el profesional de salud» | Al guardar | Genérico: nombre o registro vacío o demasiado largo, dirección de más de 255 caracteres | Revisa los datos. (No verificado en la aplicación) |
-| «No puedes eliminar este profesional de salud porque tiene recetas asociadas.» | Al eliminar | Tiene recetas | No se puede eliminar. (No verificado en la aplicación) |
+| «Ya existe un profesional de salud con ese número de registro.» | Al guardar un profesional | El número de registro ya está en uso | Abre el existente. (Verificado en el capítulo 7) |
+| «Error al guardar el profesional de salud» | Al guardar | Genérico: nombre o registro vacío o demasiado largo, dirección de más de 255 caracteres | Revisa los datos. (Verificado en el capítulo 7) |
+| «No puedes eliminar este profesional de salud porque tiene recetas asociadas.» | Al eliminar | Tiene recetas | No se puede eliminar. (Verificado en el capítulo 7) |
 | «Error al eliminar el profesional de salud» / «Error al cargar el profesional de salud» / «Error al buscar profesionales de salud» | Eliminar / abrir / buscar | Fallo genérico | Recarga e inténtalo. (No verificado en la aplicación) |
 | «El paciente seleccionado no existe. Vuelve a seleccionarlo.» / «El médico seleccionado no existe. Vuelve a seleccionarlo.» | Al guardar una receta | Alguien eliminó el paciente o el médico | Elígelo de nuevo. (No verificado en la aplicación) |
 | «La fecha de expedición no puede ser posterior a hoy.» | Al guardar una receta | La fecha es futura o falta | Usa una fecha de hoy o anterior. (No verificado en la aplicación) |
@@ -377,10 +377,10 @@ La pantalla de carga masiva es la misma para sucursales, roles, unidades, labora
 
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
-| «Ingresa un monto válido» | Bajo «Monto Apertura (S/)» | Vacío o negativo | Escribe 0 o más. (No verificado en la aplicación) |
-| «Ya tienes una caja abierta. Ciérrala antes de abrir otra.» | Al abrir caja (pantalla de sesiones o diálogo del punto de venta) | Ya tienes una caja abierta, en esta o en cualquier otra sucursal | Ve a **Sesiones de Caja**, abre tu sesión y ciérrala; o usa la que tienes. (No verificado en la aplicación) |
+| «Ingresa un monto válido» | Bajo «Monto Apertura (S/)» | Vacío o negativo | Escribe 0 o más. (Verificado en el capítulo 8) |
+| «Ya tienes una caja abierta. Ciérrala antes de abrir otra.» | Al abrir caja (pantalla de sesiones o diálogo del punto de venta) | Ya tienes una caja abierta, en esta o en cualquier otra sucursal | Ve a **Sesiones de Caja**, abre tu sesión y ciérrala; o usa la que tienes. (Verificado en el capítulo 8) |
 | «Error al aperturar la sesión» / «No se pudo aperturar la caja» | Pantalla de apertura / diálogo del punto de venta | Genérico: falta el permiso `Sesiones de Caja › Aperturar caja`, tu cuenta no tiene empleado o sucursal, monto negativo | Revisa tu permiso con el administrador. (No verificado en la aplicación) |
-| «Ingresa el monto declarado al cierre» | Bajo «Monto Cierre Declarado (S/)» | Vacío o negativo | Escribe el efectivo contado. (No verificado en la aplicación) |
+| «Ingresa el monto declarado al cierre» | Bajo «Monto Cierre Declarado (S/)» | Vacío o negativo | Escribe el efectivo contado. (Verificado en el capítulo 9) |
 | «Solo el cajero que abrió la caja o un administrador puede cerrarla.» | Al hacer clic en **Confirmar Cierre** | La caja la abrió otra persona; el botón **Cerrar Sesión** lo ve cualquiera con el permiso, pero el servidor solo deja cerrar al dueño o a un administrador | Pide a quien la abrió, o a un administrador, que la cierre. (No verificado en la aplicación) |
 | «Error al cerrar la sesión» | Al cerrar | Genérico. Causas: la sesión ya estaba cerrada, la sesión no existe, o el efectivo esperado resulta **negativo** (reembolsos en efectivo o anulaciones de otras cajas mayores que lo que hay en el cajón): en ese caso la caja no se puede cerrar con esta pantalla | Recarga y revisa el estado de la sesión. Si el estado sigue «Abierta» y el efectivo parece correcto, avisa al administrador y a soporte con los datos de la sección 4. (No verificado en la aplicación) |
 | «Error al cargar la sesión de caja» | Al abrir el detalle de una sesión | La sesión no existe o no es de una sucursal que puedes ver | Vuelve a la lista. (No verificado en la aplicación) |
@@ -400,9 +400,9 @@ El terminal de venta (`/pos/nueva`) tiene mensajes de dos tipos: avisos **antes 
 | «No se pudieron cargar las presentaciones del producto. Inténtalo nuevamente.» | Al elegir un lote | Falló la lista de presentaciones | Elige el lote otra vez. (No verificado en la aplicación) |
 | «Stock máximo disponible alcanzado ({{stock}} un.).» | Al agregar o subir cantidad | Pediste más unidades de las que hay en el lote | Baja la cantidad o elige otro lote. (No verificado en la aplicación) |
 | «Este producto no tiene precio de venta configurado en el catálogo. Pide a un administrador que lo registre.» | Al agregar al carrito o al cobrar | El producto no tiene precio de venta (los productos de carga masiva nacen sin precio) | Pide al administrador que registre el precio en **Medicamentos**. (No verificado en la aplicación) |
-| «Ingresa una cantidad válida para agregar el producto.» | Al pulsar **Agregar** | Cantidad vacía, cero o negativa | Escribe una cantidad mayor que 0. (No verificado en la aplicación) |
+| «Ingresa una cantidad válida para agregar el producto.» | Al pulsar **Agregar** | Cantidad vacía, cero o negativa | Escribe una cantidad mayor que 0. (Verificado en el capítulo 8) |
 | «El medicamento detectado no tiene stock en esta sucursal.» | Al agregar un medicamento detectado en una receta | No hay lotes de ese producto en tu sucursal | Busca otro producto o pide stock. (No verificado en la aplicación) |
-| «Ingresa el N° de operación para poder cobrar.» | Bajo los pagos | Un pago con Yape / Plin, tarjeta o transferencia no tiene número de operación | Escríbelo en «Nro Operación». (No verificado en la aplicación) |
+| «Ingresa el N° de operación para poder cobrar.» | Bajo los pagos | Un pago con Yape / Plin, tarjeta o transferencia no tiene número de operación | Escríbelo en «Nro Operación». (Verificado en el capítulo 8) |
 | Aviso del carrito: «Hay productos que requieren una receta registrada: selecciona al cliente y su receta antes de cobrar.» | Entre el carrito y los totales | Tu empresa exige receta registrada para productos de receta simple | Elige al cliente y su receta. (No verificado en la aplicación) |
 | Aviso del carrito: «Hay productos de receta retenida o estupefacientes: selecciona al cliente y una receta registrada que tenga número de receta.» | Igual | Productos controlados exigen receta registrada con número | Elige cliente y receta con número. (No verificado en la aplicación) |
 | Aviso del carrito: «La receta seleccionada no tiene número de receta: agrégalo en la receta para vender productos de receta retenida o estupefacientes.» | Igual | La receta elegida no tiene número | Completa el número en **Recetas Médicas**. (No verificado en la aplicación) |
@@ -420,7 +420,7 @@ El terminal de venta (`/pos/nueva`) tiene mensajes de dos tipos: avisos **antes 
 | «Uno de los productos requiere receta médica. Selecciona el cliente y una de sus recetas registradas.» | Al cobrar | Hay un producto que exige receta y no hay una válida | Elige cliente y receta. (No verificado en la aplicación) |
 | «La receta médica seleccionada no existe o fue eliminada.» | Al cobrar | Alguien eliminó la receta | Elige otra. (No verificado en la aplicación) |
 | «La receta médica no pertenece al cliente de la venta.» | Al cobrar | La receta es de otro paciente | Elige el cliente correcto o su receta. (No verificado en la aplicación) |
-| «La receta médica ya fue dispensada el máximo de veces permitido.» | Al cobrar | La receta ya no tiene dispensaciones disponibles | Pide al paciente una receta nueva. (No verificado en la aplicación) |
+| «La receta médica ya fue dispensada el máximo de veces permitido.» | Al cobrar | La receta ya no tiene dispensaciones disponibles | Pide al paciente una receta nueva. (Verificado en el capítulo 8) |
 | «La receta seleccionada no tiene número de receta. Agrégalo en la receta para vender productos de receta retenida o estupefacientes.» | Al cobrar | La receta no tiene número | Agrégalo en **Recetas Médicas**. (No verificado en la aplicación) |
 | «Marca "Receta verificada" para confirmar que revisaste la receta del cliente antes de cobrar.» | Al cobrar | El servidor exige la confirmación; aparece la casilla | Márcala y cobra. (No verificado en la aplicación) |
 | «El monto cubierto por el seguro debe estar entre 0 y el total de la venta.» / «Selecciona una aseguradora para aplicar la cobertura del seguro.» / «La aseguradora seleccionada no existe o fue eliminada.» | Al cobrar | Mensajes del cobro con seguro; hoy el bloque de aseguradora está oculto en el terminal y no deberías verlos | Si los ves, avisa a soporte. (No verificado en la aplicación) |
@@ -429,7 +429,7 @@ El terminal de venta (`/pos/nueva`) tiene mensajes de dos tipos: avisos **antes 
 | «No se pudo determinar el contexto de sucursal asignada del usuario.» | En el terminal | Tu sesión no trae sucursal | Cierra sesión y entra de nuevo; si persiste, el administrador debe revisar tu sucursal base. (No verificado en la aplicación) |
 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Al cobrar | Otra venta o un ajuste cambió el stock del mismo lote | Recarga y repite. (No verificado en la aplicación) |
 | «Ocurrió un error al procesar la venta.» | Al cobrar, guardar en espera o actualizar | Mensaje genérico; ver la lista de causas siguiente | Revisa las causas y reintenta. (No verificado en la aplicación) |
-| «Esta venta ya no está en espera; te llevamos a su detalle.» | Al retomar una venta en espera | Otra persona ya la cobró o la anuló | Revisa el estado en el detalle. (No verificado en la aplicación) |
+| «Esta venta ya no está en espera; te llevamos a su detalle.» | Al retomar una venta en espera | Otra persona ya la cobró o la anuló | Revisa el estado en el detalle. (Verificado en el capítulo 8) |
 | «Error al cargar la venta» | Al retomar o abrir el detalle de una venta | La venta no existe o es de otra sucursal (solo ves ventas de tu sucursal base) | Vuelve a **Ventas**. (No verificado en la aplicación) |
 | «Error al buscar ventas» | Búsqueda o exportación de ventas | Falló la búsqueda | Inténtalo de nuevo. (No verificado en la aplicación) |
 
@@ -453,9 +453,9 @@ El botón **Anular Venta** del detalle de la venta aparece cuando la venta está
 
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
-| «El motivo es obligatorio.» | Bajo «Motivo de Anulación» | Dejaste el motivo vacío | Escribe el motivo. Si escribes más de 255 caracteres, **no aparece ningún mensaje** y el botón no hace nada: acórtalo. (No verificado en la aplicación) |
+| «El motivo es obligatorio.» | Bajo «Motivo de Anulación» | Dejaste el motivo vacío | Escribe el motivo. Si escribes más de 255 caracteres, **no aparece ningún mensaje** y el botón no hace nada: acórtalo. (Verificado en el capítulo 9) |
 | «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» | Aviso inferior | La venta ya tuvo una devolución (parcial o total). No existe una pantalla «Devoluciones» en el menú: las devoluciones se hacen desde el detalle de la venta | No se puede anular. Si queda algo por devolver, usa **Devolver**. (No verificado en la aplicación) |
-| «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» | Aviso inferior | Para anular una venta ya cobrada, el dinero se registra en tu caja | Abre tu caja en **Sesiones de Caja** y vuelve a anular. Una venta «Pendiente» (en espera) se anula sin caja. (No verificado en la aplicación) |
+| «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» | Aviso inferior | Para anular una venta ya cobrada, el dinero se registra en tu caja | Abre tu caja en **Sesiones de Caja** y vuelve a anular. Una venta «Pendiente» (en espera) se anula sin caja. (Verificado en el capítulo 9) |
 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Aviso inferior | Alguien cambió la venta al mismo tiempo | Recarga y revisa el estado de la venta. (No verificado en la aplicación) |
 | «Error al anular la venta.» | Aviso inferior | Genérico. Causas: la venta ya está anulada, es de otra sucursal, el motivo era solo espacios, o no tienes el permiso `Ventas › Anular` | Recarga el detalle y mira el estado; revisa tus permisos. (No verificado en la aplicación) |
 | «Error al cargar la venta» | Al abrir el detalle | La venta no existe o es de otra sucursal | Vuelve a **Ventas**. (No verificado en la aplicación) |
@@ -466,9 +466,9 @@ El botón **Devolver** aparece si la venta está «Completada», tiene comproban
 
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
-| «Ingresa al menos una cantidad a devolver.» | Aviso al pulsar **Procesar devolución** | Todas las cantidades están en 0 | Escribe una cantidad o usa **Devolver todo lo pendiente**. (No verificado en la aplicación) |
-| «El sustento es obligatorio.» | Bajo «Sustento» | Está vacío (si escribes solo espacios no aparece mensaje y el botón no hace nada) | Escribe el sustento. (No verificado en la aplicación) |
-| «Necesitas una caja abierta para procesar la devolución.» | Aviso inferior | El reembolso sale de tu caja y no tienes una abierta en esta sucursal | Abre tu caja. (No verificado en la aplicación) |
+| «Ingresa al menos una cantidad a devolver.» | Aviso al pulsar **Procesar devolución** | Todas las cantidades están en 0 | Escribe una cantidad o usa **Devolver todo lo pendiente**. (Verificado en el capítulo 9) |
+| «El sustento es obligatorio.» | Bajo «Sustento» | Está vacío (si escribes solo espacios no aparece mensaje y el botón no hace nada) | Escribe el sustento. (Verificado en el capítulo 9) |
+| «Necesitas una caja abierta para procesar la devolución.» | Aviso inferior | El reembolso sale de tu caja y no tienes una abierta en esta sucursal | Abre tu caja. (Verificado en el capítulo 9) |
 | «Solo puedes devolver ventas de tu propia sucursal.» | Aviso inferior | La venta es de otra sucursal | Pide que lo haga alguien de esa sucursal. (No verificado en la aplicación) |
 | «Solo se pueden devolver ventas completadas.» | Aviso inferior | La venta está en espera, anulada o ya totalmente devuelta | Revisa el estado de la venta. (No verificado en la aplicación) |
 | «La venta no tiene boleta ni factura emitida que acreditar.» | Aviso inferior | No hay comprobante al que emitir la nota de crédito | Avisa a soporte. (No verificado en la aplicación) |
@@ -793,7 +793,7 @@ Mensajes de carga masiva con un campo entre comillas simples (por ejemplo «'…
 
 En curso (sin commitear): ninguno. Los dos repositorios estaban sin cambios locales al empezar (`sofia-apis` `43f5529`, `sofia-web-spa` `eeffbb6`).
 
-Este capítulo no se recorrió en la aplicación, por decisión del encargo (el navegador lo usaba otro agente). De las 206 filas de mensaje de la sección 3, **44 se vieron en pantalla** en los capítulos 1 a 5 (marcadas «Verificado en el capítulo N») y **162 son «No verificado en la aplicación»**: su texto sale del catálogo de códigos de error (`21-catalogo-codigos-error.md`) y de los inventarios de pantallas, pero nadie lo provocó en un recorrido real.
+Este capítulo no se recorrió en la aplicación, por decisión del encargo (el navegador lo usaba otro agente). De las 206 filas de mensaje de la sección 3, **65 se vieron en pantalla** en los capítulos 1 a 9 (marcadas «Verificado en el capítulo N»; 44 desde los capítulos 1 a 5 y 21 desde los capítulos 6 a 9, que se cruzaron con el texto idéntico en la versión 1.1) y **141 son «No verificado en la aplicación»**: su texto sale del catálogo de códigos de error (`21-catalogo-codigos-error.md`) y de los inventarios de pantallas, pero nadie lo provocó en un recorrido real.
 
 | # | Qué | Motivo |
 |---|---|---|
@@ -878,7 +878,7 @@ Documentos consultados:
 - `docs/ola-1-fundamentos/19-inventario-de-pantallas/19a` a `19f` (tablas «Mensajes al usuario», §5 de 19a para guards e interceptores, §6.5 y §8.9 de 19a para carga masiva, §3.12 de 19f para el mapa de códigos del terminal).
 - `docs/ola-1-fundamentos/01-reglas-de-negocio/01c2-ventas-y-comprobantes.md` (RN-VEN-001 a RN-VEN-038, RN-CMP-007), `01c3-caja-devoluciones-dashboard.md` (RN-CAJ-016, RN-CAJ-020, RN-CAJ-024, RN-DAS-001 a RN-DAS-024) y `01a-administracion-y-seguridad.md` (RN-AUT, RN-CTA).
 - `docs/ola-1-fundamentos/05-seguridad/05b-matriz-de-permisos.md` (§1.2, §1.3, §5 y §7).
-- Capítulos 1 a 5 del manual (`capitulo-01` a `capitulo-05` en esta carpeta), de donde salen las marcas «Verificado en el capítulo N».
+- Capítulos 1 a 9 del manual (`capitulo-01` a `capitulo-09` en esta carpeta), de donde salen las marcas «Verificado en el capítulo N».
 - Textos de la interfaz: `sofia-web-spa/public/i18n/es.json` y `public/i18n/<scope>/es.json` (se compararon con la lista de mensajes de este capítulo).
 
 Este capítulo no incluye recorridos en la aplicación.
