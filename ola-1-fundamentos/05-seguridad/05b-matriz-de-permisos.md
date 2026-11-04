@@ -3,13 +3,22 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código de ambos repositorios y de `docs/_inventario/*.csv`; cruce por script de lectura entre `endpoints.csv`, los servicios del SPA y los usos de `*appPermiso`. No se usó el navegador ni se llamó a la API. |
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-04)
+
+Revisión de consistencia (`18-revision-de-consistencia.md`). No cambia ningún permiso: `sofia-apis` `9c16f35` no toca controladores ni permisos.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 3.18 Proveedores | «Endpoints: 10». | «Endpoints: 11» (la tabla ya tenía 11 filas y el total de 232 ya lo contaba así). | — |
+| Cita a `0005_Empresa_MultiTenant.sql` | `:54-69`. | `:59-75` (el script se separó en lotes con `GO`). | `34089ec` |
 
 ### Versión 1.1 (2026-10-14)
 
@@ -509,7 +518,7 @@ Acciones: `Leer`, `Crear`, `Actualizar`, `Eliminar`. Endpoints: 9.
 
 ### 3.18 Proveedores («Proveedores»)
 
-Acciones: `Leer`, `Crear`, `Actualizar`, `Eliminar`, `RegistrarPrecioProveedor`. Endpoints: 10.
+Acciones: `Leer`, `Crear`, `Actualizar`, `Eliminar`, `RegistrarPrecioProveedor`. Endpoints: 11.
 
 | Acción | Método y ruta | Controlador | Qué hace | Método del servicio del SPA | Pantalla(s) y elemento | Control en el SPA |
 |---|---|---|---|---|---|---|
@@ -999,7 +1008,7 @@ Solo el script `0002_SeedBaseRoles.sql` inserta roles, y lo hace con `INSERT ...
 
 Confirmado: los roles del `0002` quedan con `TenantId` nulo y el filtro global de empresa los descarta.
 
-- El script `0005_Empresa_MultiTenant.sql:54-69` agrega `TenantId UNIQUEIDENTIFIER NULL` a todas las tablas con `IsDeleted` que no la tengan (esto incluye `Seguridad_Roles`) y **no hay ningún `UPDATE`** que rellene esa columna en `0005` ni en `0011` (búsqueda de `UPDATE`/`SET TenantId`).
+- El script `0005_Empresa_MultiTenant.sql:59-75` agrega `TenantId UNIQUEIDENTIFIER NULL` a todas las tablas con `IsDeleted` que no la tengan (esto incluye `Seguridad_Roles`) y **no hay ningún `UPDATE`** que rellene esa columna en `0005` ni en `0011` (búsqueda de `UPDATE`/`SET TenantId`).
 - El filtro de empresa del `DbContext` exige que haya empresa en el contexto **y** que `TenantId` sea igual a ella; una fila con `TenantId` nulo no coincide nunca (`sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:98-109`, comentario «NULL TenantId rows match nothing»). `Rol` hereda de `BaseEntity` (`SOFIA.Domain/Entities/Rol.cs:5`) y el filtro se aplica a toda entidad `BaseEntity` no «owned» (`ApplicationDbContext.cs:82-86`).
 - Consecuencia: ni `GET /Roles`, ni la asignación de roles a cuentas, ni el handler de permisos (`PermissionAuthorizationHandler.cs:68-72`) ven esas 6 filas. **No existe un rol «Cajero» preconfigurado utilizable**: cada empresa debe crear el suyo con `POST /Roles` (pantalla `/roles/nueva`) y asignarle permisos con `POST /Roles/permissions`. La comprobación de nombre duplicado de `CreateRol` también pasa por el filtro, por lo que la fila huérfana `Cajero` no lo bloquea (`CreateRolCommandHandler.cs:13-14`). La unicidad es por empresa y solo entre no borrados (`0020_SoftDeleteAware_Uniques_And_Checks.sql:48-49`).
 - **No verificado**: el contenido real de la base de datos local (no se consultó). Lo anterior se deduce de los scripts y del filtro.
