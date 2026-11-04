@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-27 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; los casos CU-CAT-42 y CU-CAT-44 (DIGEMID) están reconciliados con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de los documentos validados (reglas 01b v1.1 y 01c1, inventario de pantallas 19c, 19d y 19e, carga masiva 20, matriz de permisos 05b, integraciones 07, procesos 3 y 7, manual capítulo 4, historias de usuario 12b) y comprobación puntual en el código, en `endpoints.csv` y en los `es.json`. No se ejecutó la aplicación ni se llamó a la API: los mensajes salen de los `es.json` a través de los documentos fuente. |
 
@@ -90,7 +90,7 @@ Aplica a diez catálogos: unidades, jerarquías, laboratorios, ingredientes, med
 | 3 | Archivo de más de 5 MB | `Request.TooLarge` (el SPA lo detecta antes de enviar) | 413 | «El archivo supera el tamaño máximo de 5 MB.» | No hay vista previa |
 | 4 | El contenido no es un libro Excel real, o se descomprime por encima de los límites | `CargaMasiva.Archivo.Invalido` · `CargaMasiva.Archivo.ExcedeDescompresion` | 400 | «El archivo no es un Excel .xlsx válido. Descarga la plantilla y vuelve a intentarlo.» · «El archivo excede los límites de contenido permitidos. Revisa que sea una plantilla válida.» | No hay vista previa |
 | 4 | Más de 5000 filas con datos | `CargaMasiva.Filas.Excedidas` | 400 | «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.» | No hay vista previa |
-| 4 | Sin archivo adjunto (no ocurre desde la pantalla) | — (texto plano «Debe adjuntar un archivo Excel.») | 400 | Sin traducción: «Error al procesar el archivo» (`carga-masiva.preview-error`) | No hay vista previa |
+| 4 | Sin archivo adjunto (no ocurre desde la pantalla) | — (sin el campo `file`: `ProblemDetails` con `errors.file`; con un archivo de 0 bytes: texto plano «Debe adjuntar un archivo Excel.») | 400 | Sin traducción: «Error al procesar el archivo» (`carga-masiva.preview-error`) | No hay vista previa |
 | 4 | Otro fallo al procesar | — | 500 | «Error al procesar el archivo» | No hay vista previa |
 | 6 | Ninguna fila válida | — (el SPA no llama a la API) | — | «No hay filas válidas para guardar» (`carga-masiva.no-valid-rows`) | No se guarda nada |
 | 6 | Lista vacía o de más de 5000 elementos | `CargaMasiva<Entidad>Command.Rows` | 400 | «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.» (también si la lista llega vacía) | No se guarda nada |
@@ -1727,7 +1727,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 | 2 | Código ya existente o repetido en el archivo | fila: `duplicate` · `duplicate-in-file` | 200 | «El valor 'X' del campo 'codigoIdentificadorNacional' ya existe en el sistema» / «… está duplicado en el archivo» | La fila no se guarda |
 | 3 | Un duplicado llega al guardado (el dato cambió entre la vista previa y el guardado) | `Db.Duplicado` | 409 | No está en el mapa de carga masiva: «Error al guardar los registros» | No se guarda **ninguna** fila |
 | 4 | (Solo API) lista vacía o de más de 5000 | — (no hay validador de lista) | — | No se valida en el comando | Comportamiento **No verificado** |
-| 4 | Sin archivo (el lector se invoca sin nombre de archivo y no comprueba la extensión `.xlsx` en el servidor; sí la firma y el contenido) | — (texto plano) | 400 | «Error al procesar el archivo» | No hay vista previa |
+| 4 | Sin archivo (el lector se invoca sin nombre de archivo y no comprueba la extensión `.xlsx` en el servidor; sí la firma y el contenido) | — (sin el campo `file`: `ProblemDetails` con `errors.file`; con un archivo de 0 bytes: texto plano) | 400 | «Error al procesar el archivo» | No hay vista previa |
 | 1–4 | Archivo, tamaño, filas, descarga y fallos genéricos | Ver [§3.5](#35-carga-masiva-flujo-común) | — | Ver §3.5 | Ver §3.5 |
 
 **Postcondiciones**
@@ -1753,7 +1753,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 
 **Flujo principal**
 1. El actor abre «Catálogo DIGEMID». Ve los filtros «Código de Producto» y «Nombre del Producto» y un único botón en la tarjeta: **Carga Masiva** (con `DIGEMID:Crear`); **no existe «Nuevo»**.
-2. Escribe filtros y hace clic en **Buscar**. Una empresa recién registrada tiene el catálogo vacío («Resultados (0)»).
+2. Escribe filtros y hace clic en **Buscar**. Con `sofia-apis` `43f5529` una empresa recién registrada tenía el catálogo vacío («Resultados (0)», comprobado); desde `9c16f35` ve también el catálogo nacional compartido, de solo lectura (RN-DIG-008; **No verificado en la aplicación**).
 3. El sistema filtra por «contiene», ordena por nombre y luego por identificador ([RN-DIG-009]). El filtro de nombre **distingue los acentos** (`cápsula` no encuentra «CAPSULA»).
 4. El SPA muestra «Código» (enlace), «Nombre del Producto», «Forma Farmacéutica» («—» si no tiene) y «Estado».
 5. El actor hace clic en el código: `GET …/catalogo/{id}` y el SPA muestra ocho campos siempre deshabilitados (Código de Producto, Nombre del Producto, Concentración, Forma Farmacéutica, Fracción, Registro Sanitario, Titular, Estado), sin botones de edición.
@@ -1794,7 +1794,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 **Flujo principal**
 Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 1. Plantilla `plantilla-digemid-catalogo.xlsx` con ocho columnas: `CodProd` (20), `NomProd` (255) y `Estado` (50) obligatorias; `Concent` (255), `FormaFarmaceutica` (150), `Fraccion` (100), `RegistroSanitario` (50) y `Titular` (255) opcionales ([RN-DIG-010]).
-2. La vista previa marca `CodProd`, `NomProd` y `Estado` vacíos, código ya existente y repetido en el archivo; **no valida longitudes** ([RN-DIG-002] a [RN-DIG-006], [RN-DIG-011]).
+2. La vista previa marca `CodProd`, `NomProd` y `Estado` vacíos, código ya existente (en tu empresa o en el catálogo compartido) y repetido en el archivo; **no valida longitudes** ([RN-DIG-002] a [RN-DIG-006], [RN-DIG-011]).
 3. Al guardar, el validador de la carga sí exige las longitudes; guarda las filas que pasan los guards y no repiten código, y omite sin error las repetidas ([RN-DIG-012]).
 4. El SPA muestra «Se guardaron N registros correctamente» y vuelve a la búsqueda.
 
@@ -1832,12 +1832,12 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 **Flujo principal (crear)**
 1. El integrador envía `POST …/catalogo` con código, nombre y los demás datos.
 2. El sistema aplica los guards de la entidad (código y nombre no vacíos); **no hay validador** de crear ni de editar ni validación de longitud ([RN-DIG-002] a [RN-DIG-005]).
-3. El sistema comprueba que no exista otro producto no eliminado con el mismo código ([RN-DIG-006]).
+3. El sistema comprueba que no exista otro producto no eliminado con el mismo código, de la empresa o del catálogo compartido ([RN-DIG-006]).
 4. El sistema guarda y responde **201** con el identificador ([RN-DIG-008]).
 
 **Flujos alternativos**
-- **A1 — Editar**: `PUT …/catalogo/{id}` con las mismas validaciones excluyendo el propio producto.
-- **A2 — Eliminar**: `DELETE …/catalogo/{id}`: borrado lógico, sin validar dependencias; responde 204 ([RN-DIG-008]).
+- **A1 — Editar**: `PUT …/catalogo/{id}` con las mismas validaciones excluyendo el propio producto. Si el producto es del catálogo compartido (sin empresa) responde 403 `DigemidCatalogo.Global.SoloLectura` y no cambia nada ([RN-DIG-008]).
+- **A2 — Eliminar**: `DELETE …/catalogo/{id}`: borrado lógico, sin validar dependencias; responde 204 ([RN-DIG-008]). Un producto del catálogo compartido responde 403 `DigemidCatalogo.Global.SoloLectura`.
 
 **Excepciones**
 
@@ -1847,6 +1847,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 | 3 | Código repetido | `DigemidCatalogo.CodProd.Duplicado` | 409 | Solo API | No se crea |
 | 3 | Carrera | `Db.Duplicado` | 409 | Solo API | No se crea |
 | A1/A2 | El producto no existe | `DigemidCatalogo.NotFound` | 404 | Solo API | Sin cambios |
+| A1/A2 | El producto es del catálogo compartido (desde `9c16f35`; No verificado en vivo) | `DigemidCatalogo.Global.SoloLectura` | 403 | Solo API | Sin cambios |
 
 **Postcondiciones**
 - Éxito: el producto queda creado, modificado o eliminado en el catálogo de la empresa. Fallo: sin cambios.
@@ -3459,7 +3460,7 @@ Las 275 reglas de los prefijos `UDM`, `JER`, `LAB`, `ING`, `MED`, `PRE`, `FOR`, 
 
 ## 10. Fuentes
 
-Documentos consultados (rutas relativas a `D:\Baufest\GIT\Sofia\sofia-docs\`):
+Documentos consultados (rutas relativas a la carpeta `sofia-docs`):
 
 - `_inventario/REGLAS-AGENTES.md`, `_inventario/README.md`, `_inventario/endpoints.csv`, `_inventario/rutas-spa.csv`.
 - `ola-1-fundamentos/01-reglas-de-negocio/01b-catalogos.md` (v1.1) y `01c1-inventario-y-recetas.md`; reglas transversales `GEN` e `IMP` de `01a-administracion-y-seguridad.md`; `RN-VEN-019` de `01c2-ventas-y-comprobantes.md`.
