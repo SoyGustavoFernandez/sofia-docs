@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-26 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de roles, cuentas y empleados están reconciliados con `37d053d` y `7070e1a` |
 | **Método** | Lectura de documentos validados (catálogo de códigos de error, inventario de pantallas 19a a 19f, reglas de negocio, matriz de permisos y capítulos 1 a 9 del manual). Este capítulo no se recorrió en la aplicación; los mensajes que sí se vieron en pantalla en los capítulos 1 a 9 se marcan «(Verificado en el capítulo N)» y los demás «(No verificado en la aplicación)» |
 
 ## 1. Cómo usar este capítulo
@@ -101,10 +101,10 @@ Es normal: el idioma **no se guarda**. Si recargas la página, cierras sesión o
 | La caja la abrió otra persona | Al **Confirmar Cierre** ves «Solo el cajero que abrió la caja o un administrador puede cerrarla.» | Que la cierre quien la abrió o un administrador. |
 | La sesión ya estaba cerrada | «Error al cerrar la sesión»; la sesión figura como «Cerrada» o «Cuadrada» | No hay nada más que hacer. Revisa el estado en **Sesiones de Caja**. |
 | El efectivo esperado resulta negativo | «Error al cerrar la sesión» aunque la sesión esté abierta; pasa si los reembolsos en efectivo o las anulaciones de otras cajas superan lo que hay en el cajón | La pantalla no ofrece otra vía: avisa al administrador y a soporte (sección 4). |
-| Falta el monto declarado | «Ingresa el monto declarado al cierre» | Escribe el efectivo contado. |
+| Falta el monto declarado | «Ingresa el monto declarado al cierre» | Escribe el efectivo contado. (Verificado en el capítulo 9, §8) |
 | Otra operación cambió la sesión a la vez | «Otra operación modificó estos datos al mismo tiempo…» | Recarga y repite. |
 
-Después de cerrar, SOFIA te lleva a la lista sin mostrar el resultado del arqueo: ábrelo desde la lista para ver el monto declarado, el calculado y la diferencia. El estado es «Cuadrada» solo si la diferencia es exactamente 0; con cualquier otra diferencia queda «Cerrada». (Fuente: 19f §1.3; No verificado en la aplicación en este capítulo.)
+Después de cerrar, SOFIA te lleva a la lista sin mostrar el resultado del arqueo: ábrelo desde la lista para ver el monto declarado, el calculado y la diferencia. El estado es «Cuadrada» solo si la diferencia es exactamente 0; con cualquier otra diferencia queda «Cerrada». (Verificado en el capítulo 9, §8: el cierre, que no se muestra el arqueo al terminar y el estado «Cuadrada» solo con diferencia 0. Las causas de la tabla anterior, salvo el monto declarado vacío, siguen sin verificar en la aplicación.)
 
 ### 2.6 El cajero no ve ventas de otra sucursal
 
@@ -131,10 +131,10 @@ Las pantallas muestran las fechas en la hora de tu navegador, pero algunos archi
 | Cambiaste los permisos de un rol y la persona no ve el cambio | Se aplica al volver a iniciar sesión | Que cierre sesión y entre de nuevo. |
 | La carga masiva dice «Se guardaron 0 registros correctamente» | La vista previa no revisa algunos duplicados (código identificador de laboratorio, DCI de ingrediente) y el guardado los omite en silencio | Compara siempre guardados con filas válidas. (Verificado en el capítulo 4) |
 | En la carga masiva se marcan con error todas las filas repetidas, también la primera | Así está hecha la validación | Deja una sola fila. (Verificado en los capítulos 2 a 4) |
-| No puedes quitar al cliente elegido en el terminal de venta | No hay botón para quitarlo; solo se descarta al escribir otro texto o al limpiar la venta | Escribe otro cliente, o vacía el carrito y empieza de nuevo. (No verificado en la aplicación) |
-| El terminal no muestra la fecha de vencimiento del lote | Solo ofrece lotes no vencidos; no la pinta | Pregunta al administrador si necesitas verla en **Lotes**. (No verificado en la aplicación) |
-| Cerraste el navegador a mitad de una venta | El carrito se guarda solo en tu navegador durante 12 horas; se borra al cobrar, al cerrar sesión o si otra persona inicia sesión en ese equipo | Vuelve a abrir el terminal con tu usuario. (No verificado en la aplicación) |
-| «Subtotal» más «IGV» no suma exactamente el «TOTAL A PAGAR» | La pantalla redondea cada cifra por separado (hasta un centavo de diferencia) | El total a pagar es el que vale. (No verificado en la aplicación) |
+| No puedes quitar al cliente elegido en el terminal de venta | No hay botón para quitarlo; solo se descarta al escribir otro texto o al limpiar la venta | Escribe otro cliente, o vacía el carrito y empieza de nuevo. (Verificado en el capítulo 8, §10 y §19 punto 3: al borrar el texto el cliente siguió elegido y se descartó al escribir otra letra) |
+| El terminal no muestra la fecha de vencimiento del lote | Solo ofrece lotes no vencidos; no la pinta | Pregunta al administrador si necesitas verla en **Lotes**. (Verificado en el capítulo 8, §8.2: el terminal muestra solo el número de lote y «Stock Disp») |
+| Cerraste el navegador a mitad de una venta | El carrito se guarda solo en tu navegador durante 12 horas; se borra al cobrar, al cerrar sesión o si otra persona inicia sesión en ese equipo | Vuelve a abrir el terminal con tu usuario. (Verificado en el capítulo 8, §16: el carrito y el efectivo recibido volvieron al recargar y la venta siguiente al cobrar empezó vacía; las 12 horas y el borrado al cerrar sesión o al entrar otra persona: No verificado en la aplicación) |
+| «Subtotal» más «IGV» no suma exactamente el «TOTAL A PAGAR» | Por el código, la pantalla redondea cada cifra por separado y podría haber un centavo de diferencia | El total a pagar es el que vale. (No se reprodujo en el capítulo 8, §19 punto 2: en las 8 ventas y los carritos de prueba «Subtotal» más «IGV» sumó exactamente el total) |
 | «Vendido hoy» no coincide con la lista de ventas de hoy | La tarjeta suma las ventas «Completada» y «Devuelta» a monto bruto; el botón «Ver ventas de hoy» filtra solo «Completada» | Es normal. (Fuente: RN-DAS-005 y RN-DAS-014; No verificado en la aplicación) |
 | Un empleado eliminado dejó una cuenta oculta | SOFIA permite eliminar un empleado con cuenta | Elimina primero la cuenta y luego el empleado (sección 3.4). (Verificado en el capítulo 3) |
 | La campana de la cabecera dice «Sin notificaciones» | Es decorativa; no genera notificaciones | No hace falta hacer nada. (Verificado en el capítulo 1) |
@@ -221,7 +221,8 @@ Los mensajes que te avisan que falta una serie al cobrar o devolver están en la
 | «Ingresa un correo electrónico válido.» | Bajo el campo de correo, o como aviso rojo al guardar | El correo no tiene forma de correo (por ejemplo `carlos.cajero@sofia`, sin punto tras la arroba, pasa la pantalla pero lo rechaza el servidor) | Escribe el correo completo. (Verificado en el capítulo 3) |
 | «Ya existe un empleado con ese correo electrónico en tu empresa.» | Aviso inferior al guardar | Otro empleado de tu empresa usa ese correo (sin distinguir mayúsculas) | Usa otro correo. (Verificado en el capítulo 3) |
 | «Ya existe un empleado con esa licencia profesional.» | Aviso inferior al guardar | Otro empleado de tu empresa tiene esa licencia | Revisa el número. (Verificado en el capítulo 3) |
-| «Error al guardar el empleado» | Aviso inferior al guardar | Mensaje genérico. Causas: intentas cambiar **tu propia** sucursal base (lo debe hacer otro administrador), la sucursal elegida ya no existe, nombres o apellido paterno vacíos o solo espacios | Pide a otro administrador que cambie tu sucursal base; si no, revisa los datos. (No verificado en la aplicación) |
+| «No puedes cambiar tu propia sucursal base.» | Aviso inferior al guardar (desde `sofia-web-spa` `37d053d`) | Intentas cambiar la sucursal base de **tu propio** empleado | Pide a otro administrador que cambie tu sucursal base. (No verificado en la aplicación) |
+| «Error al guardar el empleado» | Aviso inferior al guardar | Mensaje genérico. Causas: la sucursal elegida ya no existe, nombres o apellido paterno vacíos o solo espacios (con `eeffbb6`, cambiar tu propia sucursal base también salía con este texto) | Revisa los datos. (No verificado en la aplicación) |
 | «No se puede eliminar un empleado que gerencia una sucursal. Asigna otro gerente primero.» | Aviso inferior al eliminar | El empleado es gerente de una sucursal | En Sucursales, abre la sucursal, **Editar**, cambia o borra el «Gerente» y **Guardar**; luego elimina al empleado. (Verificado en el capítulo 3) |
 | «Error al eliminar el empleado» | Aviso inferior al eliminar | Cualquier otro fallo al eliminar | Recarga e inténtalo. (No verificado en la aplicación) |
 | «Error al cargar el empleado» | Aviso inferior al abrir la ficha | No se pudo abrir | Vuelve a la búsqueda. (No verificado en la aplicación) |
@@ -233,8 +234,11 @@ Cuidado con el orden al dar de baja a una persona: SOFIA **permite** eliminar un
 
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
-| «Error al guardar el rol» | Aviso inferior al guardar un rol | Mensaje genérico que no dice la causa. Causas comprobadas: el nombre del rol ya existe en tu empresa; el nombre tiene más de 50 caracteres (la pantalla deja escribir 100). Al crear, **cualquier** error sale con este texto. También puede ser que un permiso ya estuviera asignado | Usa un nombre distinto y de hasta 50 caracteres. (Verificado en el capítulo 3) |
-| «Error al eliminar el rol» | Aviso inferior al eliminar un rol | Casi siempre: el rol todavía tiene cuentas asignadas (también sale ante cualquier otro fallo) | Cambia primero el rol de esas cuentas a otro y vuelve a eliminar. No elimines el rol «Admin». (Verificado en el capítulo 3) |
+| «Ya existe un rol con ese nombre.» | Aviso inferior al guardar un rol (desde `sofia-web-spa` `37d053d`) | El nombre del rol ya existe en tu empresa | Usa un nombre distinto. (No verificado en la aplicación; con `eeffbb6` salía el genérico «Error al guardar el rol», verificado en el capítulo 3) |
+| «Ese permiso ya está asignado al rol.» | Aviso inferior al guardar un rol (desde `37d053d`) | El rol ya tenía ese permiso | Recarga el rol y revisa sus permisos. (No verificado en la aplicación) |
+| «Error al guardar el rol» | Aviso inferior al guardar un rol | Mensaje genérico que no dice la causa. Causa comprobada: el nombre tiene más de 50 caracteres (la pantalla deja escribir 100). Cualquier otro error sin mensaje propio sale con este texto (con `eeffbb6` también salían así el nombre repetido y el permiso ya asignado) | Usa un nombre de hasta 50 caracteres. (Verificado en el capítulo 3) |
+| «No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.» | Aviso inferior al eliminar un rol (desde `37d053d`) | El rol todavía tiene cuentas asignadas | Cambia primero el rol de esas cuentas a otro y vuelve a eliminar. No elimines el rol «Admin». (No verificado en la aplicación; con `eeffbb6` salía «Error al eliminar el rol», verificado en el capítulo 3) |
+| «Error al eliminar el rol» | Aviso inferior al eliminar un rol | Cualquier otro fallo al eliminar | Recarga y vuelve a intentar. (No verificado en la aplicación) |
 | «No se pueden ampliar los permisos de un rol que la propia cuenta tiene asignado» | Aviso inferior al guardar permisos | Intentas darle más permisos al rol que tú mismo tienes asignado (solo un «Admin» puede) | Pide a un administrador que lo haga. (No verificado en la aplicación) |
 | «Error al cargar el rol» / «Error al cargar los permisos» / «Error al cargar las sucursales» | Aviso inferior al abrir el rol o sus pestañas | No se pudo leer el rol, la matriz o la lista de sucursales (para ver sucursales necesitas `Leer` en «Sucursales») | Recarga la ficha. (No verificado en la aplicación) |
 | «Error al buscar roles» | Aviso inferior en la búsqueda o al exportar | Falló la búsqueda o la exportación | Inténtalo de nuevo. (No verificado en la aplicación) |
@@ -247,7 +251,9 @@ Los errores de la carga masiva de roles están en la sección 3.8.
 |---|---|---|---|
 | «La longitud máxima es de 100 caracteres» | Bajo «Nombre de Usuario» | Escribiste más de 50 caracteres (el mensaje dice 100 pero el límite real es 50) | Acorta el usuario. (Verificado en el capítulo 3) |
 | (Sin mensaje) | Al guardar una cuenta con contraseña de menos de 8 caracteres | La pantalla no avisa: simplemente no guarda | Usa 8 o más caracteres. (Verificado en el capítulo 3) |
-| «Error al guardar la cuenta» | Aviso inferior al crear o editar una cuenta | Mensaje genérico. Al crear, causas comprobadas: el nombre de usuario ya existe (es único en **todas** las empresas, también entre cuentas ocultas) o el empleado ya tiene una cuenta. También: el empleado o el rol ya no existen | Elige otro usuario; revisa que el empleado no tenga cuenta; si el usuario quedó ocupado por una cuenta oculta (ver sección 3.4), soporte. (Verificado en el capítulo 3) |
+| «Ya existe una cuenta con ese nombre de usuario.» | Aviso inferior al crear una cuenta (desde `sofia-web-spa` `37d053d`) | El nombre de usuario ya existe (es único en **todas** las empresas, también entre cuentas ocultas) | Elige otro usuario; si quedó ocupado por una cuenta oculta (ver sección 3.4), soporte. (No verificado en la aplicación; con `eeffbb6` salía «Error al guardar la cuenta», verificado en el capítulo 3) |
+| «Este empleado ya tiene una cuenta de usuario vinculada.» | Aviso inferior al crear una cuenta (desde `37d053d`) | El empleado elegido ya tiene cuenta | Elige otro empleado o trabaja con su cuenta existente. (No verificado en la aplicación; con `eeffbb6` salía «Error al guardar la cuenta», verificado en el capítulo 3) |
+| «Error al guardar la cuenta» | Aviso inferior al crear o editar una cuenta | Mensaje genérico. Causas: el empleado o el rol ya no existen, u otro fallo sin mensaje propio (con `eeffbb6` también salían así el usuario repetido y el empleado con cuenta) | Revisa los datos e inténtalo de nuevo. (Verificado en el capítulo 3 con `eeffbb6`) |
 | «Una cuenta no puede modificar sus propios roles» | Aviso inferior al cambiar el rol de tu propia cuenta | Nadie puede cambiar sus propios roles | Pide a otro administrador. (No verificado en la aplicación) |
 | «Solo un administrador puede asignar o quitar el rol Admin» | Aviso inferior al asignar el rol | Solo un «Admin» puede dar o quitar el rol «Admin» | Pide a un administrador. (No verificado en la aplicación) |
 | «Solo un administrador puede modificar o eliminar la cuenta de un administrador» | Aviso inferior al guardar o eliminar | La cuenta pertenece a un administrador y tú no lo eres | Pide a un administrador. (No verificado en la aplicación) |
@@ -656,10 +662,12 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «Error al registrar el precio» — [3.7]
 - «Error al registrar el stock» — [3.9]
 - «Error al registrar la empresa» — [3.1]
+- «Ese permiso ya está asignado al rol.» — [3.5]
 - «Esta sucursal no tiene una serie de boletas activa…» — [3.12]
 - «Esta venta tiene devoluciones registradas y ya no puede anularse…» — [3.13]
 - «Esta venta ya no está en espera; te llevamos a su detalle.» — [3.12]
 - «Este campo es obligatorio» — [3.2]
+- «Este empleado ya tiene una cuenta de usuario vinculada.» — [3.6]
 - «Este enlace de recuperación está incompleto o ya fue usado…» — [3.1]
 - «Este producto no tiene precio de venta configurado en el catálogo…» — [3.12]
 - «Este producto ya tiene una conversión entre esas unidades.» — [3.7]
@@ -700,6 +708,7 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «Necesitas una caja abierta para procesar la devolución.» — [3.14]
 - «No hay filas válidas para guardar» — [3.8]
 - «No pudimos conectar con el servidor…» — [3.1]
+- «No puedes cambiar tu propia sucursal base.» — [3.4]
 - «No puedes eliminar esta receta porque ya se usó en ventas.» — [3.10]
 - «No puedes eliminar esta sucursal porque tiene empleados, usuarios, roles, stock, ventas u otros registros asociados.» — [3.2]
 - «No puedes eliminar este ingrediente activo porque está incluido en formulaciones clínicas.» — [3.7]
@@ -725,6 +734,7 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «No se puede eliminar la jerarquía porque está en uso.» — [3.7]
 - «No se puede eliminar la presentación porque tiene ventas registradas.» — [3.7]
 - «No se puede eliminar la unidad de medida porque está asociada…» — [3.7]
+- «No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.» — [3.5]
 - «No se puede eliminar un empleado que gerencia una sucursal…» — [3.4]
 - «No se puede eliminar un lote con stock o ventas registradas.» — [3.9]
 - «No se puede eliminar una serie que ya emitió comprobantes…» — [3.3]
@@ -762,11 +772,13 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «Ya existe un profesional de salud con ese número de registro.» — [3.10]
 - «Ya existe un proveedor con esa razón social.» — [3.7]
 - «Ya existe un proveedor con ese identificador tributario.» — [3.7]
+- «Ya existe un rol con ese nombre.» — [3.5]
 - «Ya existe un registro con ese mismo valor. Revisa los datos e inténtalo de nuevo.» — [3.0]
 - «Ya existe una empresa registrada con este RUC» — [3.1]
 - «Ya existe una formulación con los datos ingresados» — [3.7]
 - «Ya existe una presentación de venta para esa unidad en este producto.» — [3.7]
 - «Ya existe una sucursal con ese número de licencia.» — [3.2]
+- «Ya existe una cuenta con ese nombre de usuario.» — [3.6]
 - «Ya existe una unidad de medida con ese código.» — [3.7]
 - «Ya tienes una caja abierta. Ciérrala antes de abrir otra.» — [3.11]
 
@@ -793,7 +805,7 @@ Mensajes de carga masiva con un campo entre comillas simples (por ejemplo «'…
 
 En curso (sin commitear): ninguno. Los dos repositorios estaban sin cambios locales al empezar (`sofia-apis` `43f5529`, `sofia-web-spa` `eeffbb6`).
 
-Este capítulo no se recorrió en la aplicación, por decisión del encargo (el navegador lo usaba otro agente). De las 206 filas de mensaje de la sección 3, **65 se vieron en pantalla** en los capítulos 1 a 9 (marcadas «Verificado en el capítulo N»; 44 desde los capítulos 1 a 5 y 21 desde los capítulos 6 a 9, que se cruzaron con el texto idéntico en la versión 1.1) y **141 son «No verificado en la aplicación»**: su texto sale del catálogo de códigos de error (`21-catalogo-codigos-error.md`) y de los inventarios de pantallas, pero nadie lo provocó en un recorrido real.
+Este capítulo no se recorrió en la aplicación, por decisión del encargo (el navegador lo usaba otro agente). De las 206 filas de mensaje de la sección 3 de la versión 1.0 (la versión 1.2 agrega seis filas por `sofia-web-spa` `37d053d`, todas No verificadas en la aplicación), **65 se vieron en pantalla** en los capítulos 1 a 9 (marcadas «Verificado en el capítulo N»; 44 desde los capítulos 1 a 5 y 21 desde los capítulos 6 a 9, que se cruzaron con el texto idéntico en la versión 1.1) y **141 son «No verificado en la aplicación»**: su texto sale del catálogo de códigos de error (`21-catalogo-codigos-error.md`) y de los inventarios de pantallas, pero nadie lo provocó en un recorrido real.
 
 | # | Qué | Motivo |
 |---|---|---|
@@ -801,13 +813,13 @@ Este capítulo no se recorrió en la aplicación, por decisión del encargo (el 
 | 2 | Mensaje de suscripción vencida y bloqueo por 5 intentos (15 minutos) en la cuenta del cajero real | Se probó el bloqueo con una cuenta de prueba en el capítulo 3; la suscripción vencida no se puede provocar desde la pantalla |
 | 3 | Todos los mensajes «Error al buscar…», «Error al cargar…», «Error al eliminar…» y «Error al guardar…» genéricos | Son fallos del servidor o de la red que no se pueden provocar desde la pantalla. Las **causas** listadas salen de las columnas «Cuándo sale» del catálogo 21 |
 | 4 | Mensajes de «en uso» al eliminar (unidad, laboratorio, ingrediente, medicamento, proveedor, paciente, profesional, receta, lote, presentación, jerarquía) | Faltaba que existiera el registro que los usa al escribirse los capítulos 4 y 5; el catálogo 21 los respalda con su código 409 |
-| 5 | Todo lo del cobro (stock agotado entre medias, lote vencido o en cuarentena, recetas, vuelto, números de operación), anulación y devolución | Los capítulos 6 a 10 los escribe otro agente y no estaban publicados al redactarse este capítulo. Los textos vienen de 19f §3.12, §8 y §9 y de las reglas RN-VEN, RN-DEV y RN-CAJ |
+| 5 | Todo lo del cobro (stock agotado entre medias, lote vencido o en cuarentena, recetas, vuelto, números de operación), anulación y devolución | Este capítulo se redactó antes de que se publicaran los capítulos 6 a 10 (ya están publicados). Los textos vienen de 19f §3.12, §8 y §9 y de las reglas RN-VEN, RN-DEV y RN-CAJ; los capítulos 8 y 9 recorrieron parte del cobro, la anulación y la devolución, y sus resultados se cruzaron aquí solo en las filas de las secciones 2.5 y 2.9; el resto de las filas de 3.11 a 3.14 sigue marcado «No verificado» hasta cruzarlas una por una con esos capítulos |
 | 6 | Cierre de caja con efectivo esperado negativo | Está en RN-CAJ-016 (regla) y el catálogo 21; no se provocó |
 | 7 | «Error al interpretar la receta. Intenta nuevamente.» y sus causas | Requiere el servicio de IA y una imagen; viene de 19e §5.3 |
 | 8 | Fecha del día siguiente en las exportaciones de Sesiones de Caja y Series Fiscales | El navegador integrado no abre los archivos descargados; viene de RN-CAJ-024 y del capítulo 2 |
 | 9 | Pantalla en vista angosta, Ctrl + clic, y que el idioma elegido no se conserva al recargar | Ver los «No verificado» del capítulo 1 |
 | 10 | Mensajes de los bloques de aseguradora del terminal | El bloque está oculto en el terminal (19f §3.8); no se pueden ver |
-| 11 | Autoguardado del borrador del carrito (12 horas) y botón de cliente que no se quita | Viene de 19f §3.9 y §3.4 (derivados de la lectura de código) |
+| 11 | Duración de 12 horas del borrador del carrito y su borrado al cerrar sesión o al entrar otra persona | El capítulo 8 (§16) comprobó que el borrador se restaura y se borra al cobrar, y (§10) que el cliente no se puede quitar; la duración y los demás borrados vienen de 19f §3.9 (lectura de código) |
 
 Hallazgos que conviene conocer:
 
