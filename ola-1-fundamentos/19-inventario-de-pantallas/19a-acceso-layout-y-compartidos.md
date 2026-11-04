@@ -3,13 +3,21 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código del árbol de trabajo (SPA y, solo para describir qué calcula cada indicador del dashboard y el registro de empresa, los handlers de `SOFIA.Application/Dashboard` y `SOFIA.Application/Empresas`). No se usó el navegador ni la API local. La versión 1.1 reconcilia el documento (escrito sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`) con el código actual; no hay cambios sin commitear en ninguno de los dos repos. |
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-04)
+
+Revisión de consistencia (`18-revision-de-consistencia.md`).
+
+| # | Apartado o ID | Decía | Dice ahora | Commit |
+|---|---|---|---|---|
+| 1 | §3.3, formato de cifras | Los pipes `number` y `date` usan el `LOCALE_ID` por defecto (`en-US`). | Solo `number` depende del idioma; los pipes `date` llevan patrón explícito; las cifras de mil o más son «No verificado en la aplicación». | — |
 
 ### Versión 1.1 (2026-10-14)
 
@@ -382,7 +390,7 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 **Comportamientos particulares**
 - Las tarjetas con botón guardan los filtros en `SearchStateService.save(path, state)` y navegan; la pantalla destino restaura y ejecuta esos filtros al abrirse (`dashboard.component.ts:231-234`, `dashboard-links.ts`). Destinos: `/pos` (ventas), `/sesiones-caja`, `/stock-por-sucursal` (siempre con «solo con stock» activado y página 0 de tamaño 10).
 - El servidor rechaza un «hoy» a más de 36 horas de la hora actual (`DashboardDias.ToleranciaHoyHoras = 36`, `sofia-apis/src/SOFIA.Application/Dashboard/Common/DashboardDias.cs:10`).
-- Formato de cifras: los pipes `number: '1.2-2'` y `date` usan el `LOCALE_ID` por defecto de Angular (`en-US`): no hay proveedor de `LOCALE_ID` en `src/` (solo `registerLocaleData(es-PE)` en `provide-sofia-dates.ts:19`), así que los montos salen como `1,234.50`. Es una deducción del código, no se vio en pantalla.
+- Formato de cifras: el pipe `number: '1.2-2'` (el más usado, 42 veces en las plantillas) usa el `LOCALE_ID` por defecto de Angular (`en-US`): no hay proveedor de `LOCALE_ID` en `src/` (solo `registerLocaleData(es-PE)` en `provide-sofia-dates.ts:19`), así que los montos de mil o más salen como `1,234.50`. Los pipes `date` de las plantillas llevan un patrón explícito (`'dd/MM/yyyy'`, `'dd/MM/yyyy HH:mm'`, `'HH:mm'`), por lo que no dependen del idioma. **No verificado en la aplicación** para cifras de mil o más: el manual de usuario solo vio cifras menores de mil, escritas con punto decimal (capítulo 10, tabla de no verificados).
 
 **Observaciones**
 - El permiso `Devoluciones:Leer` se usa en el dashboard aunque el módulo de devoluciones no tiene pantalla de listado; el bloque depende solo del endpoint del dashboard.
