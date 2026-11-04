@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
 | **Método** | Lectura de documentos validados y comprobación puntual en el código; casos no ejecutados |
 
 ## 1. Convenciones
@@ -2812,7 +2812,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Datos:** Sucursal Base «Sucursal Demo Norte».
 **Pasos:**
 1. Abre tu propia ficha (empleado «Ana Demo Prueba»), haz clic en «Editar», cambia la «Sucursal Base» y haz clic en «Guardar».
-**Resultado esperado:** la API responde 403 `Empleado.SucursalBase.AutoAsignacion` y ves «Error al guardar el empleado» sin más explicación; la sucursal base no cambia.
+**Resultado esperado:** la API responde 403 `Empleado.SucursalBase.AutoAsignacion` y ves «No puedes cambiar tu propia sucursal base.» (desde `sofia-web-spa` `37d053d`; antes «Error al guardar el empleado»); la sucursal base no cambia.
 
 #### TC-ADM-200 — Edición simultánea con un valor único repetido
 
@@ -3087,7 +3087,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Pasos:**
 1. Intenta guardar el rol duplicado.
 2. En la empresa B crea un rol con un nombre que ya existe en la A.
-**Resultado esperado:** aviso rojo «Error al guardar el rol» y te quedas en la pantalla (la API responde 400 `Rol.DuplicateName`); es la única forma en que el sistema avisa del nombre duplicado; en la empresa B el mismo nombre sí se guarda.
+**Resultado esperado:** aviso rojo «Ya existe un rol con ese nombre.» (desde `sofia-web-spa` `37d053d`; antes «Error al guardar el rol») y te quedas en la pantalla (la API responde 400 `Rol.DuplicateName`); en la empresa B el mismo nombre sí se guarda.
 
 #### TC-ADM-221 — Nombre de rol de 51 a 100 caracteres
 
@@ -3124,7 +3124,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Datos:** mismo nombre nuevo `Rol Carrera`.
 **Pasos:**
 1. Envía las dos a la vez.
-**Resultado esperado:** una responde 201 y la otra 409 `Db.Duplicado` (o 400 `Rol.DuplicateName` si llegó después); en el SPA se vería «Error al guardar el rol».
+**Resultado esperado:** una responde 201 y la otra 409 `Db.Duplicado` (o 400 `Rol.DuplicateName` si llegó después); en el SPA se vería «Ya existe un rol con ese nombre.» para este último y, para `Db.Duplicado`, «Ya existe un registro con ese mismo valor. Revisa los datos e inténtalo de nuevo.» (desde `37d053d` la pantalla de roles usa `saveErrorKey`).
 
 #### TC-ADM-224 — El nivel de jerarquía no limita nada
 
@@ -3376,7 +3376,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Pasos:**
 1. Envía la petición.
 2. En la pantalla, guarda sin cambios.
-**Resultado esperado:** 400 `Permiso.Duplicate` (aunque su tipo es Conflict); si pasara desde la pantalla se vería «Error al guardar el rol»; la pantalla solo envía los permisos nuevos respecto de los cargados, por lo que guardar sin cambios no llama a ningún endpoint de permisos.
+**Resultado esperado:** 400 `Permiso.Duplicate` (aunque su tipo es Conflict); si pasara desde la pantalla se vería «Ese permiso ya está asignado al rol.» (desde `sofia-web-spa` `37d053d`; antes «Error al guardar el rol»); la pantalla solo envía los permisos nuevos respecto de los cargados, por lo que guardar sin cambios no llama a ningún endpoint de permisos.
 
 #### TC-ADM-243 — La API no contrasta el permiso con el catálogo
 
@@ -3571,7 +3571,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Pasos:**
 1. Intenta eliminar el rol y confirma.
 2. Cambia el rol de la cuenta (ver el caso de HU-ADM-037) y vuelve a intentar.
-**Resultado esperado:** la API responde 400 `Rol.InUse` (aunque su tipo es Conflict); ves el aviso rojo «Error al eliminar el rol» sin más explicación y el rol sigue existiendo; tras cambiar el rol de las cuentas, la eliminación procede.
+**Resultado esperado:** la API responde 400 `Rol.InUse` (aunque su tipo es Conflict); ves el aviso rojo «No se puede eliminar el rol porque tiene cuentas de usuario vinculadas.» (desde `sofia-web-spa` `37d053d`; antes «Error al eliminar el rol») y el rol sigue existiendo; tras cambiar el rol de las cuentas, la eliminación procede.
 
 #### TC-ADM-258 — Un rol nuevo con el mismo nombre no hereda permisos
 
@@ -3711,7 +3711,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Datos:** `POST /roles/previsualizar` multipart sin el campo `file`.
 **Pasos:**
 1. Envía la petición.
-**Resultado esperado:** 400 con el texto «Debe adjuntar un archivo Excel.» (sin `code`); la pantalla, que siempre envía un archivo, mostraría «Error al procesar el archivo».
+**Resultado esperado:** 400 con un `ProblemDetails` de validación de modelo (`errors.file`, sin `code`); con un archivo de 0 bytes sería, en cambio, el texto plano «Debe adjuntar un archivo Excel.». La pantalla, que siempre envía un archivo, mostraría «Error al procesar el archivo».
 
 ## 4.7 Cuentas de usuario
 
@@ -3878,7 +3878,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Datos:** usuario `ana.manual`; en la empresa A, usuario `luis.dos`.
 **Pasos:**
 1. Crea la cuenta con cada usuario.
-**Resultado esperado:** aviso rojo «Error al guardar la cuenta» en ambos (409 `Auth.DuplicateUsername`); el usuario es único en todo el sistema entre cuentas no eliminadas, porque el inicio de sesión no pide empresa.
+**Resultado esperado:** aviso rojo «Ya existe una cuenta con ese nombre de usuario.» en ambos (409 `Auth.DuplicateUsername`; desde `sofia-web-spa` `37d053d`, antes «Error al guardar la cuenta»); el usuario es único en todo el sistema entre cuentas no eliminadas, porque el inicio de sesión no pide empresa.
 
 #### TC-ADM-281 — El empleado ya tiene cuenta
 
@@ -3890,7 +3890,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Datos:** empleado «Ana Demo Prueba»; usuario libre `ana.otra`.
 **Pasos:**
 1. Elige a Ana en la lista y guarda.
-**Resultado esperado:** aviso «Error al guardar la cuenta» (409 `Auth.DuplicateAccount`); la lista de empleados también muestra a quienes ya tienen cuenta.
+**Resultado esperado:** aviso «Este empleado ya tiene una cuenta de usuario vinculada.» (409 `Auth.DuplicateAccount`; desde `sofia-web-spa` `37d053d`, antes «Error al guardar la cuenta»); la lista de empleados también muestra a quienes ya tienen cuenta.
 
 #### TC-ADM-282 — Alta simultánea del mismo usuario
 
@@ -3902,7 +3902,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Datos:** mismo usuario nuevo `cuenta.carrera` para dos empleados distintos.
 **Pasos:**
 1. Envía las dos a la vez.
-**Resultado esperado:** una responde 201 y la otra 409 (`Db.Duplicado` o `Auth.DuplicateUsername`); en el SPA se vería «Error al guardar la cuenta» porque la pantalla de creación no traduce los códigos de la API.
+**Resultado esperado:** una responde 201 y la otra 409 (`Db.Duplicado` o `Auth.DuplicateUsername`); en el SPA se vería «Ya existe una cuenta con ese nombre de usuario.» para `Auth.DuplicateUsername` (desde `37d053d` la pantalla de creación traduce ese código y `Auth.DuplicateAccount`) y el texto de `Db.Duplicado` para el otro.
 
 #### TC-ADM-283 — Empleado inexistente al crear una cuenta
 
@@ -3979,10 +3979,10 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Precondiciones:** la cuenta `carlos.cajero` con «Requiere Cambio de Clave: No».
 **Datos:** interruptor «Forzar Cambio de Contraseña» encendido.
 **Pasos:**
-1. Edita, observa que el interruptor empieza apagado, enciéndelo y guarda.
+1. Edita, observa que el interruptor empieza apagado (la cuenta no lo requiere), enciéndelo y guarda.
 2. Carlos inicia sesión.
 3. Vuelve a editar la cuenta y busca una forma de apagar el cambio forzado.
-**Resultado esperado:** la ficha muestra «Requiere Cambio de Clave: Sí»; en su próximo ingreso Carlos debe cambiar su contraseña (TC-ADM-058); el interruptor empieza siempre apagado y no hay forma de apagarlo a mano: se apaga solo cuando la persona cambia o restablece su contraseña.
+**Resultado esperado:** la ficha muestra «Requiere Cambio de Clave: Sí»; en su próximo ingreso Carlos debe cambiar su contraseña (TC-ADM-058). Con `sofia-web-spa` `7070e1a` el interruptor de «Forzar Cambio de Contraseña» empieza apagado solo si la cuenta no requiere el cambio; si ya lo requiere (paso 3, antes de que Carlos cambie la clave) se abre encendido y deshabilitado, con la nota «Ya requiere cambio de clave; se quita cuando el usuario la cambie.» (**No verificado en la aplicación**); en ningún caso hay forma de apagarlo a mano: se apaga solo cuando la persona cambia o restablece su contraseña. Con `eeffbb6`, el interruptor empezaba siempre apagado.
 
 #### TC-ADM-289 — Desbloquear una cuenta con «Resetear Intentos Fallidos»
 
@@ -5191,7 +5191,7 @@ Las historias de esta sección no tienen caso de uso propio: sus reglas se citan
 **Datos:** `POST /sucursales/previsualizar` multipart sin el campo `file`; y con un archivo vacío (0 bytes).
 **Pasos:**
 1. Envía cada petición.
-**Resultado esperado:** 400 con el texto plano «Debe adjuntar un archivo Excel.» (sin `code`).
+**Resultado esperado:** sin el campo `file`: 400 con un `ProblemDetails` de validación de modelo (`errors.file`, sin `code`); con el archivo de 0 bytes: 400 con el texto plano «Debe adjuntar un archivo Excel.» (sin `code`).
 
 ### HU-ADM-047 — Exportar una búsqueda a Excel
 
