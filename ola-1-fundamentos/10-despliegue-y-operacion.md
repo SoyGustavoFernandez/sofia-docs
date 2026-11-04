@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; el riesgo del script `0004` está reconciliado con `34089ec` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código y de archivos de configuración de ambos repositorios (solo lectura). No se ejecutó docker, ni compilación, ni servicios, ni navegador, ni llamadas a la API; no se abrió ningún `.env` real. `git status --short` en ambos repositorios: sin cambios sin commitear (no hay marcas «En curso»). |
 
@@ -334,9 +334,9 @@ El repositorio no documenta un procedimiento. Lo que se puede afirmar:
 
 - DbUp detiene la ejecución en el primer error, imprime el error y sale con `-1` (`Program.cs:36-45`). En el compose, `restart: on-failure` reintenta el contenedor (`docker-compose.yml:101`), por lo que una falla persistente se repetirá en bucle hasta que se corrija la causa.
 - Los scripts siguientes no se ejecutan; la API de la versión nueva puede esperar columnas o índices que no existen.
-- Como los scripts no abren transacciones y varios no tienen guardas (4.4), un fallo a mitad de un script sin guardas puede dejar objetos creados a medias; reintentar tal cual puede fallar por «ya existe» (deducción de los dos hechos anteriores; **No verificado** en ejecución). La salida segura es restaurar un respaldo anterior al intento (ver [4.7](#47-respaldos)) o limpiar a mano el estado parcial y reintentar.
+- Como los scripts no abren transacciones (salvo el `0004`, que desde `34089ec` abre una propia) y varios no tienen guardas (4.4), un fallo a mitad de un script sin guardas puede dejar objetos creados a medias; reintentar tal cual puede fallar por «ya existe» (deducción de los dos hechos anteriores; **No verificado** en ejecución). La salida segura es restaurar un respaldo anterior al intento (ver [4.7](#47-respaldos)) o limpiar a mano el estado parcial y reintentar.
 
-**Riesgo detectado en `0004_Seed_Digemid_Catalogo.sql`** (lectura del script; **No verificado** en ejecución): si existe una base de datos llamada `SofiaDb` y `DIGEMID_Catalogo_Productos` está vacía, inserta desde `[SofiaDb].[dbo].[DigemidCatalogo]` (líneas 3-5 y 34); ningún script crea una tabla `DigemidCatalogo` (búsqueda en `SOFIA.DbUp` y en `docs/_inventario/tablas.csv`: sin resultados), y el nombre `SofiaDb` está escrito en el script. En un ambiente nuevo con la base llamada `SofiaDb`, como en el compose (`docker-compose.yml:46`), la sentencia referiría una tabla que no existe. Si la base se llama de otro modo, el script se omite con un mensaje (líneas 43-46) y el catálogo DIGEMID queda vacío hasta una carga masiva. Probar DbUp contra una base nueva antes de producción.
+**`0004_Seed_Digemid_Catalogo.sql` (actualizado con `sofia-apis` `34089ec`).** La versión anterior de este documento advertía que el script leía `[SofiaDb].[dbo].[DigemidCatalogo]`, una tabla que ningún script crea. Ese riesgo desapareció: el script ahora inserta 29 698 filas dentro de sí mismo, en una transacción de todo o nada (`SET XACT_ABORT ON` y `BEGIN TRANSACTION`, `0004:2-3`) que verifica el conteo (`:29883`) y los caracteres corruptos (`:29884`) antes del `COMMIT` (`:29885`). Lo que sí queda: no tiene guarda de «tabla vacía», así que ejecutarlo sobre una tabla con datos falla la verificación de conteo y se revierte; y es un script de casi 30 000 líneas. **No verificado** en ejecución (no se ejecutó DbUp). Probar DbUp contra una base nueva antes de producción.
 
 ### 4.6 Usuario de base de datos
 
@@ -564,7 +564,7 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 | Que 8080 sea el puerto HTTP por defecto de la imagen y el efecto de `UseHttpsRedirection` sin puerto HTTPS sobre las sondas | No se ejecutó la API en contenedor |
 | Compilación de la imagen de la API en `Release` con las reglas de SonarAnalyzer del `.editorconfig` | No se compiló |
 | Nombre de la tabla del diario de DbUp, modo de transacción por defecto y comportamiento ante un fallo parcial | Ningún archivo del repositorio lo define; no se ejecutó DbUp |
-| Que el script `0004_Seed_Digemid_Catalogo.sql` falle en una base nueva llamada `SofiaDb` (lee `[SofiaDb].[dbo].[DigemidCatalogo]`, que ningún script crea) | No se ejecutó; es una lectura del script |
+| Que el script `0004_Seed_Digemid_Catalogo.sql` (seed de 29 698 filas, `34089ec`) se ejecute sin errores en una base nueva | No se ejecutó; es una lectura del script |
 | Permisos que necesita el usuario de DbUp para `EnsureDatabase` | Comportamiento de la biblioteca |
 | Que el archivo de log diario deje de escribir al llegar a 50 MB | Comportamiento de `Serilog.Sinks.File` sin `rollOnFileSizeLimit`; no se ejecutó |
 | Contenido de los archivos de log reales y del `.env` real | No se abrieron |
@@ -586,7 +586,7 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 
 ### Hallazgos relevantes
 
-- `0004_Seed_Digemid_Catalogo.sql` depende de una tabla (`DigemidCatalogo`) que ningún script crea y del nombre `SofiaDb` escrito en el script (ver [4.5](#45-si-un-script-falla)).
+- `0004_Seed_Digemid_Catalogo.sql` ya no depende de otra base (desde `34089ec` lleva las filas dentro del script); queda sin verificar que se ejecute sin errores en una base nueva (ver [4.5](#45-si-un-script-falla)).
 - `sofia-api` no depende de `sofia-dbup` en el compose.
 - El compose usa `sa` para la API y para DbUp.
 - El archivo de log diario tiene `fileSizeLimitBytes` sin `rollOnFileSizeLimit`.
