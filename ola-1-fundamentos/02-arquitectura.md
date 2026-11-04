@@ -3,13 +3,17 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código fuente (sin compilar, sin ejecutar la aplicación ni llamar a la API). Conteos tomados de `docs/_inventario/*.csv` y contrastados con el árbol de archivos |
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-04)
+
+Revisión de consistencia (`18-revision-de-consistencia.md`). Solo cambia una cita: la ubicación del SQL dinámico de `0005_Empresa_MultiTenant.sql` pasa de `:54-62` a `:59-67` porque `sofia-apis` `34089ec` separó el script en lotes con `GO`.
 
 ### Versión 1.1 (2026-10-14)
 
@@ -171,7 +175,7 @@ flowchart TB
 | Usuario con rol `Admin` | El nombre del rol es la constante `Rol.AdminRoleName = "Admin"` (`sofia-apis/src/SOFIA.Domain/Entities/Rol.cs:10`). Ese rol salta la comprobación de permisos (`sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:31-36`) y ve todas las sucursales de su empresa (`sofia-apis/src/SOFIA.Application/Common/Services/SucursalAccess.cs:19`) |
 | Usuarios con otros roles | Cualquier rol con permisos `Módulo:Acción`; el handler los lee por nombre de rol (`PermissionAuthorizationHandler.cs:44-55,68-72`) |
 
-**Roles sembrados.** El script `sofia-apis/src/SOFIA.DbUp/Scripts/0002_SeedBaseRoles.sql:5-39` inserta seis roles: `Admin`, `Gerente`, `Farmaceutico`, `Tecnico`, `Cajero` y `Auditor`. Ese script corre antes de que exista la columna `TenantId` (la agrega `0005_Empresa_MultiTenant.sql:54-62`) y ningún script posterior le asigna valor (búsqueda de `SET TenantId` en `Scripts/*.sql`: sin resultados). El filtro global de empresa descarta las filas con `TenantId` nulo (`sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:98-109`). Lo que se deduce del código: esos seis roles sembrados no son visibles para ninguna empresa a través de la API, y el único rol que recibe una empresa al registrarse es su propio `Admin` (`RegistrarEmpresaCommandHandler.cs:113-114`). **No verificado** contra la base de datos.
+**Roles sembrados.** El script `sofia-apis/src/SOFIA.DbUp/Scripts/0002_SeedBaseRoles.sql:5-39` inserta seis roles: `Admin`, `Gerente`, `Farmaceutico`, `Tecnico`, `Cajero` y `Auditor`. Ese script corre antes de que exista la columna `TenantId` (la agrega `0005_Empresa_MultiTenant.sql:59-67`) y ningún script posterior le asigna valor (búsqueda de `SET TenantId` en `Scripts/*.sql`: sin resultados). El filtro global de empresa descarta las filas con `TenantId` nulo (`sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:98-109`). Lo que se deduce del código: esos seis roles sembrados no son visibles para ninguna empresa a través de la API, y el único rol que recibe una empresa al registrarse es su propio `Admin` (`RegistrarEmpresaCommandHandler.cs:113-114`). **No verificado** contra la base de datos.
 
 **Sistemas externos**
 
