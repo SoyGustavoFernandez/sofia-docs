@@ -17,7 +17,7 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 
 ### Reglas de negocio
 
-785 reglas con identificador `RN-<MÓDULO>-<nnn>`, dónde se aplican, el código de error que devuelven, el código HTTP y el mensaje que ve el usuario.
+789 reglas con identificador `RN-<MÓDULO>-<nnn>`, dónde se aplican, el código de error que devuelven, el código HTTP y el mensaje que ve el usuario.
 
 | Documento | Contenido |
 |---|---|
@@ -39,10 +39,10 @@ Cada documento sale de leer el código, los scripts de base de datos y los texto
 | [Matriz de permisos](ola-1-fundamentos/05-seguridad/05b-matriz-de-permisos.md) | Módulo × acción × endpoint × pantalla, permisos necesarios por pantalla y roles base |
 | [Integraciones externas](ola-1-fundamentos/07-integraciones.md) | Gemini, Presidio, correo, y el estado real de SUNAT y DIGEMID |
 | [Guía del desarrollador](ola-1-fundamentos/08-guia-del-desarrollador.md) | Requisitos, entorno local, configuración, comandos de calidad, hooks de commit y convenciones |
-| [Catálogo de códigos de error](ola-1-fundamentos/21-catalogo-codigos-error.md) | Los 347 códigos de error con su HTTP, cuándo salen, la regla que los define y el mensaje que ve el usuario; códigos de validación dinámicos y códigos sin traducción |
+| [Catálogo de códigos de error](ola-1-fundamentos/21-catalogo-codigos-error.md) | Los 348 códigos de error con su HTTP, cuándo salen, la regla que los define y el mensaje que ve el usuario; códigos de validación dinámicos y códigos sin traducción |
 | [Carga masiva y exportación](ola-1-fundamentos/20-carga-masiva-y-exportacion.md) | Las 12 cargas masivas (plantilla, validaciones por fila y guardado) y las 22 exportaciones a Excel |
 | [Glosario](ola-1-fundamentos/06-glosario.md) | 133 términos de SUNAT, DIGEMID, caja, inventario, organización e IA, con lo que significan en el sistema y dónde aparecen |
-| [Pruebas automatizadas del backend](ola-1-fundamentos/09-pruebas/09a-backend.md) | Estrategia, catálogo de las 193 clases de prueba (1254 pruebas), cobertura por módulo y huecos |
+| [Pruebas automatizadas del backend](ola-1-fundamentos/09-pruebas/09a-backend.md) | Estrategia, catálogo de las 195 clases de prueba (1263 pruebas), cobertura por módulo y huecos |
 | [Pruebas automatizadas del SPA](ola-1-fundamentos/09-pruebas/09b-spa.md) | Estrategia, catálogo de los 75 specs, cobertura por pantalla y huecos |
 | [Despliegue y operación](ola-1-fundamentos/10-despliegue-y-operacion.md) | Componentes desplegables, docker-compose, configuración por entorno, base de datos, operación, CI y lo pendiente para Azure |
 | [Estado del sistema y deuda técnica](ola-1-fundamentos/11-estado-y-deuda-tecnica.md) | Estado de los 29 módulos, 23 funcionalidades pendientes o parciales, 82 elementos de deuda técnica verificados, decisiones de negocio frente al código y hallazgos ya resueltos |
@@ -128,20 +128,22 @@ Casos funcionales para ejecutar a mano en el SPA (o con un cliente HTTP en los m
 |---|---|
 | [Matriz de trazabilidad](ola-3-calidad/17-matriz-de-trazabilidad.md) | Cruce por script de las 789 reglas, 192 historias, 179 casos de uso, 1244 casos de prueba y 241 endpoints con pantallas, pruebas automatizadas, procesos y manual; resumen de cobertura por módulo y huecos explicados |
 
+### Cierre
+
+| Documento | Contenido |
+|---|---|
+| [Revisión de consistencia](ola-4-cierre/18-revision-de-consistencia.md) | Cada inconsistencia corregida entre documentos con su evidencia en el código, la reconciliación con los commits de código posteriores (`sofia-apis` `9c16f35`, `sofia-web-spa` `7070e1a`), las comprobaciones por script de toda la documentación y lo que queda pendiente |
+
 ### Inventarios base
 
 La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas por script desde el código (endpoints, permisos, tablas, códigos de error, rutas del SPA, pruebas). Son la lista de control contra la que se validan las tablas de cobertura.
-
-## En preparación
-
-- Revisión final de consistencia.
 
 ## Estructura
 
 ```
 _inventario/           Listas base generadas desde el código
 ola-1-fundamentos/     Reglas, arquitectura, datos, seguridad, integraciones, guía y pantallas
-ola-2-funcional/       Historias, casos de uso, procesos y manual de usuario (en preparación)
-ola-3-calidad/         Casos de prueba y trazabilidad (en preparación)
-ola-4-cierre/          Revisión de consistencia (en preparación)
+ola-2-funcional/       Historias, casos de uso, procesos y manual de usuario
+ola-3-calidad/         Casos de prueba y trazabilidad
+ola-4-cierre/          Revisión de consistencia
 ```
