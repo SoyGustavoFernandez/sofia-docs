@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-26 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
@@ -39,7 +39,7 @@ Todos los ejemplos usan los datos ficticios del manual: la empresa «Botica Manu
 | Crear, editar o eliminar en esas pantallas | Los mismos módulos | `Crear`, `Actualizar`, `Eliminar` |
 | Ver, crear, editar y eliminar proveedores | Proveedores | `Leer`, `Crear`, `Actualizar`, `Eliminar` |
 | Registrar un precio de compra | Proveedores | `Registrar precio de proveedor` |
-| Ver, crear, editar y eliminar aseguradoras | Seguros (la pantalla se llama «Aseguradoras») | `Leer`, `Crear`, `Actualizar`, `Eliminar` |
+| Ver, crear, editar y eliminar aseguradoras | Aseguradoras (su clave técnica es `Seguros`, que no verás en pantalla) | `Leer`, `Crear`, `Actualizar`, `Eliminar` |
 
 - Para elegir valores en los formularios, algunas pantallas consultan otros catálogos y necesitan además `Leer` en ellos: Medicamentos usa Laboratorios y Unidades de Medida; Jerarquías usa Medicamentos y Unidades de Medida; Presentaciones usa Medicamentos y Jerarquías de Unidades; Formulaciones usa Medicamentos, Ingredientes Activos y Unidades de Medida. El administrador los tiene todos.
 - En el menú lateral, las pantallas están en el grupo **CATÁLOGOS**: «Unidades de Medida», «Jerarquías de Unidades», «Laboratorios», «Ingredientes Activos», «Medicamentos», «Presentaciones de Venta», «Formulaciones Clínicas», «Proveedores» y «Aseguradoras».
@@ -561,7 +561,7 @@ Otros avisos posibles al guardar (No verificado en la aplicación: no se pudiero
 
 ## 9. Aseguradoras
 
-**Cómo llegar:** menú lateral › CATÁLOGOS › **Aseguradoras** (`/aseguradoras`). El título de la cabecera de estas pantallas es «Aseguradoras Médicas»; el menú y las migas dicen «Aseguradoras». En la pantalla de roles, el módulo de permisos se llama **Seguros**.
+**Cómo llegar:** menú lateral › CATÁLOGOS › **Aseguradoras** (`/aseguradoras`). El título de la cabecera de estas pantallas es «Aseguradoras Médicas»; el menú y las migas dicen «Aseguradoras». En la pantalla de roles, el módulo de permisos también se llama **Aseguradoras** (su clave técnica es `Seguros`, `roles.modulo.Seguros` en `public/i18n/roles/es.json:81`).
 
 ### 9.1 Qué es una aseguradora y para qué sirve hoy
 
@@ -577,7 +577,7 @@ Se crea una aseguradora ficticia:
 
 ### 9.2 La pantalla de búsqueda
 
-Título «Aseguradoras Médicas», migas «Inicio / Catálogos / Aseguradoras» y tarjeta «Búsqueda de Aseguradoras». Arriba a la derecha, **Carga Masiva** y **Nuevo** (con permiso `Crear` de Seguros). Filtros:
+Título «Aseguradoras Médicas», migas «Inicio / Catálogos / Aseguradoras» y tarjeta «Búsqueda de Aseguradoras». Arriba a la derecha, **Carga Masiva** y **Nuevo** (con permiso `Aseguradoras › Crear`). Filtros:
 
 | Filtro | Qué hace |
 |---|---|
@@ -605,11 +605,11 @@ Comprobado con dos aseguradoras: **Buscar** da «Resultados (2)»; «Nombre Come
 2. Guarda «Seguros Demo Vida S.A.» con el código `ASEG-DEMO-001`: aviso «Aseguradora guardada correctamente» y vuelves a la búsqueda.
 3. Intenta crear otra aseguradora con el código `aseg-demo-001`: aviso rojo **«Error al guardar la aseguradora»** y te quedas en el formulario. Este mismo aviso aparece ante **cualquier** error de guardado, también el de un código repetido: no existe un «ya existe» para aseguradoras. Si lo ves, revisa primero que el código no esté ya registrado.
 
-Si no ves **Nuevo**, te falta `Seguros › Crear`.
+Si no ves **Nuevo**, te falta `Aseguradoras › Crear`.
 
 ### 9.4 Ver, editar y eliminar
 
-1. Haz clic en el nombre en la tabla: se abre el detalle con los dos campos deshabilitados y el botón **Editar** (permiso `Seguros › Actualizar`).
+1. Haz clic en el nombre en la tabla: se abre el detalle con los dos campos deshabilitados y el botón **Editar** (permiso `Aseguradoras › Actualizar`).
 2. **Editar** habilita los campos y muestra **Cancelar**, **Guardar** y **Eliminar** (permiso `Eliminar`). **Cancelar** descarta los cambios (comprobado). **Guardar** muestra «Aseguradora guardada correctamente» y **te quedas** en el detalle, otra vez en modo ver, con los datos nuevos (comprobado).
 3. **Eliminar** abre «Confirmar eliminación» con «¿Estás seguro de que deseas eliminar esta aseguradora?» y **Cancelar** / **Confirmar**. **Cancelar** no borra nada. Al confirmar: «Aseguradora eliminada correctamente» y vuelves a la búsqueda (comprobado con una aseguradora de prueba, «Aseguradora Prueba Borrar», que ya no existe). SOFIA no comprueba dependencias al eliminar una aseguradora.
 4. Cualquier fallo al eliminar muestra «Error al eliminar la aseguradora». Si el detalle no abre: «Error al cargar la aseguradora».
@@ -715,7 +715,7 @@ Límites que aplica el guardado (no la vista previa): términos financieros de h
 
 ### 10.6 Carga masiva de aseguradoras
 
-**Cómo llegar:** `Aseguradoras` › **Carga Masiva** (`/aseguradoras/carga-masiva`), con `Seguros › Crear`. Plantilla comprobada: hoja «Plantilla» con las columnas `NombreComercial` y `CodigoIdentificadorNacional`, ambas obligatorias. Según el inventario, el archivo se baja como `plantilla-aseguradoras.xlsx` (No verificado en la aplicación: el nombre en disco).
+**Cómo llegar:** `Aseguradoras` › **Carga Masiva** (`/aseguradoras/carga-masiva`), con `Aseguradoras › Crear`. Plantilla comprobada: hoja «Plantilla» con las columnas `NombreComercial` y `CodigoIdentificadorNacional`, ambas obligatorias. Según el inventario, el archivo se baja como `plantilla-aseguradoras.xlsx` (No verificado en la aplicación: el nombre en disco).
 
 Prueba de la vista previa (comprobada; no se guardó): con cinco filas dijo «1 filas válidas» y «4 filas con error». Errores vistos: «El valor 'ASEG-DEMO-001' del campo 'codigoIdentificadorNacional' ya existe en el sistema», «El valor 'ASEG-REP-1' del campo 'codigoIdentificadorNacional' está duplicado en el archivo» (en **las dos** filas repetidas, incluida la primera, sin distinguir mayúsculas) y «El campo 'nombreComercial' es obligatorio».
 
@@ -723,7 +723,7 @@ Prueba de la vista previa (comprobada; no se guardó): con cinco filas dijo «1 
 
 ## 11. Lo que ve un cajero frente a un administrador
 
-Se entró al sistema con el cajero del manual (`carlos.cajero`, rol «Cajero»), que solo tiene `Medicamentos › Leer` y `Aseguradoras (Seguros) › Leer` entre las pantallas de este capítulo (capítulo 3, sección del rol «Cajero»).
+Se entró al sistema con el cajero del manual (`carlos.cajero`, rol «Cajero»), que solo tiene `Medicamentos › Leer` y `Aseguradoras › Leer` entre las pantallas de este capítulo (capítulo 3, sección del rol «Cajero»).
 
 | Qué | Administrador | Cajero (comprobado) |
 |---|---|---|
