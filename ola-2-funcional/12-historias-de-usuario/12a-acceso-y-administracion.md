@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-26 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
 | **Método** | Lectura de los documentos validados (reglas de negocio 01a v1.1, inventario de pantallas 19a y 19b v1.1, matriz de permisos 05b, autenticación 05a, manual de usuario capítulos 1 a 3, glosario) y comprobación puntual en el código. No se ejecutó la aplicación ni se llamó a la API: los mensajes exactos salen de los documentos fuente, que los comprobaron en la aplicación local. |
 
 ## 1. Cómo leer este documento
@@ -1771,7 +1771,7 @@ Escenario: Nadie cambia su propia sucursal base
   Dado que edito mi propio empleado y elijo otra sucursal base
   Cuando guardo
   Entonces la API responde 403 "Empleado.SucursalBase.AutoAsignacion"
-  Y veo "Error al guardar el empleado" sin más explicación
+  Y veo "No puedes cambiar tu propia sucursal base." (desde sofia-web-spa 37d053d; antes se veía "Error al guardar el empleado")
 
 Escenario: Edición simultánea con un valor único repetido
   Dado que otra persona guarda la misma licencia o correo a la vez
@@ -1946,8 +1946,8 @@ Escenario: El nivel mínimo en la pantalla es 1
 Escenario: El nombre no puede repetirse en la empresa
   Dado que ya existe el rol "Admin"
   Cuando creo un rol con nombre "Admin" y nivel 5
-  Entonces veo el aviso rojo "Error al guardar el rol" y me quedo en la pantalla
-  Y es la única forma en que el sistema avisa del nombre duplicado
+  Entonces veo el aviso rojo "Ya existe un rol con ese nombre." (desde sofia-web-spa 37d053d; antes "Error al guardar el rol") y me quedo en la pantalla
+  Y la API responde 400 "Rol.DuplicateName"
 
 Escenario: Nombre de 51 a 100 caracteres
   Dado que escribo un nombre de 60 caracteres (el campo admite hasta 100)
@@ -1972,7 +1972,7 @@ Escenario: Cancelar
   Entonces vuelvo a "/roles"
 ```
 
-> **Brecha conocida.** El formulario admite 100 caracteres de nombre pero la API 50; el formulario exige nivel mínimo 1 y la API acepta 0; el nombre duplicado (`Rol.DuplicateName`, que la API responde con 400 aunque su tipo es «Conflict») y los nombres largos terminan en el mismo genérico «Error al guardar el rol» (RN-ROL-002, RN-ROL-004 y RN-ROL-005; hallazgos 1, 2 y 4 de la sección 12.3 del catálogo).
+> **Brecha conocida.** El formulario admite 100 caracteres de nombre pero la API 50; el formulario exige nivel mínimo 1 y la API acepta 0; el nombre duplicado (`Rol.DuplicateName`, que la API responde con 400 aunque su tipo es «Conflict») ya tiene mensaje propio desde `37d053d` y los nombres largos terminan en el genérico «Error al guardar el rol» (RN-ROL-002, RN-ROL-004 y RN-ROL-005; hallazgos 1, 2 y 4 de la sección 12.3 del catálogo).
 
 ### HU-ADM-029 — Editar la descripción y el nivel de un rol
 
@@ -2096,7 +2096,7 @@ Escenario: Un permiso revocado se restaura en lugar de duplicarse
 Escenario: Un permiso no se asigna dos veces
   Dado que el rol ya tiene "Ventas › Leer"
   Cuando la API recibe otra asignación igual
-  Entonces responde 400 "Permiso.Duplicate" y la pantalla muestra "Error al guardar el rol"
+  Entonces responde 400 "Permiso.Duplicate" y la pantalla muestra "Ese permiso ya está asignado al rol." (desde sofia-web-spa 37d053d; antes "Error al guardar el rol")
   Pero la pantalla solo envía los permisos nuevos respecto de los cargados
 
 Escenario: La API no contrasta el permiso con el catálogo
@@ -2215,7 +2215,7 @@ Escenario: El rol tiene cuentas
   Dado que "Rol Prueba Eliminar" está asignado a la cuenta "pedro.prueba"
   Cuando confirmo la eliminación
   Entonces la API responde 400 "Rol.InUse"
-  Y veo el aviso rojo "Error al eliminar el rol" sin más explicación y el rol sigue existiendo
+  Y veo el aviso rojo "No se puede eliminar el rol porque tiene cuentas de usuario vinculadas." (desde sofia-web-spa 37d053d; antes "Error al eliminar el rol") y el rol sigue existiendo
   Y para poder eliminarlo, primero cambio el rol de esas cuentas ([HU-ADM-037](#hu-adm-037--asignar-o-cambiar-el-rol-de-una-cuenta))
 
 Escenario: Un rol nuevo con el mismo nombre no hereda permisos
@@ -2295,8 +2295,9 @@ Escenario: Al guardar se vuelve a validar cada fila
   Entonces no se guarda ninguna fila y veo "Algunas filas tienen datos inválidos. Vuelve a subir el archivo y revisa la vista previa."
 
 Escenario: Vista previa sin archivo
-  Dado que llamo a "POST /api/v1/Roles/previsualizar" sin adjuntar un archivo
-  Entonces la API responde 400 con el texto "Debe adjuntar un archivo Excel."
+  Dado que llamo a "POST /api/v1/Roles/previsualizar" sin el campo de archivo
+  Entonces la API responde 400 con un ProblemDetails de validación (errors.file)
+  Y si el archivo llega con 0 bytes responde 400 con el texto "Debe adjuntar un archivo Excel."
   Y la pantalla, que siempre envía un archivo, mostraría "Error al procesar el archivo"
 ```
 
@@ -2429,7 +2430,7 @@ Escenario: Cancelar
   Entonces vuelvo a "/cuentas"
 ```
 
-> **Brecha conocida.** En la creación no se traduce ningún código de la API: `Auth.DuplicateAccount`, `Auth.DuplicateUsername` y los demás terminan en «Error al guardar la cuenta». El mensaje de longitud dice 100 pero el límite real es 50. La contraseña de 1 a 7 caracteres no muestra mensaje. El campo de contraseña no tiene botón para mostrar el texto. El formulario no avisa de que la persona deberá cambiar la contraseña al ingresar (la API lo impone). Fuentes: inventario 19b §5.2; manual cap. 3, §7.2.
+> **Brecha conocida.** Desde `sofia-web-spa` `37d053d` la creación traduce `Auth.DuplicateAccount` («Este empleado ya tiene una cuenta de usuario vinculada.») y `Auth.DuplicateUsername` («Ya existe una cuenta con ese nombre de usuario.»); el resto de los códigos terminan en «Error al guardar la cuenta». El mensaje de longitud dice 100 pero el límite real es 50. La contraseña de 1 a 7 caracteres no muestra mensaje. El campo de contraseña no tiene botón para mostrar el texto. El formulario no avisa de que la persona deberá cambiar la contraseña al ingresar (la API lo impone). Fuentes: inventario 19b §5.2; manual cap. 3, §7.2.
 
 ### HU-ADM-036 — Administrar el estado de una cuenta
 
@@ -2469,6 +2470,7 @@ Escenario: Reactivar una cuenta
 Escenario: Forzar el cambio de contraseña
   Dado que enciendo "Forzar Cambio de Contraseña" y guardo
   Entonces la ficha muestra "Requiere Cambio de Clave: Sí"
+  Y al volver a editar, el interruptor aparece encendido y deshabilitado con la nota "Ya requiere cambio de clave; se quita cuando el usuario la cambie." (desde sofia-web-spa 7070e1a; No verificado en la aplicación)
   Y en su próximo ingreso la persona deberá cambiar su contraseña ([HU-ADM-007](#hu-adm-007--cambiar-la-contraseña-cuando-es-obligatorio))
   Y el interruptor empieza siempre apagado y no hay forma de apagarlo a mano: se apaga solo cuando la persona cambia o restablece su contraseña
 
@@ -3147,8 +3149,9 @@ Escenario: Errores genéricos
   Entonces veo "Error al procesar el archivo" o "Error al guardar los registros"
 
 Escenario: Vista previa sin archivo adjunto
-  Dado que llamo a la API sin adjuntar el archivo
-  Entonces responde 400 con el texto plano "Debe adjuntar un archivo Excel."
+  Dado que llamo a la API sin el campo de archivo
+  Entonces responde 400 con un ProblemDetails de validación (errors.file)
+  Y si el archivo llega con 0 bytes responde 400 con el texto plano "Debe adjuntar un archivo Excel."
 
 Escenario: Resolver nombres de otros catálogos
   Dado que una carga referencia otro catálogo por nombre
@@ -3404,7 +3407,7 @@ Escenario: El mensaje del backend no se muestra
   Entonces ninguna pantalla lo muestra: usa su mapa de códigos o su genérico
 ```
 
-> **Brecha conocida.** No existe un traductor global de códigos; cada pantalla declara su mapa. Los códigos de negocio de este alcance sin texto propio están listados en el hallazgo 2 de la sección 12.3 del catálogo de reglas (por ejemplo `Rol.DuplicateName`, `Rol.InUse`, `Empresa.NotFound`, `Empresa.RUC.Duplicado` en el detalle de empresa, `Empleado.SucursalBase.AutoAsignacion` y `Export.TooManyRows`). Las claves `errors.forbidden`, `errors.unauthorized`, `errors.notFound`, `errors.serverError` y `errors.networkError` existen y no se usan.
+> **Brecha conocida.** No existe un traductor global de códigos; cada pantalla declara su mapa. Los códigos de negocio de este alcance sin texto propio están listados en el hallazgo 2 de la sección 12.3 del catálogo de reglas (por ejemplo `Rol.NotFound`, `Empresa.NotFound`, `Empresa.RUC.Duplicado` en el detalle de empresa y `Export.TooManyRows`; `Rol.DuplicateName`, `Rol.InUse`, `Permiso.Duplicate`, `Auth.DuplicateAccount`, `Auth.DuplicateUsername` y `Empleado.SucursalBase.AutoAsignacion` ya tienen texto propio desde `sofia-web-spa` `37d053d`). Las claves `errors.forbidden`, `errors.unauthorized`, `errors.notFound`, `errors.serverError` y `errors.networkError` existen y no se usan.
 
 ---
 
