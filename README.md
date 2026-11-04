@@ -96,7 +96,7 @@ Cada pantalla enrutada con sus campos, validaciones, botones, permisos, mensajes
 
 ### Manual de usuario
 
-Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pantalla. Se publica capítulo por capítulo.
+Escrito recorriendo cada paso en la aplicación, con los textos exactos de la pantalla. Empieza por el [documento integrador](ola-2-funcional/manual-usuario/manual-de-usuario.md): presentación, recorridos por rol, índice completo, tareas frecuentes y limitaciones conocidas.
 
 | Capítulo | Contenido |
 |---|---|
@@ -134,7 +134,7 @@ La carpeta [`_inventario`](_inventario/README.md) contiene las listas generadas 
 
 ## En preparación
 
-- Manual de usuario en un solo documento con índice.
+- Revisión final de consistencia.
 
 ## Estructura
 
