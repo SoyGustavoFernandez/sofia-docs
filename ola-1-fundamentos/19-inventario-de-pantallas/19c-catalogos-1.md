@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-13 |
-| **Backend** | `sofia-apis`, rama `main`, commit `27597cd` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `27597cd`; la pantalla del catálogo DIGEMID está reconciliada con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `01b8260` |
 | **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear (ver §7). |
 
@@ -759,7 +759,7 @@ Si escribes `/digemid-catalogo/nueva` en la barra de direcciones: el guard exige
 ### 5.1 `/digemid-catalogo` — Catálogo DIGEMID (búsqueda)
 
 - **Componente:** `DigemidCatalogoSearchComponent` (`app/pages/digemid-catalogo/digemid-catalogo-search/digemid-catalogo-search.component.ts`, `.html`). Scope `digemidCatalogo`.
-- **Para qué sirve:** consultar el catálogo de productos DIGEMID de la empresa por código y nombre, abrir un producto, exportar la lista y entrar a la carga masiva.
+- **Para qué sirve:** consultar el catálogo de productos DIGEMID por código y nombre, abrir un producto, exportar la lista y entrar a la carga masiva. Desde `sofia-apis` `9c16f35` la lista y el detalle incluyen también el catálogo compartido (productos sin empresa, de solo lectura para todas las empresas; 01b RN-DIG-008); la pantalla no distingue visualmente entre productos propios y compartidos (la plantilla no lee ningún campo de empresa, y la API no lo devuelve: `DigemidProductoDto` no trae ningún campo de empresa, `GetDigemidCatalogoQuery.cs:9`). **No verificado en la aplicación.**
 - **Cómo se llega:** menú lateral, grupo «DIGEMID» → «Catálogo DIGEMID» (`nav.catalogoDigemid`); botón volver y migas del detalle y de la carga masiva; redirección tras guardar una carga masiva.
 - **Permiso de ruta:** `DIGEMID:Leer`. Sin permiso: aviso y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Catálogo DIGEMID» (`digemidCatalogo.title`); migas «Inicio» (`breadcrumbs.home`) / «DIGEMID» (`breadcrumbs.digemid`, sin enlace) / «Catálogo DIGEMID» (`breadcrumbs.digemid-catalogo`, activa); sin botón volver (`.html:4-7`, `.ts:47-51`). Tarjeta de filtros con título «Búsqueda en Catálogo DIGEMID» (`digemidCatalogo.search.title`) y el subtítulo común.
