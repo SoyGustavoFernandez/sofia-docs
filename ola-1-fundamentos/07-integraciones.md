@@ -3,13 +3,21 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; la sección DIGEMID está reconciliada con `34089ec` y `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código, scripts DbUp, archivos de configuración versionados (`appsettings*.json`, `docker-compose.yml`, `.env.example`, `angular.json`, `staticwebapp.config.json`) y archivos i18n. No se llamó a ningún servicio externo, no se usó el navegador ni la API local, y no se abrió ningún archivo `.env` real ni secretos de usuario. |
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-04)
+
+Revisión de consistencia (`18-revision-de-consistencia.md`), reconciliada con `sofia-apis` `34089ec` y `9c16f35`.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| DIGEMID, carga inicial (seed) y pendiente 8 | El `0004` copiaba tres columnas desde `[SofiaDb].[dbo].[DigemidCatalogo]`, una tabla que ningún script crea. | El `0004` inserta 29 698 filas dentro del propio script y las filas quedan como catálogo compartido de solo lectura para todas las empresas. | `34089ec`, `9c16f35` |
 
 ### Versión 1.1 (2026-10-14)
 
@@ -678,12 +686,12 @@ sequenceDiagram
 | Aspecto | Detalle | Fuente |
 |---|---|---|
 | Tabla | `DIGEMID_Catalogo_Productos` (`Cod_Prod`, `Nom_Prod`, `Concent`, `Forma_Farmaceutica`, `Fraccion`, `Registro_Sanitario`, `Titular`, `Estado` y columnas de auditoría) | `sofia-apis/src/SOFIA.DbUp/Scripts/0003_Digemid_Catalogo.sql:1-23` |
-| Carga inicial (seed) | `0004_Seed_Digemid_Catalogo.sql` copia filas desde otra tabla de SQL Server, `[SofiaDb].[dbo].[DigemidCatalogo]`, solo si existe la base `SofiaDb` y la tabla de destino está vacía. Copia `Cod_Prod`, `Nom_Prod` y `Concent`; deja en `NULL` forma farmacéutica, fracción, registro sanitario y titular; y fija `Estado = 'Activo'` y `CreatedBy = 'SYSTEM-MIGRATION'`. Si la base `SofiaDb` no existe, solo imprime un mensaje | `sofia-apis/src/SOFIA.DbUp/Scripts/0004_Seed_Digemid_Catalogo.sql:3-46` |
+| Carga inicial (seed) | Desde `sofia-apis` `34089ec`, `0004_Seed_Digemid_Catalogo.sql` inserta dentro del propio script 29 698 filas del catálogo oficial (código, nombre, concentración, forma farmacéutica y su versión simplificada, presentación, fracción, registro sanitario y su vencimiento, titular), con `Estado = 'Activo'` y `CreatedBy = 'System'`, en una sola transacción que verifica el conteo antes de confirmar. Ya no lee otra base de datos (la versión anterior copiaba desde `[SofiaDb].[dbo].[DigemidCatalogo]`). Las filas quedan sin empresa y, desde `9c16f35`, son un catálogo compartido de solo lectura para todas las empresas | `sofia-apis/src/SOFIA.DbUp/Scripts/0004_Seed_Digemid_Catalogo.sql:2-5`, `:29883-29885`; `sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:109-113` |
 | Carga masiva | Plantilla Excel, previsualización y carga por lotes desde el SPA, con permiso `DIGEMID:Crear` | `sofia-apis/src/SOFIA.API/Controllers/DIGEMIDController.cs:97-127` |
 | Mantenimiento manual | Listar, ver, crear, actualizar, eliminar y exportar (`DIGEMID:Leer`, `Crear`, `Actualizar`, `Eliminar`) | `sofia-apis/src/SOFIA.API/Controllers/DIGEMIDController.cs:54-95`, `:133-135` |
 | Pantalla | Ruta `digemid-catalogo` del SPA | `sofia-web-spa/src/app/app.routes.ts:165-167` |
 
-El origen del seed es una tabla `dbo.DigemidCatalogo` que **ningún script DbUp crea** (la única referencia en `sofia-apis/src` es `0004_Seed_Digemid_Catalogo.sql:34`). Es decir, el catálogo inicial depende de datos preexistentes en el servidor de base de datos, no de una descarga. **No verificado**: de dónde salieron esos datos, y qué hace el script en un servidor donde la base se llama `SofiaDb` (como en `docker-compose.yml:46`) pero no tiene esa tabla.
+En la versión 1.0 de este documento el seed dependía de una tabla `dbo.DigemidCatalogo` que ningún script creaba; con `34089ec` el catálogo viaja dentro del script y esa dependencia desapareció. **No verificado**: que el script se ejecute sin errores en una base nueva (no se ejecutó DbUp) y de qué descarga oficial salió el CSV (el comentario del script solo dice «official CSV export», `0004:1`).
 
 ### 6.2 Cómo se usa
 
@@ -858,7 +866,7 @@ En el backend, la única configuración relacionada es CORS: en `Development` se
 | 5 | Cuál de los dos límites de 10 MB actúa primero en `POST /api/v1/Recetas/analizar` y la respuesta exacta | Requiere ejecutar la API |
 | 6 | Tiempos de espera efectivos de `HttpClient`, MailKit y el SDK de Azure | No se fijan en el código; son valores por defecto de cada librería |
 | 7 | Comportamiento de la API cuando `GeminiApi:ApiKey` o `GeminiApi:BaseUrl` están vacíos, y momento en que falla la falta de `PresidioApi:BaseUrl` | Deducido del código; no se ejecutó |
-| 8 | Origen de los datos de `[SofiaDb].[dbo].[DigemidCatalogo]` y comportamiento del script `0004` si la base existe pero la tabla no | Ningún script DbUp crea esa tabla; no se ejecutó DbUp |
+| 8 | Que el script `0004` (seed de 29 698 filas) se ejecute sin errores en una base nueva y de qué descarga oficial viene el CSV | No se ejecutó DbUp; el script solo dice «official CSV export» |
 | 9 | Que los iconos Iconify se pidan a la API pública en tiempo de ejecución y qué parte de las fuentes queda incrustada en la compilación de producción | No se usó el navegador ni se compiló el SPA |
 | 10 | Ausencia total de `fetch`, `XMLHttpRequest` y llamadas HTTP a otros hosts en el SPA | Comprobado por búsqueda de patrones, no por revisión archivo por archivo |
 
