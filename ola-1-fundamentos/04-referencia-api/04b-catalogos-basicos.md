@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `34089ec`; las notas del catálogo DIGEMID (apartado 5.1) están reconciliadas con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` |
 | **Método** | Lectura de código y llamadas reales a la API local |
 
@@ -1995,7 +1995,7 @@ HTTP/1.1 400 Bad Request
 
 ## 5. `DIGEMID`
 
-Un solo controlador (`sofia-apis/src/SOFIA.API/Controllers/DIGEMIDController.cs`, clase `DigemidController`) con tres funciones: el catálogo de productos DIGEMID de la empresa (con pantalla de búsqueda, detalle de solo lectura y carga masiva), el aislamiento de lotes en cuarentena y las actas de destrucción (estos dos últimos, **solo API, sin pantalla**). Ruta base: `/api/v1/DIGEMID` (el enrutamiento no distingue mayúsculas: las respuestas devuelven `Location` con `/api/v1/Digemid/…`). Permisos: [05b, apartado 3.2][05B].
+Un solo controlador (`sofia-apis/src/SOFIA.API/Controllers/DIGEMIDController.cs`, clase `DigemidController`) con tres funciones: el catálogo de productos DIGEMID (de la empresa y, desde `9c16f35`, el compartido de solo lectura; con pantalla de búsqueda, detalle de solo lectura y carga masiva), el aislamiento de lotes en cuarentena y las actas de destrucción (estos dos últimos, **solo API, sin pantalla**). Ruta base: `/api/v1/DIGEMID` (el enrutamiento no distingue mayúsculas: las respuestas devuelven `Location` con `/api/v1/Digemid/…`). Permisos: [05b, apartado 3.2][05B].
 
 - 5.1 Catálogo de productos: reglas [RN-DIG-001 a RN-DIG-013][DIG]. Pantallas: `/digemid-catalogo`, `/digemid-catalogo/:id` y `/digemid-catalogo/carga-masiva`. **No existe pantalla de alta, edición ni eliminación** (no hay ruta `/digemid-catalogo/nueva`): crear, editar y eliminar son «Solo API (sin pantalla)».
 - 5.2 Cuarentena y 5.3 actas de destrucción: reglas [RN-CUA-001 a RN-CUA-023][CUA]. Solo API (sin pantalla): el SPA no llama a `cuarentena`, `acta-destruccion` ni `actas` de este controlador. La única lectura indirecta es `GET /api/v1/Dashboard/cuarentena`, otro controlador, que alimenta la tarjeta «Lotes en cuarentena» del tablero.
@@ -2030,7 +2030,7 @@ Longitudes de las columnas: `codProd` 20, `nomProd` 255, `concent` 255, `formaFa
 
 #### `GET /api/v1/DIGEMID/catalogo`
 
-Lista los productos del catálogo con filtros y paginación, ordenados por nombre y luego por identificador. En la empresa de prueba el catálogo empezó vacío: el sembrado de catálogo del commit `34089ec` no aparece en esta empresa (apartado 6.1).
+Lista los productos del catálogo con filtros y paginación, ordenados por nombre y luego por identificador. En la empresa de prueba el catálogo empezó vacío: con `sofia-apis` `34089ec` el sembrado de catálogo no aparecía en esta empresa (apartado 6.1). **Desde `9c16f35` el listado, el detalle y la exportación incluyen también las filas del catálogo compartido (sin empresa)**; **No verificado en vivo**: las capturas de esta parte son anteriores a ese commit.
 
 | | |
 |---|---|
@@ -2148,9 +2148,9 @@ No existe validador FluentValidation para el alta; solo los guards de la entidad
 | 400 | `DIGEMID.CodProd` | `codProd` vacío o de solo espacios | RN-DIG-002 |
 | 400 | `DIGEMID.NomProd` | `nomProd` vacío o de solo espacios | RN-DIG-003 |
 | 400 | — (`ProblemDetails` de validación: `errors.Estado`) | `estado` ausente del JSON | RN-DIG-004 |
-| 409 | `DigemidCatalogo.CodProd.Duplicado` | Otro producto no eliminado usa el código | RN-DIG-006 |
+| 409 | `DigemidCatalogo.CodProd.Duplicado` | Otro producto no eliminado usa el código, de la empresa o del catálogo compartido (desde `9c16f35`) | RN-DIG-006 |
 | 409 | `Db.Duplicado` | Carrera: falla el índice único | RN-DIG-006 |
-| 500 | — (`traceId` en el cuerpo) | Algún texto supera la longitud de su columna (el error de SQL no está mapeado) | RN-DIG-005, [apartado 6.1](#61-comprobaciones-que-estaban-pendientes) |
+| 500 | — (`traceId` en el cuerpo) | Algún texto supera la longitud de su columna (el error de SQL no está mapeado) | RN-DIG-005, [apartado 6.1](#61-comprobaciones-que-estaban-pendientes-en-los-documentos-de-reglas-y-ahora-tienen-respuesta) |
 | 401 / 403 | — | Sin token o sin `DIGEMID:Crear` | [apartado 0][04A0] |
 
 **Ejemplo real:**
@@ -2211,8 +2211,9 @@ Actualiza todos los campos de un producto. **Solo API (sin pantalla).** A difere
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `DIGEMID.CodProd` / `DIGEMID.NomProd` | Código o nombre vacíos | RN-DIG-002, RN-DIG-003 |
+| 403 | `DigemidCatalogo.Global.SoloLectura` | El producto es del catálogo compartido (sin empresa); desde `9c16f35`. **No verificado en vivo** | RN-DIG-008 |
 | 404 | `DigemidCatalogo.NotFound` | No existe o está eliminado | RN-DIG-007 |
-| 409 | `DigemidCatalogo.CodProd.Duplicado` | Otro producto usa el código | RN-DIG-006 |
+| 409 | `DigemidCatalogo.CodProd.Duplicado` | Otro producto usa el código (de la empresa o del catálogo compartido) | RN-DIG-006 |
 | 401 / 403 | — | Sin token o sin `DIGEMID:Actualizar` | [apartado 0][04A0] |
 
 **Ejemplo real:**
@@ -2261,6 +2262,7 @@ Elimina (borrado lógico) un producto del catálogo, sin validar dependencias. *
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
+| 403 | `DigemidCatalogo.Global.SoloLectura` | El producto es del catálogo compartido (sin empresa); desde `9c16f35`. **No verificado en vivo** | RN-DIG-008 |
 | 404 | `DigemidCatalogo.NotFound` | No existe o ya está eliminado | RN-DIG-007 |
 | 401 / 403 | — | Sin token o sin `DIGEMID:Eliminar` | [apartado 0][04A0] |
 
@@ -2763,7 +2765,7 @@ HTTP/1.1 200 OK
 | Multiplicador con coma en la carga masiva (nota de [01b, apartado 5][JER]) | Vista previa y carga masiva de `1,5` | La vista previa lo da por válido y la carga masiva lo guarda como **15**. |
 | Alta del catálogo DIGEMID sin `estado` ([RN-DIG-004][DIG]) | `POST /api/v1/DIGEMID/catalogo` sin el campo `estado` | `400` de validación de ASP.NET (`errors.Estado`: «The Estado field is required.»), no un error de negocio. Con `estado: ""` el guard de la entidad no lo rechaza. |
 | Texto más largo que la columna en el catálogo DIGEMID ([RN-DIG-005][DIG]) | `POST /api/v1/DIGEMID/catalogo` con `codProd` de 35 caracteres (la columna admite 20) | `500` con `traceId` y mensaje genérico: el error de truncamiento de SQL Server no está mapeado por el manejador global. |
-| Productos sembrados del catálogo DIGEMID (nota de [01b, apartado 13][DIG]) | `GET /api/v1/DIGEMID/catalogo` sin filtros en una empresa recién creada | Solo aparecen los dos productos creados para esta parte (`totalCount: 2`). El sembrado del commit `34089ec` (`0004_Seed_Digemid_Catalogo.sql`, que inserta sin `TenantId`) no es visible para esta empresa. Los productos sembrados no se ven en ninguna empresa por API. |
+| Productos sembrados del catálogo DIGEMID (nota de [01b, apartado 13][DIG]) | `GET /api/v1/DIGEMID/catalogo` sin filtros en una empresa recién creada | Solo aparecen los dos productos creados para esta parte (`totalCount: 2`). El sembrado del commit `34089ec` (`0004_Seed_Digemid_Catalogo.sql`, que inserta sin `TenantId`) no era visible para esta empresa: en ese commit los productos sembrados no se veían en ninguna empresa por API. **Desde `9c16f35` sí se ven** (catálogo compartido de solo lectura, 01b RN-DIG-008); **No verificado en vivo**. |
 
 ### 6.2 Hallazgos del código y contradicciones con los documentos previos
 
@@ -2774,7 +2776,7 @@ HTTP/1.1 200 OK
 5. **Tipo de contenido de algunos errores.** Los errores que genera el manejador global (`CargaMasiva.Archivo.Invalido`, `Db.Duplicado`, `Request.TooLarge`) llegan como `application/json` y con `traceId`; los errores de negocio de los handlers llegan como `application/problem+json` y sin `traceId`.
 6. **Cuarentena y actas.** Aislar un lote y generar un acta responden `200` (no `201`). El acta no se relaciona con los registros de cuarentena (RN-CUA-017) y no hay forma de liberar un lote retenido (RN-CUA-009): ambos ya figuran en [01d][CUA].
 7. **`PUT /api/v1/DIGEMID/catalogo/{id}`** es el único `PUT` de esta parte sin la comprobación «ID mismatch» (las otras nunca se cumplen); el efecto es el mismo.
-8. **El commit `34089ec` (posterior a la línea base `43f5529`)** solo cambia scripts DbUp (`0003`, `0004`, `0005`). La tabla `DIGEMID_Catalogo_Productos` tiene ahora tres columnas nuevas (`Forma_Farmaceutica_Simplificada`, `Presentacion`, `Fecha_Vencimiento_Registro`) que **no** están en la entidad ni en la API. El commit `9ad15f0` del SPA solo cambia la publicación de la imagen. No cambió ningún controlador, comando, consulta ni pantalla de esta parte entre la línea base y estos commits (comparado con `git diff` sobre las carpetas de cada módulo).
+8. **Los commits `34089ec` y `9c16f35` (posteriores a la línea base `43f5529`).** `34089ec` solo cambia scripts DbUp (`0003`, `0004`, `0005`); `9c16f35` (31 de octubre, posterior a las capturas de esta parte) hace que las filas sin empresa del catálogo sean visibles para todas y de solo lectura (editar o eliminar responde 403 `DigemidCatalogo.Global.SoloLectura`; ver las fichas de `PUT` y `DELETE`). Detalle de `34089ec`: La tabla `DIGEMID_Catalogo_Productos` tiene ahora tres columnas nuevas (`Forma_Farmaceutica_Simplificada`, `Presentacion`, `Fecha_Vencimiento_Registro`) que **no** están en la entidad ni en la API. El commit `9ad15f0` del SPA solo cambia la publicación de la imagen. No cambió ningún controlador, comando, consulta ni pantalla de esta parte entre la línea base y estos commits (comparado con `git diff` sobre las carpetas de cada módulo).
 
 ### 6.3 No verificado
 
