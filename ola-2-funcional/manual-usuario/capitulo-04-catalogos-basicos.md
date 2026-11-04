@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` (recorrido); la sección 8 está reconciliada con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
@@ -53,7 +53,7 @@ Las jerarquías de unidades (cuántos blísteres entran en una caja, por ejemplo
 | **Ingrediente activo** | La sustancia que produce el efecto del medicamento (por ejemplo, el paracetamol). Se identifica con su **DCI** y su **código ATC** | Se asocia a los medicamentos mediante las formulaciones clínicas (capítulo 5) |
 | **DCI** (denominación común internacional) | El nombre único, reconocido en todo el mundo, de un principio activo; también se conoce como nombre genérico. Ejemplos: «Paracetamol», «Amoxicilina» | Es el **nombre del ingrediente activo** en SOFIA. No puede repetirse en tu empresa |
 | **Código ATC** | Código del sistema ATC de la OMS (clasificación anatómica, terapéutica y química), que ordena cada principio activo en cinco niveles. Un ejemplo con el formato real: `N02BE01` | Es un dato obligatorio del ingrediente. SOFIA **no valida** su estructura: acepta cualquier texto de hasta 15 caracteres, y dos ingredientes pueden tener el mismo código |
-| **Catálogo DIGEMID** | La relación de productos farmacéuticos registrados ante DIGEMID (la autoridad peruana de medicamentos), con su código, nombre, concentración, forma farmacéutica, registro sanitario, titular y estado | Es una tabla **local** de consulta: SOFIA **no** se conecta a DIGEMID. Cuando analizas una receta con IA, SOFIA busca en este catálogo el nombre de cada medicamento detectado y, si lo encuentra, lo marca como «validado por DIGEMID» |
+| **Catálogo DIGEMID** | La relación de productos farmacéuticos registrados ante DIGEMID (la autoridad peruana de medicamentos), con su código, nombre, concentración, forma farmacéutica, registro sanitario, titular y estado | Es una tabla **local** de consulta (el catálogo nacional compartido por todas las empresas, más los productos que cargue tu empresa): SOFIA **no** se conecta a DIGEMID. Cuando analizas una receta con IA, SOFIA busca en este catálogo el nombre de cada medicamento detectado y, si lo encuentra, lo marca como «validado por DIGEMID» |
 
 Fuente de las definiciones: glosario del proyecto (`06-glosario.md`: «Unidad base», «Unidad de medida», «Laboratorio», «DCI», «Código ATC», «Catálogo DIGEMID») y regla RN-REC-023 para el uso del catálogo en el análisis de recetas.
 
@@ -327,11 +327,11 @@ Permisos: `Actualizar` para **Editar** y `Eliminar` para **Eliminar**, ambos del
 
 ### 8.1 Qué es y para qué lo usa SOFIA
 
-DIGEMID es la Dirección General de Medicamentos, Insumos y Drogas del Ministerio de Salud. Su relación de productos farmacéuticos registrados es la base de este catálogo. En SOFIA el catálogo es una **tabla local de tu empresa**: la llenas tú cargando un Excel, y SOFIA **no** se conecta a DIGEMID para actualizarla ni consultarla.
+DIGEMID es la Dirección General de Medicamentos, Insumos y Drogas del Ministerio de Salud. Su relación de productos farmacéuticos registrados es la base de este catálogo. En SOFIA el catálogo es una **tabla local** que mezcla dos clases de productos: el **catálogo nacional compartido** (sin empresa, de solo lectura, que ven todas las empresas) y los productos de **tu empresa**, que llenas tú cargando un Excel. SOFIA **no** se conecta a DIGEMID para actualizarla ni consultarla. Lo del catálogo compartido viene de `sofia-apis` `9c16f35` y es **No verificado en la aplicación**: este capítulo se recorrió antes de ese commit.
 
 Se usa para el **análisis de recetas con IA** (capítulo de recetas): por cada medicamento que la IA detecta en la foto de una receta, SOFIA busca su nombre en este catálogo; si encuentra coincidencias, marca el medicamento como «validado por DIGEMID» (con la razón «Validado por DIGEMID (nombre)»); si no, queda como «Detectado en receta». Un catálogo vacío no impide analizar recetas, pero ningún medicamento saldrá validado. (Fuente: regla RN-REC-023; el análisis de recetas se recorre en un capítulo posterior.)
 
-Una empresa recién registrada tiene el catálogo **vacío**: comprobado, la búsqueda de la empresa de prueba mostró «Resultados (0)» antes de cargar nada.
+Con la versión `43f5529` una empresa recién registrada tenía el catálogo **vacío**: se comprobó que la búsqueda de la empresa de prueba mostró «Resultados (0)» antes de cargar nada. Desde `9c16f35` una empresa nueva debería ver también el catálogo compartido (29 698 productos si la base se creó con el script `0004` de `34089ec`); **No verificado en la aplicación**. Los productos compartidos no se pueden editar ni eliminar (la pantalla no ofrece esas acciones; por API responde 403), y no puedes cargar un código que ya exista en ellos: la carga masiva lo omite como duplicado.
 
 ### 8.2 Qué puedes hacer y qué no en esta pantalla
 
@@ -577,7 +577,7 @@ El inventario `19c-catalogos-1.md` y la referencia `20-carga-masiva-y-exportacio
 | 2 | 20 §3.5 y 01b RN-LAB-015 | La vista previa no revisa el código identificador repetido | Confirmado: la fila salió válida y el guardado informó «Se guardaron 0 registros correctamente» (un mensaje de éxito con cero registros) |
 | 3 | 20 §3.2 y 01b RN-DIG-005 | La vista previa no valida longitudes y el guardado sí | Confirmado: un registro sanitario de 60 caracteres salió válido y el guardado completo fue rechazado con «Algunas filas tienen datos inválidos. Vuelve a subir el archivo y revisa la vista previa.» |
 | 4 | 20 §3.12 y 3.2 | Las filas repetidas en el archivo quedan con error | Confirmado, incluida la **primera** aparición (`LT` x2 en unidades; `DEMO-0008` y `demo-0008` en DIGEMID) |
-| 5 | 06-glosario («Catálogo DIGEMID») y 01b nota de RN-DIG | El catálogo se siembra con el script `0004_Seed_Digemid_Catalogo.sql`; 01b dice «No verificado» si esos productos son visibles para cada empresa | En la empresa de prueba, recién registrada, la búsqueda del catálogo mostró «Resultados (0)»: no se ve ningún producto sembrado |
+| 5 | 06-glosario («Catálogo DIGEMID») y 01b nota de RN-DIG | El catálogo se siembra con el script `0004_Seed_Digemid_Catalogo.sql`; 01b dice «No verificado» si esos productos son visibles para cada empresa | En la empresa de prueba, recién registrada, la búsqueda del catálogo mostró «Resultados (0)»: no se ve ningún producto sembrado (resultado con `43f5529`; desde `9c16f35` el catálogo sembrado es compartido y visible, **No verificado en la aplicación**) |
 | 6 | 19c §5.1 y 01b RN-DIG-009 | Los filtros buscan «contiene» | Además, el filtro «Nombre del Producto» **distingue los acentos** (`cápsula` no encuentra «CAPSULA»), aunque no distingue mayúsculas. Ningún documento lo menciona |
 | 7 | 19c §5 (abrir `/digemid-catalogo/nueva`) | «Error al cargar el producto DIGEMID» con el formulario vacío | Formulario vacío y deshabilitado; y, al recargar la página directamente en esa dirección, el aviso rojo mostró la clave sin traducir `digemidCatalogo.detail.load-error` (el aviso salió antes de que cargaran los textos del catálogo) |
 | 8 | 19c §0 (crear con éxito navega a la búsqueda) | Navega a la búsqueda | Coincide; con los filtros vacíos y sin tabla, como en Sucursales (capítulo 2) |
