@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código y de los documentos validados de `ola-1-fundamentos` y del manual de usuario (capítulos 1 a 3). Verificaciones puntuales en el código (marcadas con `archivo:línea`). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
@@ -102,7 +102,7 @@ sequenceDiagram
     A->>D: Busca RUC y usuario existentes
     D-->>A: Sin coincidencias
     A->>D: Inserta Empresas, Sucursales, Empleados, Seguridad_Cuentas, Seguridad_Roles, Seguridad_Cuentas_Roles
-    A-->>S: 200 con token de acceso y cookie refresh_token
+    A-->>S: 201 con token de acceso y cookie refresh_token
     S-->>U: Empresa registrada correctamente. Bienvenido
     S->>S: Navega a /dashboard
 ```
@@ -114,7 +114,7 @@ sequenceDiagram
 | 3 | API | Valida el request (nombre ≤ 200, RUC exacto de 11 dígitos, usuario 4 a 50, contraseña ≥ 8, dirección obligatoria ≤ 255, correo válido ≤ 254) | idem | RN-EMP-002 a RN-EMP-010, RN-AUT-026 | Un fallo devuelve 400 con código `RegistrarEmpresaCommand.<Propiedad>` |
 | 4 | API | Comprueba que el RUC y el usuario no existan | idem | RN-EMP-005, RN-CTA-007 | Si existen: 409 |
 | 5 | API | Crea en una sola transacción: empresa en `TrialActivo` con 30 días de prueba, sede principal «Sede Principal» (licencia vacía), empleado administrador con su correo, cuenta (no obligada a cambiar la clave) y rol `Admin` asignado | idem | RN-EMP-010, RN-EMP-011, RN-EMP-012, RN-GEN-012 | Todo o nada |
-| 6 | API | Emite token de acceso y cookie `refresh_token` (7 días, `HttpOnly`) | idem | RN-EMP-013, RN-AUT-010 a RN-AUT-012 | Sesión iniciada |
+| 6 | API | Emite token de acceso y cookie `refresh_token` (7 días, `HttpOnly`) | idem | RN-EMP-013, RN-AUT-010 a RN-AUT-012 | Sesión iniciada; la API responde 201 (`EmpresasController.cs:31`) |
 | 7 | SPA | Muestra el aviso «Empresa registrada correctamente. ¡Bienvenido!» y navega a `/dashboard` | — | — | El administrador ve el Inicio con saludo «Hola, {nombre}» |
 
 **Excepciones**
@@ -237,7 +237,7 @@ Permisos recomendados para un rol de mostrador (19 permisos, según el manual de
 | Prefijo mal formado | RN-SER-004 | «El prefijo debe tener 4 caracteres en mayúsculas y empezar con la letra que exige el tipo de comprobante.» (en el formulario) | Corregir el prefijo |
 | Serie que ya emitió comprobantes: cambiar algo distinto del estado | RN-SER-010 | «La serie ya emitió comprobantes: solo puedes cambiar su estado.» | Cambiar solo el estado |
 | Correo o licencia profesional repetidos en la empresa | RN-EPL-008, RN-EPL-010 | «Ya existe un empleado con ese correo electrónico en tu empresa.» / «Ya existe un empleado con esa licencia profesional.» | Usar otro valor |
-| Nombre de rol repetido (`Rol.DuplicateName`) | RN-ROL-005 | Genérico: «Error al guardar el rol» | Elegir otro nombre |
+| Nombre de rol repetido (`Rol.DuplicateName`) | RN-ROL-005 | «Ya existe un rol con ese nombre.» (desde `sofia-web-spa` `37d053d`; antes el genérico «Error al guardar el rol») | Elegir otro nombre |
 | Usuario repetido en todo SOFIA o empleado que ya tiene cuenta | RN-CTA-006, RN-CTA-007 | Genérico: «Error al guardar la cuenta» | Elegir otro usuario o empleado |
 | Cambiar los propios roles / asignar el rol Admin sin ser Admin | RN-CTA-015, RN-CTA-016 | «Una cuenta no puede modificar sus propios roles» / «Solo un administrador puede asignar o quitar el rol Admin» | Pedirlo a otro administrador |
 | Ampliar los permisos de un rol que uno mismo tiene asignado | RN-ROL-010 | «No se pueden ampliar los permisos de un rol que la propia cuenta tiene asignado» | Pedirlo a un administrador |
@@ -442,7 +442,7 @@ sequenceDiagram
 
 | Paso | Quién | Pantalla y acción | Endpoint y permiso | Reglas | Resultado |
 |---|---|---|---|---|---|
-| 1 | Cajero | `/pos/nueva`: el terminal busca la caja abierta propia al abrir | `GET /api/v1/POS/sesiones` (filtro sucursal, empleado y estado Abierta), `POS:Leer` | RN-VEN-003, RN-CAJ-021 | Terminal habilitado, o tarjeta «Estado de caja» con **Aperturar Caja** (solo con `POS:AperturarCaja`) |
+| 1 | Cajero | `/pos/nueva`: el terminal busca la caja abierta propia al abrir | `GET /api/v1/POS/sesiones` (filtro sucursal, empleado y estado Abierta), `POS:Leer` | RN-VEN-003, RN-CAJ-021 | Terminal habilitado, o tarjeta de aviso «Debes aperturar la caja del turno antes de procesar una venta.» (sin título) con **Aperturar Caja** (solo con `POS:AperturarCaja`) |
 | 2 | Cajero | «Buscar producto...» (por nombre comercial) y chips de condición de venta («Todos», «Venta Libre (OTC)», «Receta Simple», «Receta Retenida», «Estupefaciente»); hasta 12 productos con insignia «Disponible», «Stock bajo» o «Agotado» | `GET /api/v1/Medicamentos`, `Medicamentos:Leer` | RN-MED-014 a RN-MED-017, RN-STK-017 | Tarjetas de producto; sin filtros salen primero los más vendidos de los últimos 30 días |
 | 3 | Cajero | Pulsa el producto y luego un lote («Lote:», «Stock Disp:») | `GET /api/v1/Ventas/lotes-disponibles` y `GET /api/v1/Ventas/presentaciones`, ambos `Ventas:Crear` | RN-VEN-075, RN-VEN-076, RN-VEN-001 | Hasta 50 lotes vendibles ordenados por caducidad (no se obliga a vender el que vence primero) |
 | 4 | Cajero | Elige «Unidad» o una presentación («Caja x10 (S/ 45.00)»), escribe **Cantidad** y pulsa **Agregar**. El precio es de solo lectura | — (validación local) | RN-VEN-017 a RN-VEN-019, RN-VEN-024 | Línea en «Resumen de Venta · n». Mismo lote y presentación suman a la línea existente. Con la presentación, el servidor calcula las unidades base |
@@ -1134,7 +1134,7 @@ El estado de la cita es un **texto libre** de hasta 20 caracteres (`Programada` 
 
 | Paso | Quién | Endpoint y permiso | Reglas | Resultado |
 |---|---|---|---|---|
-| 1 | Personal | `POST /api/v1/Servicios/agenda`, `Servicios:AgendarServicio` (paciente, producto, venta opcional, fecha-hora, estado) | RN-SRV-002 a RN-SRV-005 | Cita; responde 200 con el id. **Con el script de base de datos actual el guardado podría fallar** (RN-SRV-019; no verificado en ejecución) |
+| 1 | Personal | `POST /api/v1/Servicios/agenda`, `Servicios:AgendarServicio` (paciente, producto, venta opcional, fecha-hora, estado) | RN-SRV-002 a RN-SRV-005 | Cita; responde 200 con el id. **Con el script de base de datos actual el guardado podría fallar** (RN-SRV-019; en la base de desarrollo agendar respondió 200, `04d` §7) |
 | 2 | Personal | `POST /api/v1/Servicios/inmunizacion`, `Servicios:RegistrarInmunizacion` (paciente, profesional, producto, **lote**, vía, sitio anatómico, volumen > 0, modalidad `Corriente` o `Historica`, fecha de administración) | RN-SRV-007 a RN-SRV-013 | Registro clínico; el lote no debe estar vencido **en la fecha de administración** |
 | 3 | Personal | `GET /api/v1/Servicios/agenda`, `GET /api/v1/Servicios/inmunizaciones`, `GET …/servicio/{id}`, `GET …/inmunizacion/{id}` | RN-SRV-006, RN-SRV-014, RN-SRV-016 | Listados de cuatro o cinco campos; el detalle solo devuelve el id |
 | 4 | Personal | `DELETE /api/v1/Servicios/servicio/{id}` y `DELETE …/inmunizacion/{id}`, `Servicios:Eliminar` | RN-SRV-018 | Borrado lógico sin motivo ni rastro |
@@ -1219,7 +1219,7 @@ stateDiagram-v2
 | 4 | Que el procesador de la bandeja de salida (`OutboxProcessor`) no ejecute efectos de negocio: RN-VEN-060 dice que ningún manejador consume `VentaCompletadaEvent` | No se abrió el procesador |
 | 5 | Si la base redondea o trunca los importes con más de 2 decimales y si el total guardado puede diferir de la suma de líneas (RN-VEN-020) | Requiere ejecutar la API |
 | 6 | Comportamiento de «Guardar» en el ingreso de stock sin lote elegido (excepción de JavaScript según la lectura, 19e §2.2) | No se ejecutó |
-| 7 | Si el guardado de una cita en `Servicios_Agenda` falla por columnas que el script no crea (RN-SRV-019) | No se ejecutó |
+| 7 | Si el guardado de una cita en `Servicios_Agenda` falla por columnas que el script no crea (RN-SRV-019) | En la base de desarrollo no falló (`04d` §7); por qué funciona allí y qué pasa en una base creada solo con los scripts: No verificado |
 | 8 | Aparición real de los mensajes marcados como «genérico» y de los estados HTTP de los procesos 3 a 9 | Se derivan del código y de los mapas de errores de cada pantalla |
 | 9 | Cómo se cambia la sucursal activa del token para operar en otra sede (RN-VEN-071) | Fuera del alcance de los módulos leídos |
 
@@ -1248,7 +1248,7 @@ Ninguno. `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `so
 
 ### 13.2 Reglas de negocio citadas
 
-Se extrajeron con un script de lectura todos los IDs `RN-…` citados en este documento y se compararon con las filas de definición de los seis archivos del catálogo (`01a`, `01b`, `01c1`, `01c2`, `01c3`, `01d`). Resultado: **372 IDs citados explícitamente y 475 al expandir los rangos escritos con «a»; 0 no existen en el catálogo** (el catálogo define 789 IDs distintos). Tablas con distinto número de columnas en alguna fila: 0.
+Se extrajeron con un script de lectura todos los IDs `RN-…` citados en este documento y se compararon con las filas de definición de los seis archivos del catálogo (`01a`, `01b`, `01c1`, `01c2`, `01c3`, `01d`). Resultado: **373 IDs citados explícitamente y 475 al expandir los rangos escritos con «a»; 0 no existen en el catálogo** (el catálogo define 789 IDs distintos). Tablas con distinto número de columnas en alguna fila: 0.
 
 | Prefijos | Citados en los procesos |
 |---|---|
