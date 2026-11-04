@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-13 |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-04 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
 | **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos, utilidades e i18n de `pages/pos` y `pages/sesiones-caja`). Del backend solo se abrieron controladores, algunos handlers y los DTO necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. `git status --short` no mostró cambios sin commitear en ninguno de los dos repos al empezar, así que no hay marcas «En curso (sin commitear)» en este documento. |
@@ -336,7 +336,7 @@ No hay botón para reabrir ni para imprimir un reporte de arqueo. No hay confirm
 
 - **Componente:** `AperturarCajaDialogComponent` (`APE.ts`, `APE.html`). Scope `pos`.
 - **Para qué sirve:** abrir la caja del turno sin salir del terminal de venta.
-- **Cómo se abre:** solo desde `/pos/nueva`, botón «Aperturar Caja» de la tarjeta de estado de caja (`abrirCaja()`, `NV.ts:393-400`), con ancho de 450 px. El botón existe solo con `POS:AperturarCaja` (`NV.html:17`); el endpoint exige el mismo permiso. El diálogo se puede cerrar con Esc o pulsando fuera (no tiene `disableClose`); en ese caso el terminal no vuelve a comprobar la caja.
+- **Cómo se abre:** solo desde `/pos/nueva`, botón «Aperturar Caja» de la tarjeta de aviso de caja requerida (`abrirCaja()`, `NV.ts:393-400`), con ancho de 450 px. El botón existe solo con `POS:AperturarCaja` (`NV.html:17`); el endpoint exige el mismo permiso. El diálogo se puede cerrar con Esc o pulsando fuera (no tiene `disableClose`); en ese caso el terminal no vuelve a comprobar la caja.
 - **Título y subtítulo:** «Aperturar Caja» (`pos.checkout.aperturarCajaDialogTitle`) y «Ingresa los datos para aperturar la caja de esta sucursal y continuar con la venta.» (`pos.checkout.aperturarCajaDialogSubtitle`).
 
 **Campos del formulario** (`APE.ts:36`, `APE.html`)
@@ -386,10 +386,12 @@ La pantalla se describe por zonas, en el orden en que el cajero las usa. Antes d
 | Estado | Qué se ve |
 |---|---|
 | `checkingSesion()` o `cargandoContinuacion()` verdadero | Solo un indicador de carga (`mat-spinner`, 40 px) bajo la cabecera |
-| Terminada la comprobación y sin caja propia abierta | Tarjeta de aviso «Estado de caja» (apartado 3.1); no se ve nada más |
+| Terminada la comprobación y sin caja propia abierta | Tarjeta de aviso de caja requerida, sin título propio (apartado 3.1); no se ve nada más |
 | Con caja propia abierta | El terminal: banner de continuación (si aplica) y dos columnas (A: búsqueda o escaneo; B: cliente, carrito y pago) |
 
 ### 3.1 Zona: estado de caja
+
+La tarjeta que aparece sin caja abierta es un `div.sofia-filter-card` con el texto y el botón, **sin ningún título**; no existe una tarjeta llamada «Estado de caja» (`nueva-venta.component.html:13-23`). La tarjeta «Caja» con ese título está en el Inicio (`dashboard.caja.title`, `public/i18n/dashboard/es.json:47`), no en el terminal.
 
 Se decide con `checkSesionCaja()` (`NV.ts:376-391`): toma `sucursalId` y `empleadoId` del token (`authService.sucursalId()` y `empleadoId()`) y llama `GET /api/v1/POS/sesiones` con `sucursalId`, `empleadoId`, `estadoSesion=0` (Abierta), `pageNumber=1`, `pageSize=1`. Si vuelve una sesión, guarda su `id` en `sesionId` y el terminal queda habilitado. Se necesita la **caja propia, de la sucursal del token**: una caja abierta por otro cajero no sirve.
 
@@ -607,7 +609,7 @@ Debajo de las fichas, el enlace «+ Dividir en varios métodos de pago» (`pos.c
 | Condición | Mensaje que ve el cajero cuando no se cumple |
 |---|---|
 | Hay al menos una línea en el carrito | Ninguno; el carrito muestra «El carrito está vacío.» |
-| Hay caja propia abierta (`sesionId`) | Se ve la tarjeta de «Estado de caja» en lugar del terminal |
+| Hay caja propia abierta (`sesionId`) | Se ve la tarjeta de aviso de caja requerida («Debes aperturar la caja del turno antes de procesar una venta.») en lugar del terminal |
 | `montoPendiente` es 0, o es negativo y el vuelto se cubre con efectivo | Ninguno; «Monto Pendiente:» o «Vuelto a Entregar:» en los totales |
 | Todos los pagos no efectivo tienen número de operación | «Ingresa el N° de operación para poder cobrar.» |
 | La cobertura de seguro es válida (siempre cumplida con el bloque oculto) | — |
@@ -672,7 +674,7 @@ Mientras se retoma, aparece sobre el terminal un banner con icono `schedule`: «
 | Vaciar (`pos.checkout.vaciarCart`) | Encabezado del carrito | Carrito no vacío | Nunca | `vaciarCarrito()`: borra las líneas y reinicia los pagos; **no** descarta cliente, receta ni aseguradora |
 | × en cada línea | Línea del carrito | Siempre | Nunca | `quitarDelCarrito(i)` |
 | Agregar (`pos.actions.agregar`) | Formulario de agregado | Con un lote seleccionado | Nunca | `agregarAlCarrito()` (apartado 3.2) |
-| Aperturar Caja (`pos.actions.aperturar`) | Tarjeta de estado de caja | Sin caja y con `POS:AperturarCaja` | Nunca | `abrirCaja()` → diálogo de apertura |
+| Aperturar Caja (`pos.actions.aperturar`) | Tarjeta de aviso de caja requerida | Sin caja y con `POS:AperturarCaja` | Nunca | `abrirCaja()` → diálogo de apertura |
 | Botón volver (icono de flecha en la cabecera) | Cabecera | Siempre | Nunca | Navega a `/pos` sin avisar; el borrador queda guardado |
 
 No existe un botón «Cancelar venta» ni «Limpiar» (la clave `pos.actions.cancelar` no se usa); el botón «Cobrar Venta» (`pos.actions.cobrar`) solo existe en el detalle de la venta. El terminal tampoco tiene atajos de teclado, foco automático ni listeners de teclado (búsqueda de `keydown`, `keyup`, `autofocus` y `focus()` en `NV.ts` y `NV.html` sin resultados). Los comportamientos automáticos son: búsqueda de productos con retardo de 300 ms, búsqueda de clientes con retardo de 300 ms, recarga de recetas del cliente cuando la ventana recupera el foco (`@HostListener('window:focus')`, `NV.ts:881-886`), autoguardado del borrador, desmarcado automático de «Receta verificada» y reinicio de los pagos al vaciar el carrito.
