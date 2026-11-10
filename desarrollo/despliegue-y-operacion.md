@@ -3,11 +3,13 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; el riesgo del script `0004` está reconciliado con `34089ec` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-09 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
 | **Método** | Lectura de código y de archivos de configuración de ambos repositorios (solo lectura). No se ejecutó docker, ni compilación, ni servicios, ni navegador, ni llamadas a la API; no se abrió ningún `.env` real. `git status --short` en ambos repositorios: sin cambios sin commitear (no hay marcas «En curso»). |
+
+**Historial de cambios.** 1.2 (2026-11-09): reconciliado con `d79d6fa` (el backend publica las imágenes `sofia-api` y `sofia-presidio` en ghcr), `5fc2ebf` (`.gitattributes` fuerza CRLF) y, en el SPA, `9ad15f0` (imagen nginx en ghcr con `environment.js` generado al arrancar). Con ello dejan de ser ciertas las afirmaciones «el SPA no tiene Dockerfile ni servidor web ni workflow», «no hay publicación de imágenes», «no hay regla de reescritura a `index.html`» y «no hay generación de `environment.js`» (para la imagen nginx; `staticwebapp.config.json` no cambió). El script `0004` y `ApplicationDbContext` (`9c16f35`) no alteran lo descrito. 1.1 (2026-11-04): riesgo del script `0004` reconciliado con `34089ec`.
 
 Este documento describe lo que **existe hoy** en los repositorios para desplegar y operar SOFIA y marca como **Pendiente** lo que no existe. El despliegue previsto es Azure, pero en los repositorios no hay ninguna definición de infraestructura (ver [sección 8](#8-pendientes-para-azure)); por eso no se describe ningún recurso, nombre ni arquitectura de Azure.
 
@@ -22,11 +24,11 @@ Las rutas sin prefijo de repositorio son relativas a `sofia-apis/` (backend) o `
 | API | ASP.NET Core (.NET 10) `SOFIA.API` | Imagen de contenedor | `sofia-apis/src/SOFIA.API/Dockerfile` |
 | Consola DbUp | Aplicación de consola que crea la base y aplica los scripts SQL | Imagen de contenedor | `sofia-apis/src/SOFIA.DbUp/Dockerfile` |
 | Microservicio Presidio | FastAPI (Python) que anonimiza texto | Imagen de contenedor | `sofia-apis/src/SOFIA.PresidioAPI/Dockerfile` |
-| SPA | Angular 20 | Carpeta de archivos estáticos (`dist`); no hay Dockerfile | `sofia-web-spa/angular.json`, `sofia-web-spa/package.json` |
+| SPA | Angular 20 | Carpeta de archivos estáticos (`dist`) y, desde `9ad15f0`, imagen de contenedor con nginx (`sofia-web`) | `sofia-web-spa/Dockerfile`, `sofia-web-spa/nginx/`, `sofia-web-spa/angular.json`, `sofia-web-spa/package.json` |
 | SQL Server | Base de datos | No se construye: el compose usa una imagen pública | `sofia-apis/docker-compose.yml:3-19` |
 | Servidor de correo | Receptor SMTP local (Mailpit) o proveedor externo configurado por la API | No se construye | `sofia-apis/docker-compose.yml:83-89`; `sofia-apis/src/SOFIA.Infrastructure/Email/EmailOptions.cs` |
 
-No existe ningún otro `Dockerfile`, `.dockerignore` por componente ni definición de orquestación (Kubernetes, Helm, Bicep, Terraform) en los repositorios: se buscaron `Dockerfile*`, `docker-compose*`, `*.yml`, `*.yaml`, `nginx*` hasta cuatro niveles de profundidad (solo hay un `.dockerignore`, en la raíz de `sofia-apis`, y el workflow `security.yml`).
+No existe ningún otro `Dockerfile` ni definición de orquestación (Kubernetes, Helm, Bicep, Terraform) en los repositorios: se buscaron `Dockerfile*`, `docker-compose*`, `*.yml`, `*.yaml`, `nginx*` hasta cuatro niveles de profundidad. Hay tres Dockerfile en `sofia-apis/src` más el `Dockerfile` raíz de `sofia-web-spa`; dos `.dockerignore` (raíz de cada repositorio); `docker-compose.yml` solo en `sofia-apis`; y tres workflows: `security.yml` y `docker-publish.yml` en `sofia-apis`, y `docker-publish.yml` en `sofia-web-spa`.
 
 ### 1.1 API (`SOFIA.API`)
 
@@ -95,13 +97,30 @@ Observaciones:
 
 ### 1.4 SPA (`sofia-web-spa`)
 
-Fuente: `sofia-web-spa/angular.json`, `package.json`, `public/`, `src/index.html`. No existe `Dockerfile`, ni configuración de servidor web (nginx u otro), ni workflow de CI en este repositorio.
+Fuente: `sofia-web-spa/angular.json`, `package.json`, `public/`, `src/index.html`, `Dockerfile` (16 líneas), `nginx/default.conf.template` (40), `nginx/40-runtime-env.sh` (9), `.dockerignore` (8) y `.github/workflows/docker-publish.yml` (41). Desde `9ad15f0` el SPA se empaqueta también como imagen; el resto de esta tabla describe el build de Angular, que la imagen reutiliza.
+
+**Imagen `sofia-web`.**
+
+| Aspecto | Valor | Línea |
+|---|---|---|
+| Etapas | `build` (`node:22-alpine`, etiqueta flotante) → imagen final | `Dockerfile:1,11` |
+| Compilación | `npm ci --ignore-scripts` (para no ejecutar `husky install` sin Git) y `npm run build -- --configuration production` | `Dockerfile:4-9` |
+| Imagen de ejecución | `nginxinc/nginx-unprivileged:1.27-alpine` (etiqueta flotante, usuario sin privilegios); copia `dist/sofia-web-spa` a `/usr/share/nginx/html` | `Dockerfile:11-12` |
+| Puerto | `EXPOSE 8080`; nginx escucha en 8080 | `Dockerfile:16`; `default.conf.template:2` |
+| Variables | `API_BASE_URL` **obligatoria** (el script termina si falta); `APP_VERSION` opcional (`1.0.0`) | `40-runtime-env.sh:4,8` |
+| Configuración en ejecución | El script reescribe `environment.js` con `production: true`, `appVersion` y `api.baseurl` | `40-runtime-env.sh:7-9` |
+| Rutas internas | `try_files $uri $uri/ /index.html` | `default.conf.template:37-39` |
+| Health check | `GET /healthz` responde `200 ok`; el `Dockerfile` no define `HEALTHCHECK` | `default.conf.template:18-22` |
+| Caché | `index.html` y `environment.js` sin caché (`expires -1`); `js`, `css`, fuentes e imágenes un año | `default.conf.template:24-35` |
+| Cabeceras | CSP (con `${API_BASE_URL}` en `connect-src`), `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security`, `Permissions-Policy` | `default.conf.template:10-15` |
+
+La sustitución de `${API_BASE_URL}` en la plantilla depende del mecanismo de plantillas de la imagen base de nginx: **No verificado** (no se construyó la imagen). Publicación: [6.4](#64-publicación-de-imágenes-en-ghcr).
 
 | Aspecto | Valor | Evidencia |
 |---|---|---|
 | Cómo se construye | `npm run build` = `ng build` (`package.json:8`). La configuración por defecto es `production` (`angular.json:95`). Constructor `@angular-devkit/build-angular:browser` | `angular.json:26,95` |
 | Versiones | Angular `~20.3.32`, TypeScript `~5.8.3`, `@angular/cli ~20.3.37`. La versión de Node necesaria no está declarada (no hay `engines` en `package.json` ni `.nvmrc`): **No verificado** | `package.json:20-28,42,63` |
-| Etapas, imagen base, usuario, puertos | No aplica: el SPA no se empaqueta en contenedor en este repositorio | — |
+| Etapas, imagen base, usuario, puertos | Ver la tabla de la imagen `sofia-web` arriba | `Dockerfile` |
 | Artefacto | Carpeta `dist/sofia-web-spa` con archivos estáticos con hash en el nombre (`outputHashing: all`), sin mapas de fuente. Todo el contenido de `public/` se copia a la raíz de la salida (incluidos `environment.js`, `staticwebapp.config.json`, `i18n/`, `icons/`, `images/`, `favicon.ico`) | `angular.json:33,39-45,77-78` |
 | Sustitución de entorno | En `production`, `src/environments/environment.ts` se sustituye por `environment.prod.ts` | `angular.json:63-68` |
 | Presupuesto de tamaño | 5 MB de advertencia y de error para el paquete inicial y para el estilo de cada componente | `angular.json:51-61` |
@@ -110,7 +129,7 @@ Fuente: `sofia-web-spa/angular.json`, `package.json`, `public/`, `src/index.html
 | Enrutamiento | `provideRouter` sin `withHashLocation`: las URL son rutas reales (`/auth/register`, etc.), por lo que el servidor que sirva el SPA debe devolver `index.html` para las rutas internas | `src/app/app.config.ts:32-35` |
 | Dependencias de terceros en ejecución | Fuentes y hoja de iconos desde `fonts.googleapis.com` y `fonts.gstatic.com` (`index.html:11-17`); la CSP de `staticwebapp.config.json` también permite `api.iconify.design`, `api.simplesvg.com` y `api.unisvg.com` en `connect-src` | `index.html:11-17`; `staticwebapp.config.json:3` |
 
-`public/staticwebapp.config.json` define solo `globalHeaders` (CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security`, `Permissions-Policy`) (`staticwebapp.config.json:2-9`). Es un **indicio** de que se prevé Azure Static Web Apps (el nombre y la clave `globalHeaders` corresponden a ese servicio; el repositorio no lo dice de forma explícita). El archivo **no** define `navigationFallback`, ni `routes`, ni proxy hacia la API: ver [sección 8](#8-pendientes-para-azure).
+`public/staticwebapp.config.json` define solo `globalHeaders` (CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security`, `Permissions-Policy`) (`staticwebapp.config.json:2-9`). Es un **indicio** de que se prevé Azure Static Web Apps (el nombre y la clave `globalHeaders` corresponden a ese servicio; el repositorio no lo dice de forma explícita). El archivo **no** define `navigationFallback`, ni `routes`, ni proxy hacia la API: ver [sección 8](#8-pendientes-para-azure). La imagen nginx sí resuelve la reescritura a `index.html` y repite estas cabeceras (arriba).
 
 ### 1.5 SQL Server
 
@@ -284,7 +303,7 @@ Hay un tercer entorno, `Testing`, con trato de Development para el correo y la U
 
 **Cómo cambiar la URL de la API sin recompilar:** reemplaza, en el sitio ya desplegado, el archivo `environment.js` por uno que defina `window.__env` con al menos `production` (booleano) y `api.baseurl` (URL sin barra final ni `/api`). Incluye también `appVersion`: `resolveEnvironment()` devuelve el objeto de `window.__env` tal cual (`environment.model.ts:27-28`) y varias pantallas muestran `environment.appVersion` (`header.component.ts:39,58`, `login.component.ts:55`), así que si falta se vería vacío (deducción del código; no se ejecutó). El nombre `environment.js` no lleva hash: es un activo copiado, no un paquete generado (`angular.json:39-45,77`), por lo que el hosting no debe cachearlo de forma agresiva (recomendación derivada; el repositorio no define cabeceras de caché).
 
-El repositorio **no** trae un mecanismo que genere `environment.js` en el despliegue: el `.gitignore` y el `.gitattributes` mencionan `scripts/azure/keyvault-secrets.example.json` y `scripts/azure/*.sh`, pero esa carpeta no existe (`sofia-web-spa/.gitignore:52,55-56`; `sofia-web-spa/.gitattributes:1-2`) → **Pendiente**.
+Desde `9ad15f0` la imagen nginx sí genera `environment.js` al arrancar a partir de `API_BASE_URL` y `APP_VERSION` (`nginx/40-runtime-env.sh:4-9`, ver 1.4); para un despliegue sin esa imagen (por ejemplo, archivos estáticos) no hay mecanismo y sigue siendo **Pendiente**. El `.gitignore` y el `.gitattributes` aún mencionan `scripts/azure/keyvault-secrets.example.json` y `scripts/azure/*.sh`, pero esa carpeta no existe (`sofia-web-spa/.gitignore:52,55-56`; `sofia-web-spa/.gitattributes:1-2`); además, esos patrones de `.gitattributes` no cubren `nginx/40-runtime-env.sh`, así que su fin de línea no está fijado (efecto de un checkout con CRLF: **No verificado**).
 
 Además, la API debe incluir el origen exacto del SPA en `AllowedOrigins` (CORS con credenciales, sin comodín: `Program.cs:58-61`), y la CSP del hosting estático solo permite `connect-src 'self'` más los dominios de Iconify (`staticwebapp.config.json:3`): si la API está en otro origen, hay que añadirlo a `connect-src` o el navegador bloqueará las llamadas (deducción de la CSP; no se probó).
 
@@ -301,7 +320,7 @@ El esquema lo crea y lo evoluciona **solo DbUp**; EF Core no migra (búsqueda de
 | Scripts | Los 28 `.sql` embebidos de `SOFIA.DbUp/Scripts` (solo los del primer nivel de la carpeta) | `Program.cs:30`; `SOFIA.DbUp.csproj:19` |
 | Orden | El prefijo numérico de cuatro dígitos (`0001_` a `0028_`), según la convención del repositorio | Ver [`desarrollo/guia-del-desarrollador`, sección 3.4](guia-del-desarrollador.md#34-base-de-datos-con-dbup) |
 | Registro de aplicados | El código no configura un diario propio (no hay llamada a `JournalTo...`), así que se usa el de la biblioteca `dbup-sqlserver` 7.2.0; el nombre exacto de la tabla es **No verificado** (ningún archivo del repositorio la nombra) | `Program.cs:27-32`; `SOFIA.DbUp.csproj:12` |
-| Transacciones | `Program.cs` no elige modo de transacción (no hay llamadas a `WithTransaction`, `WithTransactionPerScript` ni `WithoutTransaction`) y ningún script abre una (búsqueda de `BEGIN TRAN`, `COMMIT`, `ROLLBACK`, `XACT_ABORT` en los 28 scripts: sin resultados). El efecto del modo por defecto de la biblioteca ante un fallo a mitad de un script es **No verificado** | `Program.cs:27-32` |
+| Transacciones | `Program.cs` no elige modo de transacción (no hay llamadas a `WithTransaction`, `WithTransactionPerScript` ni `WithoutTransaction`) y solo el script `0004` abre una propia (`SET XACT_ABORT ON` y `BEGIN TRANSACTION`, `0004:2-3`; búsqueda de `BEGIN TRAN`, `COMMIT`, `ROLLBACK`, `XACT_ABORT` en los 28 scripts: únicamente `0004`). El efecto del modo por defecto de la biblioteca ante un fallo a mitad de un script es **No verificado** | `Program.cs:27-32` |
 | Salida | `Success!` y código `0`; en error, imprime el error y código `-1` (en compilación `DEBUG` espera un `Enter` antes: no ocurre en la imagen, que compila en `Release`) | `Program.cs:36-50`; `SOFIA.DbUp/Dockerfile:9` |
 | Registro (log) | `LogToConsole()`: la salida va a la consola del proceso o del contenedor; no escribe archivo | `Program.cs:31` |
 
@@ -323,8 +342,8 @@ La idempotencia depende de cada script, no de DbUp. Medida por búsqueda de guar
 
 | Scripts | Guardas de existencia | Consecuencia |
 |---|---|---|
-| `0001`, `0003`, `0006`, `0007`, `0008`, `0010`, `0011`, `0012`, `0013`, `0014`, `0016` | Ninguna | Si se ejecutan por segunda vez (o tras un fallo parcial), `CREATE TABLE`, `ALTER TABLE ADD` o `CREATE INDEX` fallan por objeto ya existente |
-| `0002`, `0004`, `0005`, `0009`, `0015`, `0017`, `0018` a `0028` | Sí (en distinto grado; `0009` solo una) | Se pueden volver a ejecutar sin duplicar, en su mayor parte; no se revisó cada sentencia una por una |
+| `0001`, `0003`, `0004`, `0006`, `0007`, `0008`, `0010`, `0011`, `0012`, `0013`, `0014`, `0016` | Ninguna (en `0004` el único `IF EXISTS` es la verificación posterior a la carga, no una guarda previa) | Si se ejecutan por segunda vez (o tras un fallo parcial), `CREATE TABLE`, `ALTER TABLE ADD` o `CREATE INDEX` fallan por objeto ya existente; `0004` falla en su verificación de conteo y se revierte |
+| `0002`, `0005`, `0009`, `0015`, `0017`, `0018` a `0028` | Sí (en distinto grado; `0009` solo una; `0017` usa `NOT EXISTS` dentro del `INSERT`) | Se pueden volver a ejecutar sin duplicar, en su mayor parte; no se revisó cada sentencia una por una |
 
 `0001_Initial_Schema.sql` crea 44 tablas en un solo lote de 857 líneas, sin `GO` ni guardas (conteo por búsqueda de `CREATE TABLE`).
 
@@ -420,7 +439,7 @@ Fuente: `sofia-apis/src/SOFIA.Infrastructure/Services/OutboxProcessor.cs`; se re
 | Si un evento falla | Registra el error y guarda el mensaje (hasta 500 caracteres) en `ErrorPublicacion`; ese evento **no se vuelve a intentar** porque el filtro exige `ErrorPublicacion == null` | 71-80, 44 |
 | Si el tipo no existe o no es notificación | Advierte en el log y lo da por procesado (no lanza excepción) | 98-108 |
 | Fallos generales (por ejemplo, sin base de datos) | Se capturan, se registran como error y el ciclo continúa | 22-29 |
-| Origen de los eventos | `ApplicationDbContext.SaveChangesAsync` convierte cada evento de dominio en una fila de outbox | `ApplicationDbContext.cs:112-130` |
+| Origen de los eventos | `ApplicationDbContext.SaveChangesAsync` convierte cada evento de dominio en una fila de outbox | `ApplicationDbContext.cs:118-136` |
 | Eventos de dominio que existen hoy | Uno: `VentaCompletadaEvent`, agregado por `CompletarVentaCommandHandler` y `CreateVentaCommandHandler` | `SOFIA.Application/Ventas/Events/VentaCompletadaEvent.cs:6`; `CompletarVentaCommandHandler.cs:104`; `CreateVentaCommandHandler.cs:116` |
 | Quién los consume | **Nadie**: no hay ninguna clase que implemente `INotificationHandler` (búsqueda en `src`: sin resultados). El procesador publica el evento y lo marca como procesado sin efecto de negocio | — |
 | Varias instancias | La consulta no reserva ni bloquea las filas (no usa un campo de reclamo ni bloqueo de lectura): dos instancias pueden leer los mismos eventos a la vez (deducción del código; no se probó). Como hoy no hay consumidores, el efecto es nulo, pero el diseño no es seguro para varias instancias si se añaden | 41-47 |
@@ -464,7 +483,7 @@ Los ganchos de commit locales (Husky.Net en el backend; husky, lint-staged y com
 
 ### 6.1 `sofia-apis`: `.github/workflows/security.yml` («Security Scan»)
 
-Es el único workflow de ambos repositorios (`sofia-apis/.github/workflows/` contiene solo este archivo; `sofia-web-spa` no tiene carpeta `.github`).
+Es el único workflow que verifica código; hay otros dos que solo publican imágenes (ver [6.4](#64-publicación-de-imágenes-en-ghcr)): `sofia-apis/.github/workflows/` contiene `security.yml` y `docker-publish.yml`, y `sofia-web-spa/.github/workflows/` contiene `docker-publish.yml`.
 
 **Disparadores** (`security.yml:3-10`): `push` y `pull_request` sobre las ramas `master` y `main`, y una ejecución programada los lunes a las 08:00 UTC (`cron: '0 8 * * 1'`) para detectar CVE nuevos. Permisos por defecto: solo lectura de contenido (`:13-14`). Las acciones de terceros están fijadas por SHA de commit.
 
@@ -474,25 +493,44 @@ Es el único workflow de ambos repositorios (`sofia-apis/.github/workflows/` con
 | `owasp-dependency-check` | `ubuntu-latest` | 1) checkout. 2) setup-dotnet 10.x. 3) `dotnet restore`. 4) `dependency-check/Dependency-Check_Action` sobre `src` con formato `ALL`, `--failOnCVSS 7`, `--enableRetired`, supresiones en `.dependency-check-suppressions.xml` (archivo sin supresiones activas: solo un ejemplo comentado) y `--nvdApiDelay 6000`. 5) sube la carpeta `reports/` como artefacto. 6) sube el SARIF a la pestaña de seguridad de GitHub (`continue-on-error: true`, requiere GitHub Advanced Security) | Cualquier vulnerabilidad con CVSS 7 o mayor. La clave `NVD_API_KEY` está comentada (solo acelera el análisis) | 59-104; `.dependency-check-suppressions.xml:1-14` |
 | `secret-scan` («Secret Scan (gitleaks)») | `ubuntu-latest` | 1) checkout con historial completo (`fetch-depth: 0`). 2) `docker run` de la imagen `ghcr.io/gitleaks/gitleaks:v8.30.1` (fijada por digest) sobre el repositorio, con `--redact --verbose --exit-code 1` | Cualquier secreto detectado en el historial. `.gitleaksignore` exime una línea de un archivo de pruebas unitarias | 109-122; `.gitleaksignore:1-2` |
 
-Lo que el workflow **no** hace: no ejecuta `SOFIA.IntegrationTests` (requieren Docker y una contraseña de pruebas, `SofiaWebAppFactory.cs:16,33-53`); no construye imágenes de contenedor; no publica ninguna imagen; no despliega; no ejecuta `dotnet format --verify-no-changes` (el formato se verifica en el gancho local de commit, `.husky/task-runner.json`).
+Lo que `security.yml` **no** hace: no ejecuta `SOFIA.IntegrationTests` (requieren Docker y una contraseña de pruebas, `SofiaWebAppFactory.cs:16,33-53`); no construye ni publica imágenes de contenedor (lo hace `docker-publish.yml`, 6.4); no despliega; no ejecuta `dotnet format --verify-no-changes` (el formato se verifica en el gancho local de commit, `.husky/task-runner.json`).
 
-### 6.2 `sofia-web-spa`: no hay CI
+### 6.2 `sofia-web-spa`: no hay CI de calidad
 
-No existe ningún workflow ni archivo de pipeline en el repositorio (no hay carpeta `.github`; búsqueda de `*.yml` y `*.yaml` hasta cuatro niveles: sin resultados). Existen los scripts para correr en CI, pero nada los invoca: `npm run test:ci` (`ng test --watch=false --browsers=ChromeHeadlessCI`) y `npm run lint:ci` (`ESLINT_TYPEAWARE=true eslint --max-warnings=0 .`) (`package.json:11,15`). El build de producción es `npm run build` (`package.json:8`).
+El único workflow es el de publicación de la imagen (6.4); no hay ninguno que ejecute lint, pruebas ni build del SPA fuera del `Dockerfile`. Existen los scripts para correr en CI, pero nada los invoca: `npm run test:ci` (`ng test --watch=false --browsers=ChromeHeadlessCI`) y `npm run lint:ci` (`ESLINT_TYPEAWARE=true eslint --max-warnings=0 .`) (`package.json:11,15`). El build de producción es `npm run build` (`package.json:8`).
 
 ### 6.3 Qué falta para un despliegue automatizado (Pendiente)
 
 | Falta | Evidencia de que no existe |
 |---|---|
-| Workflow de CI para el SPA (lint, pruebas, build) | Sin `.github` en `sofia-web-spa` |
-| Construcción y publicación de imágenes (API, DbUp, Presidio) a un registro | `security.yml` no tiene pasos de `docker build` ni de publicación; no hay definición de registro |
+| Workflow de CI para el SPA (lint, pruebas, build) | `sofia-web-spa/.github/workflows/` solo tiene `docker-publish.yml` |
+| Publicación de la imagen de DbUp | Falta en la matriz de `sofia-apis/.github/workflows/docker-publish.yml:21-27` (API, Presidio y SPA sí se publican, ver 6.4) |
 | Despliegue de la API, de DbUp y de Presidio a un ambiente | Sin pasos de despliegue, ni definición de infraestructura como código en ambos repositorios |
-| Despliegue del SPA | Sin workflow; `staticwebapp.config.json` solo sugiere el destino |
+| Despliegue del SPA (la imagen se publica, pero nada la despliega) | Sin pasos de despliegue; `staticwebapp.config.json` solo sugiere el destino |
 | Ejecución de DbUp como paso del despliegue, antes de la API | El compose no lo impone y no hay pipeline |
 | Gestión de secretos del pipeline y de los ambientes | `.env.example` menciona un «Azure staging» sin más; el SPA ignora `scripts/azure/keyvault-secrets.example.json`, que no existe (`.gitignore:52`) |
 | Pruebas de integración en CI | No se ejecutan en `security.yml` |
 | Promoción entre ambientes y reversión | Sin definición |
-| Generación de `environment.js` por ambiente para el SPA | Sin script ni plantilla (ver [3.3](#33-configuración-en-tiempo-de-ejecución-del-spa)) |
+| Generación de `environment.js` por ambiente para el SPA | Resuelto en la imagen nginx por `nginx/40-runtime-env.sh` (`9ad15f0`); sin mecanismo para un despliegue de archivos estáticos (ver [3.3](#33-configuración-en-tiempo-de-ejecución-del-spa)) |
+
+### 6.4 Publicación de imágenes en ghcr
+
+Dos workflows idénticos en estructura, uno por repositorio. Ninguno ejecuta pruebas ni análisis antes de publicar y ninguno despliega.
+
+| Aspecto | `sofia-apis` (`d79d6fa`) | `sofia-web-spa` (`9ad15f0`) |
+|---|---|---|
+| Archivo | `.github/workflows/docker-publish.yml` («Publish Docker Images», 52 líneas) | `.github/workflows/docker-publish.yml` («Publish Docker Image», 41 líneas) |
+| Disparadores | `push` a `main` y `workflow_dispatch` (3-6) | Igual (3-6) |
+| Permisos | `contents: read` y, en el job, `packages: write` (8-17) | Igual (8-17) |
+| Imágenes | Matriz: `sofia-api` (contexto `.`, `src/SOFIA.API/Dockerfile`) y `sofia-presidio` (contexto `src/SOFIA.PresidioAPI`) (18-27). No publica DbUp | `sofia-web` (contexto `.`, `Dockerfile` raíz) (32-36) |
+| Registro y etiquetas | `ghcr.io/soygustavofernandez/<imagen>:uat` y `:<github.sha>` (48-50) | `ghcr.io/soygustavofernandez/sofia-web:uat` y `:<github.sha>` (37-39) |
+| Autenticación | `github.actor` y `secrets.GITHUB_TOKEN` (35-40) | Igual (25-30) |
+| Caché | `type=gha` por imagen (51-52) | `type=gha` (40-41) |
+| Acciones | Fijadas por hash de commit (30, 33, 36, 43) | Fijadas por hash (20, 23, 26, 33) |
+
+La etiqueta `:uat` se sobrescribe en cada `push` a `main`: sirve para un ambiente de pruebas, y `:<sha>` permite fijar una versión. Que exista un ambiente `uat` desplegado es **No verificado**: ningún archivo de los repositorios lo define. El registro es GitHub Container Registry, no un servicio de Azure.
+
+**`.gitattributes` del backend (`5fc2ebf`).** `sofia-apis/.gitattributes:1-4` fuerza CRLF en el checkout (igual que `.editorconfig`) y LF en `*.sh` y `Dockerfile`; evita que `IDE0055` falle en el build de Linux de `security.yml`. Los `Dockerfile` en LF no se ven afectados por el CRLF.
 
 ## 7. Lista de verificación previa a producción
 
@@ -518,8 +556,8 @@ Solo puntos sustentados por el código o la configuración. Marca cada uno antes
 | 16 | **Cifrado de datos personales: pendiente.** El código no cifra campos en la base (búsqueda de `DataProtection`, `AesGcm`, `Aes.Create`, `ENCRYPTBY` y `ColumnEncryption` en `src`: sin resultados). Queda por definir el cifrado en reposo a nivel de plataforma | Ausencia verificada; no hay definición de infraestructura |
 | 17 | Volumen persistente para `/app/logs`, sabiendo que el archivo diario tiene un tope de 50 MB y se conservan 30 | `Program.cs:24-29`; `SOFIA.API/Dockerfile:30-31` |
 | 18 | No desplegar Mailpit ni exponer puertos de SQL Server o Presidio al exterior. El compose los limita a `127.0.0.1` | `docker-compose.yml:11,29,43,87-89` |
-| 19 | SPA: `environment.js` con `production`, `api.baseurl` y `appVersion`; la CSP de `staticwebapp.config.json` debe permitir el origen de la API en `connect-src`; el servidor debe devolver `index.html` en las rutas internas | `environment.model.ts:9-31`; `staticwebapp.config.json:3`; `app.config.ts:32-35` |
-| 20 | Imágenes base: `aspnet:10.0`, `sdk:10.0`, `runtime:10.0` y `mssql/server:2022-latest` van por etiqueta flotante (sin digest); decide si fijarlas | `SOFIA.API/Dockerfile:1,6`; `SOFIA.DbUp/Dockerfile:1,11`; `docker-compose.yml:4` |
+| 19 | SPA: `environment.js` con `production`, `api.baseurl` y `appVersion` (la imagen nginx lo genera con `API_BASE_URL` y `APP_VERSION`, `nginx/40-runtime-env.sh:4-9`); la CSP debe permitir el origen de la API en `connect-src` (nginx lo hace, `default.conf.template:10`; `staticwebapp.config.json` no); el servidor debe devolver `index.html` en las rutas internas (nginx lo hace, `default.conf.template:37-39`) | `environment.model.ts:9-31`; `staticwebapp.config.json:3`; `app.config.ts:32-35` |
+| 20 | Imágenes base: `aspnet:10.0`, `sdk:10.0`, `runtime:10.0`, `mssql/server:2022-latest`, `node:22-alpine` y `nginx-unprivileged:1.27-alpine` van por etiqueta flotante (sin digest; solo Presidio fija digest); decide si fijarlas | `SOFIA.API/Dockerfile:1,6`; `SOFIA.DbUp/Dockerfile:1,11`; `docker-compose.yml:4`; `sofia-web-spa/Dockerfile:1,11` |
 | 21 | SQL Server en producción con la edición y licencia que correspondan: el compose usa `MSSQL_PID=Developer` | `docker-compose.yml:9` |
 | 22 | El `HEALTHCHECK` de la API usa `curl`; verifica que la imagen resultante lo tenga o cambia la sonda | `docker-compose.yml:77`; `SOFIA.API/Dockerfile` (no lo instala) |
 
@@ -530,12 +568,12 @@ El despliegue previsto es Azure, pero **no hay ningún ambiente creado** y los r
 | Necesidad que se deduce del código | Evidencia | Estado |
 |---|---|---|
 | Hosting estático para el SPA (indicio de Azure Static Web Apps por el nombre y la clave `globalHeaders`) | `sofia-web-spa/public/staticwebapp.config.json:2-9` | Pendiente |
-| Regla de reescritura a `index.html` para las rutas internas del SPA (el archivo no define `navigationFallback`; las rutas no usan `#`) | `staticwebapp.config.json` (solo `globalHeaders`); `app.config.ts:32-35` | Pendiente |
+| Regla de reescritura a `index.html` para las rutas internas del SPA | Resuelta en la imagen nginx (`default.conf.template:37-39`, `9ad15f0`); `staticwebapp.config.json` sigue sin `navigationFallback` (solo `globalHeaders`) | Resuelto para la imagen nginx; Pendiente si se usara Static Web Apps |
 | Cómo llega el SPA a la API: otro origen (requiere `AllowedOrigins`, CSP `connect-src` y cookie `SameSite=None`) o mismo origen (`baseurl` vacío en producción); no está decidido en el código | `environment.prod.ts:6-8`; `staticwebapp.config.json:3`; `Program.cs:51-62` | Pendiente |
-| Generación de `environment.js` por ambiente al desplegar el SPA | `public/environment.js:1`; `.gitignore:52,55-56` (menciona archivos que no existen) | Pendiente |
-| Hosting para la imagen de la API y para DbUp (contenedores) | `SOFIA.API/Dockerfile`; `SOFIA.DbUp/Dockerfile` | Pendiente |
+| Generación de `environment.js` por ambiente al desplegar el SPA | Resuelta en la imagen nginx (`nginx/40-runtime-env.sh:4-9`, `9ad15f0`); `public/environment.js:1` sigue vacío; `.gitignore:52,55-56` menciona archivos que no existen | Resuelto para la imagen nginx |
+| Hosting para las imágenes de la API, de DbUp y del SPA (contenedores) | `SOFIA.API/Dockerfile`; `SOFIA.DbUp/Dockerfile` | Pendiente |
 | Hosting para Presidio (contenedor) accesible solo por la API | `SOFIA.PresidioAPI/Dockerfile`; `main.py:12,18-21` | Pendiente |
-| Registro de imágenes de contenedor | No hay pasos de publicación | Pendiente |
+| Registro de imágenes de contenedor | Existe ghcr con `:uat` y `:<sha>` para API, Presidio y SPA (6.4, `d79d6fa`, `9ad15f0`); falta DbUp y no es un registro de Azure | Parcial |
 | Servidor SQL Server, usuarios (migración y aplicación) y cadena de conexión | `docker-compose.yml:46,97` usa `sa` | Pendiente |
 | Respaldo y restauración de la base | Ninguno en los repositorios | Pendiente |
 | Almacén de secretos para: `Jwt:SecretKey`, cadena de conexión, `GeminiApi:ApiKey`, `PresidioApi:InternalKey`, `Email:Smtp:Password`, `Email:AzureCommunication:ConnectionString` | Claves secretas de [3.1](#31-claves-de-la-api); `.env.example:19-21` | Pendiente |
@@ -552,7 +590,7 @@ El despliegue previsto es Azure, pero **no hay ningún ambiente creado** y los r
 
 ### En curso (sin commitear)
 
-Ninguno. `git status --short` en `sofia-apis` y `sofia-web-spa` no mostró cambios al elaborar este documento (commits `43f5529` y `eeffbb6`).
+Ninguno. `git status --short` en `sofia-apis` y `sofia-web-spa` no mostró cambios al revisar este documento (commits `9c16f35` y `7070e1a`).
 
 ### No verificado
 
@@ -577,10 +615,10 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 ### Pendientes (no existen en los repositorios)
 
 - Definición de infraestructura de Azure o de cualquier ambiente: ver [sección 8](#8-pendientes-para-azure).
-- Pipeline de CI para el SPA y pipeline de despliegue para ambos repositorios: [6.3](#63-qué-falta-para-un-despliegue-automatizado-pendiente).
+- Pipeline de CI de calidad para el SPA, publicación de la imagen de DbUp y pipeline de despliegue para ambos repositorios: [6.3](#63-qué-falta-para-un-despliegue-automatizado-pendiente).
 - Respaldos de la base de datos, monitoreo, alertas y envío de logs: [4.7](#47-respaldos) y [5.4](#54-monitoreo-y-alertas).
 - Usuarios de SQL Server distintos de `sa` (migración y aplicación): [4.6](#46-usuario-de-base-de-datos).
-- Generación de `environment.js` por ambiente y regla de reescritura de rutas del SPA: [3.3](#33-configuración-en-tiempo-de-ejecución-del-spa) y [8](#8-pendientes-para-azure).
+- Generación de `environment.js` y reescritura de rutas del SPA: resueltas en la imagen nginx; pendientes solo para un despliegue de archivos estáticos ([3.3](#33-configuración-en-tiempo-de-ejecución-del-spa) y [8](#8-pendientes-para-azure)).
 - Cifrado de datos personales: [7](#7-lista-de-verificación-previa-a-producción), punto 16.
 - Procedimiento documentado de recuperación ante un script DbUp fallido: [4.5](#45-si-un-script-falla).
 
@@ -591,7 +629,8 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 - El compose usa `sa` para la API y para DbUp.
 - El archivo de log diario tiene `fileSizeLimitBytes` sin `rollOnFileSizeLimit`.
 - `OutboxProcessor` publica `VentaCompletadaEvent`, pero no existe ningún `INotificationHandler`; los eventos fallidos no se reintentan.
-- `staticwebapp.config.json` no define `navigationFallback` y el router no usa `#`.
+- `staticwebapp.config.json` no define `navigationFallback` y el router no usa `#` (la imagen nginx sí reescribe a `index.html`).
+- Los workflows `docker-publish.yml` publican en ghcr sin ejecutar pruebas y la imagen de DbUp no se publica.
 - `.gitignore` y `.gitattributes` del SPA mencionan `scripts/azure/` y `environment.js.example`, que no existen.
 
 ## Tabla de cobertura
@@ -621,7 +660,9 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 | `sofia-web-spa/src/environments/environment.local.ts` | 3.3 (no se abrió) |
 | `sofia-web-spa/public/environment.js` y `src/index.html` | 3.3 |
 | `sofia-web-spa/angular.json` y `package.json` | 1.4; 6.2 |
-| Workflows del SPA | 6.2 (no existen) |
+| Workflows del SPA (`docker-publish.yml`) | 6.2, 6.4 (no hay CI de calidad) |
+| `sofia-apis/.github/workflows/docker-publish.yml`, `sofia-apis/.gitattributes` | 6.4 |
+| `sofia-web-spa/Dockerfile`, `.dockerignore`, `nginx/default.conf.template`, `nginx/40-runtime-env.sh` | 1.4; 3.3; 6.4 |
 | Componentes: API, DbUp, Presidio, SPA, SQL Server, correo | Sección 1 |
 | Configuración por entorno | Sección 3 |
 | Base de datos | Sección 4 |
@@ -635,7 +676,7 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 Backend (`sofia-apis`):
 
 - `docker-compose.yml`, `.env.example`, `.dockerignore`, `.gitleaksignore`, `.dependency-check-suppressions.xml`, `.editorconfig`, `dotnet-tools.json`, `.gitignore`
-- `.github/workflows/security.yml`
+- `.github/workflows/security.yml`, `.github/workflows/docker-publish.yml`, `.gitattributes` (añadidos en la versión 1.2)
 - `.husky/task-runner.json`
 - `src/Directory.Build.props`
 - `src/SOFIA.API/Dockerfile`, `Program.cs`, `SOFIA.API.csproj`, `appsettings.json`, `appsettings.Development.json`, `appsettings.Testing.json`, `Properties/launchSettings.json`, `Extensions/RateLimitingExtensions.cs`, `Extensions/RefreshTokenCookieExtensions.cs`, `Infrastructure/SecurityHeadersMiddleware.cs`, `Infrastructure/GlobalExceptionHandler.cs`, `Services/CurrentUser.cs`, `Controllers/AuthController.cs`, `Controllers/EmpresasController.cs`, `Controllers/RecetasController.cs`
@@ -647,6 +688,7 @@ Backend (`sofia-apis`):
 
 Frontend (`sofia-web-spa`):
 
+- `Dockerfile`, `.dockerignore`, `nginx/default.conf.template`, `nginx/40-runtime-env.sh`, `.github/workflows/docker-publish.yml` (añadidos en la versión 1.2)
 - `angular.json`, `package.json`, `.gitignore`, `.gitattributes`, `commitlint.config.js`, `.husky/pre-commit`, `.husky/commit-msg`
 - `public/environment.js`, `public/staticwebapp.config.json`
 - `src/index.html`, `src/typings.d.ts`
