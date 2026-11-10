@@ -3,13 +3,31 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-09 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
 | **Método** | Lectura de código y de archivos de configuración y tooling de ambos repositorios (solo lectura). No se ejecutó ningún comando de compilación, prueba, formato ni servidor. El apartado «Entorno local observado» recoge una comprobación hecha por el orquestador con `docker ps` / `docker inspect`. |
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-09)
+
+Revisión contra el código (`sofia-apis` `43f5529` → `9c16f35`, `sofia-web-spa` `eeffbb6` → `7070e1a`). Los dos repositorios están limpios (`git status --short` vacío).
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 2.1, 4.1, 6.1, 11.1 | `security.yml` era el único workflow del backend y no había `.gitattributes` | Hay un segundo workflow, `docker-publish.yml` (publica las imágenes `sofia-api` y `sofia-presidio` en ghcr), y un `.gitattributes` que fuerza CRLF (LF en `*.sh` y `Dockerfile`) | `d79d6fa`, `5fc2ebf` |
+| 2.2, 3.6, 6.2, 10.3, 11.2 | El SPA no tenía CI, ni `Dockerfile`, ni `.dockerignore`, ni carpeta `nginx/` | Tiene `Dockerfile`, `.dockerignore`, `nginx/` y el workflow `docker-publish.yml` (imagen `sofia-web` en ghcr con `environment.js` generado al arrancar). Sigue sin CI de lint ni de pruebas | `9ad15f0` |
+| 2.1 | `SOFIA.Domain/Common` sin `IGlobalReadEntity` | Se agrega la marca `IGlobalReadEntity` (catálogo DIGEMID compartido) | `9c16f35` |
+| 2.2 | 34 scopes de traducción | 33 carpetas de scope (`public/i18n/`, sin contar `es.json` ni `en.json`) | — |
+| 5.1 | 14 líneas de cuerpo sobre 167 commits | 14 sobre 177 commits | — |
+| 5.2 | 78 commits | 88 commits (cabecera más larga: 99 caracteres; ninguno con cuerpo) | — |
+| 7.1 | `ApplicationDbContext.cs:145-149,96,109` | `ApplicationDbContext.cs:151-155,96,115` (se agregó un bloque de 6 líneas antes del borrado lógico) | `9c16f35` |
+| 8.2 | `roles-detail.component.ts:182-186`, `roles/es.json:47-57` | `roles-detail.component.ts:194-198`, `roles/es.json:50-60` | `37d053d` |
+| 4.1, 4.2 | No mencionaban el fin de línea ni la construcción en contenedor | Se agregan la nota de CRLF (`.gitattributes`) y cómo construye el SPA la imagen (`npm ci --ignore-scripts` y `npm run build -- --configuration production`) | `5fc2ebf`, `9ad15f0` |
+
+### Versión 1.1 (2026-10-14)
 
 ### Versión 1.1 (2026-10-14)
 
@@ -100,7 +118,10 @@ sofia-apis/
 ├── .dockerignore                         Qué no entra al contexto de build de Docker
 ├── .editorconfig                         Estilo C# y severidades de analizadores (ver 7.1)
 ├── .env.example                          Plantilla de variables para docker compose (solo nombres y valores de ejemplo)
-├── .github/workflows/security.yml        Único workflow de CI (ver 6)
+├── .gitattributes                        Fin de línea CRLF salvo `*.sh` y `Dockerfile` (LF) (ver 4.1)
+├── .github/workflows/
+│   ├── security.yml                      CI: compilación, pruebas, OWASP y gitleaks (ver 6.1)
+│   └── docker-publish.yml                Publica las imágenes sofia-api y sofia-presidio en ghcr (ver 6.1)
 ├── .gitignore
 ├── .gitleaksignore                       Un hallazgo de gitleaks marcado como falso positivo
 ├── .husky/                               Hooks de Git con Husky.Net (ver 5.1)
@@ -138,7 +159,7 @@ No existe una carpeta `tests/`: los tres proyectos de prueba están en `src/` (`
 | Proyecto | Propósito | Referencia a | Fuente |
 |---|---|---|---|
 | `SOFIA.SharedKernel` | Punto de extensión compartido. Hoy solo contiene `AddSharedKernel()`, que no registra nada | — | `sofia-apis/src/SOFIA.SharedKernel/DependencyInjection.cs:5-7` |
-| `SOFIA.Domain` | Entidades (50 archivos en `Entities/`), enums (12 en `Enums/`), `Result`, `Error`, `BaseEntity`, el objeto de valor `Ruc`. `TreatWarningsAsErrors=true`. Expone `internal` a `SOFIA.UnitTests` y `SOFIA.Infrastructure` | SharedKernel | `sofia-apis/src/SOFIA.Domain/SOFIA.Domain.csproj:4,12-17,26` |
+| `SOFIA.Domain` | Entidades (50 archivos en `Entities/`), enums (12 en `Enums/`), `Result`, `Error`, `BaseEntity`, la marca `IGlobalReadEntity` (`Common/IGlobalReadEntity.cs`), el objeto de valor `Ruc`. `TreatWarningsAsErrors=true`. Expone `internal` a `SOFIA.UnitTests` y `SOFIA.Infrastructure` | SharedKernel | `sofia-apis/src/SOFIA.Domain/SOFIA.Domain.csproj:4,12-17,26` |
 | `SOFIA.Application` | Commands, queries, validadores y handlers por módulo; comportamientos del pipeline de MediatR; interfaces que implementa Infrastructure | Domain, SharedKernel | `sofia-apis/src/SOFIA.Application/SOFIA.Application.csproj:4-5`, `DependencyInjection.cs:13-24` |
 | `SOFIA.Infrastructure` | `ApplicationDbContext` y 48 configuraciones EF, JWT y permisos, envío de correo, lectura/generación de Excel, clientes de Presidio y Gemini, `OutboxProcessor` | Application, SharedKernel | `sofia-apis/src/SOFIA.Infrastructure/SOFIA.Infrastructure.csproj:4-5`, `DependencyInjection.cs:28-154` |
 | `SOFIA.API` | `Program.cs`, 31 controladores, middlewares, manejador global de excepciones, límites de peticiones | Application, Infrastructure, SharedKernel | `sofia-apis/src/SOFIA.API/SOFIA.API.csproj:23-25` |
@@ -203,7 +224,7 @@ src/SOFIA.Application/
 └── GlobalUsings.cs
 
 src/SOFIA.Domain/
-├── Common/                 BaseEntity, Result, Error, IAuditableEntity, IDomainEvent, EnumExtensions
+├── Common/                 BaseEntity, Result, Error, IAuditableEntity, IGlobalReadEntity, IDomainEvent, EnumExtensions
 ├── Entities/               50 archivos
 ├── Enums/                  12 archivos
 └── ValueObjects/           Ruc
@@ -251,18 +272,22 @@ Carpetas vacías que existen solo en esta máquina (Git no las rastrea, así que
 
 ```text
 sofia-web-spa/
+├── .dockerignore               Qué no entra al contexto de build de la imagen
 ├── .editorconfig               2 espacios, UTF-8, comillas simples en .ts
 ├── .gitattributes              Fuerza LF en docker/*.sh y scripts/azure/*.sh (carpetas que no existen en el repo)
+├── .github/workflows/docker-publish.yml   Publica la imagen sofia-web en ghcr (ver 6.2)
 ├── .gitignore
 ├── .husky/                     Hooks de Git con husky 8 (ver 5.2)
 │   ├── pre-commit
 │   └── commit-msg
 ├── .prettierignore
 ├── .prettierrc.json
+├── Dockerfile                  Imagen del SPA: compila con Node 22 y sirve con nginx sin privilegios (ver 3.6)
 ├── angular.json                Workspace de Angular: build, serve, test, lint
 ├── commitlint.config.js
 ├── eslint.config.js
 ├── karma.conf.js
+├── nginx/                      default.conf.template (servidor) y 40-runtime-env.sh (genera environment.js al arrancar)
 ├── package.json / package-lock.json
 ├── tsconfig.json               Opciones estrictas y alias de rutas
 ├── tsconfig.app.json
@@ -273,7 +298,7 @@ sofia-web-spa/
 │   ├── environment.js          Configuración en tiempo de ejecución (window.__env)
 │   ├── staticwebapp.config.json  Cabeceras de seguridad para Azure Static Web Apps
 │   ├── favicon.ico
-│   ├── i18n/                   es.json y en.json raíz + una carpeta por scope (34 scopes)
+│   ├── i18n/                   es.json y en.json raíz + una carpeta por scope (33 scopes)
 │   ├── icons/
 │   └── images/
 └── src/
@@ -578,13 +603,15 @@ El contenido del `environment.local.ts` de esta máquina no se abrió (es config
 
 > La etiqueta `<script src="environment.js"></script>` que carga ese archivo está en `src/index.html:18` (`sofia-web-spa/src/index.html:18`), dentro de `<head>`, así que `window.__env` se define antes de arrancar Angular. Hasta el commit `31af681` esa etiqueta no existía y nada cargaba `environment.js`; se agregó en `8f36125`. Un despliegue que sobrescriba `environment.js` con un objeto válido ya tiene efecto.
 
+**Imagen de contenedor (desde `9ad15f0`).** `sofia-web-spa/Dockerfile` (16 líneas) compila en una etapa `node:22-alpine` (`npm ci --ignore-scripts`, para que el script `prepare` de husky no corra sin repositorio Git, y `npm run build -- --configuration production`, `Dockerfile:1-9`) y sirve `dist/sofia-web-spa` con `nginxinc/nginx-unprivileged:1.27-alpine` en el puerto 8080 (`Dockerfile:11-16`). Al arrancar, `nginx/40-runtime-env.sh` exige la variable `API_BASE_URL` (si falta, el contenedor termina con «API_BASE_URL is required») y sobrescribe `environment.js` con `production: true`, `appVersion` (variable `APP_VERSION`, por defecto `1.0.0`) y `api.baseurl` = `API_BASE_URL` (`nginx/40-runtime-env.sh:4-9`). `nginx/default.conf.template` devuelve `index.html` en las rutas internas (`try_files $uri $uri/ /index.html`, línea 38), expone `GET /healthz` (línea 18-22), no cachea `index.html` ni `environment.js` (líneas 24-30), cachea un año los estáticos con hash (línea 32-35) y repite las cabeceras de `staticwebapp.config.json` con el origen de la API añadido a `connect-src` (línea 10). La sustitución de `${API_BASE_URL}` en la plantilla la hace el mecanismo de plantillas de la imagen base de nginx: **No verificado** en ejecución (no se construyó la imagen). Detalle y workflow que la publica: [despliegue-y-operacion.md](despliegue-y-operacion.md) 1.4 y 6.4.
+
 **Puerto y host.** `ng serve` usa `localhost:4200` (`angular.json:108-111`). El script `npm start` ejecuta `ng serve -o`, que además abre el navegador (`package.json:7`).
 
 **Proxy.** No hay: no existe ningún `proxy.conf.*` ni opción `proxyConfig` en `angular.json`. El SPA llama a la API directamente por su URL absoluta (`${environment.api.baseurl}/api/v1/...`, por ejemplo `sofia-web-spa/src/app/pages/laboratorios/services/laboratorio.service.ts:17`), por eso dependes de la política CORS de [3.5](#35-api).
 
 **Traducciones.** Se cargan por HTTP desde `/i18n/<ruta>.json` (`sofia-web-spa/src/app/core/transloco/transloco-loader.ts:10-12`), es decir, desde `public/i18n/`. Idiomas `es` y `en`, por defecto `es` (`sofia-web-spa/src/app/app.config.ts:51-59`).
 
-**`public/staticwebapp.config.json`.** Cabeceras globales (CSP, `X-Frame-Options`, HSTS, etc.) para un despliegue en Azure Static Web Apps (`sofia-web-spa/public/staticwebapp.config.json:2-9`); `ng serve` no las aplica. Su `connect-src` solo permite `'self'` y los dominios de Iconify, dato a tener en cuenta en despliegue si la API está en otro origen.
+**`public/staticwebapp.config.json`.** Cabeceras globales (CSP, `X-Frame-Options`, HSTS, etc.) para un despliegue en Azure Static Web Apps (`sofia-web-spa/public/staticwebapp.config.json:2-9`); `ng serve` no las aplica. Su `connect-src` solo permite `'self'` y los dominios de Iconify, dato a tener en cuenta en despliegue si la API está en otro origen (la imagen con nginx sí agrega el origen de la API, ver arriba).
 
 Pasos:
 
@@ -624,6 +651,8 @@ Ejecuta todo desde la raíz de `sofia-apis` (donde está `SOFIA.Solution.slnx`).
 | `dotnet test src/SOFIA.ArchitectureTests/SOFIA.ArchitectureTests.csproj` | Tres pruebas: `Domain` no depende de `Application`/`Infrastructure`/`API`; `Application` no depende de `Infrastructure`/`API`; toda acción pública de controlador con verbo HTTP declara `[HasPermission]`, `[Authorize]` o `[AllowAnonymous]` (en el método o en la clase). El hook `pre-commit` la ejecuta en `Release` con `--no-restore` | `sofia-apis/src/SOFIA.ArchitectureTests/ArchitectureTests.cs:16-77`, `.husky/task-runner.json:35-46` |
 | `dotnet test src/SOFIA.IntegrationTests/SOFIA.IntegrationTests.csproj` | Pruebas de integración con la API en memoria (`WebApplicationFactory<Program>`) y un SQL Server real en un contenedor Testcontainers. Ver requisitos abajo | `sofia-apis/src/SOFIA.IntegrationTests/Infrastructure/SofiaWebAppFactory.cs:19-25` |
 | `dotnet test SOFIA.Solution.slnx` | Ejecuta los tres proyectos de prueba; por tanto necesita lo mismo que las de integración | `sofia-apis/SOFIA.Solution.slnx:4,9,10` |
+
+**Fin de línea.** Desde `5fc2ebf`, `sofia-apis/.gitattributes:1-4` hace que un clon (también en Linux, como en GitHub Actions) se extraiga con CRLF para todo archivo de texto (`* text=auto eol=crlf`), igual que `end_of_line = crlf` de `.editorconfig`, para que la regla `IDE0055` pase en CI; excepto `*.sh` y `Dockerfile`, que quedan en LF (líneas 3-4). Los hooks `.husky/pre-commit` y `.husky/commit-msg` no tienen extensión y no figuran como excepción, así que también se extraen con CRLF; el efecto de eso al ejecutarlos en Linux es **No verificado** (en la copia de trabajo de Windows de esta máquina ya tienen CRLF).
 
 **Qué necesitan las pruebas de integración** (todo en `SofiaWebAppFactory.cs`):
 
@@ -705,7 +734,7 @@ El plugin `prettier` está registrado en ESLint (`eslint.config.js:30-33`) pero 
 
 - En una compilación o CI: define `HUSKY=0` y el target no instala nada (`SOFIA.API.csproj:29`).
 - En Docker se omite solo: `.dockerignore:1` excluye `.git`, y el target exige que exista (`SOFIA.API.csproj:28-29`).
-- El workflow de CI del repositorio no define `HUSKY=0` (`sofia-apis/.github/workflows/security.yml`), de modo que allí el `restore` también instala los hooks, sin efecto práctico porque no se hacen commits.
+- El workflow `security.yml` no define `HUSKY=0` (`sofia-apis/.github/workflows/security.yml`), de modo que allí el `restore` también instala los hooks, sin efecto práctico porque no se hacen commits. `docker-publish.yml` no ejecuta `restore` fuera de Docker.
 
 **`pre-commit`** ejecuta `dotnet husky run --group pre-commit` (`sofia-apis/.husky/pre-commit:22`), es decir, estas cuatro tareas de `task-runner.json` en orden:
 
@@ -745,7 +774,7 @@ Ejemplos según esa expresión:
 | `feat(app):add void endpoint` | No | Falta el espacio tras los dos puntos |
 | `feat(app): add void endpoint` seguido de línea en blanco y un cuerpo | No | El mensaje debe ser de una sola línea |
 
-El historial del repositorio contiene commits que no cumplen la regla actual (scopes como `security`, `auth`, `application`, `ventas`, `roles`, `medicamentos`, y 14 líneas de cuerpo en total sobre 167 commits, según `git log`): son anteriores al hook o se hicieron sin él. No los tomes como ejemplo.
+El historial del repositorio contiene commits que no cumplen la regla actual (scopes como `security`, `auth`, `application`, `ventas`, `roles`, `medicamentos`, y 14 líneas de cuerpo en total sobre 177 commits, según `git log`): son anteriores al hook o se hicieron sin él. No los tomes como ejemplo.
 
 Si usas el editor de Git en lugar de `git commit -m`, ten presente que el validador lee el archivo del mensaje tal cual; **no verificado** en ejecución cómo se comporta con las líneas de comentario que añade Git. Con `git commit -m "<mensaje de una línea>"` no hay ambigüedad.
 
@@ -792,7 +821,7 @@ Ejemplos según esas reglas:
 | `fix(pos): correct total rounding.` | No | Punto final en el asunto |
 | Una cabecera de 101 caracteres o más | No | Supera `header-max-length` |
 
-En los 78 commits del repositorio la cabecera más larga mide 99 caracteres y ninguno tiene cuerpo (`git log`).
+En los 88 commits del repositorio la cabecera más larga mide 99 caracteres y ninguno tiene cuerpo (`git log`).
 
 ### 5.3 Diferencias entre repos, de un vistazo
 
@@ -810,7 +839,7 @@ En los 78 commits del repositorio la cabecera más larga mide 99 caracteres y ni
 
 ### 6.1 `sofia-apis`: workflow «Security Scan»
 
-Único archivo: `sofia-apis/.github/workflows/security.yml`.
+Archivo: `sofia-apis/.github/workflows/security.yml`. El repositorio tiene además `docker-publish.yml`, que publica imágenes y no verifica código (ver el final de esta sección).
 
 **Cuándo corre** (líneas 3-10): en cada `push` y `pull_request` a `master` o `main`, y todos los lunes a las 08:00 UTC (para detectar CVE nuevos). Permisos por defecto: `contents: read` (líneas 13-14). Las acciones están fijadas por hash de commit.
 
@@ -824,7 +853,7 @@ En los 78 commits del repositorio la cabecera más larga mide 99 caracteres y ni
 6. `dotnet test src/SOFIA.ArchitectureTests/SOFIA.ArchitectureTests.csproj --no-build --configuration Release`.
 7. Sube los `**/*.trx` como artefacto `test-results` (siempre, aunque falle un paso anterior).
 
-No ejecuta `SOFIA.IntegrationTests`, ni `dotnet format`, ni construye imágenes Docker, ni despliega.
+`security.yml` no ejecuta `SOFIA.IntegrationTests`, ni `dotnet format`, ni construye imágenes Docker, ni despliega.
 
 **Job 2 — `owasp-dependency-check`** (líneas 59-104), con permisos adicionales `actions: read` y `security-events: write`:
 
@@ -855,9 +884,11 @@ flowchart LR
 
 Los tres jobs son independientes (ninguno declara `needs`).
 
-### 6.2 `sofia-web-spa`: no existe
+**Workflow `docker-publish.yml` («Publish Docker Images», `d79d6fa`).** Corre en cada `push` a `main` y a mano (`workflow_dispatch`) (líneas 3-6), con permiso `packages: write` solo en el job (líneas 15-17). Una matriz construye y publica dos imágenes en `ghcr.io` con `docker/build-push-action` (líneas 18-52): `sofia-api` (contexto `.`, `src/SOFIA.API/Dockerfile`) y `sofia-presidio` (contexto `src/SOFIA.PresidioAPI`). Cada imagen recibe dos etiquetas, `:uat` y `:<sha del commit>` (líneas 48-50). No ejecuta pruebas ni análisis, no publica la imagen de DbUp (`src/SOFIA.DbUp/Dockerfile` no figura en la matriz) y no despliega. Las acciones están fijadas por hash de commit (líneas 30, 33, 36, 43).
 
-El repositorio del SPA **no tiene carpeta `.github`** ni ningún otro archivo de pipeline (comprobado en el sistema de archivos y en `git ls-files`). No hay CI que ejecute `lint:ci`, `test:ci` ni `build`; los únicos controles automáticos son los hooks locales de [5.2](#52-spa-sofia-web-spa-husky--lint-staged--commitlint). Pese a ello, `eslint.config.js:11` y los nombres de los scripts `test:ci` y `lint:ci` están pensados para un CI.
+### 6.2 `sofia-web-spa`: sin CI de calidad; solo publica una imagen
+
+El repositorio del SPA tiene `.github/workflows/docker-publish.yml` («Publish Docker Image», `9ad15f0`): en cada `push` a `main` y a mano construye la imagen del `Dockerfile` raíz y la publica en `ghcr.io` como `sofia-web` con las etiquetas `:uat` y `:<sha del commit>` (líneas 3-6, 32-41; acciones fijadas por hash). Ese es el único workflow: **no hay CI que ejecute `lint:ci`, `test:ci` ni `build` por separado** (el build ocurre solo dentro del `Dockerfile`); los únicos controles automáticos son los hooks locales de [5.2](#52-spa-sofia-web-spa-husky--lint-staged--commitlint). Pese a ello, `eslint.config.js:11` y los nombres de los scripts `test:ci` y `lint:ci` están pensados para un CI. Sobre la imagen: [3.6](#36-spa).
 
 ## 7. Convenciones de código
 
@@ -877,7 +908,7 @@ Solo se listan convenciones que se ven en el código o que impone un analizador 
 | **Permisos con `[HasPermission("Modulo", "Accion")]` en cada acción.** Toda acción debe declarar autorización | `LaboratoriosController.cs:18,26,34,44,58`; `SOFIA.Infrastructure/Authentication/HasPermissionAttribute.cs:5-10` | Prueba de arquitectura `Controller_Actions_Should_Declare_Authorization` (`ArchitectureTests.cs:59-74`), que corre en cada commit y en CI |
 | **Validadores FluentValidation** que heredan de `AbstractValidator<TCommand>`; se registran solos por ensamblado. Si fallan, `ValidationBehavior` devuelve `Result.Failure` 400 con código `"{NombreDelRequest}.{Propiedad}"` (no un literal) | `CreateLaboratorioCommandValidator.cs:9-19`; `SOFIA.Application/DependencyInjection.cs:17,24`; `Common/Behaviors/ValidationBehavior.cs:29-31,41,46` | Pipeline de MediatR |
 | **Entidades**: `sealed`, heredan de `BaseEntity`, constructor privado sin parámetros para EF, propiedades con `private set`, fábrica estática `Create(...)` y métodos de cambio que devuelven `Result` | `SOFIA.Domain/Entities/Laboratorio.cs:5-12,38`; `SOFIA.Domain/Common/BaseEntity.cs:3-29` | Observado |
-| **Auditoría, multiempresa y borrado lógico en la base**: `BaseEntity` aporta `TenantId`, `CreatedAt/By`, `LastModifiedAt/By`, `IsDeleted`, `DeletedAt/By`. Un `Remove()` se convierte en borrado lógico al guardar, y hay filtros globales de borrado lógico y de empresa | `BaseEntity.cs:8-15`; `SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:145-149,96,109`; uso en `DeleteLaboratorioCommandHandler.cs:29` | `ApplicationDbContext` |
+| **Auditoría, multiempresa y borrado lógico en la base**: `BaseEntity` aporta `TenantId`, `CreatedAt/By`, `LastModifiedAt/By`, `IsDeleted`, `DeletedAt/By`. Un `Remove()` se convierte en borrado lógico al guardar, y hay filtros globales de borrado lógico y de empresa | `BaseEntity.cs:8-15`; `SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:151-155,96,115`; uso en `DeleteLaboratorioCommandHandler.cs:29` | `ApplicationDbContext` |
 | **Antes de eliminar un maestro se comprueban dependencias** con `AnyAsync` y se responde 409 | `DeleteLaboratorioCommandHandler.cs:20-27` | Observado |
 | **Configuraciones EF: una clase `IEntityTypeConfiguration<T>` por entidad** en `Persistence/Configurations/`, con tabla en plural, columnas en `Pascal_Con_Guion_Bajo`, clave `<Entidad>_ID` e índices únicos filtrados por `IsDeleted` y por empresa. Se cargan por ensamblado | `SOFIA.Infrastructure/Persistence/Configurations/LaboratorioConfiguration.cs:11,16,20,25,28-29`; `ApplicationDbContext.cs:80` | Observado |
 | **Capas**: `Domain` no depende de nadie; `Application` no depende de `Infrastructure` ni de `API`. Los handlers usan `IApplicationDbContext`, no el `DbContext` concreto | `ArchitectureTests.cs:16-57`; `CreateLaboratorioCommandHandler.cs:11` | Pruebas de arquitectura |
@@ -946,7 +977,7 @@ Un permiso es un par de textos `Modulo` + `Accion`. **No existe una tabla ni una
 
 1. **Atributo en la API.** Pon `[HasPermission("<Modulo>", "<Accion>")]` en la acción que quieres proteger (modelo: `LaboratoriosController.cs:34`). Con eso el permiso aparece solo en `GET /api/v1/roles/permissions/catalog` y, por tanto, en la pantalla de permisos del rol. La comparación de nombres no distingue mayúsculas (`sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:48-50`); el rol `Admin` no necesita que se le asigne (`:31-36`).
 2. **Script DbUp (solo si roles existentes deben recibirlo sin intervención manual).** Modelo real: `sofia-apis/src/SOFIA.DbUp/Scripts/0017_Permiso_Ventas_Anular.sql:1-9`, que al separar `Ventas:Anular` de `Ventas:Actualizar` insertó el permiso nuevo a cada rol que tenía el anterior, con `NOT EXISTS` para ser repetible. Si no necesitas ese reparto, no hace falta script: un administrador lo asigna desde la pantalla de roles.
-3. **SPA — etiqueta.** Añade la traducción en `sofia-web-spa/public/i18n/roles/es.json` y `en.json`, bajo `permisos.modulo.<Modulo>` y/o `permisos.accion.<Accion>` (estructura en `roles/es.json:47-57`). Si falta, la pantalla muestra el nombre técnico tal cual (`sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:182-186`). El spec `sofia-web-spa/src/app/pages/roles/roles-i18n.spec.ts:13-27` exige que todo módulo de `ROUTE_PERMISSIONS` tenga etiqueta y que `es` y `en` tengan las mismas claves.
+3. **SPA — etiqueta.** Añade la traducción en `sofia-web-spa/public/i18n/roles/es.json` y `en.json`, bajo `permisos.modulo.<Modulo>` y/o `permisos.accion.<Accion>` (estructura en `roles/es.json:50-60`). Si falta, la pantalla muestra el nombre técnico tal cual (`sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:194-198`). El spec `sofia-web-spa/src/app/pages/roles/roles-i18n.spec.ts:13-27` exige que todo módulo de `ROUTE_PERMISSIONS` tenga etiqueta y que `es` y `en` tengan las mismas claves.
 4. **SPA — uso.**
    - Para ocultar un botón: `*appPermiso="'<Accion>'"` (usa el módulo de la ruta actual) o `*appPermiso="'<Modulo>:<Accion>'"` (modelo: `laboratorios-search.component.html:19,27`; directiva en `shared/directives/permiso.directive.ts:6-25`).
    - Para proteger una subruta con una acción distinta de `Leer`/`Crear`: añádela a `ROUTE_ACTIONS` (modelo: `'recetas-medicas/escanear': 'Analizar'` en `sofia-web-spa/src/app/core/auth/route-permissions.ts:29-33`).
@@ -1036,7 +1067,7 @@ Todos se deducen del código o de la configuración; ninguno se reprodujo ejecut
 
 ### 10.2 En curso (sin commitear)
 
-Ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en `sofia-apis` (`43f5529`) ni en `sofia-web-spa` (`eeffbb6`). Los cuatro archivos que la versión 1.0 tenía aquí ya están commiteados y las secciones que dependían de ellos se actualizaron:
+Ninguno. Al 2026-11-09 `git status --short` no muestra cambios locales en `sofia-apis` (`9c16f35`) ni en `sofia-web-spa` (`7070e1a`). Los cuatro archivos que la versión 1.0 tenía aquí ya están commiteados y las secciones que dependían de ellos se actualizaron:
 
 | Archivo | Qué cambió respecto a la versión 1.0 | Dónde afecta en esta guía |
 |---|---|---|
@@ -1050,7 +1081,8 @@ Los archivos de ventas, caja, `venta-detail`, traducciones de `pos` y los dos `R
 ### 10.3 Pendientes detectados (no existen en los repositorios)
 
 - No hay `global.json` que fije el SDK de .NET ni `engines`/`.nvmrc` que fije Node.
-- El SPA no tiene CI, ni `Dockerfile`, ni configuración de proxy.
+- El SPA no tiene CI de lint ni de pruebas ni configuración de proxy de desarrollo (sí tiene `Dockerfile`, nginx y un workflow que publica la imagen desde `9ad15f0`, ver 6.2).
+- El workflow `docker-publish.yml` del backend no publica la imagen de DbUp, y ningún workflow de publicación (backend ni SPA) ejecuta pruebas antes de publicar.
 - No hay Swagger/OpenAPI habilitado en la API.
 - No hay script ni documentación en el código para confiar en el certificado de desarrollo ni para crear `environment.local.ts` (no existe un `environment.local.ts.example`).
 - CI no ejecuta las pruebas de integración ni `dotnet format`.
@@ -1107,6 +1139,8 @@ Inventario: los archivos de configuración y tooling pedidos en el encargo, más
 | 41 | `global.json` | No existe (1) |
 | 42 | `Directory.Packages.props`, `nuget.config` | No existen (las versiones de paquetes están en cada `.csproj`) |
 | 43 | `src/SOFIA.API/SOFIA.API.csproj.user` | Archivo local de Visual Studio, no versionado (`*.user` en `.gitignore`); no se documenta |
+| 43a | `.gitattributes` | 2.1, 4.1 |
+| 43b | `.github/workflows/docker-publish.yml` | 2.1, 6.1 |
 
 ### 11.2 `sofia-web-spa`
 
@@ -1137,8 +1171,8 @@ Inventario: los archivos de configuración y tooling pedidos en el encargo, más
 | 66 | `public/staticwebapp.config.json` | 2.2, 3.6 |
 | 67 | `src/index.html` | 3.6 |
 | 68 | `src/app/app.config.ts`, `src/main.ts` | 2.2, 3.6, 7.2 |
-| 69 | `.github/workflows/*` | No existe (6.2) |
-| 70 | `Dockerfile`, `docker-compose.yml` | No existen |
+| 69 | `.github/workflows/docker-publish.yml` | 2.2, 6.2 (única definición de pipeline; no hay CI de lint ni de pruebas) |
+| 70 | `Dockerfile`, `.dockerignore`, `nginx/default.conf.template`, `nginx/40-runtime-env.sh` | 2.2, 3.6. `docker-compose.yml`: no existe |
 | 71 | `proxy.conf.*` | No existe (3.6) |
 | 72 | `.nvmrc`, `.node-version`, campo `engines` | No existen (1) |
 | 73 | `.env.example` | No existe (el SPA no usa archivos `.env`) |
@@ -1165,7 +1199,7 @@ Inventario: los archivos de configuración y tooling pedidos en el encargo, más
 
 ## 12. Fuentes
 
-Archivos leídos para esta guía (commits `43f5529` y `eeffbb6`, con el árbol de trabajo sin cambios locales según `git status`).
+Archivos leídos para esta guía (commits `9c16f35` y `7070e1a`, con el árbol de trabajo sin cambios locales según `git status`; la versión 1.2 comprobó por script cada cita `archivo:línea` (el archivo existe, la línea existe y se leyó la primera línea citada) y sumó `sofia-apis/.gitattributes`, `sofia-apis/.github/workflows/docker-publish.yml`, `sofia-web-spa/Dockerfile`, `sofia-web-spa/.dockerignore`, `sofia-web-spa/nginx/` y `sofia-web-spa/.github/workflows/docker-publish.yml`).
 
 **`sofia-apis` — configuración y tooling**
 
