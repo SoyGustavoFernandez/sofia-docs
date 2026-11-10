@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; las pruebas de DIGEMID y de aislamiento de empresa están reconciliadas con `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de código (los tres proyectos de prueba, sus `.csproj`, `.husky`, `.github`) y de los inventarios `sofia-docs/_inventario`; los cruces de cobertura se calcularon con un script de solo lectura. No se ejecutó ninguna prueba ni compilación. `git status --short` sin cambios en `sofia-apis` al 2026-10-15 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-09 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` (revisado contra el código el 2026-11-09) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
+| **Método** | Lectura de código (los tres proyectos de prueba, sus `.csproj`, `.husky`, `.github`) y de los inventarios `sofia-docs/_inventario`; los cruces de cobertura se calcularon con un script de solo lectura. No se ejecutó ninguna prueba ni compilación. Revisado el 2026-11-09 contra el contenido del commit `9c16f35` |
 
 Este documento describe qué pruebas automatizadas tiene el backend, cómo están hechas y qué queda sin cubrir. Los comandos para correrlas y los requisitos de Docker y secretos están en la [guía del desarrollador, sección 4.1](../../desarrollo/guia-del-desarrollador.md#41-backend); aquí solo se agrega lo que esa guía no dice. Para la arquitectura de capas ver [tecnico/arquitectura.md](../../tecnico/arquitectura.md). La parte hermana del SPA es [calidad/pruebas-automatizadas/spa.md](spa.md).
 
@@ -41,7 +41,9 @@ Convención de conteo: «pruebas» = métodos con `[Fact]` o `[Theory]` (así lo
 
 Versión 1.1: las cifras incluyen los 9 métodos de prueba (2 archivos nuevos) que agregó `sofia-apis` `9c16f35` (catálogo DIGEMID compartido): `DeleteDigemidProductoCommandHandlerTests` (3), `DigemidCatalogoProductoTests` (4), una prueba más en `UpdateDigemidProductoCommandHandlerTests` y una más en `TenantIsolationIntegrationTests`. Recuento hecho sobre el diff del commit (`git show 9c16f35`), no con el script del inventario CSV.
 
-Fuente: `sofia-docs/_inventario/pruebas-backend.csv` (193 filas de datos; el `README.md` del inventario dice «186 archivos», cifra desfasada: el CSV tiene 193) y recuento de archivos `.cs` fuera de `bin`/`obj` (203 = 193 + 10 de apoyo). Ninguna prueba está marcada con `Skip`: la búsqueda de `Skip =` en `UnitTests` e `IntegrationTests` no devolvió resultados.
+Versión 1.2 (2026-11-09): revisión contra el commit `9c16f35` (recuento hecho sobre el contenido del commit, no sobre el árbol de trabajo). Se corrigieron: total de la tabla de 3 (162 archivos y 1 087 pruebas), resumen de integración (173 pruebas), 97 archivos con `Mock<IApplicationDbContext>`, las citas de línea de `SofiaWebAppFactory.cs` y `TestCurrentUser.cs`, el apartado de rotulado Arrange/Act/Assert, el recuento de entidades sin prueba de dominio (26 de 50, `DigemidCatalogoProducto` ya tiene prueba), las pruebas de concurrencia de la anulación (1) y el número de archivos `.cs` (205).
+
+Fuente: `sofia-docs/_inventario/pruebas-backend.csv` (193 filas de datos; el `README.md` del inventario dice «186 archivos», cifra desfasada: el CSV tiene 193) y recuento de archivos `.cs` fuera de `bin`/`obj` (205 = 195 + 10 de apoyo; el CSV se generó antes de `9c16f35` y no incluye los 2 archivos de ese commit). Ninguna prueba está marcada con `Skip`: la búsqueda de `Skip =` en `UnitTests` e `IntegrationTests` no devolvió resultados.
 
 ### 1.2 Herramientas y versiones
 
@@ -70,11 +72,11 @@ Particularidades: `SOFIA.ArchitectureTests` compila con `TreatWarningsAsErrors=t
 - **Carpeta `Common/`** dentro de un módulo para servicios auxiliares de Application (`UT/Ventas/Common/VentaDetalleFactoryTests.cs`, `UT/Devoluciones/Common/…`, `UT/Dashboard/Common/…`).
 - **Nombres de método**, en inglés: `Handle_Should<Resultado>_When<Condición>` (la mayoría de los handlers), `Validate_Should(Pass|Fail)_When<Condición>` (validadores), `Create_Should…`/`Update_Should…`/`<Metodo>_Should…` (entidades). Hay desviaciones: validadores de Ventas, Recetas y Magistrales usan `Should_Have_Error_When_…`/`Should_Not_Have_Error_When_…` y otros `ValidCommand_ShouldNotHaveAnyValidationErrors`; los de Seguridad y Roles usan `Handle_<Situación>_<Resultado>` (`UT/Security/Commands/Roles/…`). No hay una convención única.
 - **Integration** organizado por área funcional, no por módulo de Application (`IT/Api`, `IT/Security`, `IT/Persistence`, `IT/Maestros`, …) y los nombres de clase terminan en `IntegrationTests` (varios archivos terminan solo en `Tests`).
-- Los comentarios del código de prueba están en inglés y los `Arrange/Act/Assert` solo se rotulan en las pruebas de arquitectura.
+- Los comentarios del código de prueba están en inglés y los comentarios `// Arrange`/`// Act`/`// Assert` se usan solo en 11 archivos de `SOFIA.UnitTests`, 8 de `SOFIA.IntegrationTests` y en las pruebas de arquitectura; el resto no los rotula.
 
 ### 1.4 Patrones de las pruebas unitarias
 
-1. **Handlers de Application con `Mock<IApplicationDbContext>`**: 96 archivos de prueba crean `Mock<IApplicationDbContext>` y le asignan `DbSet` falsos con `BuildMockDbSet()` de MockQueryable (`new List<Venta> { _venta }.BuildMockDbSet().Object`, ejemplo `UT/Ventas/Commands/AnularVenta/AnularVentaCommandHandlerTests.cs:43-49`). Las colecciones se declaran como campos `List<T>` para afirmar sobre ellas después del `Handle`. No hay base de datos en memoria ni SQLite: la búsqueda de `UseInMemory`/`Sqlite` en `UT/` no encontró resultados.
+1. **Handlers de Application con `Mock<IApplicationDbContext>`**: 97 archivos de prueba crean `Mock<IApplicationDbContext>` y le asignan `DbSet` falsos con `BuildMockDbSet()` de MockQueryable (`new List<Venta> { _venta }.BuildMockDbSet().Object`, ejemplo `UT/Ventas/Commands/AnularVenta/AnularVentaCommandHandlerTests.cs:43-49`). Las colecciones se declaran como campos `List<T>` para afirmar sobre ellas después del `Handle`. No hay base de datos en memoria ni SQLite: la búsqueda de `UseInMemory`/`Sqlite` en `UT/` no encontró resultados.
 2. **Usuario actual simulado** con `Mock<ICurrentUser>` (`IsAuthenticated`, `SucursalId`, `Id`, …), ver `AnularVentaCommandHandlerTests.cs:30-32`.
 3. **Qué se afirma**: `Result.IsSuccess`/`IsFailure`, el código y tipo de `Error` (NotFound, Conflict, Forbidden, Validation…), el estado mutado de la entidad y que `SaveChangesAsync` se llame una vez (`Times.Once`) o nunca (`Times.Never`) en los caminos de rechazo.
 4. **Entidades de dominio**: se prueban sin dobles, llamando a las fábricas (`Venta.Create(...)`, `LoteInventario.Create(...)`) y verificando el `Result` y el estado.
@@ -85,10 +87,10 @@ Particularidades: `SOFIA.ArchitectureTests` compila con `TreatWarningsAsErrors=t
 
 ### 1.5 Patrones de las pruebas de integración
 
-- **Fábrica de la aplicación**: `SofiaWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime` (`IT/Infrastructure/SofiaWebAppFactory.cs:54`). Levanta un contenedor `mcr.microsoft.com/mssql/server:2022-latest` con Testcontainers (`:58-60`), arranca la API en entorno `Development` (`:96`), fuerza `Email:Provider=None` y `App:FrontendBaseUrl=https://app.sofia.test` (`:99-100`), reemplaza el `DbContext` por uno apuntado al contenedor (`:105-112`), sustituye `ICurrentUser` por `TestCurrentUser` (`:115-117`) y `IEmailSender` por `CapturingEmailSender` (`:119-120`).
-- **Esquema con `EnsureCreated`**: la base de pruebas se crea a partir del modelo de EF Core con `db.Database.EnsureCreated()` (`SofiaWebAppFactory.cs:125`), **no** con los scripts DbUp. Consecuencia: un cambio de esquema hecho solo en un script SQL no se verá en estas pruebas, y los índices, restricciones o columnas que solo existan en los scripts no están probados aquí. Entorno de la API durante las pruebas: `Development` (`:96`).
+- **Fábrica de la aplicación**: `SofiaWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime` (`IT/Infrastructure/SofiaWebAppFactory.cs:19`). Levanta un contenedor `mcr.microsoft.com/mssql/server:2022-latest` con Testcontainers (`:23-25`), arranca la API en entorno `Development` (`:61`), fuerza `Email:Provider=None` y `App:FrontendBaseUrl=https://app.sofia.test` (`:64-65`), reemplaza el `DbContext` por uno apuntado al contenedor (`:69-77`), sustituye `ICurrentUser` por `TestCurrentUser` (`:79-82`) y `IEmailSender` por `CapturingEmailSender` (`:84-85`).
+- **Esquema con `EnsureCreated`**: la base de pruebas se crea a partir del modelo de EF Core con `db.Database.EnsureCreated()` (`SofiaWebAppFactory.cs:90`), **no** con los scripts DbUp. Consecuencia: un cambio de esquema hecho solo en un script SQL no se verá en estas pruebas, y los índices, restricciones o columnas que solo existan en los scripts no están probados aquí. Entorno de la API durante las pruebas: `Development` (`:61`).
 - **Base de datos por clase de prueba**: `BaseIntegrationTest` implementa `IClassFixture<SofiaWebAppFactory>` (`IT/Infrastructure/BaseIntegrationTest.cs:11`), así que xUnit crea **una fábrica —y por tanto un contenedor SQL Server— por clase** y la comparte entre las pruebas de esa clase. Cada prueba obtiene un `IServiceScope` propio con `ISender` (MediatR) y `ApplicationDbContext` (`:28-31`). Los datos de una clase no se limpian entre sus pruebas: el código crea los datos con identificadores únicos (`Guid.NewGuid()`) y varias clases aíslan cada prueba en una empresa propia (`CurrentUser.Empresa = Guid.NewGuid()` en el constructor, o un `RegistrarEmpresa` nuevo por prueba), ver los comentarios «Every test runs in its own company» en `IT/Ventas/AnularVentaCajaIntegrationTests.cs`, `IT/Maestros/DeleteMaestroInUseIntegrationTests.cs` y `IT/Dashboard/DashboardVentasIntegrationTests.cs`.
-- **Inquilino controlado**: `TestCurrentUser` expone `Empresa`, `Empleado`, `Sucursal` y `Admin` modificables; `BaseIntegrationTest` los restablece al construir cada prueba (`BaseIntegrationTest.cs:22-26`) con la empresa fija `6f1b2c3d-0000-4000-8000-000000000001` (`IT/Infrastructure/TestCurrentUser.cs:43`).
+- **Inquilino controlado**: `TestCurrentUser` expone `Empresa`, `Empleado`, `Sucursal` y `Admin` modificables; `BaseIntegrationTest` los restablece al construir cada prueba (`BaseIntegrationTest.cs:22-26`) con la empresa fija `6f1b2c3d-0000-4000-8000-000000000001` (`IT/Infrastructure/TestCurrentUser.cs:10`).
 - **Ejecución secuencial**: `parallelizeTestCollections` es `false` (`IT/xunit.runner.json:3`).
 - **Dos estilos**: (a) pruebas que llaman a handlers por MediatR con la base real (`Sender.Send(...)`), (b) pruebas HTTP de extremo a extremo con `Factory.CreateClient()` contra los controladores reales (`IT/Api`, `IT/Security`).
 - **Constructores de datos**: `RegistroEmpresaBuilder.Nuevo` (RUC aleatorio único y correo de administrador, `IT/Infrastructure/RegistroEmpresaBuilder.cs`), `PosCatalogSeeder` (sucursal, empleado, medicamento, lote, stock y ventas, `IT/Infrastructure/PosCatalogSeeder.cs`), `DashboardTestClock.HoyLima()` (inicio del día en Lima, UTC-5, `IT/Infrastructure/DashboardTestClock.cs`).
@@ -159,7 +161,7 @@ Resumen por módulo:
 | Transferencias | 2 | 29 |
 | UnidadesMedida | 4 | 12 |
 | Ventas | 12 | 180 |
-| **Total** | **160** | **1 079** |
+| **Total** | **162** | **1 087** |
 
 (Los totales por módulo se calcularon sumando las filas del CSV con un script de lectura; ver 5.1.)
 
@@ -471,7 +473,7 @@ Resumen por módulo:
 
 Rutas relativas a `IT/`. «Base real» = SQL Server 2022 en contenedor con esquema creado por `EnsureCreated` (1.5). «HTTP» = `Factory.CreateClient` contra los controladores reales; «MediatR» = `Sender.Send(...)` directo al pipeline real (validación, transacción, auditoría). Muchas clases aíslan cada prueba en una empresa nueva (`CurrentUser.Empresa = Guid.NewGuid()` o `RegistrarEmpresa` con `RegistroEmpresaBuilder`) para que los datos de una prueba no cuenten en otra.
 
-Resumen: 32 archivos, 172 pruebas; 26 archivos usan contenedor SQL Server y 6 no (1.5).
+Resumen: 32 archivos, 173 pruebas; 26 archivos usan contenedor SQL Server y 6 no (1.5).
 
 ### 4.1 Api (HTTP y manejo de errores)
 
@@ -647,9 +649,9 @@ Todo lo que sigue sale del cruce del apartado 5 y de las pruebas catalogadas en 
 
 Varios de estos validadores sí corren en el pipeline de una prueba de integración (por ejemplo `RegistrarEmpresaValidationIntegrationTests`), pero ninguna prueba instancia el validador y recorre sus reglas.
 
-### 6.3 Entidades sin prueba de dominio dedicada (27 de 50)
+### 6.3 Entidades sin prueba de dominio dedicada (26 de 50)
 
-`AseguradoraMedica`, `AuditoriaEventoSeguridad`, `CuentaRol`, `CuentaSucursal`, `DetalleTransferencia`, `DetalleVenta`, `DevolucionDetalle`, `DigemidActaDestruccion`, `DigemidActaDetalle`, `DigemidCatalogoProducto`, `IngredienteActivo`, `JerarquiaUoM`, `MagistralConsumoInsumo`, `MagistralOrdenProduccion`, `PermisoRol`, `ProfesionalSalud`, `ProveedorDistribuidor`, `RecetaDigitalizadaIA`, `RegistroPrivacidadPresidio`, `Rol`, `RolSucursal`, `ServicioAgenda`, `ServicioClinicoInmunizacion`, `SistemaNotificacionInterna`, `SistemaOutboxEvento`, `UnidadMedida`, `VentaReclamoSeguro`.
+`AseguradoraMedica`, `AuditoriaEventoSeguridad`, `CuentaRol`, `CuentaSucursal`, `DetalleTransferencia`, `DetalleVenta`, `DevolucionDetalle`, `DigemidActaDestruccion`, `DigemidActaDetalle`, `IngredienteActivo`, `JerarquiaUoM`, `MagistralConsumoInsumo`, `MagistralOrdenProduccion`, `PermisoRol`, `ProfesionalSalud`, `ProveedorDistribuidor`, `RecetaDigitalizadaIA`, `RegistroPrivacidadPresidio`, `Rol`, `RolSucursal`, `ServicioAgenda`, `ServicioClinicoInmunizacion`, `SistemaNotificacionInterna`, `SistemaOutboxEvento`, `UnidadMedida`, `VentaReclamoSeguro`.
 
 De ellas, el script no encontró ninguna mención en pruebas unitarias ni de integración de `CuentaRol`, `CuentaSucursal`, `DigemidActaDetalle`, `RecetaDigitalizadaIA`, `RegistroPrivacidadPresidio` ni `SistemaNotificacionInterna`. `MagistralOrdenProduccion` y `MagistralConsumoInsumo` aparecen en las pruebas de los handlers de Magistrales (3.14) pero no tienen prueba propia.
 
@@ -668,7 +670,7 @@ Estado por flujo. «Sin integración» significa que ningún archivo de `SOFIA.I
 | Crear una venta (`CreateVentaCommand`) | 33 + 13 pruebas unitarias (3.28) | Solo se usa como siembra en `PreciosProveedorIntegrationTests` (costo histórico, RN-VEN-022). No hay prueba de integración del descuento de stock con base real (RN-VEN-014, RN-VEN-015), de cuarentena (RN-VEN-012), de la emisión de la boleta ni de la unicidad del correlativo (RN-CMP-004, RN-CMP-009). |
 | Cobrar una venta en espera (`CompletarVentaCommand`) | 21 + 8 pruebas unitarias | Sin integración (RN-VEN-056). |
 | Actualizar venta en espera (`ActualizarVentaPendienteCommand`) | 10 + 3 pruebas unitarias | Sin integración (RN-VEN-053 a RN-VEN-055). |
-| Anulación de venta | 11 pruebas unitarias + 6 de integración + 2 de concurrencia | Cubierta (RN-VEN-062 a RN-VEN-069, RN-CMP-012); no se prueba el rechazo por HTTP ni el permiso de anular. |
+| Anulación de venta | 11 pruebas unitarias + 6 de integración + 1 de concurrencia | Cubierta (RN-VEN-062 a RN-VEN-069, RN-CMP-012); no se prueba el rechazo por HTTP ni el permiso de anular. |
 | Devolución (`ProcesarDevolucionCommand`) | 14 + 8 pruebas unitarias del handler y el validador, 3 de las extensiones y 3 de la cabecera; concurrencia de devoluciones parciales a nivel de entidad (4.2) | **Sin prueba de integración del command ni del endpoint**: nota de crédito real contra la serie, reintegro de stock en base real, transaccionalidad todo o nada (RN-DEV-020 a RN-DEV-025, RN-DEV-028). Las dos consultas de devoluciones (RN-DEV-030, RN-DEV-031) no tienen prueba. |
 | Recetas: exigencia al vender | Matriz de exigencia en `VentaDetalleFactoryTests` (31) y en los handlers de venta; configuración flexible o estricta en `PosLookupsIntegrationTests` | La política `ExigirRegistroReceta` (RN-VEN-028, RN-VEN-029) no se prueba con una venta real de punta a punta. |
 | Recetas: análisis con IA | `GeminiRecetaAnalyzerTests` (2: selección de modelo) y validador de especialidad (3) | Sin prueba: formato de imagen (RN-REC-019), fallo del proveedor (RN-REC-021), límites del resultado (RN-REC-022), validación contra DIGEMID (RN-REC-023), coincidencia con el catálogo (RN-REC-024), stock por sucursal (RN-REC-026), equivalentes y sugerencias (RN-REC-027, RN-REC-028). Presidio (anonimización) solo como doble. |
@@ -696,7 +698,7 @@ Estado por flujo. «Sin integración» significa que ningún archivo de `SOFIA.I
 
 - **Esquema de integración distinto del real**: las pruebas usan `EnsureCreated` (1.5). Los scripts DbUp (fuente de verdad del esquema) no se ejercitan en ninguna prueba; un índice o restricción que exista solo en un script no se prueba.
 - **Integración fuera de CI**: ver 7.
-- **Suites que dependen de reflexión** sobre campos de respaldo (`CuentaFactory`, `EmisorMocks`) se romperían silenciosamente con un renombre.
+- **Suites que dependen de reflexión** (campos de respaldo en `CuentaFactory`; la propiedad `ExigirRegistroReceta` por nombre en `EmisorMocks`) se romperían con un renombre.
 - **Sin pruebas de rendimiento, carga ni de interfaz** del lado del backend; la seguridad estática depende de SonarAnalyzer y OWASP Dependency Check en CI (7).
 
 ---
@@ -737,13 +739,13 @@ Los otros jobs del workflow (OWASP Dependency Check y gitleaks) no ejecutan prue
 6. No se comprobó si el contenedor de CI (`ubuntu-latest`) podría ejecutar las pruebas de integración ni si faltaría configuración (JWT, contraseña).
 7. Las reglas de negocio citadas en 6 se tomaron de los títulos de los documentos [negocio/reglas](../../negocio/reglas/) (validados por otro agente) y de la lista de IDs vista; no se contrastó cada regla contra el código de la prueba. Los IDs RN-SER se tomaron de la lista de títulos de las reglas de series fiscales (RN-SER-013).
 
-**En curso (sin commitear):** ninguno. `git status --short` en `sofia-apis` no mostró cambios al 2026-10-15; el commit sigue siendo `43f5529`.
+**En curso (sin commitear):** ninguno documentado; todo lo descrito se verificó contra el contenido del commit `9c16f35`.
 
 **Pendientes**
 
 - Evaluar añadir pruebas de integración a CI (Docker en el runner) o al menos un hook previo al push.
 - Cerrar los huecos de 6 empezando por los flujos que mueven dinero o stock sin integración (devolución, cobro de venta pendiente, cierre de caja, transferencias).
-- Reconciliar con [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md): sus citas a `SofiaWebAppFactory.cs` líneas 19-25 y 33-90 corresponden a una versión anterior del archivo (ahora la fábrica está en las líneas 54-127); el contenido sigue siendo correcto. Y el `README.md` de `_inventario` dice «186 archivos» de prueba mientras el CSV regenerado tiene 193.
+- Reconciliar con [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md): sus citas a `SofiaWebAppFactory.cs` líneas 19-25 y 33-90 coinciden con el archivo actual (la fábrica ocupa las líneas 19-96; las citas de la versión 1.1 de este documento a las líneas 54-127 eran erróneas y se corrigieron). El `README.md` de `_inventario` dice «186 archivos» de prueba mientras el CSV tiene 193 y el código actual 195.
 
 ---
 
@@ -972,12 +974,12 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 
 ## 10. Fuentes
 
-Código de `sofia-apis` (commit `43f5529`), todo bajo `sofia-apis/`:
+Código de `sofia-apis` (commit `9c16f35`), todo bajo `sofia-apis/`:
 
 - `src/SOFIA.UnitTests/SOFIA.UnitTests.csproj`, `src/SOFIA.IntegrationTests/SOFIA.IntegrationTests.csproj`, `src/SOFIA.ArchitectureTests/SOFIA.ArchitectureTests.csproj`, `src/Directory.Build.props`, `src/SOFIA.Domain/SOFIA.Domain.csproj`, `SOFIA.Solution.slnx`.
 - `src/SOFIA.ArchitectureTests/ArchitectureTests.cs`.
 - `src/SOFIA.IntegrationTests/Infrastructure/*.cs` (7 archivos) y `src/SOFIA.IntegrationTests/xunit.runner.json`.
-- Los 160 archivos de `src/SOFIA.UnitTests/` y los 32 de `src/SOFIA.IntegrationTests/` listados en 9.1 (nombres de métodos, cabeceras, constructores y, por muestreo, cuerpos: `AnularVentaCommandHandlerTests.cs`, `CuentaAdminProtectionTests.cs`, `ConcurrencyIntegrationTests.cs`, `GeminiRecetaAnalyzerTests.cs`, `LoggingConfigurationTests.cs`, `TransactionRollbackIntegrationTests.cs`, `ExportRequestValidationIntegrationTests.cs`, `DashboardVentasIntegrationTests.cs`).
+- Los 162 archivos de `src/SOFIA.UnitTests/` y los 32 de `src/SOFIA.IntegrationTests/` listados en 9.1 (nombres de métodos, cabeceras, constructores y, por muestreo, cuerpos: `AnularVentaCommandHandlerTests.cs`, `CuentaAdminProtectionTests.cs`, `ConcurrencyIntegrationTests.cs`, `GeminiRecetaAnalyzerTests.cs`, `LoggingConfigurationTests.cs`, `TransactionRollbackIntegrationTests.cs`, `ExportRequestValidationIntegrationTests.cs`, `DashboardVentasIntegrationTests.cs`).
 - Clases de `src/SOFIA.Application` (handlers y validadores, solo para resolver nombres) y `src/SOFIA.Application/DependencyInjection.cs`.
 - `.husky/pre-commit`, `.husky/commit-msg`, `.husky/task-runner.json`, `.github/workflows/security.yml`.
 
