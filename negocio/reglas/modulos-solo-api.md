@@ -3,11 +3,21 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `27597cd` (la línea base vigente; el documento se empezó sobre `606cb69` y se comprobó con `git diff --stat 606cb69..HEAD` que los commits nuevos no tocan ningún archivo de transferencias, delivery, magistrales, servicios, cuarentena, actas ni auditoría) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `01b8260` (la línea base vigente) |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
 | **Método** | Lectura de código (controladores, validadores, handlers, entidades, configuraciones EF, scripts DbUp, búsqueda de llamadas y rutas en el SPA, archivos `es.json`). No se ejecutó la aplicación ni se llamó a la API ni se consultó la base de datos. |
+
+## Historial de cambios
+
+### Versión 1.2 (2026-11-14)
+
+Reconciliación con `sofia-apis` `6f6b837` y `sofia-web-spa` `558ad35`. Ninguna regla de transferencias, delivery, magistrales, servicios, cuarentena ni auditoría cambia.
+
+| Apartado o ID | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| RN-SRV-019 | `DBUP/0005_Empresa_MultiTenant.sql:61-74`. | `:59-75`: el script se separó en lotes con `GO`. | `34089ec` |
 
 ## 1. Alcance y convenciones
 
@@ -426,7 +436,7 @@ El módulo tiene dos registros independientes: la **agenda de servicios** (entid
 
 | ID | Regla | Tipo | Dónde se aplica | Código de error | HTTP | Mensaje en el SPA (es) |
 |---|---|---|---|---|---|---|
-| RN-SRV-019 | **`Servicios_Agenda`: el script de base de datos no coincide con el mapeo de EF.** La tabla del script `0001` tiene `Agenda_ID`, `Cliente_ID`, `Producto_ID`, `Venta_ID`, `Fecha_Hora_Programada`, `Estado_Cita` (`VARCHAR(20)`, valor por defecto `Programada`), `CreatedAt`, `CreatedBy` e `IsDeleted`; la configuración EF mapea además `LastModifiedAt`, `LastModifiedBy`, `DeletedAt` y `DeletedBy`, que **ningún script crea** (la tabla es la única de este documento a la que le faltan; los scripts posteriores solo le agregan `TenantId`, por la regla general del script `0005`). EF incluye todas las columnas mapeadas al insertar y al leer, de modo que, si la base se creó solo con los scripts, agendar, listar, consultar y eliminar citas fallarían con un error de columna inexistente (500, RN-GEN-040). **Comprobación en vivo (versión 1.1):** en la base de desarrollo de la referencia de la API agendar respondió 200, el listado devolvió la cita y eliminar respondió 200 (`tecnico/api/inventario-recetas-y-operaciones` §7, comprobación de RN-SRV-019); el código y los scripts no lo explican: ningún script DbUp toca `Servicios_Agenda` salvo `0001` y el `0005` solo le agrega `TenantId` (búsqueda de `Servicios_Agenda` en `SOFIA.DbUp/Scripts`: solo `0001`), y la aplicación no crea ni migra el esquema (solo `SofiaWebAppFactory.cs:90` usa `EnsureCreated`, en las pruebas de integración). Por qué funciona la base de desarrollo es **No verificado** (el esquema de esa base no se consultó); una base creada solo con los scripts podría fallar (sección 9.1, punto 1). Restricciones que sí existen: claves foráneas `FK_Agenda_Cliente`, `FK_Agenda_Producto` y `FK_Agenda_Venta`, e índice `IX_Agenda_Fecha` sobre la fecha programada para filas no eliminadas; no hay `CHECK` sobre el estado. | Integridad | `DBUP/0001_Initial_Schema.sql:753-768`; `CFG-AGE:38-45`; `DBUP/0005_Empresa_MultiTenant.sql:61-74` | `Db.ReferenciaInvalida` (clave foránea) (RN-GEN-038); error de columna inexistente sin mapear (RN-GEN-040) | 409 · 500 | Sin pantalla. |
+| RN-SRV-019 | **`Servicios_Agenda`: el script de base de datos no coincide con el mapeo de EF.** La tabla del script `0001` tiene `Agenda_ID`, `Cliente_ID`, `Producto_ID`, `Venta_ID`, `Fecha_Hora_Programada`, `Estado_Cita` (`VARCHAR(20)`, valor por defecto `Programada`), `CreatedAt`, `CreatedBy` e `IsDeleted`; la configuración EF mapea además `LastModifiedAt`, `LastModifiedBy`, `DeletedAt` y `DeletedBy`, que **ningún script crea** (la tabla es la única de este documento a la que le faltan; los scripts posteriores solo le agregan `TenantId`, por la regla general del script `0005`). EF incluye todas las columnas mapeadas al insertar y al leer, de modo que, si la base se creó solo con los scripts, agendar, listar, consultar y eliminar citas fallarían con un error de columna inexistente (500, RN-GEN-040). **Comprobación en vivo (versión 1.1):** en la base de desarrollo de la referencia de la API agendar respondió 200, el listado devolvió la cita y eliminar respondió 200 (`tecnico/api/inventario-recetas-y-operaciones` §7, comprobación de RN-SRV-019); el código y los scripts no lo explican: ningún script DbUp toca `Servicios_Agenda` salvo `0001` y el `0005` solo le agrega `TenantId` (búsqueda de `Servicios_Agenda` en `SOFIA.DbUp/Scripts`: solo `0001`), y la aplicación no crea ni migra el esquema (solo `SofiaWebAppFactory.cs:90` usa `EnsureCreated`, en las pruebas de integración). Por qué funciona la base de desarrollo es **No verificado** (el esquema de esa base no se consultó); una base creada solo con los scripts podría fallar (sección 9.1, punto 1). Restricciones que sí existen: claves foráneas `FK_Agenda_Cliente`, `FK_Agenda_Producto` y `FK_Agenda_Venta`, e índice `IX_Agenda_Fecha` sobre la fecha programada para filas no eliminadas; no hay `CHECK` sobre el estado. | Integridad | `DBUP/0001_Initial_Schema.sql:753-768`; `CFG-AGE:38-45`; `DBUP/0005_Empresa_MultiTenant.sql:59-75` | `Db.ReferenciaInvalida` (clave foránea) (RN-GEN-038); error de columna inexistente sin mapear (RN-GEN-040) | 409 · 500 | Sin pantalla. |
 | RN-SRV-020 | **`Servicios_Clinicos_Inmunizacion`.** Obligatorios: paciente, profesional, producto, lote, vía (`VARCHAR(50)`), sitio (`VARCHAR(100)`), volumen y modalidad (`VARCHAR(20)`); admiten NULL la venta (columna `Transaccion_ID`) y la fecha de entrega de la hoja informativa (`DATE`); la fecha de administración es `DATETIME` con valor por defecto y admite NULL en la base, aunque EF la declara obligatoria. **El volumen de la dosis es `DECIMAL(8,2)` en el script y EF lo declara `DECIMAL(12,4)`:** con 3 o 4 decimales, lo que ocurre al guardar no se verificó (sección 9.1, punto 2). Restricciones: `CHK_Modalidad_Reg` (`Corriente`, `Historica`) y claves foráneas `FK_Inmunizacion_Trans`, `FK_Inmunizacion_Cliente`, `FK_Inmunizacion_Prof`, `FK_Inmunizacion_Prod` y `FK_Inmunizacion_Lote`. Sin `CHECK` sobre el volumen. | Integridad | `DBUP/0001_Initial_Schema.sql:384-411`; `CFG-INM:13-95` | `Db.ValorInvalido` (CHECK) · `Db.ReferenciaInvalida` (claves foráneas) (RN-GEN-037, RN-GEN-038) | 400 · 409 | Sin pantalla. |
 | RN-SRV-021 | **Guards de actualización sin uso.** `ServicioAgenda.Update` y `ServicioClinicoInmunizacion.Update` repiten los guards de `Create`, pero ningún handler los llama (las actualizaciones no hacen nada, RN-SRV-017). | Integridad | `AGE:56-90`; `INM:126-164`; búsqueda de `.Update(` en `APP/Servicios` (sin coincidencias) | `ServicioAgenda.*` · `ServicioClinicoInmunizacion.*` (inalcanzables) | 400 | Sin pantalla. |
 
@@ -563,7 +573,7 @@ La auditoría de seguridad es una tabla de eventos (`Auditoria_Eventos_Seguridad
 
 ### 9.2 En curso (sin commitear)
 
-Se comprobó con `git status --short` en ambos repos (2026-10-13, `sofia-apis` `27597cd`, `sofia-web-spa` `01b8260`). Los cambios locales de `sofia-apis` son `README.md`, `RegistrarEmpresaCommandHandler.cs`, `Sucursal.cs` y pruebas; los de `sofia-web-spa` son `README.md`, `angular.json` y `src/index.html`. **Ninguna regla de este documento se apoya en un archivo con cambios sin commitear.** Las validaciones de dependencias al eliminar (`Sucursal.InUse`, `Medicamento.InUse`, `Paciente.InUse`) que se citan en RN-TRA-030, RN-MAG-023, RN-SRV-015 y RN-CUA-023 ya están commiteadas desde `27597cd`; `git diff --stat 606cb69..HEAD` confirma que los commits nuevos no tocan ningún archivo de transferencias, delivery, magistrales, servicios, cuarentena, actas ni auditoría.
+Ninguna. `git status --short` está limpio en `sofia-apis` (`6f6b837`) y en `sofia-web-spa` (`558ad35`).
 
 ### 9.3 Hallazgos del código
 
