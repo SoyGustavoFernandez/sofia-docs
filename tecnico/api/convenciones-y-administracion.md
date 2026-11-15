@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` |
-| **Método** | Lectura de código y llamadas reales a la API local |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Método** | Lectura de código y llamadas reales a la API local (2026-10-30). Versión 1.1: revisión contra el código y alta de las fichas de suscripción y de `Plataforma`, escritas desde el código (sin llamar a la API); ver 11.5 |
 
 ## Contenido
 
@@ -21,12 +21,13 @@
 - [7. `SeriesFiscales`](#7-seriesfiscales)
 - [8. `Dashboard`](#8-dashboard)
 - [9. `Auditoria`](#9-auditoria)
+- [9b. `Plataforma`](#9b-plataforma)
 - [10. Datos de prueba creados](#10-datos-de-prueba-creados)
 - [11. Pendientes y «No verificado»](#11-pendientes-y-no-verificado)
 - [12. Tabla de cobertura](#12-tabla-de-cobertura)
 - [13. Fuentes](#13-fuentes)
 
-Este documento es la parte A de cinco de la referencia de la API. Describe los 66 endpoints de nueve controladores de acceso y administración: `Auth` (7), `Empresas` (5), `Sucursales` (10), `Empleados` (6), `Roles` (17), `Cuentas` (9), `SeriesFiscales` (6), `Dashboard` (5) y `Auditoria` (1). Las otras cuatro partes enlazan la sección 0 en lugar de repetirla. Las reglas de negocio están en [negocio/reglas/administracion-y-seguridad.md](../../negocio/reglas/administracion-y-seguridad.md) (prefijos `GEN`, `AUT`, `EMP`, `SUC`, `EPL`, `ROL`, `CTA`, `SER`, `IMP`) y la matriz de permisos en [tecnico/seguridad/matriz-de-permisos.md](../seguridad/matriz-de-permisos.md); aquí se remite a ellas por ID y no se copian.
+Este documento es la parte A de cinco de la referencia de la API. Describe los 73 endpoints de diez controladores de acceso y administración: `Auth` (7), `Empresas` (9), `Sucursales` (10), `Empleados` (6), `Roles` (17), `Cuentas` (9), `SeriesFiscales` (6), `Dashboard` (5) y `Auditoria` (1) y `Plataforma` (3). Las otras cuatro partes enlazan la sección 0 en lugar de repetirla. Las reglas de negocio están en [negocio/reglas/administracion-y-seguridad.md](../../negocio/reglas/administracion-y-seguridad.md) (prefijos `GEN`, `AUT`, `EMP`, `SUC`, `EPL`, `ROL`, `CTA`, `SER`, `IMP`) y la matriz de permisos en [tecnico/seguridad/matriz-de-permisos.md](../seguridad/matriz-de-permisos.md); aquí se remite a ellas por ID y no se copian.
 
 ## 0. Convenciones comunes
 
@@ -127,8 +128,8 @@ Content-Type: application/problem+json
 | Origen | Estado | Cuerpo | Ejemplo real |
 |---|---|---|---|
 | Sin token o token inválido | 401 | Vacío. | 0.2 |
-| Sin permiso (`[HasPermission]`) | 403 | Vacío (la autorización falla sin cuerpo propio). Código: `PermissionAuthorizationHandler.cs` y `SOFIA.Infrastructure/DependencyInjection.cs:149-151`. | No verificado en vivo (ver 11) |
-| Límite de peticiones | 429 | Sin cuerpo definido por el código; la API no envía `Retry-After` (`RateLimitingExtensions.cs:14` solo fija el estado). | No verificado en vivo (ver 11) |
+| Sin permiso (`[HasPermission]`) | 403 | Vacío (la autorización falla sin cuerpo propio). Código: `PermissionAuthorizationHandler.cs` y `SOFIA.Infrastructure/DependencyInjection.cs:158-160`. | No verificado en vivo (ver 11) |
+| Límite de peticiones | 429 | Sin cuerpo definido por el código; la API no envía `Retry-After` (`RateLimitingExtensions.cs:15` solo fija el estado). | No verificado en vivo (ver 11) |
 | Ruta no válida (identificador que no es GUID, p. ej. `/Sucursales/abc`) | 404 | Vacío: la restricción `:guid` de la ruta descarta la petición antes del controlador. | Real, 0.6 |
 | JSON ilegible, tipo incorrecto, campo obligatorio ausente, parámetro de consulta no convertible o atributo de modelo incumplido (`[ExportHeaders]`, `[ExportLabel]`, `[ExportDateFormat]`, `[JsonRequired]`) | 400 | `ProblemDetails` **estándar de ASP.NET** con `type`, `title`, `status`, `errors` y `traceId`; sin `code`. | Real, 0.6 |
 | `Unauthorized()` directo del controlador (`Auth/refresh` sin cookie) | 401 | `ProblemDetails` mínimo con `type`, `title`, `status` y `traceId`. | Real, 1.3 |
@@ -162,7 +163,7 @@ Content-Type: application/json
 
 ### 0.5 Regla del HTTP de error
 
-El estado HTTP de un fallo de negocio **no sale del tipo de error** (`Validation`, `NotFound`, `Conflict`, `Forbidden`, `Unauthorized`): sale del número que el handler pasa a `Result.Failure(error, statusCode)`, que vale **400 por defecto** (`SOFIA.Domain/Common/Result.cs:149-150`; el mapeo solo lee `result.StatusCode`, `ResultExtensions.cs:17,22`). Consecuencias que verás en las fichas:
+El estado HTTP de un fallo de negocio **no sale del tipo de error** (`Validation`, `NotFound`, `Conflict`, `Forbidden`, `Unauthorized`): sale del número que el handler pasa a `Result.Failure(error, statusCode)`, que vale **400 por defecto** (`SOFIA.Domain/Common/Result.cs:32-33`; el mapeo solo lee `result.StatusCode`, `ResultExtensions.cs:17,22`). Consecuencias que verás en las fichas:
 
 - Un conflicto de negocio que el handler no marca con 409 sale como **400**: por ejemplo `Rol.DuplicateName`, `Rol.InUse` y `Permiso.Duplicate` (`Conflict` por tipo, 400 por estado). Las fichas indican siempre el estado real capturado.
 - Los fallos de validación (`ValidationBehavior`) y los errores de las entidades de dominio salen como 400.
@@ -342,10 +343,11 @@ La confirmación **vuelve a validar** cada fila y **omite en silencio** las que 
 
 | Límite | Valor | Aplica a | Respuesta | Fuente |
 |---|---|---|---|---|
-| Peticiones globales | 200 por minuto por IP (ventana fija), con hasta 10 en cola | Todo endpoint sin política propia | 429 | `SOFIA.API/Extensions/RateLimitingExtensions.cs:14-24` (RN-GEN-025) |
+| Peticiones globales | 200 por minuto por IP (ventana fija), con hasta 10 en cola | Todo endpoint sin política propia | 429 | `SOFIA.API/Extensions/RateLimitingExtensions.cs:17-25` (RN-GEN-025) |
 | Política `auth` | 10 por minuto por IP, sin cola | `Auth/login`, `Auth/change-password`, `Auth/forgot-password`, `Auth/reset-password` | 429 | `RateLimitingExtensions.cs:27-33` (RN-GEN-026) |
 | Política `signup` | 5 por hora por IP, sin cola | `Empresas/registrar` | 429 | `RateLimitingExtensions.cs:35-41` (RN-GEN-027) |
-| Política `ai-endpoints` | 10 por minuto por empresa (o por IP si el token no trae empresa) | Endpoints de IA (documentados en la parte D) | 429 | `RateLimitingExtensions.cs:43-50` (RN-GEN-028) |
+| Política `public-info` | 30 por minuto por IP, sin cola | `GET Plataforma/pago` (anónimo) | 429 | `RateLimitingExtensions.cs:43-49` (RN-GEN-043) |
+| Política `ai-endpoints` | 10 por minuto por empresa (o por IP si el token no trae empresa) | Endpoints de IA (documentados en la parte D) | 429 | `RateLimitingExtensions.cs:51-58` (RN-GEN-028) |
 | Archivo de carga masiva | 5 MB | `previsualizar` y `carga-masiva` | 413 `Request.TooLarge` | `ImportLimits.cs:6` |
 | Cuerpo del resto de endpoints | Sin límite propio en el código: rige el valor por omisión del servidor web | Resto | 413 `Request.TooLarge` | No se configura `MaxRequestBodySize` en `sofia-apis/src` |
 | Filas de exportación | 10 000 | `…/exportar` | 400 `Export.TooManyRows` | `PaginationLimits.cs:6` |
@@ -354,7 +356,7 @@ El límite por IP se cuenta con la IP de la conexión; `X-Forwarded-For` solo se
 
 ### 0.12 Multiempresa
 
-La empresa no se envía en ninguna petición: sale del token (`empresaId`). Toda consulta sobre una entidad de negocio filtra automáticamente por esa empresa y por «no eliminado», y toda inserción se asigna a ella (reglas RN-GEN-001 a RN-GEN-004; `ApplicationDbContext.cs:85-109`). Consecuencias para quien consume la API:
+La empresa no se envía en ninguna petición: sale del token (`empresaId`). Toda consulta sobre una entidad de negocio filtra automáticamente por esa empresa y por «no eliminado», y toda inserción se asigna a ella (reglas RN-GEN-001 a RN-GEN-004; `ApplicationDbContext.cs:86-116`). Consecuencias para quien consume la API:
 
 - Un registro de otra empresa **se comporta como inexistente**: el `GET` por identificador responde 404 (`*.NotFound`), no 403.
 - Las comprobaciones de unicidad suelen ser por empresa (licencia de sucursal, nombre de rol, licencia y correo de empleado, prefijo de serie), salvo las que son globales por diseño: el **nombre de usuario** (el inicio de sesión no pide la empresa) y el **RUC**.
@@ -692,7 +694,7 @@ HTTP/1.1 204 No Content
 
 ## 2. `Empresas`
 
-Registro público de una empresa y consulta y edición de **la empresa del usuario** (por el aislamiento de 0.12, el listado devuelve una sola fila: la propia). Cinco endpoints. Reglas: `RN-EMP-001` a `RN-EMP-018` ([`negocio/reglas/administracion-y-seguridad`, apartado 7](../../negocio/reglas/administracion-y-seguridad.md)); permisos en [`tecnico/seguridad/matriz-de-permisos`, apartado 3.6](../seguridad/matriz-de-permisos.md). El estado de la suscripción no se puede cambiar por la API (RN-EMP-015): solo se editan nombre y RUC.
+Registro público de una empresa y consulta y edición de **la empresa del usuario** (por el aislamiento de 0.12, el listado devuelve una sola fila: la propia; **el operador de plataforma ve todas las empresas**, RN-EMP-022, y para él `GET /Empresas` y `GET /Empresas/{id}` no filtran por empresa). Nueve endpoints (cinco de empresa y, desde `6f6b837`, cuatro de suscripción en 2.1). Reglas: `RN-EMP-001` a `RN-EMP-028` ([`negocio/reglas/administracion-y-seguridad`, apartado 7](../../negocio/reglas/administracion-y-seguridad.md)); permisos en [`tecnico/seguridad/matriz-de-permisos`, apartado 3.6](../seguridad/matriz-de-permisos.md). `PUT /Empresas/{id}` solo edita nombre y RUC; el estado de la suscripción lo cambia únicamente el operador de plataforma con los cuatro endpoints de 2.1 (RN-EMP-015, RN-EMP-019 a RN-EMP-021). `ExigirRegistroReceta` sigue sin poder cambiarse por la API (RN-EMP-016).
 
 Enumerado `EstadoEmpresa` (viaja como número): `0` TrialActivo, `1` Activo, `2` Suspendido, `3` Cancelado.
 
@@ -704,7 +706,7 @@ Registro público: crea en una sola transacción la empresa, su sede principal, 
 |---|---|
 | **Permiso** | Ninguno (anónimo) |
 | **Límite de peticiones** | Política `signup`: **5 por hora por IP**, sin cola (0.11) |
-| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:21` → `RegistrarEmpresaCommand` |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:26` → `RegistrarEmpresaCommand` |
 | **Pantalla del SPA** | `/auth/register`, botón «Registrar Empresa» |
 
 **Cuerpo:**
@@ -765,9 +767,9 @@ Lista paginada de empresas visibles (en la práctica, la del usuario), ordenada 
 
 | | |
 |---|---|
-| **Permiso** | `Empresas:Leer` |
+| **Permiso** | `Empresas:Leer` **o** ser operador de plataforma (`[HasPermissionOrPlataforma]`, RN-EMP-001, RN-GEN-042) |
 | **Límite de peticiones** | Solo el global |
-| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:35` → `GetEmpresasQuery` |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:40` → `GetEmpresasQuery` |
 | **Pantalla del SPA** | `/empresas`, botón «Buscar» |
 
 **Parámetros de consulta:**
@@ -835,9 +837,9 @@ Devuelve una empresa por identificador.
 
 | | |
 |---|---|
-| **Permiso** | `Empresas:Leer` |
+| **Permiso** | `Empresas:Leer` **o** ser operador de plataforma (`[HasPermissionOrPlataforma]`, RN-EMP-001, RN-GEN-042) |
 | **Límite de peticiones** | Solo el global |
-| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:57` → `GetEmpresaByIdQuery` |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:62` → `GetEmpresaByIdQuery` |
 | **Pantalla del SPA** | `/empresas/:id` (carga inicial) |
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
@@ -848,7 +850,7 @@ Devuelve una empresa por identificador.
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 404 | `Empresa.NotFound` | No existe, está eliminada o es de otra empresa. | RN-EMP-017 |
+| 404 | `Empresa.NotFound` | No existe, está eliminada o es de otra empresa (el operador de plataforma ve las de todas). | RN-EMP-017, RN-EMP-022 |
 
 **Ejemplo real:**
 
@@ -888,7 +890,7 @@ Edita el nombre y el RUC de la empresa. El identificador de la ruta manda sobre 
 |---|---|
 | **Permiso** | `Empresas:Actualizar` |
 | **Límite de peticiones** | Solo el global |
-| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:65` → `UpdateEmpresaCommand` |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:70` → `UpdateEmpresaCommand` |
 | **Pantalla del SPA** | `/empresas/:id`, botón «Guardar» |
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
@@ -951,12 +953,12 @@ Genera el Excel de empresas con los mismos filtros del listado.
 
 | | |
 |---|---|
-| **Permiso** | `Empresas:Leer` |
+| **Permiso** | `Empresas:Leer` **o** ser operador de plataforma (`[HasPermissionOrPlataforma]`, RN-EMP-001, RN-GEN-042) |
 | **Límite de peticiones** | Solo el global |
-| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:74` → `GetEmpresasQuery` (hasta 10 000 filas) |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:111` → `GetEmpresasQuery` (hasta 10 000 filas) |
 | **Pantalla del SPA** | `/empresas`, botón «Exportar» |
 
-**Cuerpo** (`EmpresaExportRequest`, `EmpresasController.cs:110`; mecanismo en 0.9):
+**Cuerpo** (`EmpresaExportRequest`, `EmpresasController.cs:149`; mecanismo en 0.9):
 
 | Campo | Tipo | Obligatorio | Reglas |
 |---|---|---|---|
@@ -985,6 +987,108 @@ HTTP/1.1 200 OK
 Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 Content-Disposition: attachment; filename=empresas.xlsx; filename*=UTF-8''empresas.xlsx
 ```
+
+### 2.1 Suscripción de las empresas (solo operador de plataforma)
+
+Desde `sofia-apis` `6f6b837` cuatro endpoints cambian el estado de la suscripción de **cualquier** empresa. Solo los llama el operador de plataforma: la cuenta con `Seguridad_Cuentas.Es_Admin_Plataforma = 1`, cuyo token lleva el claim `plat_admin` (RN-GEN-042, RN-CTA-021). Usan la política `PLATAFORMA_ADMIN` (`[Authorize(Policy = PlataformaAdminPolicy.Name)]`), que exige ese claim y **no** la satisface el rol `Admin` de una empresa; cada handler vuelve a comprobarlo y, si falla, responde 403 `Auth.PlataformaAdminRequerido`. Una cuenta sin el claim recibe 403 de la política sin cuerpo, antes de llegar al handler (0.4). Las cuatro responden `204 No Content` y buscan la empresa entre todas las empresas, no solo la propia. Reglas: `RN-EMP-019` a `RN-EMP-022`, `RN-EMP-028`; pantalla: botones del detalle `/empresas/:id` (`RN-EMP-022`). **Ejemplos de esta sección: No verificado en vivo** (no se llamó a la API en esta revisión; el cuerpo y los códigos salen del código).
+
+Cuerpo común de `activar` y `extender-prueba` (`SuscripcionFechaRequest`, `EmpresasController.cs:147`):
+
+| Campo | Tipo | Obligatorio | Reglas |
+|---|---|---|---|
+| `fechaVencimiento` | fecha y hora ISO 8601 con zona | Sí | Posterior a la hora actual (validador `ActivarSuscripcionEmpresaCommandValidator.cs:11-12` y `ExtenderPruebaEmpresaCommandValidator.cs:11-12`; la regla del dominio es la misma, `Empresa.cs:98-103`). El SPA envía el final del día elegido en hora local (RN-EMP-028). |
+
+#### `PUT /api/v1/Empresas/{id}/suscripcion/activar`
+
+Deja la empresa en estado `Activo` hasta la fecha indicada; al llegar esa fecha deja de estar vigente sola, sin cambiar de estado (RN-EMP-014, RN-EMP-019). Sirve para cobrar una renovación y para devolver el acceso a una empresa suspendida, cancelada o con la prueba vencida.
+
+| | |
+|---|---|
+| **Permiso** | Política `PLATAFORMA_ADMIN` (claim `plat_admin`; no es un permiso de módulo) |
+| **Límite de peticiones** | Solo el global |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:79` → `ActivarSuscripcionEmpresaCommand` |
+| **Pantalla del SPA** | `/empresas/:id`, botón «Activar suscripción» (solo operador) |
+
+**Parámetros de ruta:** `id` (GUID, obligatorio). **Cuerpo:** `fechaVencimiento` (tabla anterior).
+
+**Respuesta correcta:** `204 No Content`. Se audita como `EMPRESA_ACTIVAR` con «Vence: aaaa-mm-dd» (`ActivarSuscripcionEmpresaCommand.cs:11-12`).
+
+**Errores posibles:**
+
+| HTTP | `code` | Cuándo | Regla |
+|---|---|---|---|
+| 400 | `ActivarSuscripcionEmpresaCommand.FechaVencimiento` / `.Id` | Fecha no posterior a ahora; identificador vacío. | RN-EMP-019 |
+| 403 | sin `code` | El token no trae `plat_admin` (política). | RN-GEN-042 |
+| 403 | `Auth.PlataformaAdminRequerido` | El handler no ve la marca de operador (solo si la política dejó pasar). | RN-GEN-042 |
+| 404 | `Empresa.NotFound` | La empresa no existe o está eliminada. | RN-EMP-019 |
+
+**Ejemplo (forma según el código, no verificado en vivo):**
+
+```http
+PUT /api/v1/Empresas/7012325b-0c71-4fca-ab88-1a978b1c5011/suscripcion/activar
+Authorization: Bearer <token del operador>
+Content-Type: application/json
+
+{ "fechaVencimiento": "2026-12-31T23:59:59-05:00" }
+```
+
+```http
+HTTP/1.1 204 No Content
+```
+
+#### `PUT /api/v1/Empresas/{id}/suscripcion/extender-prueba`
+
+Cambia el vencimiento de una empresa que sigue en estado `TrialActivo`; la fecha nueva reemplaza a la anterior (puede ser anterior a la que había, si es futura). No cambia el estado.
+
+| | |
+|---|---|
+| **Permiso** | Política `PLATAFORMA_ADMIN` |
+| **Límite de peticiones** | Solo el global |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:87` → `ExtenderPruebaEmpresaCommand` |
+| **Pantalla del SPA** | `/empresas/:id`, botón «Extender prueba» (solo operador y solo si la empresa está en prueba) |
+
+**Parámetros de ruta y cuerpo:** como en `activar`.
+
+**Respuesta correcta:** `204 No Content`. Se audita como `EMPRESA_EXT_PRUEBA`.
+
+**Errores posibles:**
+
+| HTTP | `code` | Cuándo | Regla |
+|---|---|---|---|
+| 400 | `ExtenderPruebaEmpresaCommand.FechaVencimiento` / `.Id` | Fecha no posterior a ahora; identificador vacío. | RN-EMP-020 |
+| 403 | sin `code` / `Auth.PlataformaAdminRequerido` | Igual que en `activar`. | RN-GEN-042 |
+| 404 | `Empresa.NotFound` | La empresa no existe o está eliminada. | RN-EMP-020 |
+| 409 | `Empresa.Suscripcion.NoEstaEnPrueba` | La empresa no está en `TrialActivo` (`Empresa.cs:110-115`). | RN-EMP-020 |
+
+**Ejemplo:** igual que `activar`, con la ruta `.../suscripcion/extender-prueba`; respuesta `204`. Para una empresa ya `Activo` la respuesta sería `{ "status": 409, "detail": "Only a company on trial can have its trial extended.", "code": "Empresa.Suscripcion.NoEstaEnPrueba" }` (según el código, no verificado en vivo).
+
+#### `PUT /api/v1/Empresas/{id}/suscripcion/suspender`
+
+Deja la empresa en `Suspendido`: pierde el acceso al iniciar sesión, al renovar la sesión y, con un token vivo, en un minuto como máximo (RN-GEN-018, RN-EMP-021). Se revierte activando la suscripción.
+
+| | |
+|---|---|
+| **Permiso** | Política `PLATAFORMA_ADMIN` |
+| **Límite de peticiones** | Solo el global |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:95` → `SuspenderEmpresaCommand` |
+| **Pantalla del SPA** | `/empresas/:id`, botón «Suspender» (solo operador, nunca en su propia empresa ni si ya está suspendida) |
+
+**Parámetros de ruta:** `id` (GUID). **Cuerpo:** ninguno. **Respuesta correcta:** `204 No Content`; se audita como `EMPRESA_SUSPENDER`.
+
+**Errores posibles:** 400 `SuspenderEmpresaCommand.Id` (identificador vacío); 403 (igual que en `activar`); 404 `Empresa.NotFound`; **409 `Empresa.Suscripcion.PropiaEmpresa`** si el id es el de la empresa del propio operador (`EmpresaPlataformaExtensions.cs:11-12,21-22`, `SuspenderEmpresaCommandHandler.cs:23-26`).
+
+#### `PUT /api/v1/Empresas/{id}/suscripcion/cancelar`
+
+Deja la empresa en `Cancelado`, con los mismos efectos de acceso que suspender (RN-EMP-021). Se revierte activando la suscripción.
+
+| | |
+|---|---|
+| **Permiso** | Política `PLATAFORMA_ADMIN` |
+| **Límite de peticiones** | Solo el global |
+| **Código** | `SOFIA.API/Controllers/EmpresasController.cs:103` → `CancelarEmpresaCommand` |
+| **Pantalla del SPA** | `/empresas/:id`, botón «Cancelar suscripción» (solo operador, nunca en su propia empresa ni si ya está cancelada) |
+
+**Parámetros de ruta:** `id` (GUID). **Cuerpo:** ninguno. **Respuesta correcta:** `204 No Content`; se audita como `EMPRESA_CANCELAR`. **Errores posibles:** los mismos que `suspender` (`CancelarEmpresaCommand.Id`, 403, 404, 409 `Empresa.Suscripcion.PropiaEmpresa`).
 
 ## 3. `Sucursales`
 
@@ -3500,6 +3604,98 @@ HTTP/1.1 400 Bad Request
 { "status": 400, "detail": "'Tabla' must not be empty.; 'Registro Id' must not be empty.", "code": "AnonimizarDatosCommand.Tabla" }
 ```
 
+## 9b. `Plataforma`
+
+Datos de pago y cifras de suscripciones del operador de plataforma (`PlataformaController`, nuevo en `sofia-apis` `6f6b837`). Tres endpoints. Reglas: `RN-EMP-023` a `RN-EMP-027`, `RN-GEN-043`, `RN-DAS-025`, `RN-DAS-026` ([`negocio/reglas/administracion-y-seguridad`](../../negocio/reglas/administracion-y-seguridad.md) y [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md)); permisos en [`tecnico/seguridad/matriz-de-permisos`, apartado 3.28](../seguridad/matriz-de-permisos.md). **Los ejemplos de esta sección son No verificado en vivo**: no se llamó a la API en esta revisión; los códigos y los campos salen del código.
+
+#### `GET /api/v1/Plataforma/pago`
+
+Devuelve los datos de pago que el operador publicó. Es **anónimo** a propósito: lo lee una empresa bloqueada antes de iniciar sesión, para saber cómo pagar su suscripción (RN-EMP-025, RN-AUT-040).
+
+| | |
+|---|---|
+| **Permiso** | Ninguno (anónimo) |
+| **Límite de peticiones** | Política `public-info`: **30 por minuto por IP**, sin cola (RN-GEN-043; `RateLimitingExtensions.cs:43-49`) |
+| **Código** | `SOFIA.API/Controllers/PlataformaController.cs:21` → `GetConfiguracionPagoQuery` |
+| **Pantalla del SPA** | `/auth/login` (bloque «Paga tu suscripción con Yape» tras `Auth.EmpresaNoVigente`), diálogo «Cómo pagar» del aviso del panel y `/configuracion-pago` |
+
+**Parámetros:** ninguno.
+
+**Respuesta correcta:** `200 OK` con `ConfiguracionPagoDto`: `whatsappNumero`, `yapeNumero`, `instrucciones` y `qrDataUrl` (la imagen como `data:image/png;base64,...` o `data:image/jpeg;base64,...`). Lee la fila más antigua sin filtro de empresa; si el operador nunca guardó nada, los cuatro campos salen `null` (`GetConfiguracionPagoQueryHandler.cs:21-24`).
+
+**Errores posibles:** 429 al pasar de 30 peticiones por minuto desde la misma IP (cuerpo vacío, 0.11).
+
+**Ejemplo (forma según el código):**
+
+```json
+HTTP/1.1 200 OK
+
+{ "whatsappNumero": "51987654321", "yapeNumero": "987654321", "instrucciones": "Monto mensual S/ 90", "qrDataUrl": "data:image/png;base64,iVBORw0KGgo..." }
+```
+
+#### `GET /api/v1/Plataforma/dashboard`
+
+Cifras de suscripciones de **todas** las empresas para la sección «Suscripciones» del panel del operador (RN-DAS-025, RN-DAS-026).
+
+| | |
+|---|---|
+| **Permiso** | Política `PLATAFORMA_ADMIN` (claim `plat_admin`) |
+| **Límite de peticiones** | Solo el global |
+| **Código** | `SOFIA.API/Controllers/PlataformaController.cs:29` → `GetDashboardPlataformaQuery` |
+| **Pantalla del SPA** | `/dashboard`, sección «Suscripciones» (solo operador) |
+
+**Parámetros de consulta:** `inicioMes` (fecha y hora ISO 8601, opcional): instante en que empieza el mes local del operador; si se omite, se usa el primer día del mes UTC (`GetDashboardPlataformaQueryHandler.cs:29`).
+
+**Respuesta correcta:** `200 OK` con `total`, `vigentes` (en prueba más con suscripción), `enPrueba`, `conSuscripcion`, `porVencer` (vencen dentro de los próximos 7 días), `vencidas` (estado `TrialActivo` o `Activo` con vencimiento ya pasado), `suspendidas`, `canceladas`, `registradasEsteMes`, `diasPorVencer` (7) y `proximasAVencer` (hasta 10 empresas con `id`, `nombre`, `estado` y `fechaVencimiento`, por fecha). Cuenta las empresas no eliminadas de todas las empresas (`GetDashboardPlataformaQueryHandler.cs:31-70`).
+
+**Errores posibles:** 403 sin `code` si el token no trae `plat_admin` (política); 403 `Auth.PlataformaAdminRequerido` si solo falla la comprobación del handler.
+
+#### `PUT /api/v1/Plataforma/pago`
+
+Crea o actualiza la única fila de datos de pago y, si se envía, reemplaza la imagen del QR (RN-EMP-023, RN-EMP-024).
+
+| | |
+|---|---|
+| **Permiso** | Política `PLATAFORMA_ADMIN` |
+| **Límite de peticiones** | Solo el global; cuerpo máximo de 1 MB más 64 KB (`[RequestSizeLimit]`, `PlataformaController.cs:16,37`) |
+| **Código** | `SOFIA.API/Controllers/PlataformaController.cs:38` → `GuardarConfiguracionPagoCommand` |
+| **Pantalla del SPA** | `/configuracion-pago`, botón «Guardar» (solo operador) |
+
+**Cuerpo** (formulario `multipart/form-data`, `ConfiguracionPagoRequest`, `PlataformaController.cs:65`):
+
+| Campo | Tipo | Obligatorio | Reglas |
+|---|---|---|---|
+| `whatsappNumero` | texto | Sí | De 8 a 15 dígitos, con código de país y solo dígitos (`GuardarConfiguracionPagoCommandValidator.cs:10-12`). |
+| `yapeNumero` | texto | No | Exactamente 9 dígitos; en blanco se guarda como nulo (`:14-16`). |
+| `instrucciones` | texto | No | Hasta 500 caracteres (`:18-19`); en blanco se guarda como nulo. |
+| `qr` | archivo | No | Si no se envía se conserva el QR guardado. Entre 1 byte y 1 MB (el controlador rechaza más con 400 `ConfiguracionPago.Qr.Tamano`, `:42-47`); PNG o JPEG según la firma del archivo, no según el tipo que declare el cliente (`ConfiguracionPago.Qr.Formato`). |
+
+**Respuesta correcta:** `204 No Content`. Se audita como `PAGO_CONFIG_GUARDAR` con «QR sin cambio» o «QR reemplazado».
+
+**Errores posibles:**
+
+| HTTP | `code` | Cuándo | Regla |
+|---|---|---|---|
+| 400 | `GuardarConfiguracionPagoCommand.WhatsappNumero` / `.YapeNumero` / `.Instrucciones` / `.QrImagen` | Falla el validador. | RN-EMP-023, RN-EMP-024 |
+| 400 | `ConfiguracionPago.Qr.Tamano` | El archivo pesa más de 1 MB (respuesta del controlador, sin `detail`). | RN-EMP-024 |
+| 400 | `ConfiguracionPago.Qr.Formato`, `.WhatsappNumero`, `.YapeNumero`, `.Instrucciones` | Reglas del dominio (el validador las atrapa antes en el caso normal). | RN-EMP-023, RN-EMP-024 |
+| 403 | sin `code` / `Auth.PlataformaAdminRequerido` | Igual que en 2.1. | RN-GEN-042 |
+| 413 | `Request.TooLarge` | El cuerpo completo supera 1 MB más 64 KB. | RN-GEN-039 |
+
+**Ejemplo (forma según el código):**
+
+```http
+PUT /api/v1/Plataforma/pago
+Authorization: Bearer <token del operador>
+Content-Type: multipart/form-data; boundary=----x
+
+campos: whatsappNumero=51987654321, yapeNumero=987654321, instrucciones=Monto mensual S/ 90, qr=<archivo png>
+```
+
+```http
+HTTP/1.1 204 No Content
+```
+
 ## 10. Datos de prueba creados
 
 Todo se creó en la empresa de prueba «Farmacia API Referencia S.A.C.» con el prefijo `4A-` (o `4a.` en el usuario). Son datos ficticios. Las contraseñas de las cuentas de prueba no se escriben aquí.
@@ -3527,7 +3723,7 @@ La cuenta compartida de la referencia solo se usó para el inicio de sesión de 
 
 | Endpoint | Motivo |
 |---|---|
-| `POST /api/v1/Empresas/registrar` | Crea empresas y tiene límite de 5 por hora por IP (API-AGENTES.md). La forma de la respuesta (`201` con `{ "token" }`) sale de `EmpresasController.cs:30-31`; el manual no trae un ejemplo técnico. |
+| `POST /api/v1/Empresas/registrar` | Crea empresas y tiene límite de 5 por hora por IP (API-AGENTES.md). La forma de la respuesta (`201` con `{ "token" }`) sale de `EmpresasController.cs:35-36`; el manual no trae un ejemplo técnico. |
 | `POST /api/v1/Auth/change-password` | El encargo limita este endpoint a la lectura del código. Un intento de llamarlo con la cuenta de prueba fue denegado por el control de permisos de la sesión de trabajo y no se repitió. |
 | `POST /api/v1/Auth/reset-password` | Igual: solo desde el código; además el token solo existe en el correo. |
 
@@ -3535,7 +3731,7 @@ La cuenta compartida de la referencia solo se usó para el inicio de sesión de 
 
 | Tema | Motivo |
 |---|---|
-| 403 por falta de permiso (cuerpo vacío) | La cuenta de la referencia es `Admin` (pasa todo) y toda cuenta creada por la API nace con cambio de clave obligatorio, que solo se quita con `change-password`/`reset-password`; sin eso el 403 que se obtiene es `Auth.CambioClaveRequerido`, no el de permiso. El comportamiento sale de `PermissionAuthorizationHandler.cs` y de `DependencyInjection.cs:149-151`. |
+| 403 por falta de permiso (cuerpo vacío) | La cuenta de la referencia es `Admin` (pasa todo) y toda cuenta creada por la API nace con cambio de clave obligatorio, que solo se quita con `change-password`/`reset-password`; sin eso el 403 que se obtiene es `Auth.CambioClaveRequerido`, no el de permiso. El comportamiento sale de `PermissionAuthorizationHandler.cs` y de `DependencyInjection.cs:158-160`. |
 | 429 | Provocarlo con la política `auth` (10 por minuto por IP) o la global (200) habría bloqueado a los demás agentes, que comparten la IP. Cuerpo y cabeceras sin comprobar; el código no define `Retry-After`. |
 | 500 | No se provocó. |
 | `Auth.InvalidCredentials` (401 de `login`), `Auth.EmpresaNoVigente` (403) | Exigen una contraseña incorrecta (prohibida: bloquea cuentas compartidas) o una empresa suspendida. |
@@ -3560,15 +3756,21 @@ La cuenta compartida de la referencia solo se usó para el inicio de sesión de 
 8. **Los previsualizar tienen tres formas de rechazar un archivo vacío o ausente:** sin el campo `file`, 400 estándar (`errors.file`); con un archivo de 0 bytes, 400 `text/plain` («Debe adjuntar un archivo Excel.»); con un archivo que no es `.xlsx`, 400 JSON con `CargaMasiva.Archivo.Invalido` (y `Content-Type: application/json` en lugar de `problem+json`).
 9. **Discrepancia con la documentación previa:** RN-IMP-013 de [`negocio/reglas/administracion-y-seguridad`](../../negocio/reglas/administracion-y-seguridad.md) afirma que la vista previa sin archivo responde el texto plano «Debe adjuntar un archivo Excel.»; en la API real eso ocurre solo con un archivo vacío (sin el campo, responde el 400 estándar del modelo).
 
+### 11.5 Versión 1.1 (2026-11-14)
+
+- Los 66 endpoints anteriores se compararon por script con los controladores de `6f6b837` (método, ruta, permiso, límite de peticiones y línea del controlador): coinciden, salvo el permiso de los tres de lectura de `Empresas` (ahora `[HasPermissionOrPlataforma]`) y las líneas de `EmpresasController.cs`, ya corregidas. Las rutas del documento omiten la restricción `:guid` del controlador (`{id}` en vez de `{id:guid}`), por convención de la sección 0.
+- Los 7 endpoints nuevos (2.1 y 9b) y los ejemplos de `Empresas` y `Plataforma` están escritos desde el código: **No verificado en vivo**. Los 403 de la política `PLATAFORMA_ADMIN` salen sin cuerpo (como los de `[HasPermission]`, 0.4); `Auth.PlataformaAdminRequerido` solo aparecería si el handler se invocara sin la política.
+- Hallazgo: el catálogo de permisos de roles ya no incluye `Empresas:Leer` (ver `tecnico/seguridad/matriz-de-permisos`, apartado 2).
+
 ### 11.4 En curso (sin commitear)
 
 Ninguno: al 2026-10-30, `git status --short` en `sofia-apis` (`34089ec`) y en `sofia-web-spa` (`9ad15f0`) no mostró cambios locales. El commit más nuevo que la línea base del encargo (`43f5529` / `eeffbb6`) solo cambia los scripts de base de datos del catálogo DIGEMID, flujos de GitHub y atributos de fin de línea; no toca ningún controlador de esta parte.
 
 ## 12. Tabla de cobertura
 
-### 12.1 Endpoints (66 de 66)
+### 12.1 Endpoints (73 de 73)
 
-Cada endpoint de `_inventario/endpoints.csv` para `Auth`, `Empresas`, `Sucursales`, `Empleados`, `Roles`, `Cuentas`, `SeriesFiscales`, `Dashboard` y `Auditoria` tiene su ficha (verificado con un script de lectura sobre este documento): **66 con ficha, 63 con ejemplo real y 3 con «Ejemplo no verificado»**. Orden del inventario.
+Cada endpoint de `_inventario/endpoints.csv` para `Auth`, `Empresas`, `Sucursales`, `Empleados`, `Roles`, `Cuentas`, `SeriesFiscales`, `Dashboard` y `Auditoria` tiene su ficha (verificado con un script de lectura sobre este documento): **73 con ficha (los 66 de la versión 1.0 y 7 de la 1.1 con ejemplo no verificado en vivo; de los 66 originales, 63 con ejemplo real y 3 con «Ejemplo no verificado»**. Orden del inventario.
 
 | # | Endpoint | Ficha | Ejemplo |
 |---|---|---|---|
@@ -3638,6 +3840,13 @@ Cada endpoint de `_inventario/endpoints.csv` para `Auth`, `Empresas`, `Sucursale
 | 64 | `POST /api/v1/Sucursales` | Sección 3 | Real |
 | 65 | `PUT /api/v1/Sucursales/{id}` | Sección 3 | Real |
 | 66 | `DELETE /api/v1/Sucursales/{id}` | Sección 3 | Real |
+| 67 | `PUT /api/v1/Empresas/{id}/suscripcion/activar` | Sección 2.1 | Según el código |
+| 68 | `PUT /api/v1/Empresas/{id}/suscripcion/extender-prueba` | Sección 2.1 | Según el código |
+| 69 | `PUT /api/v1/Empresas/{id}/suscripcion/suspender` | Sección 2.1 | Según el código |
+| 70 | `PUT /api/v1/Empresas/{id}/suscripcion/cancelar` | Sección 2.1 | Según el código |
+| 71 | `GET /api/v1/Plataforma/pago` | Sección 9b | Según el código |
+| 72 | `GET /api/v1/Plataforma/dashboard` | Sección 9b | Según el código |
+| 73 | `PUT /api/v1/Plataforma/pago` | Sección 9b | Según el código |
 
 ### 12.2 Contenido de la sección 0
 
@@ -3656,7 +3865,7 @@ Cada endpoint de `_inventario/endpoints.csv` para `Auth`, `Empresas`, `Sucursale
 
 ## 13. Fuentes
 
-**Código de `sofia-apis`** (commit `34089ec`):
+**Código de `sofia-apis`** (commit `6f6b837`; la versión 1.0 se capturó sobre `34089ec`): `PlataformaController.cs`, `PlataformaAdminPolicy.cs`, `EmpresaPlataformaExtensions.cs`, los comandos `ActivarSuscripcionEmpresa`, `ExtenderPruebaEmpresa`, `SuspenderEmpresa`, `CancelarEmpresa`, `GuardarConfiguracionPago` y las consultas `GetConfiguracionPago`, `GetDashboardPlataforma`, y `Domain/Entities/PlataformaConfiguracionPago.cs`.
 
 - Controladores: `src/SOFIA.API/Controllers/AuthController.cs`, `EmpresasController.cs`, `SucursalesController.cs`, `EmpleadosController.cs`, `RolesController.cs`, `CuentasController.cs`, `SeriesFiscalesController.cs`, `DashboardController.cs`, `AuditoriaController.cs`.
 - Infraestructura de la API: `src/SOFIA.API/Program.cs`, `Extensions/ResultExtensions.cs`, `Extensions/RateLimitingExtensions.cs`, `Extensions/RefreshTokenCookieExtensions.cs`, `Extensions/ExportExtensions.cs`, `Infrastructure/GlobalExceptionHandler.cs`, `RequireCsrfHeaderAttribute.cs`, `PasswordChangeRequiredMiddleware.cs`, `AllowDuringPasswordChangeAttribute.cs`, `SecurityHeadersMiddleware.cs`, `ExportHeadersAttribute.cs`, `ExportLabelAttribute.cs`, `ExportDateFormatAttribute.cs`, `Services/CurrentUser.cs`, `appsettings.json` (solo los nombres de claves `Jwt:ExpiryMinutes`, `ForwardedHeaders:KnownProxies`).
