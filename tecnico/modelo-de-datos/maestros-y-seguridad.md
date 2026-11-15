@@ -3,13 +3,25 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; la tabla DIGEMID y los scripts `0003`, `0004` y `0005` están reconciliados con `34089ec` y `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de código: scripts DbUp `0001`–`0028` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio. No se consultó la base de datos ni la API. |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Método** | Lectura de código: scripts DbUp `0001`–`0029` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio. No se consultó la base de datos ni la API. |
 
 ## Historial de cambios
+
+### Versión 1.3 (2026-11-14)
+
+Revisión contra el código y reconciliación con la gestión de suscripciones por el operador de plataforma (`sofia-apis` `9c16f35` → `6f6b837`). Se comprobaron por script las 27 tablas anteriores (columnas, tipos, nulos, valores por defecto, índices, claves foráneas y `CHECK`) contra los scripts `0001`–`0029`: no hubo diferencias.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 1, 2.5, 10.1, 12, 13 y 14 (alcance) | 27 tablas y scripts `0001`–`0028`. | 28 tablas y scripts `0001`–`0029`: el `0029` agrega `Seguridad_Cuentas.Es_Admin_Plataforma` y crea `Plataforma_Configuracion_Pago`. | `6f6b837` |
+| 4.1 `Seguridad_Cuentas` | 19 columnas. | 20 columnas: agrega `Es_Admin_Plataforma` (`BIT NOT NULL`, 0 por defecto, restricción `DF_Seguridad_Cuentas_Es_Admin_Plataforma`), que solo se cambia a mano en la base (RN-CTA-021, RN-GEN-042). | `6f6b837` |
+| 5.3 (nuevo) | No existía. | Tabla `Plataforma_Configuracion_Pago`: datos de pago que el operador publica (WhatsApp, Yape, indicaciones y QR), una sola fila por convención del código (RN-EMP-023 a RN-EMP-025). | `6f6b837` |
+| 2.2 y 4.1 (filtro de empresa) | El filtro de empresa descarta siempre las filas con `TenantId` nulo. | Excepción: las entidades `IGlobalReadEntity` (el catálogo DIGEMID compartido) dejan pasar las filas con `TenantId` nulo (`ApplicationDbContext.cs:110-114`); y el operador de plataforma lee `Empresas` y `Plataforma_Configuracion_Pago` sin filtro de empresa. | `9c16f35`, `6f6b837` |
+| Citas `DbContext:n` y `Ent/Cuenta.cs:n` | Numeradas sobre `43f5529` (y `9c16f35` para `109-113`). | Corridas 1 línea (nuevo `DbSet` en la línea 65) y 7 desde la línea 109 (6 del filtro compartido y 1 del `DbSet`); `Ent/Cuenta.cs` y `Ent/Empresa.cs` también cambiaron. | `6f6b837` |
 
 ### Versión 1.2 (2026-11-04)
 
@@ -38,9 +50,9 @@ Reconciliación con el código actual (`sofia-apis` `00991bc` → `43f5529`, `so
 
 ## 1. Alcance y forma de lectura
 
-Este documento es el diccionario de datos de las **27 tablas de maestros y seguridad** de SOFIA: empresa y organización (3), seguridad (9), sistema (2), catálogo farmacéutico y comercial (11) y personas (2). Las otras 23 tablas (inventario, transferencias, cuarentena y actas, recetas, caja, ventas, SUNAT, devoluciones, delivery, magistrales y servicios) y el historial de scripts se documentan en la Parte B.
+Este documento es el diccionario de datos de las **28 tablas de maestros y seguridad** de SOFIA: empresa y organización (3), seguridad (9), sistema (3), catálogo farmacéutico y comercial (11) y personas (2). Las otras 23 tablas (inventario, transferencias, cuarentena y actas, recetas, caja, ventas, SUNAT, devoluciones, delivery, magistrales y servicios) y el historial de scripts se documentan en la Parte B.
 
-El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0028`**. El script `0028_Ventas_Sesion_Anulacion.sql` solo agrega la columna `Sesion_Anulacion_ID` y su clave foránea a `Ventas_Cabecera`, que es de la Parte B (`sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql:2-7`), así que no afecta a ninguna tabla de este documento.
+El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0029`**. El script `0029_Plataforma_Suscripciones.sql` agrega la columna `Es_Admin_Plataforma` a `Seguridad_Cuentas` y crea `Plataforma_Configuracion_Pago` (apartados 4.1 y 5.3). El script `0028_Ventas_Sesion_Anulacion.sql` solo agrega la columna `Sesion_Anulacion_ID` y su clave foránea a `Ventas_Cabecera`, que es de la Parte B (`sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql:2-7`), así que no afecta a ninguna tabla de este documento.
 
 ### 1.1 Abreviaturas de las fuentes
 
@@ -48,7 +60,7 @@ Para no repetir rutas largas en cada celda, las citas usan estas abreviaturas:
 
 | Abreviatura | Ruta real |
 |---|---|
-| `0001:86` | `sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql`, línea 86. El mismo criterio vale para `0002` … `0028` (el nombre completo de cada script está en la sección [Fuentes](#14-fuentes)). |
+| `0001:86` | `sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql`, línea 86. El mismo criterio vale para `0002` … `0029` (el nombre completo de cada script está en la sección [Fuentes](#14-fuentes)). |
 | `Cfg/X.cs:n` | `sofia-apis/src/SOFIA.Infrastructure/Persistence/Configurations/X.cs`, línea n |
 | `Ent/X.cs:n` | `sofia-apis/src/SOFIA.Domain/Entities/X.cs`, línea n |
 | `DbContext:n` | `sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs`, línea n |
@@ -77,14 +89,15 @@ La columna de multiempresa se llama `TenantId` (`UNIQUEIDENTIFIER NULL`, sin val
 |---|---|---|
 | Declarada en el `CREATE TABLE` | `Empresas`, `RefreshTokens` | `0005:15`, `0006:9` |
 | `ALTER TABLE` explícito | `Sucursales`, `Empleados`, `Seguridad_Cuentas`, `Presentaciones_Venta` | `0005:34-36`, `0005:47-48`, `0005:54-55`, `0011:3` |
+| Declarada en el `CREATE TABLE` del `0029` (el `0005` ya había corrido) | `Plataforma_Configuracion_Pago` | `0029:14` |
 | SQL dinámico del `0005`: agrega `TenantId` a toda tabla que en ese momento tenía columna `IsDeleted` y aún no tenía `TenantId` | `Seguridad_Roles`, `Seguridad_Permisos_Rol`, `Auditoria_Eventos_Seguridad`, `Registro_Privacidad_Presidio`, `Sistema_Notificaciones_Internas`, `Sistema_Outbox_Eventos`, `Unidades_Medida`, `Jerarquia_UoM`, `Laboratorios`, `Ingredientes_Activos`, `Medicamentos`, `Formulacion_Clinica`, `Proveedores_Dist`, `Historial_Precios_Prov`, `Aseguradoras_Medicas`, `DIGEMID_Catalogo_Productos`, `Pacientes_Clientes`, `Profesionales_Salud` | `0005:59-75` |
 | No tienen `TenantId` (no tienen `IsDeleted` y ningún script se lo agrega) | `Seguridad_Cuentas_Roles`, `Seguridad_CuentasSucursales`, `Seguridad_Roles_Sucursales` | `0001:826-834`, `0007:4-12`, `0008:1-7` |
 
-En la aplicación, toda entidad que hereda de `BaseEntity` recibe dos filtros globales de consulta: borrado lógico (`IsDeleted = 0`) y empresa (`TenantId` igual a la empresa del usuario). El filtro de empresa es estricto: si no hay empresa en el contexto, o la fila tiene `TenantId` nulo, la fila no aparece (`DbContext:82-86`, `DbContext:91-110`). Al insertar, si la entidad no trae `TenantId` se le asigna la empresa del usuario (`DbContext:168-178`).
+En la aplicación, toda entidad que hereda de `BaseEntity` recibe dos filtros globales de consulta: borrado lógico (`IsDeleted = 0`) y empresa (`TenantId` igual a la empresa del usuario). El filtro de empresa es estricto: si no hay empresa en el contexto, o la fila tiene `TenantId` nulo, la fila no aparece, con una excepción: las entidades marcadas `IGlobalReadEntity` (hoy solo el catálogo DIGEMID) dejan pasar las filas con `TenantId` nulo (`sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:110-114`). Además, los handlers del operador de plataforma que cruzan empresas quitan el filtro `Tenant` con `IgnoreQueryFilters([QueryFilters.Tenant])` (RN-GEN-042) (`DbContext:83-87`, `DbContext:92-117`). Al insertar, si la entidad no trae `TenantId` se le asigna la empresa del usuario (`DbContext:175-185`).
 
 ### 2.3 Borrado lógico y auditoría
 
-El patrón estándar son siete columnas, que la aplicación rellena en `SaveChangesAsync` (`DbContext:132-158`): al insertar `CreatedBy`/`CreatedAt`; al modificar `LastModifiedBy`/`LastModifiedAt`; y un borrado se convierte en actualización que pone `IsDeleted = 1`, `DeletedBy` y `DeletedAt`. El nombre de usuario que se guarda es `currentUser.Name` o `"SYSTEM"` si no hay usuario.
+El patrón estándar son siete columnas, que la aplicación rellena en `SaveChangesAsync` (`DbContext:139-165`): al insertar `CreatedBy`/`CreatedAt`; al modificar `LastModifiedBy`/`LastModifiedAt`; y un borrado se convierte en actualización que pone `IsDeleted = 1`, `DeletedBy` y `DeletedAt`. El nombre de usuario que se guarda es `currentUser.Name` o `"SYSTEM"` si no hay usuario.
 
 | Columna | Tipo en tablas del `0001` | Nulo | Valor por defecto | Significado |
 |---|---|---|---|---|
@@ -106,7 +119,7 @@ Variaciones respecto de ese patrón (todas verificadas en los scripts):
 
 ### 2.4 Concurrencia (`RowVersion`)
 
-De las 27 tablas de este documento, solo `RefreshTokens` tiene columna `RowVersion ROWVERSION NOT NULL` (`0019:18-19`). Las demás tablas con `RowVersion` (`Inventario_Sucursal`, `Ventas_Cabecera`, `Transferencias_Cab`, `POS_Sesiones_Caja`) son de la Parte B (`0019:2-16`).
+De las 28 tablas de este documento, solo `RefreshTokens` tiene columna `RowVersion ROWVERSION NOT NULL` (`0019:18-19`). Las demás tablas con `RowVersion` (`Inventario_Sucursal`, `Ventas_Cabecera`, `Transferencias_Cab`, `POS_Sesiones_Caja`) son de la Parte B (`0019:2-16`).
 
 ### 2.5 Resumen por tabla
 
@@ -126,6 +139,7 @@ De las 27 tablas de este documento, solo `RefreshTokens` tiene columna `RowVersi
 | `Registro_Privacidad_Presidio` | Sí | Sí | Completa | No |
 | `Sistema_Notificaciones_Internas` | Sí | Sí | Parcial: solo `CreatedAt` | No |
 | `Sistema_Outbox_Eventos` | Sí | Sí | Completa | No |
+| `Plataforma_Configuracion_Pago` | Sí | Sí | Completa | No |
 | `Unidades_Medida` | Sí | Sí | Completa | No |
 | `Jerarquia_UoM` | Sí | Sí | Completa | No |
 | `Laboratorios` | Sí | Sí | Completa | No |
@@ -156,7 +170,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 ### 3.1 `Empresas`
 
 **Propósito.** Cada fila es una empresa cliente de SOFIA (una botica o cadena): es el inquilino del sistema multiempresa y lleva el estado de su suscripción (periodo de prueba, activa, suspendida o cancelada).
-**Entidad.** `Empresa` (`Ent/Empresa.cs:14`), configurada en `Cfg/EmpresaConfiguration.cs`. Tiene `DbSet` (`DbContext:15`) y la usa el código (registro de empresa, actualización y control de vigencia).
+**Entidad.** `Empresa` (`Ent/Empresa.cs:14`), configurada en `Cfg/EmpresaConfiguration.cs`. Tiene `DbSet` (`DbContext:15`) y la usa el código (registro de empresa, actualización, control de vigencia y las operaciones de suscripción del operador de plataforma).
 **Creada en** `0005:8-23`.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
@@ -166,8 +180,8 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `RUC` | `CHAR(11)` | Sí | — | RUC de la empresa. El dominio exige 11 dígitos numéricos (`sofia-apis/src/SOFIA.Domain/ValueObjects/Ruc.cs:18`). | `0005:11` |
 | `Estado` | `INT` | No | `0` | Estado de la suscripción. Se guarda como **número** (`Cfg/EmpresaConfiguration.cs:32-34`). Valores del enum `EstadoEmpresa` (`Ent/Empresa.cs:6-12`): `0` TrialActivo, `1` Activo, `2` Suspendido, `3` Cancelado. El script no tiene `CHECK`. | `0005:12` |
 | `FechaInicioTrial` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Inicio del periodo de prueba. | `0005:13` |
-| `FechaVencimiento` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Vencimiento del periodo de prueba o de la suscripción. Al crear la empresa el dominio pone la fecha actual más 30 días (`Ent/Empresa.cs:37`, `Ent/Empresa.cs:64`). | `0005:14` |
-| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. En esta tabla el dominio la iguala al propio `Empresa_ID` (`Ent/Empresa.cs:67`). | `0005:15` |
+| `FechaVencimiento` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Vencimiento del periodo de prueba o de la suscripción. Al crear la empresa el dominio pone la fecha actual más 30 días (`Ent/Empresa.cs:37`, `Ent/Empresa.cs:67`). | `0005:14` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. En esta tabla el dominio la iguala al propio `Empresa_ID` (`Ent/Empresa.cs:70`). | `0005:15` |
 | `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0005:16` |
 | `CreatedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario creador. | `0005:17` |
 | `LastModifiedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: última modificación. | `0005:18` |
@@ -287,7 +301,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 
 **Propósito.** Cuenta de usuario con la que un empleado inicia sesión: nombre de usuario, hash de la contraseña, bloqueo por intentos fallidos y recuperación de contraseña.
 **Entidad.** `Cuenta` (`Ent/Cuenta.cs:7`), configurada en `Cfg/CuentaConfiguration.cs`. `DbSet` en `DbContext:25`; en uso.
-**Creada en** `0001:790-810`; modificada en `0005` y `0020`.
+**Creada en** `0001:790-810`; modificada en `0005`, `0020` y `0029`.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
 |---|---|---|---|---|---|
@@ -295,11 +309,11 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `Empleado_ID` | `UNIQUEIDENTIFIER` | No | — | Empleado dueño de la cuenta. Una sola cuenta vigente por empleado. El `UNIQUE` en línea original fue reemplazado por un índice único filtrado. | `0001:792` → `0020:57-72` |
 | `Nombre_Usuario` | `VARCHAR(50)` | No | — | Nombre de usuario para iniciar sesión. Es único **en todo el sistema** (no por empresa) porque el inicio de sesión no pide la empresa (`0020:56`). El `UNIQUE` en línea original fue reemplazado por un índice único filtrado. | `0001:793` → `0020:57-68` |
 | `Password_Hash` | `NVARCHAR(MAX)` | No | — | Hash de la contraseña. | `0001:794` |
-| `Recovery_Token` | `VARCHAR(100)` | Sí | — | Hash del token de recuperación de contraseña; nunca se guarda el token en claro (`Ent/Cuenta.cs:104-109`). | `0001:795` |
-| `Recovery_Token_Expiry` | `DATETIMEOFFSET` | Sí | — | Vencimiento del token de recuperación; el dominio lo fija a una hora desde su generación (`Ent/Cuenta.cs:108`). | `0001:796` |
-| `Security_Stamp` | `UNIQUEIDENTIFIER` | No | `NEWSEQUENTIALID()` | Sello de seguridad; el dominio lo regenera al cambiar o restablecer la contraseña y al invalidarlo explícitamente (`Ent/Cuenta.cs:71`, `Ent/Cuenta.cs:100`, `Ent/Cuenta.cs:121`). | `0001:797` |
+| `Recovery_Token` | `VARCHAR(100)` | Sí | — | Hash del token de recuperación de contraseña; nunca se guarda el token en claro (`Ent/Cuenta.cs:108-113`). | `0001:795` |
+| `Recovery_Token_Expiry` | `DATETIMEOFFSET` | Sí | — | Vencimiento del token de recuperación; el dominio lo fija a una hora desde su generación (`Ent/Cuenta.cs:112`). | `0001:796` |
+| `Security_Stamp` | `UNIQUEIDENTIFIER` | No | `NEWSEQUENTIALID()` | Sello de seguridad; el dominio lo regenera al cambiar o restablecer la contraseña y al invalidarlo explícitamente (`Ent/Cuenta.cs:75`, `Ent/Cuenta.cs:104`, `Ent/Cuenta.cs:125`). | `0001:797` |
 | `Requiere_Cambio_Clave` | `BIT` | No | `1` | Indica que el usuario debe cambiar su contraseña. | `0001:798` |
-| `Intentos_Fallidos` | `INT` | No | `0` | Contador de intentos fallidos de inicio de sesión. Al llegar a 5 el dominio bloquea la cuenta 15 minutos (`Ent/Cuenta.cs:85-89`). | `0001:799` |
+| `Intentos_Fallidos` | `INT` | No | `0` | Contador de intentos fallidos de inicio de sesión. Al llegar a 5 el dominio bloquea la cuenta 15 minutos (`Ent/Cuenta.cs:89-93`). | `0001:799` |
 | `Bloqueado_Hasta` | `DATETIMEOFFSET` | Sí | — | Fecha y hora hasta la que la cuenta queda bloqueada. | `0001:800` |
 | `Cuenta_Activa` | `BIT` | No | `1` | Cuenta habilitada o deshabilitada. | `0001:801` |
 | `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` | Auditoría: creación. | `0001:802` |
@@ -310,6 +324,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0001:807` |
 | `DeletedBy` | `VARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0001:808` |
 | `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila. | `0005:54-55` |
+| `Es_Admin_Plataforma` | `BIT` | No | `0` (restricción `DF_Seguridad_Cuentas_Es_Admin_Plataforma`) | Marca de operador de plataforma. Solo se cambia directamente en la base de datos: el dominio la crea en `false`, su setter es privado y ningún comando la asigna (`Ent/Cuenta.cs:26-27`, `Ent/Cuenta.cs:67`; RN-CTA-021). Mientras vale 1, el token de acceso lleva el claim `plat_admin` y la cuenta no se bloquea por la vigencia de su propia empresa (RN-GEN-042). EF declara el mismo valor por defecto (`Cfg/CuentaConfiguration.cs:58-60`). | `0029:2-3` |
 
 **Clave primaria:** `Cuenta_ID` (sin nombre en el script).
 
@@ -328,6 +343,7 @@ El único índice del `0015` que el `0020` no vuelve a crear es `UX_Empleados_Te
 | `IX_Cuentas_Login` | Índice no agrupado, no único, filtrado | `Nombre_Usuario` | `WHERE IsDeleted = 0 AND Cuenta_Activa = 1` | `0001:852` |
 | `UX_Seguridad_Cuentas_Nombre_Usuario` | Índice único filtrado | `Nombre_Usuario` | `WHERE IsDeleted = 0` | `0020:67-68` |
 | `UX_Seguridad_Cuentas_Empleado_ID` | Índice único filtrado | `Empleado_ID` | `WHERE IsDeleted = 0` | `0020:71-72` |
+| `DF_Seguridad_Cuentas_Es_Admin_Plataforma` | `DEFAULT` con nombre | `Es_Admin_Plataforma` | `DEFAULT 0` | `0029:3` |
 
 Las dos restricciones `UNIQUE` en línea del `0001` (sobre `Empleado_ID` y `Nombre_Usuario`, con nombre autogenerado) ya no existen: el `0020` las busca en el catálogo y las elimina antes de crear los índices filtrados (`0020:57-64`).
 
@@ -337,7 +353,7 @@ Las dos restricciones `UNIQUE` en línea del `0001` (sobre `Empleado_ID` y `Nomb
 ### 4.2 `Seguridad_CuentasSucursales`
 
 **Propósito.** Tabla puente que dice a qué sucursales puede acceder una cuenta de usuario.
-**Entidad.** `CuentaSucursal` (`Ent/CuentaSucursal.cs:3`); no hereda de `BaseEntity`. No tiene archivo de configuración propio: se configura como entidad de unión dentro de `Cfg/CuentaConfiguration.cs:85-98`. `DbSet` en `DbContext:29`; se usa a través de la navegación `Cuenta.Sucursales` (`Ent/Cuenta.cs:30-31`).
+**Entidad.** `CuentaSucursal` (`Ent/CuentaSucursal.cs:3`); no hereda de `BaseEntity`. No tiene archivo de configuración propio: se configura como entidad de unión dentro de `Cfg/CuentaConfiguration.cs:89-102`. `DbSet` en `DbContext:29`; se usa a través de la navegación `Cuenta.Sucursales` (`Ent/Cuenta.cs:33-34`).
 **Creada en** `0007:4-12`. Ningún script posterior la modifica.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
@@ -365,7 +381,7 @@ Nota de nomenclatura: esta tabla nombra sus columnas `CuentaId`, `SucursalId`, `
 ### 4.3 `Seguridad_Cuentas_Roles`
 
 **Propósito.** Tabla puente que asigna roles a una cuenta de usuario.
-**Entidad.** `CuentaRol` (`Ent/CuentaRol.cs:3`); no hereda de `BaseEntity`. Configurada en `Cfg/CuentaRolConfiguration.cs` y como entidad de unión en `Cfg/CuentaConfiguration.cs:77-83`. `DbSet` en `DbContext:28`; se usa a través de la navegación `Cuenta.Roles` (`Ent/Cuenta.cs:28-29`).
+**Entidad.** `CuentaRol` (`Ent/CuentaRol.cs:3`); no hereda de `BaseEntity`. Configurada en `Cfg/CuentaRolConfiguration.cs` y como entidad de unión en `Cfg/CuentaConfiguration.cs:81-87`. `DbSet` en `DbContext:28`; se usa a través de la navegación `Cuenta.Roles` (`Ent/Cuenta.cs:31-32`).
 **Creada en** `0001:826-834`. Ningún script posterior la modifica.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
@@ -425,7 +441,7 @@ Nota de nomenclatura: esta tabla nombra sus columnas `CuentaId`, `SucursalId`, `
 ### 4.5 `Seguridad_Permisos_Rol`
 
 **Propósito.** Permisos concedidos a un rol, expresados como par módulo y acción (por ejemplo `Ventas` + `Anular`).
-**Entidad.** `PermisoRol` (`Ent/PermisoRol.cs:5`), configurada en `Cfg/PermisoRolConfiguration.cs`. `DbSet` en `DbContext:27`; en uso (asignar, revocar y consultar permisos, y en la autorización de cada petición: `sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:68`).
+**Entidad.** `PermisoRol` (`Ent/PermisoRol.cs:5`), configurada en `Cfg/PermisoRolConfiguration.cs`. `DbSet` en `DbContext:27`; en uso (asignar, revocar y consultar permisos, y en la autorización de cada petición: `sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:76`).
 **Creada en** `0001:836-850`; `TenantId` agregada en `0005`.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
@@ -516,7 +532,7 @@ Nota de nomenclatura: esta tabla nombra sus columnas `CuentaId`, `SucursalId`, `
 |---|---|---|---|---|
 | `FK_RefreshTokens_Cuentas` | `CuentaId` | `Seguridad_Cuentas.Cuenta_ID` | `CASCADE` | `0006:18-19` |
 
-Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
+Es la única clave foránea de las 28 tablas con `ON DELETE` declarado.
 
 **Índices y restricciones**
 
@@ -646,14 +662,14 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 ### 5.2 `Sistema_Outbox_Eventos`
 
 **Propósito.** Bandeja de salida de eventos de dominio (patrón outbox): cada evento que una entidad levanta se guarda aquí en la misma transacción que el cambio, y un proceso en segundo plano lo publica después.
-**Entidad.** `SistemaOutboxEvento` (`Ent/SistemaOutboxEvento.cs:5`), configurada en `Cfg/SistemaOutboxEventoConfiguration.cs`. `DbSet` en `DbContext:60`; en uso: la escribe `SaveChangesAsync` (`DbContext:114-130`) y la lee el proceso `sofia-apis/src/SOFIA.Infrastructure/Services/OutboxProcessor.cs:42-47`, que toma hasta 20 eventos no procesados y sin error, de todas las empresas, por orden de `Fecha_Creacion`.
+**Entidad.** `SistemaOutboxEvento` (`Ent/SistemaOutboxEvento.cs:5`), configurada en `Cfg/SistemaOutboxEventoConfiguration.cs`. `DbSet` en `DbContext:60`; en uso: la escribe `SaveChangesAsync` (`DbContext:121-137`) y la lee el proceso `sofia-apis/src/SOFIA.Infrastructure/Services/OutboxProcessor.cs:42-47`, que toma hasta 20 eventos no procesados y sin error, de todas las empresas, por orden de `Fecha_Creacion`.
 **Creada en** `0001:503-518`; `TenantId` agregada en `0005`.
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
 |---|---|---|---|---|---|
 | `Evento_Outbox_ID` | `UNIQUEIDENTIFIER` | No | `NEWSEQUENTIALID()` | Identificador del evento. Clave primaria. | `0001:504` |
-| `Tipo_Evento` | `VARCHAR(100)` | No | — | Tipo del evento: el nombre completo de la clase .NET del evento de dominio (`DbContext:121-122`). | `0001:505` |
-| `Payload_JSON` | `NVARCHAR(MAX)` | No | — | Evento serializado en JSON (`DbContext:123`). | `0001:506` |
+| `Tipo_Evento` | `VARCHAR(100)` | No | — | Tipo del evento: el nombre completo de la clase .NET del evento de dominio (`DbContext:128-129`). | `0001:505` |
+| `Payload_JSON` | `NVARCHAR(MAX)` | No | — | Evento serializado en JSON (`DbContext:130`). | `0001:506` |
 | `Fecha_Creacion` | `DATETIME` | Sí | `CURRENT_TIMESTAMP` | Fecha y hora de creación del evento. La aplicación la envía en UTC (`Ent/SistemaOutboxEvento.cs:43`). | `0001:507` |
 | `Procesado` | `BIT` | Sí | `0` | Indica si el evento ya fue publicado. | `0001:508` |
 | `Fecha_Procesamiento` | `DATETIME` | Sí | — | Fecha y hora en que se publicó. | `0001:509` |
@@ -670,6 +686,37 @@ Es la única clave foránea de las 27 tablas con `ON DELETE` declarado.
 **Clave primaria:** `Evento_Outbox_ID` (sin nombre en el script).
 **Claves foráneas:** ninguna.
 **Índices y restricciones:** ninguno aparte de la clave primaria (no hay índice sobre `Procesado` ni `Fecha_Creacion`, que son las columnas por las que consulta el proceso).
+**Multiempresa, borrado lógico, auditoría, RowVersion:** `TenantId` sí; `IsDeleted` sí; auditoría completa; `RowVersion` no.
+**Datos sembrados:** ninguno.
+
+### 5.3 `Plataforma_Configuracion_Pago`
+
+**Propósito.** Datos de pago que el operador de plataforma publica para las empresas cuya suscripción no está vigente: número de WhatsApp al que se envía la captura del pago, número de Yape, indicaciones y la imagen del código QR. La lee cualquiera sin sesión (`GET /api/v1/Plataforma/pago`) y solo la escribe el operador (`PUT /api/v1/Plataforma/pago`).
+**Entidad.** `PlataformaConfiguracionPago` (`Ent/PlataformaConfiguracionPago.cs:7`), configurada en `Cfg/PlataformaConfiguracionPagoConfiguration.cs`. `DbSet PlataformaConfiguracionesPago` (`DbContext:65`); en uso: `GetConfiguracionPagoQueryHandler` y `GuardarConfiguracionPagoCommandHandler`.
+**Una sola fila, por convención del código.** Ninguna restricción de la base limita la tabla a una fila (no hay índice único ni `CHECK`): los dos handlers leen la fila **más antigua** (`OrderBy(CreatedAt)`) sin filtro de empresa (`sofia-apis/src/SOFIA.Application/Plataforma/Commands/GuardarConfiguracionPago/GuardarConfiguracionPagoCommandHandler.cs:22-25`; `sofia-apis/src/SOFIA.Application/Plataforma/Queries/GetConfiguracionPago/GetConfiguracionPagoQueryHandler.cs:15-19`); si no existe, la crean al guardar (`GuardarConfiguracionPagoCommandHandler.cs:27-37`). Al crearla, `SaveChangesAsync` asigna a `TenantId` la empresa del token de quien guarda, es decir, la propia empresa del operador (`DbContext:175-185`); aun así la fila es global en la práctica porque ambos handlers la leen con `IgnoreQueryFilters([QueryFilters.Tenant])`. No verificado en la aplicación.
+**Creada en** `0029:6-22` (con guarda `IF OBJECT_ID(...) IS NULL`).
+
+| Columna | Tipo | Nulo | Valor por defecto | Descripción | Script (creación / última modificación) |
+|---|---|---|---|---|---|
+| `Configuracion_ID` | `UNIQUEIDENTIFIER` | No | `NEWSEQUENTIALID()` (restricción `DF_Plataforma_Configuracion_Pago_ID`) | Identificador. Clave primaria (`PK_Plataforma_Configuracion_Pago`). | `0029:8` |
+| `Whatsapp_Numero` | `VARCHAR(15)` | No | — | Número de WhatsApp que recibe las capturas de pago: de 8 a 15 dígitos con código de país, solo dígitos (`Ent/PlataformaConfiguracionPago.cs:35`, `:88`; RN-EMP-023). | `0029:9` |
+| `Yape_Numero` | `VARCHAR(9)` | Sí | — | Número de Yape, exactamente 9 dígitos; un valor en blanco se guarda como nulo (`Ent/PlataformaConfiguracionPago.cs:41-45`, `:91`). | `0029:10` |
+| `Instrucciones` | `NVARCHAR(500)` | Sí | — | Indicaciones de pago; hasta 500 caracteres, recortadas, y un texto en blanco se guarda como nulo (`Ent/PlataformaConfiguracionPago.cs:47-51`). | `0029:11` |
+| `Qr_Imagen` | `VARBINARY(MAX)` | Sí | — | Imagen del código QR, entre 1 byte y 1 MB (`MaxQrBytes = 1024 * 1024`, `Ent/PlataformaConfiguracionPago.cs:10`, `:62`; RN-EMP-024). | `0029:12` |
+| `Qr_Content_Type` | `VARCHAR(20)` | Sí | — | `image/png` o `image/jpeg`, decidido por la firma del archivo y no por lo que declare el cliente (`Ent/PlataformaConfiguracionPago.cs:67-86`). | `0029:13` |
+| `TenantId` | `UNIQUEIDENTIFIER` | Sí | — | Empresa dueña de la fila: la empresa del operador que la creó (ver arriba). | `0029:14` |
+| `CreatedAt` | `DATETIMEOFFSET` | No | `SYSDATETIMEOFFSET()` (restricción `DF_Plataforma_Configuracion_Pago_CreatedAt`) | Auditoría: creación. | `0029:15` |
+| `CreatedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario creador. | `0029:16` |
+| `LastModifiedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: última modificación. | `0029:17` |
+| `LastModifiedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario de la última modificación. | `0029:18` |
+| `IsDeleted` | `BIT` | No | `0` (restricción `DF_Plataforma_Configuracion_Pago_IsDeleted`) | Borrado lógico. | `0029:19` |
+| `DeletedAt` | `DATETIMEOFFSET` | Sí | — | Auditoría: fecha de borrado. | `0029:20` |
+| `DeletedBy` | `NVARCHAR(100)` | Sí | — | Auditoría: usuario que borró. | `0029:21` |
+
+**Clave primaria:** `Configuracion_ID` (`PK_Plataforma_Configuracion_Pago`, `0029:8`).
+**Claves foráneas:** ninguna.
+**Referenciada por:** ninguna tabla.
+**Índices y restricciones:** ninguno aparte de la clave primaria y los tres `DEFAULT` con nombre. Los formatos (dígitos, longitudes, tipo de imagen) los valida solo la aplicación (`Ent/PlataformaConfiguracionPago.cs:32-76`, `GuardarConfiguracionPagoCommandValidator.cs:10-24`); la base no tiene `CHECK`.
 **Multiempresa, borrado lógico, auditoría, RowVersion:** `TenantId` sí; `IsDeleted` sí; auditoría completa; `RowVersion` no.
 **Datos sembrados:** ninguno.
 
@@ -1489,6 +1536,13 @@ erDiagram
         bit Procesado
         datetime Fecha_Creacion
     }
+    Plataforma_Configuracion_Pago {
+        uniqueidentifier Configuracion_ID PK
+        varchar Whatsapp_Numero
+        varchar Yape_Numero
+        nvarchar Instrucciones
+        varbinary Qr_Imagen
+    }
     Recetas_Digitalizadas_IA {
         uniqueidentifier Procesamiento_ID PK "Parte B"
         uniqueidentifier Receta_ID FK
@@ -1507,7 +1561,7 @@ erDiagram
 
 ## 10. Datos sembrados y modificados por scripts
 
-Ninguno de los scripts `0001`–`0028` contiene cargas masivas de datos escritas en el propio script. Lo que hacen con datos de las 27 tablas de este documento es lo siguiente.
+Ninguno de los scripts `0001`–`0029` contiene cargas masivas de datos escritas en el propio script (el `0004` trae las filas del catálogo DIGEMID, descritas abajo). El `0029` no inserta ni modifica filas: ninguna cuenta queda marcada como operador de plataforma ni se crea la fila de `Plataforma_Configuracion_Pago`. Lo que hacen con datos de las 28 tablas de este documento es lo siguiente.
 
 ### 10.1 Roles base (`0002`)
 
@@ -1524,7 +1578,7 @@ Inserta **6 filas** en `Seguridad_Roles`, cada una solo si no existe ya un rol c
 
 Dos observaciones que se desprenden de los scripts y del código:
 
-- Estos roles se insertan **antes** de que exista la columna `TenantId` (la agrega el `0005` como `NULL` y ningún script la rellena), así que quedan con `TenantId` nulo. El filtro de empresa de la aplicación descarta las filas con `TenantId` nulo (`DbContext:98-109`), de modo que las consultas normales no los ven. Lo que cada empresa usa es su propio rol `Admin`, que se crea al registrarla (`sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:115-116`).
+- Estos roles se insertan **antes** de que exista la columna `TenantId` (la agrega el `0005` como `NULL` y ningún script la rellena), así que quedan con `TenantId` nulo. El filtro de empresa de la aplicación descarta las filas con `TenantId` nulo (`DbContext:99-116`), de modo que las consultas normales no los ven. Lo que cada empresa usa es su propio rol `Admin`, que se crea al registrarla (`sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:115-116`).
 - **Ningún script siembra permisos** (`Seguridad_Permisos_Rol`) para estos roles ni los asigna a cuentas.
 
 ### 10.2 Catálogo DIGEMID (`0004`)
@@ -1568,15 +1622,15 @@ Los scripts son la fuente de verdad del esquema: la base se crea con DbUp, no co
 | D-04 | `Historial_Precios_Prov`: índices por `Proveedor_ID` y por `Producto_ID` | No existen en ningún script. | Declarados con `HasIndex` (`Cfg/HistorialPrecioProveedorConfiguration.cs:68-69`). | Índices que el modelo da por hechos y la base no tiene. |
 | D-05 | `Ingredientes_Activos`: índice sobre `Codigo_ATC` | Se llama `IX_Ingredientes_ATC` (`0001:125`). | `HasIndex(x => x.CodigoAtc)` sin nombre (`Cfg/IngredienteActivoConfiguration.cs:30`); por convención EF lo llamaría `IX_Ingredientes_Activos_Codigo_ATC`. | Solo difiere el nombre. |
 | D-06 | `Sucursales.Gerente_ID` | Clave foránea sin índice único (`0001:40-41`): un empleado puede figurar como gerente de varias sucursales. | Relación uno a uno (`HasOne(...).WithOne(...)`, `Cfg/SucursalConfiguration.cs:36-39`; navegación única `Empleado.Sucursal_Gerenciada`, `Ent/Empleado.cs:32-33`). | El modelo asume que un empleado gerencia como máximo una sucursal; la base no lo garantiza. |
-| D-07 | Comportamiento al borrar (`ON DELETE`) | Sin `ON DELETE` (sin acción): `FK_Permisos_Rol` (`0001:848`), `FK_Privacidad_Procesamiento` (`0001:535`), y las claves foráneas de las tres tablas puente (`0001:832-833`, `0007:10-11`, `0008:5-6`). | `DeleteBehavior.Cascade` explícito en `Cfg/PermisoRolConfiguration.cs:33-36` y `Cfg/RegistroPrivacidadPresidioConfiguration.cs:55-58`. Las tablas puente no declaran `OnDelete` (`Cfg/CuentaConfiguration.cs:78-98`, `Cfg/RolConfiguration.cs:34-45`), y la convención de EF Core para relaciones obligatorias es cascada. | La base no borra en cascada; solo `RefreshTokens` tiene `ON DELETE CASCADE` y ahí sí coinciden (`0006:18-19`, `Cfg/RefreshTokenConfiguration.cs:34-37`). En la práctica los maestros se borran lógicamente, así que la cascada de la base no llega a intervenir. |
-| D-08 | Columnas de texto `VARCHAR` / `CHAR` | Casi todas las columnas de texto de las tablas del `0001` son `VARCHAR(n)`; `Empresas.RUC` es `CHAR(11)` (`0005:11`). | Solo se declara longitud (`HasMaxLength`), sin `IsUnicode(false)`, salvo `Empleados.Email` (`Cfg/EmpleadoConfiguration.cs:40-43`). No hay convención global de tipos de texto (`DbContext:69-76` solo configura `DateTime`). Por convención EF las trata como `nvarchar(n)` (y `RUC` como `nchar(11)`, `Cfg/EmpresaConfiguration.cs:24-27`). | Diferencia de tipo Unicode / no Unicode en todo el modelo. No afecta a las tablas que ya nacieron con `NVARCHAR` (`Empresas.Nombre`, `Presentaciones_Venta.Descripcion`, `DIGEMID_Catalogo_Productos`, `RefreshTokens.TokenHash`, `Sistema_Notificaciones_Internas.Mensaje_Texto`). |
+| D-07 | Comportamiento al borrar (`ON DELETE`) | Sin `ON DELETE` (sin acción): `FK_Permisos_Rol` (`0001:848`), `FK_Privacidad_Procesamiento` (`0001:535`), y las claves foráneas de las tres tablas puente (`0001:832-833`, `0007:10-11`, `0008:5-6`). | `DeleteBehavior.Cascade` explícito en `Cfg/PermisoRolConfiguration.cs:33-36` y `Cfg/RegistroPrivacidadPresidioConfiguration.cs:55-58`. Las tablas puente no declaran `OnDelete` (`Cfg/CuentaConfiguration.cs:82-102`, `Cfg/RolConfiguration.cs:34-45`), y la convención de EF Core para relaciones obligatorias es cascada. | La base no borra en cascada; solo `RefreshTokens` tiene `ON DELETE CASCADE` y ahí sí coinciden (`0006:18-19`, `Cfg/RefreshTokenConfiguration.cs:34-37`). En la práctica los maestros se borran lógicamente, así que la cascada de la base no llega a intervenir. |
+| D-08 | Columnas de texto `VARCHAR` / `CHAR` | Casi todas las columnas de texto de las tablas del `0001` son `VARCHAR(n)`; `Empresas.RUC` es `CHAR(11)` (`0005:11`). | Solo se declara longitud (`HasMaxLength`), sin `IsUnicode(false)`, salvo `Empleados.Email` (`Cfg/EmpleadoConfiguration.cs:40-43`). No hay convención global de tipos de texto (`DbContext:70-77` solo configura `DateTime`). Por convención EF las trata como `nvarchar(n)` (y `RUC` como `nchar(11)`, `Cfg/EmpresaConfiguration.cs:24-27`). | Diferencia de tipo Unicode / no Unicode en todo el modelo. No afecta a las tablas que ya nacieron con `NVARCHAR` (`Empresas.Nombre`, `Presentaciones_Venta.Descripcion`, `DIGEMID_Catalogo_Productos`, `RefreshTokens.TokenHash`, `Sistema_Notificaciones_Internas.Mensaje_Texto`). |
 | D-09 | Columnas de fecha `DATETIME` | `DATETIME`: `Auditoria_Eventos_Seguridad.Fecha_Hora_Evento` (`0001:491`), `Registro_Privacidad_Presidio.Fecha_Auditoria` (`0001:527`), `Sistema_Outbox_Eventos.Fecha_Creacion` y `.Fecha_Procesamiento` (`0001:507`, `0001:509`), `Sistema_Notificaciones_Internas.Fecha_Lectura` (`0001:779`), `Historial_Precios_Prov.Fecha_Inicio_Vigencia` y `.Fecha_Fin_Vigencia` (`0001:249-250`). | Propiedades `DateTime` sin `HasColumnType`; por convención EF usa `datetime2`. Ninguna configuración declara `HasColumnType("datetime")`. | Diferencia de precisión del tipo. |
 | D-10 | Longitud de las columnas de auditoría de texto | `VARCHAR(100)`, `NVARCHAR(100)` o `NVARCHAR(256)` según la tabla (apartado 2.3). | `CreatedBy`, `LastModifiedBy` y `DeletedBy` son `string?` sin longitud (`sofia-apis/src/SOFIA.Domain/Common/BaseEntity.cs:10-15`); ninguna configuración les pone `HasMaxLength`. | Un nombre de usuario de más de 100 caracteres no cabría en la mayoría de las tablas. |
 | D-11 | `Medicamentos`: `CHK_Condicion_Venta` | Existe (`0001:86`). | No declarado; EF solo declara `CHK_Medicamentos_Precio_Venta_Base` (`Cfg/MedicamentoConfiguration.cs:61`). | Los demás `CHECK` de estas tablas sí están declarados en EF con el mismo nombre y condición (`Cfg/JerarquiaUoMConfiguration.cs:55`, `Cfg/PresentacionVentaConfiguration.cs:56-60`, `Cfg/HistorialPrecioProveedorConfiguration.cs:73-78`, `Cfg/PacienteClienteConfiguration.cs:55`). |
 | D-12 | `Seguridad_Permisos_Rol`: `UQ_Rol_Modulo_Accion` | Restricción `UNIQUE` (`0001:849`). | Índice único con ese mismo nombre (`Cfg/PermisoRolConfiguration.cs:38-40`). | Equivalentes en la práctica; cambia solo el tipo de objeto. |
-| D-13 | Valores por defecto de la base | Muchos `DEFAULT` (`NEWSEQUENTIALID()`, `SYSDATETIMEOFFSET()`, `0`, `1`, `100.00`). | EF solo declara los de `Seguridad_Cuentas` (`Cfg/CuentaConfiguration.cs:36-49`), `Seguridad_Cuentas_Roles.AssignedAt` (`Cfg/CuentaRolConfiguration.cs:21-23`), `RefreshTokens.IsRevoked` (`Cfg/RefreshTokenConfiguration.cs:23-25`) y `Empresas.ExigirRegistroReceta` (`Cfg/EmpresaConfiguration.cs:42-44`). | Sin efecto práctico: la aplicación envía siempre los valores (identificadores generados en `BaseEntity`, fechas en `SaveChangesAsync`). |
+| D-13 | Valores por defecto de la base | Muchos `DEFAULT` (`NEWSEQUENTIALID()`, `SYSDATETIMEOFFSET()`, `0`, `1`, `100.00`). | EF solo declara los de `Seguridad_Cuentas` (`Cfg/CuentaConfiguration.cs:36-49`), `Seguridad_Cuentas_Roles.AssignedAt` (`Cfg/CuentaRolConfiguration.cs:21-23`), `RefreshTokens.IsRevoked` (`Cfg/RefreshTokenConfiguration.cs:23-25`) `Empresas.ExigirRegistroReceta` (`Cfg/EmpresaConfiguration.cs:42-44`) y `Seguridad_Cuentas.Es_Admin_Plataforma` (`Cfg/CuentaConfiguration.cs:58-60`). | Sin efecto práctico: la aplicación envía siempre los valores (identificadores generados en `BaseEntity`, fechas en `SaveChangesAsync`). |
 
-**Coincidencias comprobadas** (para que no se busquen como discrepancias): nombres de tabla y de columna de las 27 tablas; nombres y filtros de todos los índices `UX_…` (incluido `UX_Empleados_Tenant_Licencia_Prof`, `Cfg/EmpleadoConfiguration.cs:55-57`); `IX_Cuentas_Login` (`Cfg/CuentaConfiguration.cs:63-64`); `IX_Empresas_RUC` (`Cfg/EmpresaConfiguration.cs:49-51`); precisión de todos los `DECIMAL`; `RowVersion` de `RefreshTokens`; almacenamiento de `Empresas.Estado` como entero y de `Medicamentos.Condicion_Venta` como texto.
+**Coincidencias comprobadas** (para que no se busquen como discrepancias): nombres de tabla y de columna de las 28 tablas (la configuración de `Plataforma_Configuracion_Pago` en `Cfg/PlataformaConfiguracionPagoConfiguration.cs:11-40` coincide con el `0029` en nombres, longitudes y `VARCHAR`/`NVARCHAR`); nombres y filtros de todos los índices `UX_…` (incluido `UX_Empleados_Tenant_Licencia_Prof`, `Cfg/EmpleadoConfiguration.cs:55-57`); `IX_Cuentas_Login` (`Cfg/CuentaConfiguration.cs:67-68`); `IX_Empresas_RUC` (`Cfg/EmpresaConfiguration.cs:49-51`); precisión de todos los `DECIMAL`; `RowVersion` de `RefreshTokens`; almacenamiento de `Empresas.Estado` como entero y de `Medicamentos.Condicion_Venta` como texto.
 
 ---
 
@@ -1602,13 +1656,15 @@ Los scripts son la fuente de verdad del esquema: la base se crea con DbUp, no co
 - `Seguridad_Permisos_Rol`: la unicidad `UQ_Rol_Modulo_Accion` no ignora las filas borradas lógicamente, a diferencia del resto de claves de negocio.
 - Los roles base del `0002` quedan con `TenantId` nulo y fuera del alcance del filtro de empresa. Las filas DIGEMID del `0004` también quedan con `TenantId` nulo, pero desde `9c16f35` el filtro de empresa sí las deja pasar (catálogo compartido de solo lectura, 6.8).
 
-**En curso (sin commitear):** ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en los repositorios. El script `0028`, que en la versión 1.0 estaba sin commitear, ya está commiteado y no toca ninguna de las 27 tablas.
+**En curso (sin commitear):** ninguno. Este documento se apoya solo en los commits `6f6b837` y `558ad35` (leídos con `git show`/`git archive`); no usa ningún archivo con cambios locales.
+
+**No verificado en la aplicación (versión 1.3):** que la fila de `Plataforma_Configuracion_Pago` quede con el `TenantId` de la empresa del operador al crearla (deducido de `DbContext:175-185`; ver 5.3); qué cuentas están marcadas como operador en una base real (no se consultó ninguna).
 
 ---
 
 ## 13. Tabla de cobertura
 
-Inventario: las 27 tablas asignadas. Todas figuran en `docs/_inventario/tablas.csv` y todas se encontraron en los scripts; no se detectó ninguna tabla de más ni de menos (el CSV lista 50 tablas: estas 27 y las 23 de la Parte B).
+Inventario: las 28 tablas asignadas. Las 27 anteriores figuran en `docs/_inventario/tablas.csv` (que lista 50 tablas) y todas se encontraron en los scripts; `Plataforma_Configuracion_Pago` es nueva del `0029` y el CSV aún no la lista (51 tablas en los scripts: estas 28 y las 23 de la Parte B). No se detectó ninguna tabla de más ni de menos.
 
 En «Índices» se cuentan los índices y restricciones `UNIQUE` distintos de la clave primaria. En «Scripts» aparecen los que crean o modifican la tabla o sus datos; `0005` figura también cuando solo le agrega `TenantId` mediante el SQL dinámico.
 
@@ -1617,7 +1673,7 @@ En «Índices» se cuentan los índices y restricciones `UNIQUE` distintos de la
 | 1 | `Empresas` | 15 | 0 | 1 | 0 | `0005`, `0025` | 3.1 |
 | 2 | `Sucursales` | 14 | 2 | 1 | 0 | `0001`, `0005` | 3.2 |
 | 3 | `Empleados` | 16 | 1 | 2 | 0 | `0001`, `0005`, `0015`, `0022`, `0026` | 3.3 |
-| 4 | `Seguridad_Cuentas` | 19 | 1 | 3 | 0 | `0001`, `0005`, `0020` | 4.1 |
+| 4 | `Seguridad_Cuentas` | 20 | 1 | 3 | 0 | `0001`, `0005`, `0020`, `0029` | 4.1 |
 | 5 | `Seguridad_CuentasSucursales` | 4 | 2 | 0 | 0 | `0007` | 4.2 |
 | 6 | `Seguridad_Cuentas_Roles` | 4 | 2 | 0 | 0 | `0001` | 4.3 |
 | 7 | `Seguridad_Roles` | 12 | 0 | 1 | 0 | `0001`, `0002`, `0005`, `0015`, `0020` | 4.4 |
@@ -1641,7 +1697,8 @@ En «Índices» se cuentan los índices y restricciones `UNIQUE` distintos de la
 | 25 | `Aseguradoras_Medicas` | 11 | 0 | 1 | 0 | `0001`, `0005`, `0015`, `0020` | 7.3 |
 | 26 | `Pacientes_Clientes` | 14 | 0 | 1 | 1 | `0001`, `0005`, `0015`, `0020`, `0023` | 8.1 |
 | 27 | `Profesionales_Salud` | 12 | 0 | 1 | 0 | `0001`, `0005`, `0015`, `0020` | 8.2 |
-| | **Total** | **345** | **29** | **27** | **9** | | |
+| 28 | `Plataforma_Configuracion_Pago` | 14 | 0 | 0 | 0 | `0029` | 5.3 |
+| | **Total** | **360** | **29** | **27** | **9** | | |
 
 Otros elementos del encargo:
 
@@ -1652,7 +1709,7 @@ Otros elementos del encargo:
 | Diagramas ER (4 grupos) | Sección 9 |
 | Discrepancias entre scripts y EF | Sección 11 (D-01 a D-13) |
 | Tablas sin uso en el código | Apartados 4.9 y 5.1; resumen en la sección 12 |
-| Scripts `0012`, `0016`, `0018`, `0021`, `0024`, `0027`, `0028` | Leídos completos; no tocan ninguna de las 27 tablas (solo tablas de la Parte B). No aplica documentarlos aquí. |
+| Scripts `0012`, `0016`, `0018`, `0021`, `0024`, `0027`, `0028` | Leídos completos; no tocan ninguna de las 28 tablas (solo tablas de la Parte B). No aplica documentarlos aquí. |
 | Historial de scripts | No aplica: corresponde a la Parte B. |
 
 ---
@@ -1689,6 +1746,7 @@ Otros elementos del encargo:
 - `0026_Empleados_Apellido_Materno_Opcional.sql`
 - `0027_VentasPagos_Transaccion_Index.sql`
 - `0028_Ventas_Sesion_Anulacion.sql` (leído solo para confirmar que no afecta a estas tablas)
+- `0029_Plataforma_Suscripciones.sql`
 
 **Configuraciones de EF** (`sofia-apis/src/SOFIA.Infrastructure/Persistence/`):
 
