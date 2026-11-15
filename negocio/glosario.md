@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
 | **Método** | Lectura de código (entidades, enums, handlers, scripts DbUp, componentes Angular y archivos `es.json`), contraste con los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y 19 búsquedas web en fuentes oficiales peruanas (SUNAT, DIGEMID, gob.pe, El Peruano). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay trabajo sin commitear que afecte a este documento. |
 
 ## 1. Cómo leer este glosario
@@ -108,7 +108,7 @@ Mapa de la familia: SOFIA emite hoy **solo boletas** (al cobrar una venta) y **n
 
 **En SOFIA.** Valor `CarneExtranjeria = "4"` (`ENUM/TipoDocumentoIdentidad.cs:10`). El número admite de 1 a 12 letras o números (`TipoDocumentoIdentidad.cs:56-57`). En cargas masivas se acepta el código o la abreviatura `CE` (`TipoDocumentoIdentidad.cs:19-23`).
 
-**Dónde aparece.** Selector «Tipo de Documento» de Pacientes; texto «Carné de extranjería» (`I18N/es.json:272`, `tipos-documento.4`). Columna `Pacientes_Clientes.Tipo_Doc_Identidad` (CHECK que acepta `'1','4','6','7'`, `DBUP/0023_Pacientes_Tipo_Documento.sql:7`). Reglas: [RN-PAC-002](reglas/catalogos.md), [RN-PAC-004](reglas/catalogos.md), [RN-PAC-013](reglas/catalogos.md).
+**Dónde aparece.** Selector «Tipo de Documento» de Pacientes; texto «Carné de extranjería» (`I18N/es.json:274`, `tipos-documento.4`). Columna `Pacientes_Clientes.Tipo_Doc_Identidad` (CHECK que acepta `'1','4','6','7'`, `DBUP/0023_Pacientes_Tipo_Documento.sql:7`). Reglas: [RN-PAC-002](reglas/catalogos.md), [RN-PAC-004](reglas/catalogos.md), [RN-PAC-013](reglas/catalogos.md).
 
 ### Cliente eventual
 *También aparece como:* «Cliente Eventual (Público General)», «CLIENTE EVENTUAL», «Sin documento», tipo de documento `"-"` («Varios»).
@@ -117,7 +117,7 @@ Mapa de la familia: SOFIA emite hoy **solo boletas** (al cobrar una venta) y **n
 
 **En SOFIA.** Cuando la venta no tiene paciente (o el paciente tiene un documento de más de 20 caracteres), la boleta se emite con tipo de documento `"-"`, número `00000000` y nombre `CLIENTE EVENTUAL` (`APP/Ventas/Common/VentaComprobanteGenerator.cs:11-12`, `:82-91`). El valor `"-"` no está entre los tipos que un paciente puede tener (`ENUM/TipoDocumentoIdentidad.cs:8` frente a `:14`).
 
-**Dónde aparece.** POS, «Datos del Cliente»: «Cliente Eventual (Público General)» (`I18N/pos/es.json:168`, `checkout.clienteEventual`). Texto «Sin documento» (`I18N/es.json:275`, clave `tipos-documento` con la llave `-`). Reglas: [RN-VEN-025](reglas/ventas-y-comprobantes.md), [RN-CMP-005](reglas/ventas-y-comprobantes.md).
+**Dónde aparece.** POS, «Datos del Cliente»: «Cliente Eventual (Público General)» (`I18N/pos/es.json:168`, `checkout.clienteEventual`). Texto «Sin documento» (`I18N/es.json:277`, clave `tipos-documento` con la llave `-`). Reglas: [RN-VEN-025](reglas/ventas-y-comprobantes.md), [RN-CMP-005](reglas/ventas-y-comprobantes.md).
 
 ### Comprobante de pago
 *También aparece como:* comprobante, comprobante emitido, `SunatComprobanteEmitido`, `SUNAT_Comprobantes_Emitidos`.
@@ -144,7 +144,7 @@ Mapa de la familia: SOFIA emite hoy **solo boletas** (al cobrar una venta) y **n
 
 **En SOFIA.** Valor `Dni = "1"` (`ENUM/TipoDocumentoIdentidad.cs:9`); el número debe ser exactamente 8 dígitos (`:50`). Abreviatura `DNI` en cargas masivas y exportaciones.
 
-**Dónde aparece.** Pacientes: «Tipo de Documento» y «Documento de Identidad»; texto «DNI» (`I18N/es.json:271`). Mensaje de formato: `I18N/pacientes/es.json:89` (`detail.documento-formato`). Reglas: [RN-PAC-002](reglas/catalogos.md) a [RN-PAC-004](reglas/catalogos.md).
+**Dónde aparece.** Pacientes: «Tipo de Documento» y «Documento de Identidad»; texto «DNI» (`I18N/es.json:273`). Mensaje de formato: `I18N/pacientes/es.json:89` (`detail.documento-formato`). Reglas: [RN-PAC-002](reglas/catalogos.md) a [RN-PAC-004](reglas/catalogos.md).
 
 ### Emisor
 *También aparece como:* razón social del emisor, RUC del emisor, `EmisorComprobante`.
@@ -251,7 +251,7 @@ Mapa de la familia: SOFIA emite hoy **solo boletas** (al cobrar una venta) y **n
 
 **En SOFIA.** Una serie pertenece a una **sucursal** y a un **tipo de comprobante** (solo Boleta, Factura, Nota de Crédito o Proforma). El prefijo tiene 4 letras mayúsculas o números y la letra inicial que exige el tipo (`DOM/SunatSerieFiscal.cs:31-47`). Estado `Activa` o `Inactiva`; una sucursal puede tener una sola serie activa por tipo. Una serie que ya emitió comprobantes no se puede eliminar ni cambiar de numeración: solo cambia de estado.
 
-**Dónde aparece.** Menú «SUNAT» > «Series Fiscales» (`I18N/es.json:27`, `nav.seriesFiscales`). Campos: «Sucursal», «Tipo de Comprobante», «Prefijo de Serie», «Correlativo Actual», «Estado» (`I18N/series-fiscales/es.json:33-38`); estados «Activa» e «Inactiva» (`:55-58`). Inventario de pantallas: [`producto/pantallas/administracion`](../producto/pantallas/administracion.md). Reglas: [RN-SER-001](reglas/administracion-y-seguridad.md) a [RN-SER-014](reglas/administracion-y-seguridad.md).
+**Dónde aparece.** Menú «SUNAT» > «Series Fiscales» (`I18N/es.json:28`, `nav.seriesFiscales`). Campos: «Sucursal», «Tipo de Comprobante», «Prefijo de Serie», «Correlativo Actual», «Estado» (`I18N/series-fiscales/es.json:33-38`); estados «Activa» e «Inactiva» (`:55-58`). Inventario de pantallas: [`producto/pantallas/administracion`](../producto/pantallas/administracion.md). Reglas: [RN-SER-001](reglas/administracion-y-seguridad.md) a [RN-SER-014](reglas/administracion-y-seguridad.md).
 
 ### Ticket
 *También aparece como:* `TipoComprobante.Ticket`, descripción `"00"`.
@@ -297,7 +297,7 @@ Mapa de la familia: SOFIA emite hoy **solo boletas** (al cobrar una venta) y **n
 | `7` | «Pasaporte» | `PASAPORTE` | 1 a 20 letras o números | Sí |
 | `-` | «Sin documento» | — | — | No: lo usa solo el comprobante del cliente eventual |
 
-(`I18N/es.json:270-276`, `tipos-documento`.) Los pacientes anteriores a la columna pueden tener el tipo vacío y se facturan como cliente eventual con su propio número (`VentaComprobanteGenerator.cs:81-91`).
+(`I18N/es.json:272-278`, `tipos-documento`.) Los pacientes anteriores a la columna pueden tener el tipo vacío y se facturan como cliente eventual con su propio número (`VentaComprobanteGenerator.cs:81-91`).
 
 **Dónde aparece.** Pacientes: «Tipo de Documento» (`I18N/pacientes/es.json:93`). Tabla `Pacientes_Clientes` y `SUNAT_Comprobantes_Emitidos.Tipo_Doc_Identidad_Cliente`. Reglas: [RN-PAC-002](reglas/catalogos.md) a [RN-PAC-004](reglas/catalogos.md), [RN-PAC-013](reglas/catalogos.md). Enum: `TipoDocumentoIdentidad`.
 
@@ -375,7 +375,7 @@ Mapa de la familia: SOFIA modela el **catálogo DIGEMID** como una tabla local d
 
 **En SOFIA.** **Solo API (sin pantalla)** para aislar. Un registro de cuarentena apunta a un lote y una sucursal, con cantidad aislada, motivo, fecha, empleado que lo registra y estado de resolución (`DOM/DigemidInventarioCuarentena.cs:10-17`). Un lote con un registro en estado `Retenido` **no se puede vender en ninguna sucursal** (`APP/Ventas/Common/VentaDetalleFactory.cs:168`) y deja de contar como stock vendible (`APP/Inventarios/Common/InventarioVendibleExtensions.cs`). Aislar no descuenta stock. No existe ninguna operación para liberar, destruir o devolver un lote retenido ([RN-CUA-009](reglas/modulos-solo-api.md)). Devolver mercadería con destino «Cuarentena DIGEMID» solo anota el destino: no crea el registro de cuarentena ([RN-DEV-024](reglas/caja-devoluciones-y-dashboard.md), [RN-CUA-011](reglas/modulos-solo-api.md)).
 
-**Dónde aparece.** Dashboard, sección Inventario: «Lotes en cuarentena» y «Retenidos: no se pueden vender» (`I18N/dashboard/es.json:72-73`, `inventario.quarantine`, `quarantineHint`). Permiso «Aislar lote en cuarentena» (`I18N/roles/es.json:92`). Reglas: [RN-CUA-001](reglas/modulos-solo-api.md) a [RN-CUA-012](reglas/modulos-solo-api.md), [RN-CUA-020](reglas/modulos-solo-api.md), [RN-CUA-023](reglas/modulos-solo-api.md), [RN-DAS-022](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** Dashboard, sección Inventario: «Lotes en cuarentena» y «Retenidos: no se pueden vender» (`I18N/dashboard/es.json:94-95`, `inventario.quarantine`, `quarantineHint`). Permiso «Aislar lote en cuarentena» (`I18N/roles/es.json:92`). Reglas: [RN-CUA-001](reglas/modulos-solo-api.md) a [RN-CUA-012](reglas/modulos-solo-api.md), [RN-CUA-020](reglas/modulos-solo-api.md), [RN-CUA-023](reglas/modulos-solo-api.md), [RN-DAS-022](reglas/caja-devoluciones-y-dashboard.md).
 
 ### DCI (denominación común internacional)
 *También aparece como:* «Denominación DCI», `DenominacionDci`, nombre genérico, principio activo.
@@ -393,7 +393,7 @@ Mapa de la familia: SOFIA modela el **catálogo DIGEMID** como una tabla local d
 
 **En SOFIA.** Aparece de cuatro formas: (1) el **catálogo DIGEMID** local; (2) el módulo de permisos `DIGEMID` (que también protege cuarentena y actas); (3) el destino de devolución «Cuarentena DIGEMID»; (4) el texto «Reportes DIGEMID automatizados» en la pantalla de acceso (`I18N/auth/es.json:24`, `features.digemid`). **No hay reportes DIGEMID automatizados ni integración con DIGEMID** (comprobado en [tecnico/integraciones §6](../tecnico/integraciones.md)): ese texto es de marketing.
 
-**Dónde aparece.** Grupo de menú «DIGEMID» (`I18N/es.json:33`, `breadcrumbs.digemid`). Módulo «DIGEMID» en los permisos (`I18N/roles/es.json:61`). Matriz: [`tecnico/seguridad/matriz-de-permisos`](../tecnico/seguridad/matriz-de-permisos.md).
+**Dónde aparece.** Grupo de menú «DIGEMID» (`I18N/es.json:34`, `breadcrumbs.digemid`). Módulo «DIGEMID» en los permisos (`I18N/roles/es.json:61`). Matriz: [`tecnico/seguridad/matriz-de-permisos`](../tecnico/seguridad/matriz-de-permisos.md).
 
 ### Dispensación
 *También aparece como:* dispensar, «dispensada el máximo de veces permitido», `PuedeDispensar`, `Venta.Receta.Agotada`.
@@ -438,7 +438,7 @@ No hay textos de interfaz para estos valores.
 
 **En SOFIA.** Atributo obligatorio del **lote**. El lote **se vende hasta el final de su día de caducidad** y está vencido desde el día siguiente (`DOM/LoteInventario.cs:93-99`). Al crear un lote no se admite una caducidad ya vencida. Un lote vencido no se puede vender, se cuenta en el dashboard y se excluye del stock vendible. Término preferido: **caducidad** para el dato, **lote vencido** para el estado.
 
-**Dónde aparece.** Lotes: «Fecha de Caducidad», «Caducidad Desde», «Caducidad Hasta» (`I18N/lotes/es.json:23`, `:24-25`). Dashboard: «Lotes vencidos con stock» y «Lotes que vencen en 30 días o menos» (`I18N/dashboard/es.json:64-65`). POS: «Uno de los lotes está vencido y no se puede vender. Retíralo del carrito.» (`I18N/pos/es.json:354`). Reglas: [RN-LOT-005](reglas/inventario-y-recetas.md), [RN-LOT-006](reglas/inventario-y-recetas.md), [RN-VEN-013](reglas/ventas-y-comprobantes.md), [RN-DAS-018](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** Lotes: «Fecha de Caducidad», «Caducidad Desde», «Caducidad Hasta» (`I18N/lotes/es.json:23`, `:24-25`). Dashboard: «Lotes vencidos con stock» y «Lotes que vencen en 30 días o menos» (`I18N/dashboard/es.json:86-87`). POS: «Uno de los lotes está vencido y no se puede vender. Retíralo del carrito.» (`I18N/pos/es.json:354`). Reglas: [RN-LOT-005](reglas/inventario-y-recetas.md), [RN-LOT-006](reglas/inventario-y-recetas.md), [RN-VEN-013](reglas/ventas-y-comprobantes.md), [RN-DAS-018](reglas/caja-devoluciones-y-dashboard.md).
 
 ### Forma farmacéutica
 *También aparece como:* «Forma Farmacéutica», `FormaFarmaceutica`.
@@ -456,7 +456,7 @@ No hay textos de interfaz para estos valores.
 
 **En SOFIA.** Une un **medicamento**, un **ingrediente activo**, una **concentración de dosis** (mayor que cero) y una **unidad de medida**. Un medicamento lista cada ingrediente una sola vez. El código TE Orange es opcional (hasta 5 caracteres). Dos medicamentos con el mismo ingrediente, concentración y unidad son **equivalentes terapéuticos** ([RN-REC-027](reglas/inventario-y-recetas.md)). El medicamento de una formulación no se puede cambiar una vez creada.
 
-**Dónde aparece.** Menú «Catálogos» > «Formulaciones Clínicas» (`I18N/es.json:20`). Campos: «Medicamento», «Ingrediente Activo», «Concentración de Dosis», «Unidad de Medida», «Código TE Orange» (`I18N/formulacionesClinicas/es.json:18-23`). Reglas: [RN-FOR-001](reglas/catalogos.md) a [RN-FOR-013](reglas/catalogos.md).
+**Dónde aparece.** Menú «Catálogos» > «Formulaciones Clínicas» (`I18N/es.json:21`). Campos: «Medicamento», «Ingrediente Activo», «Concentración de Dosis», «Unidad de Medida», «Código TE Orange» (`I18N/formulacionesClinicas/es.json:18-23`). Reglas: [RN-FOR-001](reglas/catalogos.md) a [RN-FOR-013](reglas/catalogos.md).
 
 ### Fórmula magistral (orden magistral)
 *También aparece como:* «Órdenes Magistrales», `MagistralOrdenProduccion`, `Magistrales_Ordenes_Produccion`, «Iniciar orden magistral», «Completar orden magistral».
@@ -510,7 +510,7 @@ No hay textos de interfaz para estos valores.
 
 **En SOFIA.** Un lote pertenece a un **medicamento** y tiene número de lote (hasta 100 caracteres, único por medicamento), fecha de caducidad y fecha de fabricación opcional (`DOM/LoteInventario.cs:9-12`). **El lote nace sin existencias**: las unidades se registran por sucursal en el stock (ver «Stock por sucursal»). La venta se hace por lote. No se puede eliminar un lote con stock o ventas.
 
-**Dónde aparece.** Menú «Inventario» > «Lotes» (`I18N/es.json:22`). Campos: «Número de Lote», «Fecha de Fabricación», «Fecha de Caducidad» (`I18N/lotes/es.json:21-23`). Reglas: [RN-LOT-001](reglas/inventario-y-recetas.md) a [RN-LOT-019](reglas/inventario-y-recetas.md).
+**Dónde aparece.** Menú «Inventario» > «Lotes» (`I18N/es.json:23`). Campos: «Número de Lote», «Fecha de Fabricación», «Fecha de Caducidad» (`I18N/lotes/es.json:21-23`). Reglas: [RN-LOT-001](reglas/inventario-y-recetas.md) a [RN-LOT-019](reglas/inventario-y-recetas.md).
 
 ### Modalidad de registro
 *También aparece como:* `ModalidadRegistro`, `Modalidad_Registro`, `Corriente`, `Historica`.
@@ -562,7 +562,7 @@ No tiene texto de interfaz (módulo sin pantalla).
 
 **En SOFIA.** Registro de **paciente**, **médico** (profesional de salud), **fecha de expedición** (no futura), **repeticiones máximas** (≥ 0, por defecto 0), **indicaciones de uso** (hasta 1 000 caracteres) y **número de receta** opcional (`DOM/RecetaMedica.cs:12-19`). **No guarda los medicamentos recetados**: la receta registrada se vincula a las líneas de una venta. No se puede eliminar una receta ya usada en una venta. Hay también un flujo de **lectura con IA** (ver «Análisis de receta»).
 
-**Dónde aparece.** Menú «Pacientes & Atención» > «Recetas Médicas» (`I18N/es.json:26`). Campos: «Paciente», «Médico», «Fecha de Expedición», «Repeticiones Máximas», «Número de receta», «Indicaciones de Uso» (`I18N/recetas-medicas/es.json:30-35`). POS: «Receta médica», «Sin receta», «Registrar receta» (`I18N/pos/es.json:171-175`). Reglas: [RN-REC-001](reglas/inventario-y-recetas.md) a [RN-REC-017](reglas/inventario-y-recetas.md), [RN-REC-031](reglas/inventario-y-recetas.md).
+**Dónde aparece.** Menú «Pacientes & Atención» > «Recetas Médicas» (`I18N/es.json:27`). Campos: «Paciente», «Médico», «Fecha de Expedición», «Repeticiones Máximas», «Número de receta», «Indicaciones de Uso» (`I18N/recetas-medicas/es.json:30-35`). POS: «Receta médica», «Sin receta», «Registrar receta» (`I18N/pos/es.json:171-175`). Reglas: [RN-REC-001](reglas/inventario-y-recetas.md) a [RN-REC-017](reglas/inventario-y-recetas.md), [RN-REC-031](reglas/inventario-y-recetas.md).
 
 ### Receta retenida
 *También aparece como:* `CondicionVenta.RecetaRetenida`, «Receta Retenida».
@@ -856,7 +856,7 @@ Mapa de la familia: el cajero **abre una sesión de caja** con un monto de apert
 
 **En SOFIA.** El grupo de menú «Punto de Venta» tiene dos opciones: «Sesiones de Caja» y «Ventas». El terminal de venta es la ruta `/pos/nueva` (botón de nueva venta). El permiso de módulo `POS` se rotula «Sesiones de Caja» y el de ventas se llama `Ventas`.
 
-**Dónde aparece.** Menú (`I18N/es.json:56`, `breadcrumbs.puntoVenta`); título del terminal «Terminal de Punto de Venta (POS)» (`I18N/pos/es.json:3`). Inventario de pantallas: [`producto/pantallas/acceso-layout-y-compartidos`](../producto/pantallas/acceso-layout-y-compartidos.md).
+**Dónde aparece.** Menú (`I18N/es.json:58`, `breadcrumbs.puntoVenta`); título del terminal «Terminal de Punto de Venta (POS)» (`I18N/pos/es.json:3`). Inventario de pantallas: [`producto/pantallas/acceso-layout-y-compartidos`](../producto/pantallas/acceso-layout-y-compartidos.md).
 
 ### Reclamo de seguro
 *También aparece como:* `VentaReclamoSeguro`, `Ventas_Reclamos_Seguro`, `EstadoReclamo`, `CodigoAutorizacion`, copago.
@@ -883,7 +883,7 @@ Mapa de la familia: el cajero **abre una sesión de caja** con un monto de apert
 
 **En SOFIA.** Una fila por turno con sucursal, empleado, hora de apertura y de cierre, monto de apertura, efectivo esperado, monto declarado, diferencia y estado. Cada venta cobrada queda ligada a la sesión con que se cobró. Un empleado solo puede tener **una sesión abierta** a la vez.
 
-**Dónde aparece.** Menú «Punto de Venta» > «Sesiones de Caja» (`I18N/es.json:24`). Campos: «Sucursal», «Cajero», «Fecha / Hora Apertura», «Fecha / Hora Cierre», «Monto Apertura (S/)», «Monto Cierre Declarado (S/)», «Monto Cierre Calculado (S/)», «Diferencia Arqueo (S/)», «Estado» (`I18N/sesiones-caja/es.json:28-36`). Reglas: [RN-CAJ-001](reglas/caja-devoluciones-y-dashboard.md) a [RN-CAJ-027](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** Menú «Punto de Venta» > «Sesiones de Caja» (`I18N/es.json:25`). Campos: «Sucursal», «Cajero», «Fecha / Hora Apertura», «Fecha / Hora Cierre», «Monto Apertura (S/)», «Monto Cierre Declarado (S/)», «Monto Cierre Calculado (S/)», «Diferencia Arqueo (S/)», «Estado» (`I18N/sesiones-caja/es.json:28-36`). Reglas: [RN-CAJ-001](reglas/caja-devoluciones-y-dashboard.md) a [RN-CAJ-027](reglas/caja-devoluciones-y-dashboard.md).
 
 ### Venta
 *También aparece como:* «Ventas», `Venta`, `Ventas_Cabecera`, transacción (`Transaccion_ID`).
@@ -892,7 +892,7 @@ Mapa de la familia: el cajero **abre una sesión de caja** con un monto de apert
 
 **En SOFIA.** Cabecera con sucursal, empleado (cajero), cliente opcional, sesión de caja, fecha, total bruto, estado y motivo de anulación; líneas por **lote** con cantidad y precio fijado; y pagos. El historial de la pantalla Ventas muestra solo las ventas de la **sucursal del usuario**. No hay descuentos. La moneda es el sol.
 
-**Dónde aparece.** Menú «Punto de Venta» > «Ventas» (`I18N/es.json:25`); columnas «Código de Venta», «Fecha», «Cliente», «Empleado», «Total (S/)», «Estado», «Ítems» (`I18N/pos/es.json:68-74`). Reglas: [RN-VEN-001](reglas/ventas-y-comprobantes.md) a [RN-VEN-083](reglas/ventas-y-comprobantes.md) (ver el catálogo completo).
+**Dónde aparece.** Menú «Punto de Venta» > «Ventas» (`I18N/es.json:26`); columnas «Código de Venta», «Fecha», «Cliente», «Empleado», «Total (S/)», «Estado», «Ítems» (`I18N/pos/es.json:68-74`). Reglas: [RN-VEN-001](reglas/ventas-y-comprobantes.md) a [RN-VEN-083](reglas/ventas-y-comprobantes.md) (ver el catálogo completo).
 
 ### Venta completada
 *También aparece como:* `EstadoVenta.Completada`, «Completada», «Cobrar Venta», «Venta Procesada Exitosamente».
@@ -910,7 +910,7 @@ Mapa de la familia: el cajero **abre una sesión de caja** con un monto de apert
 
 **En SOFIA.** Se guarda con estado `Pendiente`: **reserva el stock** y cuenta como dispensación de la receta, pero **no tiene pagos ni comprobante** y su código es provisional. No caduca ni se libera sola: solo se cobra o se anula. Puede retomarla cualquier usuario de la sucursal con su propia caja abierta. El dashboard cuenta las ventas en espera y su importe «Por cobrar».
 
-**Dónde aparece.** POS: «Guardar y Atender Siguiente» (`I18N/pos/es.json:17`), «Venta guardada en espera. Retómala desde Ventas cuando el cliente vuelva.» (`:335`), «Cobrar Venta en Espera» (`:268`). Dashboard: «Ventas en espera» y «Por cobrar» (`I18N/dashboard/es.json:25-26`). Reglas: [RN-VEN-052](reglas/ventas-y-comprobantes.md) a [RN-VEN-056](reglas/ventas-y-comprobantes.md), [RN-CAJ-017](reglas/caja-devoluciones-y-dashboard.md), [RN-DAS-009](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** POS: «Guardar y Atender Siguiente» (`I18N/pos/es.json:17`), «Venta guardada en espera. Retómala desde Ventas cuando el cliente vuelva.» (`:335`), «Cobrar Venta en Espera» (`:268`). Dashboard: «Ventas en espera» y «Por cobrar» (`I18N/dashboard/es.json:47-48`). Reglas: [RN-VEN-052](reglas/ventas-y-comprobantes.md) a [RN-VEN-056](reglas/ventas-y-comprobantes.md), [RN-CAJ-017](reglas/caja-devoluciones-y-dashboard.md), [RN-DAS-009](reglas/caja-devoluciones-y-dashboard.md).
 
 ### Vuelto
 *También aparece como:* «Vuelto a Entregar:», «Vuelto Entregado:», «Vuelto:».
@@ -1015,7 +1015,7 @@ Mapa de la familia: un **medicamento** pertenece a un **laboratorio**, tiene una
 
 **En SOFIA.** Maestro con **código nacional**, **nombre comercial** (hasta 150 caracteres), **laboratorio**, **unidad base**, **condición de venta** y **precio de venta base** (no negativo, 2 decimales; puede estar vacío en registros antiguos o de carga masiva, y entonces no se puede vender sin presentación) (`DOM/Medicamento.cs:11-18`). Un medicamento no guarda su registro sanitario, forma farmacéutica ni concentración (esos datos están en el catálogo DIGEMID y en la formulación clínica). **Medicamento** y **producto** son la misma fila: la documentación usa «medicamento» para el maestro y «producto» solo cuando el rótulo de la pantalla lo dice.
 
-**Dónde aparece.** Menú «Catálogos» > «Medicamentos» (`I18N/es.json:18`). Campos: «Código Nacional», «Nombre Comercial», «Laboratorio», «Unidad Base», «Condición de Venta», «Precio de Venta Base», «Stock Total» (`I18N/medicamentos/es.json:30-36`). Reglas: [RN-MED-001](reglas/catalogos.md) a [RN-MED-026](reglas/catalogos.md).
+**Dónde aparece.** Menú «Catálogos» > «Medicamentos» (`I18N/es.json:19`). Campos: «Código Nacional», «Nombre Comercial», «Laboratorio», «Unidad Base», «Condición de Venta», «Precio de Venta Base», «Stock Total» (`I18N/medicamentos/es.json:30-36`). Reglas: [RN-MED-001](reglas/catalogos.md) a [RN-MED-026](reglas/catalogos.md).
 
 ### Multiplicador
 *También aparece como:* «Multiplicador», `Multiplicador`.
@@ -1051,7 +1051,7 @@ Mapa de la familia: un **medicamento** pertenece a un **laboratorio**, tiene una
 
 **En SOFIA.** Une un **producto**, una **unidad de venta**, una **equivalencia** en unidades base (la calcula el sistema desde las jerarquías y no se recalcula si estas cambian) y un **precio de venta** propio (≥ 0). Un producto tiene como máximo una presentación por unidad de venta. Para crear una, el producto debe tener una jerarquía de unidades. Al vender, la cantidad se ingresa en presentaciones y el stock se descuenta en unidades base. No se puede eliminar una presentación con ventas.
 
-**Dónde aparece.** Menú «Catálogos» > «Presentaciones de Venta» (`I18N/es.json:19`). Campos «Producto», «Unidad de Venta», «Precio de Venta» y columna «Equivalencia» (`I18N/presentaciones-venta/es.json:45-48`, `:53`). Reglas: [RN-PRE-001](reglas/catalogos.md) a [RN-PRE-015](reglas/catalogos.md), [RN-VEN-017](reglas/ventas-y-comprobantes.md), [RN-VEN-018](reglas/ventas-y-comprobantes.md).
+**Dónde aparece.** Menú «Catálogos» > «Presentaciones de Venta» (`I18N/es.json:20`). Campos «Producto», «Unidad de Venta», «Precio de Venta» y columna «Equivalencia» (`I18N/presentaciones-venta/es.json:45-48`, `:53`). Reglas: [RN-PRE-001](reglas/catalogos.md) a [RN-PRE-015](reglas/catalogos.md), [RN-VEN-017](reglas/ventas-y-comprobantes.md), [RN-VEN-018](reglas/ventas-y-comprobantes.md).
 
 ### Próximo a vencer
 *También aparece como:* «Lotes que vencen en 30 días o menos», «31 a 60 días», «61 a 90 días».
@@ -1060,7 +1060,7 @@ Mapa de la familia: un **medicamento** pertenece a un **laboratorio**, tiene una
 
 **En SOFIA.** No hay una alerta propia: el **dashboard** cuenta las filas de stock con cantidad > 0 en tres tramos de caducidad desde hoy: hasta 30 días, de 31 a 60 y de 61 a 90 (`APP/Dashboard/Queries/GetDashboardInventario/GetDashboardInventarioQueryHandler.cs:26-41`). Un lote que vence hoy aún no está vencido. Los lotes ya vencidos con stock se cuentan aparte.
 
-**Dónde aparece.** Dashboard, sección Inventario: «Lotes que vencen en 30 días o menos», «Lotes que vencen en 31 a 60 días» y «Lotes que vencen en 61 a 90 días» (`I18N/dashboard/es.json:65-67`). Reglas: [RN-DAS-018](reglas/caja-devoluciones-y-dashboard.md), [RN-DAS-019](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** Dashboard, sección Inventario: «Lotes que vencen en 30 días o menos», «Lotes que vencen en 31 a 60 días» y «Lotes que vencen en 61 a 90 días» (`I18N/dashboard/es.json:87-89`). Reglas: [RN-DAS-018](reglas/caja-devoluciones-y-dashboard.md), [RN-DAS-019](reglas/caja-devoluciones-y-dashboard.md).
 
 ### Proveedor
 *También aparece como:* «Proveedores», distribuidor, `ProveedorDistribuidor`, `Proveedores_Dist`.
@@ -1078,7 +1078,7 @@ Mapa de la familia: un **medicamento** pertenece a un **laboratorio**, tiene una
 
 **En SOFIA.** El umbral es **fijo: 10 unidades base vendibles o menos, por sucursal y producto** (`APP/Dashboard/Queries/GetDashboardInventario/GetDashboardInventarioQueryHandler.cs:14`); no es configurable por producto. La pantalla Stock por Sucursal filtra por «Cantidad Mínima» y «Cantidad Máxima», que son filtros de consulta y no un punto de reposición.
 
-**Dónde aparece.** Dashboard: «Productos con stock bajo» con la ayuda «{{umbral}} unidades o menos, por sucursal» (`I18N/dashboard/es.json:69-70`); POS, catálogo: «Stock bajo» (`I18N/pos/es.json:218`). Reglas: [RN-DAS-021](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** Dashboard: «Productos con stock bajo» con la ayuda «{{umbral}} unidades o menos, por sucursal» (`I18N/dashboard/es.json:91-92`); POS, catálogo: «Stock bajo» (`I18N/pos/es.json:218`). Reglas: [RN-DAS-021](reglas/caja-devoluciones-y-dashboard.md).
 
 ### Stock por sucursal
 *También aparece como:* «Stock por Sucursal», «Cantidad Física», `InventarioSucursal`, `Inventario_Sucursal`, `LotesEnSucursal`, existencias.
@@ -1087,7 +1087,7 @@ Mapa de la familia: un **medicamento** pertenece a un **laboratorio**, tiene una
 
 **En SOFIA.** **Una fila por lote y sucursal**; guarda la **cantidad física** en unidades base, nunca negativa (CHECK `CHK_Inventario_Positivo`, `DBUP/0001_Initial_Schema.sql:180`), con una versión de fila contra cambios simultáneos. El listado muestra solo las sucursales accesibles del usuario y, por defecto, solo filas con stock. Una venta, una transferencia, un ajuste o una orden magistral cambian esa cantidad.
 
-**Dónde aparece.** Menú «Inventario» > «Stock por Sucursal» (`I18N/es.json:23`). Filtros y columnas: «Sucursal», «Producto», «Número de Lote», «Fecha de Caducidad», «Cantidad Física», «Solo con stock disponible» (`I18N/stock-por-sucursal/es.json:22-31`). Reglas: [RN-STK-001](reglas/inventario-y-recetas.md) a [RN-STK-018](reglas/inventario-y-recetas.md).
+**Dónde aparece.** Menú «Inventario» > «Stock por Sucursal» (`I18N/es.json:24`). Filtros y columnas: «Sucursal», «Producto», «Número de Lote», «Fecha de Caducidad», «Cantidad Física», «Solo con stock disponible» (`I18N/stock-por-sucursal/es.json:22-31`). Reglas: [RN-STK-001](reglas/inventario-y-recetas.md) a [RN-STK-018](reglas/inventario-y-recetas.md).
 
 ### Stock vendible
 *También aparece como:* stock disponible, «Stock Disp:», «Disponible», «Agotado».
@@ -1143,7 +1143,7 @@ Mapa de la familia: una **empresa** (cliente de SOFIA, aislado de las demás) ti
 
 **Definición.** Impedimento temporal de iniciar sesión tras varios intentos fallidos. Término propio de SOFIA (no normativo).
 
-**En SOFIA.** Al llegar a **5 intentos fallidos** de contraseña, la cuenta queda bloqueada **15 minutos** (`DOM/Cuenta.cs:86-88`). Un inicio correcto pone los intentos en 0 y quita el bloqueo. Un administrador puede resetear los intentos desde la cuenta.
+**En SOFIA.** Al llegar a **5 intentos fallidos** de contraseña, la cuenta queda bloqueada **15 minutos** (`DOM/Cuenta.cs:90-92`). Un inicio correcto pone los intentos en 0 y quita el bloqueo. Un administrador puede resetear los intentos desde la cuenta.
 
 **Dónde aparece.** Cuentas de Usuario: «Bloqueado», «Intentos Fallidos», «Bloqueado Hasta» y la acción «Resetear Intentos Fallidos» (`I18N/cuentas/es.json:25-28`, `:34`). Reglas: [RN-AUT-005](reglas/administracion-y-seguridad.md) a [RN-AUT-007](reglas/administracion-y-seguridad.md), [RN-CTA-011](reglas/administracion-y-seguridad.md).
 
@@ -1172,7 +1172,16 @@ Mapa de la familia: una **empresa** (cliente de SOFIA, aislado de las demás) ti
 
 **En SOFIA.** Flujo de tres pasos: **descargar la plantilla**, **subir el archivo** (solo `.xlsx`; máx. 5 MB y 5 000 filas; se lee la primera hoja) y **revisar la vista previa**, que marca cada fila como «Válido» o «Error» antes de **guardar solo las válidas**. Al guardar, cada fila se valida otra vez. Está disponible solo en los **maestros** (12 pantallas): Aseguradoras, Catálogo DIGEMID, Ingredientes Activos, Jerarquías de Unidades, Laboratorios, Medicamentos, Pacientes, Profesionales de Salud, Proveedores, Roles, Sucursales y Unidades de Medida (`docs/_inventario/rutas-spa.csv`, rutas `.../carga-masiva`). Exige el permiso `Crear` del módulo.
 
-**Dónde aparece.** Botón «Carga Masiva» en la pantalla de búsqueda y pantalla «Carga Masiva» con «Descargar plantilla», «Subir archivo», «Vista previa» y «Guardar válidos ({{count}})» (`I18N/es.json:218-232`, `carga-masiva.*`). Reglas: [RN-IMP-001](reglas/administracion-y-seguridad.md) a [RN-IMP-007](reglas/administracion-y-seguridad.md), [RN-IMP-012](reglas/administracion-y-seguridad.md) a [RN-IMP-016](reglas/administracion-y-seguridad.md).
+**Dónde aparece.** Botón «Carga Masiva» en la pantalla de búsqueda y pantalla «Carga Masiva» con «Descargar plantilla», «Subir archivo», «Vista previa» y «Guardar válidos ({{count}})» (`I18N/es.json:220-234`, `carga-masiva.*`). Reglas: [RN-IMP-001](reglas/administracion-y-seguridad.md) a [RN-IMP-007](reglas/administracion-y-seguridad.md), [RN-IMP-012](reglas/administracion-y-seguridad.md) a [RN-IMP-016](reglas/administracion-y-seguridad.md).
+
+### Configuración de pago
+*También aparece como:* «Configuración de Pago», datos de pago, `Plataforma_Configuracion_Pago`.
+
+**Definición.** Los datos con los que una empresa paga su suscripción a SOFIA: WhatsApp donde enviar la captura del pago, número de Yape, indicaciones y código QR. Término propio de SOFIA (no normativo).
+
+**En SOFIA.** Es una sola fila que publica el operador de plataforma ([RN-EMP-023](reglas/administracion-y-seguridad.md)): WhatsApp de 8 a 15 dígitos con código de país, Yape de 9 dígitos (opcional), indicaciones de hasta 500 caracteres (opcional) y QR PNG o JPEG de hasta 1 MB (opcional) (`DOM/PlataformaConfiguracionPago.cs:9-15,32-57`; `DBUP/0029_Plataforma_Suscripciones.sql:7-18`). La leen sin sesión las empresas bloqueadas (`GET plataforma/pago`, [RN-EMP-025](reglas/administracion-y-seguridad.md)). El sistema no cobra ni confirma pagos: el pago es por Yape y la captura va por WhatsApp.
+
+**Dónde aparece.** Pantalla «Configuración de Pago» (`/configuracion-pago`, solo operador; menú «Configuración de Pago», `nav.configuracionPago` en `I18N/es.json`). Bloque «Paga tu suscripción con Yape» en el inicio de sesión y en el diálogo «Cómo pagar» (`I18N/suscripcion/es.json`). Reglas: [RN-EMP-023](reglas/administracion-y-seguridad.md) a [RN-EMP-027](reglas/administracion-y-seguridad.md), [RN-AUT-040](reglas/administracion-y-seguridad.md).
 
 ### Cuenta de usuario
 *También aparece como:* «Cuentas de Usuario», «Nombre de Usuario», «Cuenta Activa», `Cuenta`, `Seguridad_Cuentas`.
@@ -1188,9 +1197,9 @@ Mapa de la familia: una **empresa** (cliente de SOFIA, aislado de las demás) ti
 
 **Definición.** Pantalla de inicio con indicadores del día. Término propio de SOFIA (no normativo).
 
-**En SOFIA.** Seis bloques: Ventas de hoy, Caja, Inventario, Ventas de los últimos 7 días, Productos más vendidos en 7 días y Devoluciones de hoy. Cada sección se pide y falla por separado y se muestra solo si el usuario tiene el permiso de lectura correspondiente. Un administrador ve el total de la empresa con desglose por sucursal; los demás ven el total de sus sucursales accesibles y sus propias ventas. Los importes de venta son **brutos**: las devoluciones se muestran aparte.
+**En SOFIA.** Seis bloques: Ventas de hoy, Caja, Inventario, Ventas de los últimos 7 días, Productos más vendidos en 7 días y Devoluciones de hoy, más la sección «Suscripciones» que solo ve el [operador de plataforma](#operador-de-plataforma). Cada sección se pide y falla por separado y se muestra solo si el usuario tiene el permiso de lectura correspondiente (la de suscripciones, la marca de operador). Un administrador ve el total de la empresa con desglose por sucursal; los demás ven el total de sus sucursales accesibles y sus propias ventas. Los importes de venta son **brutos**: las devoluciones se muestran aparte.
 
-**Dónde aparece.** Menú «Principal» > «Dashboard» (`I18N/es.json:3`); saludo y secciones en `I18N/dashboard/es.json` (por ejemplo «Ventas de hoy», línea 17). Inventario: [`producto/pantallas/acceso-layout-y-compartidos`](../producto/pantallas/acceso-layout-y-compartidos.md). Reglas: [RN-DAS-001](reglas/caja-devoluciones-y-dashboard.md) a [RN-DAS-024](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** Menú «Principal» > «Dashboard» (`I18N/es.json:3`); saludo y secciones en `I18N/dashboard/es.json` (por ejemplo «Ventas de hoy», línea 17). Inventario: [`producto/pantallas/acceso-layout-y-compartidos`](../producto/pantallas/acceso-layout-y-compartidos.md). Reglas: [RN-DAS-001](reglas/caja-devoluciones-y-dashboard.md) a [RN-DAS-026](reglas/caja-devoluciones-y-dashboard.md).
 
 ### Empleado
 *También aparece como:* «Empleados», `Empleado`, `Empleados`.
@@ -1220,13 +1229,13 @@ Mapa de la familia: una **empresa** (cliente de SOFIA, aislado de las demás) ti
 | Valor | Número | Texto en la interfaz | ¿Está vigente? |
 |---|---|---|---|
 | `TrialActivo` | 0 | «Trial Activo» | Sí, mientras el vencimiento sea futuro |
-| `Activo` | 1 | «Activo» | Sí |
+| `Activo` | 1 | «Activo» | Sí, mientras el vencimiento sea futuro |
 | `Suspendido` | 2 | «Suspendido» | No |
 | `Cancelado` | 3 | «Cancelado» | No |
 
-Una empresa está **vigente** si no está eliminada y está `Activo`, o `TrialActivo` con vencimiento futuro (`DOM/Empresa.cs:30-33`). Se comprueba al iniciar sesión, al renovar y en **cada petición**: si no está vigente, nadie de la empresa puede usar el sistema. **Pendiente:** las operaciones de activar, suspender, cancelar y extender la prueba existen en la entidad pero ningún endpoint ni pantalla las invoca; hoy el estado solo se cambia en la base de datos ([RN-EMP-015](reglas/administracion-y-seguridad.md)).
+Una empresa está **vigente** si no está eliminada, está `Activo` o `TrialActivo` y su vencimiento es futuro (`DOM/Empresa.cs:30-33`): la suscripción pagada vence sola, igual que la prueba, sin cambiar de estado. Se comprueba al iniciar sesión, al renovar y en **cada petición**: si no está vigente, nadie de la empresa puede usar el sistema (salvo el [operador de plataforma](#operador-de-plataforma)). El estado lo cambia solo el operador de plataforma: activar la suscripción, extender la prueba, suspender y cancelar ([RN-EMP-015](reglas/administracion-y-seguridad.md), [RN-EMP-019](reglas/administracion-y-seguridad.md) a [RN-EMP-021](reglas/administracion-y-seguridad.md)).
 
-**Dónde aparece.** Empresa: filtro y columna «Estado» y «Vigente» (`I18N/empresa/es.json:42-50`, `estado.*`). Mensaje de login: «La suscripción de tu empresa no está activa o ha vencido…» (`I18N/auth/es.json:15`). Reglas: [RN-EMP-012](reglas/administracion-y-seguridad.md) a [RN-EMP-015](reglas/administracion-y-seguridad.md), [RN-AUT-009](reglas/administracion-y-seguridad.md).
+**Dónde aparece.** Empresa: filtro y columna «Estado» y «Vigente» (`I18N/empresa/es.json:42-50`, `estado.*`). Mensaje de login: «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» (`I18N/auth/es.json:15`). Botones «Activar suscripción», «Extender prueba», «Suspender» y «Cancelar suscripción» en el detalle de la empresa, solo para el operador (`I18N/empresa/es.json`, `suscripcion.*`). Reglas: [RN-EMP-012](reglas/administracion-y-seguridad.md) a [RN-EMP-015](reglas/administracion-y-seguridad.md), [RN-AUT-009](reglas/administracion-y-seguridad.md).
 
 ### Exportación
 *También aparece como:* «Exportar», `exportar`, Excel.
@@ -1235,7 +1244,7 @@ Una empresa está **vigente** si no está eliminada y está `Activo`, o `TrialAc
 
 **En SOFIA.** El botón «Exportar» de cada pantalla de búsqueda genera un `.xlsx` con **los mismos filtros** de la consulta. Los títulos de columna y las etiquetas «Sí»/«No» los manda el SPA ya traducidos y las fechas salen como `dd/MM/yyyy` (español) u otro formato permitido. Un archivo no puede superar **10 000 filas**; si la consulta filtrada tiene más, no se genera.
 
-**Dónde aparece.** Botón «Exportar» (`I18N/es.json:77`, `actions.export`); nombres de archivo como `ventas.xlsx` (`I18N/pos/es.json:65`). Reglas: [RN-IMP-008](reglas/administracion-y-seguridad.md) a [RN-IMP-011](reglas/administracion-y-seguridad.md), [RN-IMP-017](reglas/administracion-y-seguridad.md).
+**Dónde aparece.** Botón «Exportar» (`I18N/es.json:79`, `actions.export`); nombres de archivo como `ventas.xlsx` (`I18N/pos/es.json:65`). Reglas: [RN-IMP-008](reglas/administracion-y-seguridad.md) a [RN-IMP-011](reglas/administracion-y-seguridad.md), [RN-IMP-017](reglas/administracion-y-seguridad.md).
 
 ### Licencia profesional
 *También aparece como:* «Licencia Profesional», `Licencia_Prof`, `LicenciaProf`.
@@ -1264,12 +1273,21 @@ Una empresa está **vigente** si no está eliminada y está `Activo`, o `TrialAc
 
 **Dónde aparece.** Sucursales: «Nº de Licencia» (`I18N/sucursales/es.json:22`); error «Ya existe una sucursal con ese número de licencia.» (`:10`). Reglas: [RN-SUC-004](reglas/administracion-y-seguridad.md), [RN-SUC-005](reglas/administracion-y-seguridad.md).
 
+### Operador de plataforma
+*También aparece como:* administrador de plataforma, `Es_Admin_Plataforma`, `EsAdminPlataforma`, `plat_admin`, `PLATAFORMA_ADMIN`.
+
+**Definición.** La persona del dueño del servicio SOFIA que administra las suscripciones de todas las empresas clientes. Término propio de SOFIA (no normativo).
+
+**En SOFIA.** Es una cuenta con la marca `Es_Admin_Plataforma = 1`, que solo se pone a mano en la base de datos: ningún comando, endpoint ni pantalla la asigna (`DOM/Cuenta.cs:26-27`; [RN-CTA-021](reglas/administracion-y-seguridad.md)). El rol Admin de una empresa no le da estas funciones. El operador ve todas las empresas, activa su suscripción, extiende la prueba, las suspende y cancela (menos la suya), publica la configuración de pago y ve la sección «Suscripciones» del panel; su acceso no se bloquea por la vigencia de su propia empresa ([RN-GEN-042](reglas/administracion-y-seguridad.md), [RN-EMP-019](reglas/administracion-y-seguridad.md) a [RN-EMP-022](reglas/administracion-y-seguridad.md)).
+
+**Dónde aparece.** Botones de suscripción en el detalle de «Empresa»; menú «Configuración de Pago»; panel «Suscripciones» (`I18N/dashboard/es.json`). Reglas: [RN-DAS-025](reglas/caja-devoluciones-y-dashboard.md), [RN-DAS-026](reglas/caja-devoluciones-y-dashboard.md).
+
 ### Periodo de prueba
 *También aparece como:* «1 mes de prueba gratis», «Inicio Trial», `FechaInicioTrial`, `DiasTrial`, trial.
 
 **Definición.** Tiempo inicial gratuito para probar SOFIA. Término propio de SOFIA (no normativo).
 
-**En SOFIA.** Una empresa nueva nace en `TrialActivo` con vencimiento **30 días** después del registro (`DOM/Empresa.cs:37`, `:64`). Al vencer, la empresa deja de estar vigente. No hay pantalla para activar la suscripción.
+**En SOFIA.** Una empresa nueva nace en `TrialActivo` con vencimiento **30 días** después del registro (`DOM/Empresa.cs:37`, `:64`). Al vencer, la empresa deja de estar vigente. El operador de plataforma puede extender la prueba hasta una fecha futura ([RN-EMP-020](reglas/administracion-y-seguridad.md)) o activar la suscripción ([RN-EMP-019](reglas/administracion-y-seguridad.md)).
 
 **Dónde aparece.** Registro: «Crea tu empresa y obtén 1 mes de prueba gratis» (`I18N/empresa/es.json:7`). Empresa: «Inicio Trial» (`:116`). Reglas: [RN-EMP-012](reglas/administracion-y-seguridad.md).
 
@@ -1289,7 +1307,7 @@ Una empresa está **vigente** si no está eliminada y está `Activo`, o `TrialAc
 
 **En SOFIA.** Libro con una hoja «Plantilla» que solo contiene la cabecera de columnas del maestro. Se descarga desde la pantalla de búsqueda del maestro.
 
-**Dónde aparece.** «Descargar plantilla» (`I18N/es.json:218`). Reglas: [RN-IMP-016](reglas/administracion-y-seguridad.md).
+**Dónde aparece.** «Descargar plantilla» (`I18N/es.json:220`). Reglas: [RN-IMP-016](reglas/administracion-y-seguridad.md).
 
 ### Rol
 *También aparece como:* «Roles & Permisos», «Roles», `Rol`, `Seguridad_Roles`.
@@ -1344,6 +1362,15 @@ Una empresa está **vigente** si no está eliminada y está `Activo`, o `TrialAc
 **En SOFIA.** Un Admin accede a todas las sucursales de su empresa. Cualquier otro usuario accede a: su **sucursal base**, las **asignadas a su cuenta** y las **asignadas a sus roles**, cruzadas con las sucursales no eliminadas de la empresa. Los selectores de sucursal solo muestran estas.
 
 **Dónde aparece.** Cuentas de Usuario: «Sucursales Asignadas» («Sucursales adicionales donde esta cuenta puede operar, además de la sucursal base de su empleado») (`I18N/cuentas/es.json:47-48`); Roles, pestaña «Sucursales» (`I18N/roles/es.json:39`). Reglas: [RN-GEN-023](reglas/administracion-y-seguridad.md), [RN-SUC-010](reglas/administracion-y-seguridad.md), [RN-CTA-019](reglas/administracion-y-seguridad.md), [RN-ROL-017](reglas/administracion-y-seguridad.md), [RN-ROL-018](reglas/administracion-y-seguridad.md).
+
+### Vencimiento de la suscripción
+*También aparece como:* «Vencimiento», «Vence», «Vigente hasta», `FechaVencimiento`.
+
+**Definición.** Fecha y hora hasta la que una empresa puede usar SOFIA, tanto en el periodo de prueba como con suscripción pagada. Término propio de SOFIA (no normativo).
+
+**En SOFIA.** Columna `Empresas.FechaVencimiento`. Al llegar esa fecha la empresa deja de estar vigente aunque su estado siga en `TrialActivo` o `Activo` ([RN-EMP-014](reglas/administracion-y-seguridad.md)). El operador la fija al activar la suscripción o extender la prueba, siempre en el futuro, al final del día elegido; si renueva antes de que venza, el calendario parte del vencimiento actual para no perder días ([RN-EMP-028](reglas/administracion-y-seguridad.md)). Siete días antes, la empresa ve en el panel «Tu suscripción vence en N días» o «Tu periodo de prueba vence en N días» ([RN-EMP-026](reglas/administracion-y-seguridad.md)); el operador ve las próximas a vencer ([RN-DAS-026](reglas/caja-devoluciones-y-dashboard.md)).
+
+**Dónde aparece.** Empresa: columna «Vencimiento»; diálogo «Activar suscripción» con «Vigente hasta» y los atajos «1 mes», «3 meses», «6 meses» y «12 meses» (`I18N/empresa/es.json`). Reglas: [RN-EMP-019](reglas/administracion-y-seguridad.md), [RN-EMP-020](reglas/administracion-y-seguridad.md), [RN-EMP-026](reglas/administracion-y-seguridad.md), [RN-EMP-028](reglas/administracion-y-seguridad.md).
 
 ## 8. Inteligencia artificial
 
@@ -1414,7 +1441,7 @@ Mapa de la familia: el único uso de IA en SOFIA es **leer una receta desde una 
 
 ## 9. Índice alfabético
 
-Cada línea enlaza a la entrada del término. Las líneas con «ver» son variantes o sinónimos que no tienen entrada propia. Hay 133 entradas.
+Cada línea enlaza a la entrada del término. Las líneas con «ver» son variantes o sinónimos que no tienen entrada propia. Hay 136 entradas.
 
 - Abierta (sesión): ver [Estado de la sesión de caja](#estado-de-la-sesión-de-caja)
 - [Acta de destrucción](#acta-de-destrucción)
@@ -1438,6 +1465,7 @@ Cada línea enlaza a la entrada del término. Las líneas con «ver» son varian
 - Cajero (empleado): ver [Cajero](#cajero)
 - [Cambio de contraseña obligatorio](#cambio-de-contraseña-obligatorio)
 - [Carga masiva](#carga-masiva)
+- [Configuración de pago](#configuración-de-pago)
 - [Carné de extranjería](#carné-de-extranjería)
 - Carné de extranjería (documento): ver [Carné de extranjería](#carné-de-extranjería)
 - [Catálogo DIGEMID](#catálogo-digemid)
@@ -1544,6 +1572,7 @@ Cada línea enlaza a la entrada del término. Las líneas con «ver» son varian
 - [Paciente](#paciente)
 - [Pago dividido](#pago-dividido)
 - Pasaporte: ver [Tipo de documento de identidad](#tipo-de-documento-de-identidad)
+- [Operador de plataforma](#operador-de-plataforma)
 - [Periodo de prueba](#periodo-de-prueba)
 - Permiso: ver [Permiso (módulo y acción)](#permiso-módulo-y-acción)
 - [Permiso (módulo y acción)](#permiso-módulo-y-acción)
@@ -1606,6 +1635,7 @@ Cada línea enlaza a la entrada del término. Las líneas con «ver» son varian
 - Unidad menor: ver [Jerarquía de unidades](#jerarquía-de-unidades)
 - UoM: ver [Unidad de medida](#unidad-de-medida)
 - Vencimiento (fecha): ver [Fecha de caducidad](#fecha-de-caducidad)
+- [Vencimiento de la suscripción](#vencimiento-de-la-suscripción)
 - [Venta](#venta)
 - [Venta completada](#venta-completada)
 - Venta en espera: ver [Venta en espera (pendiente)](#venta-en-espera-pendiente)
@@ -1624,8 +1654,8 @@ Cada línea enlaza a la entrada del término. Las líneas con «ver» son varian
 |---|---|
 | `Fuente oficial: <URL>` (confirmada por búsqueda web; varias solo en parte, y así se dice en la entrada) | 36 |
 | `Definición general, no verificada en fuente oficial.` | 45 |
-| `Término propio de SOFIA (no normativo).` | 52 |
-| Total de entradas | 133 |
+| `Término propio de SOFIA (no normativo).` | 55 |
+| Total de entradas | 136 |
 
 Se hicieron 19 búsquedas web (el máximo permitido era 25) y un intento de abrir una página de SUNAT que respondió 403.
 
@@ -1648,7 +1678,6 @@ Se hicieron 19 búsquedas web (el máximo permitido era 25) y un intento de abri
 - Pantallas de Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, Cuarentena y actas, listado de Devoluciones y Auditoría: solo API.
 - Operaciones de cuarentena para liberar, destruir o devolver un lote (los estados existen, nadie los asigna).
 - Cobertura de seguro en el POS: apagada por una constante.
-- Activar, suspender, cancelar o extender la prueba de una empresa: solo en la base de datos.
 - Estado `Aprobada` de la transferencia: ningún endpoint lo alcanza.
 - Tabla `Registro_Privacidad_Presidio` y `Recetas_Digitalizadas_IA`: nunca se escriben.
 
@@ -1662,7 +1691,7 @@ Se hicieron 19 búsquedas web (el máximo permitido era 25) y un intento de abri
 6. **Estado de aceptación del comprobante:** el script deja `Pendiente` por defecto (`DBUP/0001_Initial_Schema.sql:573`) y el código siempre escribe `NoEnviado`.
 7. **Confianza del análisis de receta:** el factor de parecido da 1,0 al medicamento sin coincidencia DIGEMID y 0,9 al que la tiene (`AnalizarRecetaQueryHandler.cs:54`, `:63`), de modo que lo no validado puntúa algo más alto.
 8. **Roles base sembrados (`0002`)** tienen `TenantId` nulo y sin permisos: ningún rol «Cajero», «Farmaceutico», etc. es visible para una empresa.
-9. **«En curso (sin commitear)»:** ninguno. `git status --short` estaba vacío en ambos repositorios (`43f5529` y `eeffbb6`).
+9. **«En curso (sin commitear)»:** ninguno. `git status --short` está vacío en ambos repositorios (`6f6b837` y `558ad35`).
 
 ## 11. Tabla de cobertura
 
@@ -1801,7 +1830,7 @@ Doce de doce enums de `enums.csv` cubiertos, más `EstadoEmpresa`.
 
 Términos de la lista: 108 filas, todas con entrada; uno solo («Colegiatura») no se usa en SOFIA.
 
-### 11.3 Opciones del menú lateral (`SPA/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:3-180`)
+### 11.3 Opciones del menú lateral (`SPA/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:3-185`)
 
 | Grupo | Opción (`es.json`) | Entrada |
 |---|---|---|
@@ -1810,6 +1839,7 @@ Términos de la lista: 108 filas, todas con entrada; uno solo («Colegiatura») 
 | Administración | Sucursales | [Sucursal](#sucursal) |
 | Administración | Empleados | [Empleado](#empleado) |
 | Administración | Roles & Permisos | [Rol](#rol), [Permiso (módulo y acción)](#permiso-módulo-y-acción) |
+| Administración | Configuración de Pago (solo operador de plataforma) | [Configuración de pago](#configuración-de-pago) |
 | Administración | Cuentas de Usuario | [Cuenta de usuario](#cuenta-de-usuario) |
 | Catálogos | Unidades de Medida | [Unidad de medida](#unidad-de-medida) |
 | Catálogos | Jerarquías de Unidades | [Jerarquía de unidades](#jerarquía-de-unidades) |
@@ -1830,7 +1860,7 @@ Términos de la lista: 108 filas, todas con entrada; uno solo («Colegiatura») 
 | DIGEMID | Catálogo DIGEMID | [Catálogo DIGEMID](#catálogo-digemid) |
 | SUNAT | Series Fiscales | [Serie (prefijo)](#serie-prefijo) |
 
-24 de 24 opciones cubiertas.
+25 de 25 opciones cubiertas.
 
 ### 11.4 Resumen de cobertura
 
@@ -1838,9 +1868,9 @@ Términos de la lista: 108 filas, todas con entrada; uno solo («Colegiatura») 
 |---|---|---|
 | Enums de `enums.csv` | 12 | 12 (más `EstadoEmpresa`) |
 | Términos de la lista del encargo | 108 filas | 108 (1 marcado «No se usa en SOFIA») |
-| Opciones del menú lateral | 24 | 24 |
+| Opciones del menú lateral | 25 | 25 |
 | Secciones pedidas | 6 | 6 |
-| Entradas del glosario | 133 | 133 |
+| Entradas del glosario | 136 | 136 |
 
 ## 12. Fuentes
 
