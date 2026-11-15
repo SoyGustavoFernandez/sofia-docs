@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (revisión: solo se corrigieron tres citas de `VentasController.cs`; las fichas no cambiaron) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
 | **Método** | Lectura de código y llamadas reales a la API local (`https://localhost:7300`, empresa de la referencia «Farmacia API Referencia S.A.C.») |
 
 ## 0. Alcance, convenciones y datos de este documento
@@ -1137,7 +1137,7 @@ Cobra una venta en espera: registra los pagos, la deja `Completada`, emite la bo
 |---|---|
 | **Permiso** | `Ventas:Actualizar` |
 | **Límite de peticiones** | solo el global |
-| **Código** | `SOFIA.API/Controllers/VentasController.cs:85` → `CompletarVentaCommand` (`SOFIA.Application/Ventas/Commands/CompletarVenta/`); el cuerpo es `CompletarVentaBody` (`VentasController.cs:236-242`) |
+| **Código** | `SOFIA.API/Controllers/VentasController.cs:85` → `CompletarVentaCommand` (`SOFIA.Application/Ventas/Commands/CompletarVenta/`); el cuerpo es `CompletarVentaBody` (`VentasController.cs:150-156`) |
 | **Pantalla del SPA** | `/pos/nueva?continuar={id}` («Procesar Venta»); se llega desde el botón «Cobrar Venta» de `/pos/:id` |
 
 **Parámetros (ruta):** `id` (GUID, obligatorio): venta en estado `Pendiente`.
@@ -1227,7 +1227,7 @@ Reemplaza las líneas (y el cliente) de una venta en espera. Primero devuelve al
 |---|---|
 | **Permiso** | `Ventas:Actualizar` |
 | **Límite de peticiones** | solo el global |
-| **Código** | `SOFIA.API/Controllers/VentasController.cs:94` → `ActualizarVentaPendienteCommand` (`SOFIA.Application/Ventas/Commands/ActualizarVentaPendiente/`; reemplazo en `Ventas/Common/VentaDetalleUpdater.cs`); el cuerpo es `ActualizarVentaPendienteBody` (`VentasController.cs:244-246`) |
+| **Código** | `SOFIA.API/Controllers/VentasController.cs:94` → `ActualizarVentaPendienteCommand` (`SOFIA.Application/Ventas/Commands/ActualizarVentaPendiente/`; reemplazo en `Ventas/Common/VentaDetalleUpdater.cs`); el cuerpo es `ActualizarVentaPendienteBody` (`VentasController.cs:158-160`) |
 | **Pantalla del SPA** | `/pos/nueva?continuar={id}`: botón «Actualizar Venta en Espera» |
 
 **Parámetros (ruta):** `id` (GUID, obligatorio): venta en estado `Pendiente` de la sucursal del token.
@@ -1296,7 +1296,7 @@ Genera un Excel de ventas con los mismos filtros del listado (sin paginar). Si h
 |---|---|
 | **Permiso** | `Ventas:Leer` |
 | **Límite de peticiones** | solo el global |
-| **Código** | `SOFIA.API/Controllers/VentasController.cs:103` → `GetVentasQuery` (reutilizado); el cuerpo es `VentaExportRequest` (`VentasController.cs:227-234`) |
+| **Código** | `SOFIA.API/Controllers/VentasController.cs:103` → `GetVentasQuery` (reutilizado); el cuerpo es `VentaExportRequest` (`VentasController.cs:141-148`) |
 | **Pantalla del SPA** | `/pos`: botón «Exportar» |
 
 **Parámetros:** ninguno.
