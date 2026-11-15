@@ -3,23 +3,23 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; el historial de scripts (`0003`, `0004`, `0005`) está reconciliado con `34089ec` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de código: scripts DbUp `0001`–`0028` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio; historial de commits con `git log` de solo lectura. No se consultó la base de datos ni la API. |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (versión 1.2: revisión contra el código y alta del script `0029` en el historial; las 23 tablas de esta Parte B no cambiaron respecto de `43f5529`) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Método** | Lectura de código: scripts DbUp `0001`–`0029` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio; historial de commits con `git log` de solo lectura. No se consultó la base de datos ni la API. |
 
 ## 1. Alcance y forma de lectura
 
-Este documento es la Parte B del diccionario de datos. Cubre las **23 tablas transaccionales** (inventario y transferencias, cuarentena y actas DIGEMID, recetas, caja, ventas, SUNAT, devoluciones, delivery, magistrales y servicios) y el **historial de los 28 scripts DbUp**. Las otras 27 tablas (maestros y seguridad) están en [tecnico/modelo-de-datos/maestros-y-seguridad.md](maestros-y-seguridad.md).
+Este documento es la Parte B del diccionario de datos. Cubre las **23 tablas transaccionales** (inventario y transferencias, cuarentena y actas DIGEMID, recetas, caja, ventas, SUNAT, devoluciones, delivery, magistrales y servicios) y el **historial de los 29 scripts DbUp**. Las otras 28 tablas (maestros y seguridad) están en [tecnico/modelo-de-datos/maestros-y-seguridad.md](maestros-y-seguridad.md).
 
-El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0028`**. Commits verificados con `git log -1 --format=%h`: `sofia-apis` `43f5529` y `sofia-web-spa` `eeffbb6`, los de la línea base; `git status --short` no muestra cambios locales en ninguno de los dos repositorios, así que nada de este documento depende de archivos sin commitear.
+El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0029`**. El `0029` (`Es_Admin_Plataforma` y `Plataforma_Configuracion_Pago`) solo toca tablas de la Parte A. Commits verificados con `git log -1 --format=%h`: `sofia-apis` `6f6b837` y `sofia-web-spa` `558ad35`; los dos repositorios tenían cambios locales de otra tarea sin commitear (devoluciones, textos y rutas del SPA), que **no se usaron**: todo se leyó del commit con `git archive`/`git show`, así que nada de este documento depende de archivos sin commitear.
 
 ### 1.1 Abreviaturas de las fuentes
 
 | Abreviatura | Ruta real |
 |---|---|
-| `0001:148` | `sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql`, línea 148. Igual para `0002` … `0028` (nombres completos en la sección de Fuentes). |
+| `0001:148` | `sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql`, línea 148. Igual para `0002` … `0029` (nombres completos en la sección de Fuentes). |
 | `Cfg/X.cs:n` | `sofia-apis/src/SOFIA.Infrastructure/Persistence/Configurations/X.cs`, línea n |
 | `Ent/X.cs:n` | `sofia-apis/src/SOFIA.Domain/Entities/X.cs`, línea n |
 | `DbContext:n` | `sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs`, línea n |
@@ -73,7 +73,7 @@ Salvo `Servicios_Agenda`, las 22 tablas restantes declaran las siete columnas de
 
 ### 2.3 Fechas `DATETIME` y conversión a UTC
 
-Varias columnas de fecha de estas tablas son `DATETIME` (sin zona horaria). El `ApplicationDbContext` convierte toda propiedad `DateTime` y `DateTime?` con un conversor a UTC para que el JSON salga con `Z` (`DbContext:69-76`, comentario en `DbContext:71`). No se hace ninguna conversión para las columnas `DATETIMEOFFSET`.
+Varias columnas de fecha de estas tablas son `DATETIME` (sin zona horaria). El `ApplicationDbContext` convierte toda propiedad `DateTime` y `DateTime?` con un conversor a UTC para que el JSON salga con `Z` (`DbContext:70-77`, comentario en `DbContext:72`). No se hace ninguna conversión para las columnas `DATETIMEOFFSET`.
 
 ---
 
@@ -796,7 +796,7 @@ Ninguno de estos módulos tiene pantalla enrutada (**Solo API (sin pantalla)**; 
 ### 9.3 `Magistrales_Consumo_Insumos`
 
 **Propósito.** Insumos (lotes de materia prima) consumidos por una orden de producción magistral.
-**Entidad.** `MagistralConsumoInsumo` (`Ent/MagistralConsumoInsumo.cs:5`), configurada en `Cfg/MagistralConsumoInsumoConfiguration.cs`. `DbSet MagistralesConsumosInsumo` (`DbContext:56`); lo escribe `IniciarOrdenMagistralCommandHandler` (`:98`).
+**Entidad.** `MagistralConsumoInsumo` (`Ent/MagistralConsumoInsumo.cs:5`), configurada en `Cfg/MagistralConsumoInsumoConfiguration.cs`. `DbSet MagistralesConsumosInsumo` (`DbContext:56`); lo escribe `IniciarOrdenMagistralCommandHandler` (`:99`).
 **Creada en** `0001:716-731`. Ningún script posterior la modifica (salvo `TenantId`).
 
 | Columna | Tipo | Nulo | Valor por defecto | Descripción | Script |
@@ -1271,7 +1271,7 @@ Notas de los diagramas:
 
 ## 11. Datos sembrados y modificados por scripts
 
-**Ninguno de los 28 scripts inserta, actualiza ni borra filas de las 23 tablas de esta Parte B.** Lo comprobé leyendo cada script completo: las únicas sentencias de datos son el `INSERT` de roles (`0002`, Parte A), el seed del catálogo DIGEMID (`0004`, Parte A), el `UPDATE` de `Formulacion_Clinica` (`0009`), el `DELETE` de `Presentaciones_Venta` (`0013`), el `INSERT` de permisos (`0017`) y el `UPDATE` de `Laboratorios` (`0020`); todas tocan tablas de la Parte A (ver su [sección 10](maestros-y-seguridad.md#10-datos-sembrados-y-modificados-por-scripts) y la tabla de scripts de la sección 13 de este documento). Las 23 tablas nacen vacías. Tampoco existe un sembrador en el código del backend para ellas (la Parte A buscó «seed» en `SOFIA.API`, `SOFIA.Infrastructure`, `SOFIA.Application` y `SOFIA.DbUp` sin resultados en `.cs`).
+**Ninguno de los 29 scripts inserta, actualiza ni borra filas de las 23 tablas de esta Parte B.** Lo comprobé leyendo cada script completo: las únicas sentencias de datos son el `INSERT` de roles (`0002`, Parte A), el seed del catálogo DIGEMID (`0004`, Parte A), el `UPDATE` de `Formulacion_Clinica` (`0009`), el `DELETE` de `Presentaciones_Venta` (`0013`), el `INSERT` de permisos (`0017`) y el `UPDATE` de `Laboratorios` (`0020`); todas tocan tablas de la Parte A (ver su [sección 10](maestros-y-seguridad.md#10-datos-sembrados-y-modificados-por-scripts) y la tabla de scripts de la sección 13 de este documento). Las 23 tablas nacen vacías. Tampoco existe un sembrador en el código del backend para ellas (la Parte A buscó «seed» en `SOFIA.API`, `SOFIA.Infrastructure`, `SOFIA.Application` y `SOFIA.DbUp` sin resultados en `.cs`).
 
 Lo que sí hacen los scripts sobre estas tablas es **cambiar su estructura sobre filas ya existentes**, con efecto potencial sobre datos:
 
@@ -1303,14 +1303,14 @@ Los scripts son la fuente de verdad: la base se crea con DbUp, no con migracione
 | D-07 | Índices | En el script y no en EF: `IX_Ventas_Cabecera_Sucursal_Fecha_Estado` (`0012:2`), `IX_Devoluciones_Sesion` (`0016:12`), `IX_Agenda_Fecha` (`0001:768`). En EF y no en el script: índices por `Cliente_ID` y por `Medico_ID` en `Recetas_Medicas` (`Cfg/RecetaMedicaConfiguration.cs:65-66`) y por `Sucursal_ID` y por `Empleado_ID` en `POS_Sesiones_Caja` (`Cfg/PosSesionCajaConfiguration.cs:84-85`). `Lotes_Inventario`: el script lo llama `IX_Lotes_Caducidad` (`0001:166`). | EF declara `HasIndex(x => x.FechaCaducidad)` sin nombre (`Cfg/LoteInventarioConfiguration.cs:49`); por convención lo nombraría `IX_Lotes_Inventario_Fecha_Caducidad`. | Los índices de EF que el script no crea no existen en la base. Los demás índices (`UX_*` y `IX_*` de ventas, pagos, comprobantes, series, delivery y actas) coinciden en nombre y filtro. |
 | D-08 | Valores por defecto con significado distinto | `Estado_Aceptacion` `DEFAULT 'Pendiente'` (`0001:573`); `Estado_Produccion` `DEFAULT 'En_Proceso'` (`0001:701`). | El código inserta siempre `NoEnviado` (`VentaComprobanteGenerator.cs:55,69`) y `Iniciada` (`Ent/MagistralOrdenProduccion.cs:9`). | Los valores por defecto de la base no se usan nunca y no son valores válidos del dominio. |
 | D-09 | Columnas con `DEFAULT` pero sin `NOT NULL` | Admiten `NULL`: `Repeticiones_Max` (`0001:301`), `Requiere_Revision_Humana` y `Fecha_Procesamiento` (`0001:419-420`), `Estado_Resolucion` y `Fecha_Ingreso_Cuarentena` (`0001:639-640`), `Estado_Cita` (`0001:759`). Igual otras (`Estado_Serie`, `Estado_Aceptacion`, `Estado_Produccion`, `Fecha_*`). | Obligatorias (`IsRequired()`): `Repeticiones_Max` (`Cfg/RecetaMedicaConfiguration.cs:32-34`), `Requiere_Revision_Humana` y `Fecha_Procesamiento` (`Cfg/RecetaDigitalizadaIAConfiguration.cs:40-46`), `Estado_Resolucion` y `Fecha_Ingreso_Cuarentena` (`Cfg/DigemidInventarioCuarentenaConfiguration.cs:40-48`), `Estado_Cita` (`Cfg/ServicioAgendaConfiguration.cs:33-36`). | Misma naturaleza que la D-02 de la Parte A. La aplicación siempre envía valor; el resto de las columnas de este grupo (`Estado_Serie`, `Estado_Aceptacion`, `Estado_Produccion`, `Fecha_Emision`, etc.): No verificado si EF las marca obligatorias. |
-| D-10 | Fechas `DATETIME` | `Fecha_Despacho`, `Fecha_Recepcion`, `Fecha_Hora_Apertura`, `Fecha_Hora_UTC`, `Fecha_Pago`, `Fecha_Emision`, `Fecha_Devolucion`, `Fecha_Preparacion`, `Fecha_Hora_Programada`, `Fecha_Admn_Fisica`, `Fecha_Verificacion_Receta`, etc. | Propiedades `DateTime` sin tipo de columna; EF usa `datetime2` por convención y el contexto fuerza `Kind = Utc` con un conversor (`DbContext:69-76`). | Como en la Parte A, D-09. No se guarda zona horaria: los valores se interpretan como UTC. |
+| D-10 | Fechas `DATETIME` | `Fecha_Despacho`, `Fecha_Recepcion`, `Fecha_Hora_Apertura`, `Fecha_Hora_UTC`, `Fecha_Pago`, `Fecha_Emision`, `Fecha_Devolucion`, `Fecha_Preparacion`, `Fecha_Hora_Programada`, `Fecha_Admn_Fisica`, `Fecha_Verificacion_Receta`, etc. | Propiedades `DateTime` sin tipo de columna; EF usa `datetime2` por convención y el contexto fuerza `Kind = Utc` con un conversor (`DbContext:70-77`). | Como en la Parte A, D-09. No se guarda zona horaria: los valores se interpretan como UTC. |
 | D-11 | `Ventas_Cabecera.Estado` | `VARCHAR(20)`, valores del `CHECK` = nombres del enum. | La configuración declara dos conversiones seguidas, una con `EnumDescriptionConverter<EstadoVenta>` y otra `HasConversion<string>()` (`Cfg/VentaConfiguration.cs:44-47`). | El enum no tiene atributos `Description`, por lo que ambas guardan el nombre. Cuál prevalece de las dos: No verificado (no se ejecutó). Sin consecuencia visible con los valores actuales. |
 
 **Coincidencias comprobadas** (para que no se busquen como discrepancias): nombres de las 23 tablas y de las columnas mapeadas (salvo D-01 y las propiedades de los índices); `RowVersion` de las cuatro tablas del `0019` (`IsRowVersion`); valores de `Estado_Logistico` y de las descripciones de `Estado_Sesion`, `Estado_Despacho`, `Destino_Fisico_Logico`, `Modalidad_Registro` y `Tipo_Comprobante` con los `CHECK` o valores del dominio; `UX_Inventario_Sucursal_Lote`, `UX_Lotes_Producto_NumeroLote`, `UX_POS_Sesiones_Caja_Empleado_Abierta`, `UX_Despachos_Delivery_Transaccion`, `UX_DIGEMID_Actas_Destruccion_Tenant_Numero_Resolucion_Interna` y los índices de `SerieFiscalIndexes` (`sofia-apis/src/SOFIA.Application/SeriesFiscales/SerieFiscalIndexes.cs:5-7`) con su nombre en el script.
 
 ---
 
-## 13. Historial de los 28 scripts
+## 13. Historial de los 29 scripts
 
 Fuentes del «por qué», y solo estas: (a) los comentarios del propio script; (b) el asunto del commit que lo agregó o modificó, obtenido con `git -C sofia-apis log --format="%h %ad %s" --date=short -- src/SOFIA.DbUp/Scripts/<archivo>`; (c) el código que necesita el cambio. Los commits de este repositorio solo tienen asunto (sin cuerpo), así que cuando el script no trae comentario el motivo se limita al asunto del commit. Donde ni uno ni otro dan el motivo, dice «Motivo no documentado». Las líneas son las de `wc -l` (el CSV `docs/_inventario/scripts-dbup.csv` cuenta una más en cada archivo; ver apartado de pendientes). «Idempotente» = se puede volver a correr sin error ni cambios (usa `IF NOT EXISTS`, `IF COL_LENGTH(...) IS NULL`, `DROP … IF EXISTS` o equivalente).
 
@@ -1346,8 +1346,9 @@ El commit `ed9a464` (2026-05-25, «chore(infra): restructure project directories
 | 0026 | `0026_Empleados_Apellido_Materno_Opcional.sql` (4) | `4803d98` (2026-10-02) | Cambia `Empleados.Apellido_Materno` a `NULL`. | Comentario: «a person with a single surname stores NULL instead of a placeholder». | Sí (solo si la columna aún es `NOT NULL`, `:2`) | No toca datos (no convierte los textos de relleno que ya existan) |
 | 0027 | `0027_VentasPagos_Transaccion_Index.sql` (5) | `00991bc` (2026-10-02) | Crea `IX_Ventas_Pagos_Transaccion`. | Comentario: los pagos «are always read by sale (receipt, cash count, dashboard), which otherwise scans the whole table»; commit: «add dashboard summary endpoints with branch scope and real figures». | Sí | No toca datos |
 | 0028 | `0028_Ventas_Sesion_Anulacion.sql` (8) | `358935e` (2026-10-08) | Agrega `Ventas_Cabecera.Sesion_Anulacion_ID` y `FK_VentaCab_Sesion_Anulacion`. | Comentario: sesión de caja desde la que se anuló una venta cobrada, «so the cash handed back is counted in the drawer it left»; commit: «require an open cash session to void a charged sale and count the refund there». | Sí | No toca datos |
+| 0029 | `0029_Plataforma_Suscripciones.sql` (23) | `6f6b837` (2026-11-14) | Agrega `Seguridad_Cuentas.Es_Admin_Plataforma BIT NOT NULL` con `DF_Seguridad_Cuentas_Es_Admin_Plataforma` (`0029:2-3`) y crea `Plataforma_Configuracion_Pago` (`0029:6-22`). Ambas tablas son de la Parte A. | Comentario: marca de operador de plataforma «set by hand, never by the application» y fila única con los datos de pago que ven las empresas que deben pagar; commit: «add platform operator subscription management». | Sí (`IF COL_LENGTH(...) IS NULL` y `IF OBJECT_ID(...) IS NULL`) | No toca datos: no marca ninguna cuenta como operador ni inserta la fila de pago |
 
-**Resumen:** idempotentes con guardas explícitas: `0002`, `0015` y `0017` a `0028` (14 scripts; el `0004` dejó de serlo en `34089ec`). Parcialmente: `0005` (1). No idempotentes: `0001`, `0003`, `0004`, `0006` a `0014` y `0016` (13). Scripts que modifican o eliminan datos existentes: `0009` (relleno y borrado de columna), `0013` (borra todas las presentaciones de venta) y `0020` (`UPDATE` de laboratorios); insertan filas `0002`, `0004` y `0017`. Los scripts `0009`, `0013` y `0020` tocan solo tablas de la Parte A.
+**Resumen:** idempotentes con guardas explícitas: `0002`, `0015` y `0017` a `0029` (15 scripts; el `0004` dejó de serlo en `34089ec`). Parcialmente: `0005` (1). No idempotentes: `0001`, `0003`, `0004`, `0006` a `0014` y `0016` (13). Scripts que modifican o eliminan datos existentes: `0009` (relleno y borrado de columna), `0013` (borra todas las presentaciones de venta) y `0020` (`UPDATE` de laboratorios); insertan filas `0002`, `0004` y `0017`. Los scripts `0009`, `0013` y `0020` tocan solo tablas de la Parte A.
 
 ---
 
@@ -1404,18 +1405,18 @@ La guía del desarrollador ya explica cómo ejecutar DbUp y cómo agregar un scr
 - `Magistrales_Consumo_Insumos.Unidad_Medida` es texto libre, sin relación con `Unidades_Medida`.
 - La base no impide que `Transferencias_Cab` tenga la misma sucursal de origen y de destino (sin `CHECK`), pero el dominio sí lo rechaza (`Transferencia.cs:47-50`).
 
-**En curso (sin commitear):** ninguno. `git status --short` no muestra cambios locales ni en `sofia-apis` ni en `sofia-web-spa`; nada de este documento depende de archivos sin commitear.
+**En curso (sin commitear):** ninguno. Ningún apartado de este documento se apoya en archivos con cambios locales (los hay en ambos repositorios por otra tarea; se leyó solo de los commits `6f6b837` y `558ad35`).
 
 **Contraste con los inventarios CSV**
 
-- `docs/_inventario/tablas.csv` **coincide** con lo encontrado: lista las 23 tablas de esta Parte B con el mismo script y la misma línea de su `CREATE TABLE` (todas en `0001_Initial_Schema.sql`). Total del CSV: 50 tablas (23 de esta parte + 27 de la Parte A); el `0001` crea 44 de ellas.
-- `docs/_inventario/scripts-dbup.csv` lista 28 scripts, como se encontró. Su columna de líneas es **una más** que `wc -l` en todos los scripts (por ejemplo `0001` figura con 858 y tiene 857); no afecta a nada y no se investigó la causa; se usan en esta Parte B los números de `wc -l`.
+- `docs/_inventario/tablas.csv` **coincide** con lo encontrado: lista las 23 tablas de esta Parte B con el mismo script y la misma línea de su `CREATE TABLE` (todas en `0001_Initial_Schema.sql`). Total del CSV: 50 tablas (23 de esta parte + 27 de la Parte A); el `0001` crea 44 de ellas. Con el `0029` hay 51 (23 + 28).
+- `docs/_inventario/scripts-dbup.csv` lista 28 scripts: no incluye el `0029` (hay 29 en `6f6b837`); `docs/_inventario/tablas.csv` tampoco lista `Plataforma_Configuracion_Pago` (51 tablas en los scripts). Para los 28 que lista, coincide. Su columna de líneas es **una más** que `wc -l` en todos los scripts (por ejemplo `0001` figura con 858 y tiene 857); no afecta a nada y no se investigó la causa; se usan en esta Parte B los números de `wc -l`.
 
 ---
 
 ## 16. Tabla de cobertura
 
-Inventario: las **23 tablas** asignadas y los **28 scripts** `0001` a `0028`. «Columnas» incluye las siete de auditoría y borrado lógico, `TenantId` (0005) y, donde aplica, `RowVersion` (0019) y las agregadas por otros scripts; «Índices» cuenta los índices distintos de la clave primaria; «Constraints `CHECK`» es el estado final. Los conteos se calcularon con un script de solo lectura sobre los `.sql` (columnas del `CREATE TABLE` más `ALTER TABLE … ADD` posteriores, más una por `TenantId`; claves foráneas; `CHECK` finales) y se compararon con las filas escritas en cada apartado del documento; coinciden.
+Inventario: las **23 tablas** asignadas y los **29 scripts** `0001` a `0029`. «Columnas» incluye las siete de auditoría y borrado lógico, `TenantId` (0005) y, donde aplica, `RowVersion` (0019) y las agregadas por otros scripts; «Índices» cuenta los índices distintos de la clave primaria; «Constraints `CHECK`» es el estado final. Los conteos se calcularon con un script de solo lectura sobre los `.sql` (columnas del `CREATE TABLE` más `ALTER TABLE … ADD` posteriores, más una por `TenantId`; claves foráneas; `CHECK` finales) y se compararon con las filas escritas en cada apartado del documento; coinciden.
 
 | # | Tabla | Columnas | FKs | Índices | `CHECK` | Scripts que la tocan | Apartado |
 |---|---|---|---|---|---|---|---|
@@ -1444,11 +1445,11 @@ Inventario: las **23 tablas** asignadas y los **28 scripts** `0001` a `0028`. «
 | 23 | `Servicios_Clinicos_Inmunizacion` | 20 | 5 | 0 | 1 | `0001`, `0005` | 9.5 |
 | | **Total** | **363** | **59** | **15** | **17** | | |
 
-Los 28 scripts:
+Los 29 scripts:
 
 | Script | Dónde quedó |
 |---|---|
-| `0001` a `0028` (los 28) | Una fila por script en la sección 13 (qué hace, por qué, idempotencia y efecto sobre datos). Los que tocan tablas de esta Parte B figuran además en la columna «Scripts que la tocan» de la tabla anterior. |
+| `0001` a `0029` (los 29) | Una fila por script en la sección 13 (qué hace, por qué, idempotencia y efecto sobre datos). Los que tocan tablas de esta Parte B figuran además en la columna «Scripts que la tocan» de la tabla anterior. |
 
 Otros elementos del encargo:
 
@@ -1467,11 +1468,11 @@ Otros elementos del encargo:
 
 ## 17. Fuentes
 
-**Scripts DbUp** (`sofia-apis/src/SOFIA.DbUp/Scripts/`), leídos completos y en orden: `0001_Initial_Schema.sql`, `0002_SeedBaseRoles.sql`, `0003_Digemid_Catalogo.sql`, `0004_Seed_Digemid_Catalogo.sql`, `0005_Empresa_MultiTenant.sql`, `0006_RefreshTokens.sql`, `0007_CuentasSucursales.sql`, `0008_RolesSucursales.sql`, `0009_FormulacionClinica_UnidadMedida.sql`, `0010_PresentacionesVenta.sql`, `0011_PresentacionesVenta_TenantId.sql`, `0012_VentasCabecera_SucursalFechaEstado_Index.sql`, `0013_PresentacionesVenta_UnidadVenta.sql`, `0014_Medicamentos_PrecioVentaBase.sql`, `0015_TenantScoped_UniqueIndexes.sql`, `0016_Devoluciones_Reembolso.sql`, `0017_Permiso_Ventas_Anular.sql`, `0018_SeriesFiscales_UniqueNumbering.sql`, `0019_Concurrency_RowVersion.sql`, `0020_SoftDeleteAware_Uniques_And_Checks.sql`, `0021_Delivery_Unique_Venta.sql`, `0022_Empleados_Email.sql`, `0023_Pacientes_Tipo_Documento.sql`, `0024_VentasDetalle_Comprobantes_Transaccion_Index.sql`, `0025_Receta_Flexible_Verificacion.sql`, `0026_Empleados_Apellido_Materno_Opcional.sql`, `0027_VentasPagos_Transaccion_Index.sql`, `0028_Ventas_Sesion_Anulacion.sql`.
+**Scripts DbUp** (`sofia-apis/src/SOFIA.DbUp/Scripts/`), leídos completos y en orden: `0001_Initial_Schema.sql`, `0002_SeedBaseRoles.sql`, `0003_Digemid_Catalogo.sql`, `0004_Seed_Digemid_Catalogo.sql`, `0005_Empresa_MultiTenant.sql`, `0006_RefreshTokens.sql`, `0007_CuentasSucursales.sql`, `0008_RolesSucursales.sql`, `0009_FormulacionClinica_UnidadMedida.sql`, `0010_PresentacionesVenta.sql`, `0011_PresentacionesVenta_TenantId.sql`, `0012_VentasCabecera_SucursalFechaEstado_Index.sql`, `0013_PresentacionesVenta_UnidadVenta.sql`, `0014_Medicamentos_PrecioVentaBase.sql`, `0015_TenantScoped_UniqueIndexes.sql`, `0016_Devoluciones_Reembolso.sql`, `0017_Permiso_Ventas_Anular.sql`, `0018_SeriesFiscales_UniqueNumbering.sql`, `0019_Concurrency_RowVersion.sql`, `0020_SoftDeleteAware_Uniques_And_Checks.sql`, `0021_Delivery_Unique_Venta.sql`, `0022_Empleados_Email.sql`, `0023_Pacientes_Tipo_Documento.sql`, `0024_VentasDetalle_Comprobantes_Transaccion_Index.sql`, `0025_Receta_Flexible_Verificacion.sql`, `0026_Empleados_Apellido_Materno_Opcional.sql`, `0027_VentasPagos_Transaccion_Index.sql`, `0028_Ventas_Sesion_Anulacion.sql`, `0029_Plataforma_Suscripciones.sql`.
 
 **DbUp:** `sofia-apis/src/SOFIA.DbUp/Program.cs`, `sofia-apis/src/SOFIA.DbUp/SOFIA.DbUp.csproj`; documentación XML de los paquetes `dbup-sqlserver` 7.2.0 y `dbup-core` 6.1.1 en el caché local de NuGet (`dbup-sqlserver.xml`, `dbup-core.xml`).
 
-**Historial de commits** (`git -C sofia-apis log` y `git show`, solo lectura): historial por archivo de los 28 scripts y diffs de los commits `6578414`, `77a0e26`, `c166f90`, `5b14dd7`, `513ca79` (sobre `0001`) y `b11f950` (sobre `0006`).
+**Historial de commits** (`git -C sofia-apis log` y `git show`, solo lectura): historial por archivo de los 29 scripts y diffs de los commits `6578414`, `77a0e26`, `c166f90`, `5b14dd7`, `513ca79` (sobre `0001`) y `b11f950` (sobre `0006`).
 
 **Configuraciones de EF** (`sofia-apis/src/SOFIA.Infrastructure/Persistence/`): `ApplicationDbContext.cs`, `Converters/EnumDescriptionConverter.cs` y, en `Configurations/`: `LoteInventarioConfiguration.cs`, `InventarioSucursalConfiguration.cs`, `TransferenciaConfiguration.cs`, `DetalleTransferenciaConfiguration.cs`, `DigemidInventarioCuarentenaConfiguration.cs`, `DigemidActaDestruccionConfiguration.cs`, `DigemidActaDetalleConfiguration.cs`, `RecetaMedicaConfiguration.cs`, `RecetaDigitalizadaIAConfiguration.cs`, `PosSesionCajaConfiguration.cs`, `VentaConfiguration.cs`, `DetalleVentaConfiguration.cs`, `VentaPagoConfiguration.cs`, `VentaReclamoSeguroConfiguration.cs`, `SunatSerieFiscalConfiguration.cs`, `SunatComprobanteEmitidoConfiguration.cs`, `DevolucionCabeceraConfiguration.cs`, `DevolucionDetalleConfiguration.cs`, `DespachoDeliveryConfiguration.cs`, `MagistralOrdenProduccionConfiguration.cs`, `MagistralConsumoInsumoConfiguration.cs`, `ServicioAgendaConfiguration.cs`, `ServicioClinicoInmunizacionConfiguration.cs`.
 
