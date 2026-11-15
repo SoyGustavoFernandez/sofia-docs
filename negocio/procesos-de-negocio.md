@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
 | **Método** | Lectura de código y de los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y del manual de usuario (capítulos 1 a 3). Verificaciones puntuales en el código (marcadas con `archivo:línea`). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
 
 ## 1. Cómo leer este documento
@@ -37,6 +37,8 @@ flowchart TD
     P4 --> P8["8. Dashboard"]
     P5 --> P8
     P6B --> P8
+    P1 --> P10["10. Suscripción: alta, cobro y renovación"]
+    P10 -.-> P8
     P3 -.-> P9["9. Procesos solo API (sin pantalla)"]
     P9 -.-> P3
 ```
@@ -56,6 +58,7 @@ Lectura del mapa: las líneas continuas son el camino de una botica nueva; las p
 | 7. Recetas con IA | 9 |
 | 8. Dashboard | 10 |
 | 9. Procesos que existen solo en la API | 11 |
+| 10. Suscripción: alta, cobro y renovación | 10 bis |
 | Pendientes y «No verificado» | 12 |
 | Tabla de cobertura | 13 |
 | Fuentes | 14 |
@@ -114,7 +117,7 @@ sequenceDiagram
 | 3 | API | Valida el request (nombre ≤ 200, RUC exacto de 11 dígitos, usuario 4 a 50, contraseña ≥ 8, dirección obligatoria ≤ 255, correo válido ≤ 254) | idem | RN-EMP-002 a RN-EMP-010, RN-AUT-026 | Un fallo devuelve 400 con código `RegistrarEmpresaCommand.<Propiedad>` |
 | 4 | API | Comprueba que el RUC y el usuario no existan | idem | RN-EMP-005, RN-CTA-007 | Si existen: 409 |
 | 5 | API | Crea en una sola transacción: empresa en `TrialActivo` con 30 días de prueba, sede principal «Sede Principal» (licencia vacía), empleado administrador con su correo, cuenta (no obligada a cambiar la clave) y rol `Admin` asignado | idem | RN-EMP-010, RN-EMP-011, RN-EMP-012, RN-GEN-012 | Todo o nada |
-| 6 | API | Emite token de acceso y cookie `refresh_token` (7 días, `HttpOnly`) | idem | RN-EMP-013, RN-AUT-010 a RN-AUT-012 | Sesión iniciada; la API responde 201 (`EmpresasController.cs:31`) |
+| 6 | API | Emite token de acceso y cookie `refresh_token` (7 días, `HttpOnly`) | idem | RN-EMP-013, RN-AUT-010 a RN-AUT-012 | Sesión iniciada; la API responde 201 (`EmpresasController.cs:36`) |
 | 7 | SPA | Muestra el aviso «Empresa registrada correctamente. ¡Bienvenido!» y navega a `/dashboard` | — | — | El administrador ve el Inicio con saludo «Hola, {nombre}» |
 
 **Excepciones**
@@ -203,7 +206,7 @@ sequenceDiagram
 | 4 | Administrador | `/series-fiscales/nueva`, «Series Fiscales»: elige Sucursal, Tipo de Comprobante «Boleta», Prefijo de Serie (`B…`), Correlativo Actual (0), Estado «Activa»; **Guardar**. Repite con «Nota de Crédito» (prefijo `B…` o `F…`) para cada sucursal | `POST /api/v1/SeriesFiscales`, `SeriesFiscales:Crear` | RN-SER-003 a RN-SER-008 | Serie creada (auditoría `SERIE_CREAR`) |
 | 5 | Administrador | `/empleados/nueva`, «Empleados»: Nombres, Apellido Paterno, Apellido Materno, **Sucursal Base**, Licencia Profesional, Correo electrónico; **Guardar** | `POST /api/v1/Empleados`, `Empleados:Crear` | RN-EPL-002 a RN-EPL-010 | Empleado creado; aviso «Empleado guardado correctamente» |
 | 6 | Administrador | `/roles/nueva`, «Roles & Permisos»: Nombre del Rol, Nivel de Jerarquía (1 o más), Descripción; **Guardar** | `POST /api/v1/Roles`, `Seguridad:Crear` | RN-ROL-002 a RN-ROL-006 | Rol creado (auditoría `ROL_CREAR`); el nombre ya no se puede cambiar |
-| 7 | Administrador | Abrir el rol, **Editar**, pestaña **Permisos** (27 módulos, 105 permisos): marcar casillas; pestaña **Sucursales**: marcar sucursales; **Guardar** | `PUT /api/v1/Roles/{id}` (`Seguridad:Actualizar`), `POST /api/v1/Roles/permissions` y `DELETE /api/v1/Roles/permissions/{permisoId}` (`Seguridad:GestionarPermisos`), `PUT /api/v1/Roles/{id}/sucursales` (`Seguridad:GestionarPermisos`); llamadas en `sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:236-237` y `:286-287` | RN-ROL-010 a RN-ROL-017, RN-GEN-022 | Permisos y sucursales del rol guardados; los usuarios conectados ven el cambio al recargar |
+| 7 | Administrador | Abrir el rol, **Editar**, pestaña **Permisos** (27 módulos, 105 permisos): marcar casillas; pestaña **Sucursales**: marcar sucursales; **Guardar** | `PUT /api/v1/Roles/{id}` (`Seguridad:Actualizar`), `POST /api/v1/Roles/permissions` y `DELETE /api/v1/Roles/permissions/{permisoId}` (`Seguridad:GestionarPermisos`), `PUT /api/v1/Roles/{id}/sucursales` (`Seguridad:GestionarPermisos`); llamadas en `sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:248-249` y `:299` | RN-ROL-010 a RN-ROL-017, RN-GEN-022 | Permisos y sucursales del rol guardados; los usuarios conectados ven el cambio al recargar |
 | 8 | Administrador | `/cuentas/nueva`, «Cuentas de Usuario»: elige Empleado, escribe Nombre de Usuario y Contraseña (8 a 128); **Guardar** | `POST /api/v1/Cuentas`, `Seguridad:Crear` | RN-CTA-002 a RN-CTA-008 | Cuenta activa, con 0 intentos y **obligada a cambiar la clave**; abre la ficha |
 | 9 | Administrador | En la ficha: **Editar**, tarjeta «Roles Asignados», «Agregar rol...», elegir el rol, **Guardar** | `POST /api/v1/Cuentas/{id}/roles/{rolId}` (y `DELETE` para quitar), `Seguridad:AsignarRoles`; llamada en `sofia-web-spa/src/app/pages/seguridad/services/cuenta.service.ts:51` | RN-CTA-014 a RN-CTA-018 | Rol asignado; el sello de seguridad cambia |
 | 10 | Administrador | Tarjeta «Sucursales Asignadas», «Agregar sucursal...» (opcional; se aplica al instante) | `POST /api/v1/Cuentas/{id}/sucursales/{sucursalId}`, `Seguridad:Actualizar` | RN-CTA-019, RN-GEN-023 | Sucursal adicional asignada; aviso «Sucursal asignada correctamente» |
@@ -244,7 +247,7 @@ Permisos recomendados para un rol de mostrador (19 permisos, según el manual de
 | Contraseña actual incorrecta en `/cambiar-clave` | RN-AUT-029 | «La contraseña actual es incorrecta» | Reescribirla |
 | Nueva contraseña igual a la actual o menor de 8 | RN-AUT-026, RN-AUT-027 | «La nueva contraseña debe ser distinta de la actual» / «Debe tener al menos 8 caracteres» | Elegir otra |
 | 5 intentos fallidos de ingreso | RN-AUT-007 | «Credenciales inválidas. Verifica tu usuario y contraseña.» (igual que cualquier fallo) | Esperar 15 minutos o que el administrador marque **Resetear Intentos Fallidos** |
-| Suscripción vencida, suspendida o cancelada | RN-AUT-009, RN-EMP-014 | «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» | Contactar a soporte (ningún endpoint ni pantalla cambia el estado, RN-EMP-015) |
+| Suscripción vencida, suspendida o cancelada | RN-AUT-009, RN-EMP-014 | «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» (y debajo, cómo pagar por Yape, RN-AUT-040) | Pagar por Yape, enviar la captura por WhatsApp y esperar a que el operador de plataforma active la suscripción (proceso 10, RN-EMP-019) |
 
 **Postcondiciones.** Tablas escritas: `Empresas` (nombre y RUC), `Sucursales`, `SUNAT_Series_Fiscales`, `Empleados`, `Seguridad_Roles`, `Seguridad_Permisos_Rol`, `Seguridad_Roles_Sucursales`, `Seguridad_Cuentas`, `Seguridad_Cuentas_Roles`, `Seguridad_CuentasSucursales`, `RefreshTokens` y `Auditoria_Eventos_Seguridad` (eventos `EMPRESA_ACTUALIZAR`, `SERIE_CREAR`, `ROL_CREAR`, `ROL_ACTUALIZAR`, `PERMISO_ASIGNAR`, `PERMISO_REVOCAR`, `ROL_SUCURSALES`, `CUENTA_REGISTRAR`, `ROL_ASIGNAR_CUENTA`, `CUENTA_SUC_ASIGNAR`, `CLAVE_CAMBIAR`). **Crear y editar sucursales y empleados no generan evento de auditoría de seguridad**: sus comandos no implementan `IAuditableCommand` (búsqueda en `sofia-apis/src/SOFIA.Application/**/Commands`; ver sección 12, brecha 2). Al cambiar la contraseña, `Requiere_Cambio_Clave` pasa a falso y se anulan todos los tokens de refresco de la cuenta.
 
@@ -920,7 +923,7 @@ El análisis **no escribe nada**: no cambia ninguna tabla y no genera evento de 
 
 ## 10. Proceso 8 — Dashboard
 
-**Objetivo.** Dar a cada usuario el resumen del día de lo que su rol puede ver: ventas, caja, inventario y devoluciones.
+**Objetivo.** Dar a cada usuario el resumen del día de lo que su rol puede ver: ventas, caja, inventario y devoluciones; y al operador de plataforma, además, el estado de las suscripciones.
 
 **Actores.** Cualquier usuario autenticado. Cada bloque exige el permiso `Leer` de su módulo, y el rol `Admin` los ve todos.
 
@@ -962,6 +965,7 @@ flowchart TD
 | «Productos sin stock» y «Productos con stock bajo» | idem | Por sucursal y producto, sobre el stock **vendible**; bajo = 1 a 10 unidades | RN-DAS-020, RN-DAS-021 |
 | «Lotes en cuarentena» | `GET /api/v1/Dashboard/cuarentena`, `DIGEMID:Leer` | `DIGEMID_Inventario_Cuarentena` en estado `Retenido`, por sucursal y lote | RN-DAS-022 |
 | «Devoluciones de hoy» y «Monto reembolsado» | `GET /api/v1/Dashboard/devoluciones`, `Devoluciones:Leer` | `Devoluciones_Cabecera` de hoy, de cualquier método de reembolso | RN-DAS-023 |
+| «Suscripciones»: empresas vigentes, por vencer en 7 días, vencidas, suspendidas, canceladas, registradas este mes y próximas a vencer | `GET /api/v1/plataforma/dashboard`, solo operador de plataforma (no un permiso) | `Empresas` de todas las empresas, por estado y vencimiento (RN-EMP-014) | RN-DAS-025, RN-DAS-026 |
 
 ### 10.2 Qué ve cada rol
 
@@ -972,6 +976,7 @@ flowchart TD
 | «Mis ventas de hoy» y «Mi caja» | Los suyos | Los suyos |
 | Bloques visibles | Todos | Solo los de los módulos cuyo `Leer` tenga el rol; el rol de mostrador del manual (con `Leer` en Ventas, Sesiones de Caja, Inventario, DIGEMID y Devoluciones) ve las cinco secciones |
 | Enlaces «Ver ventas de hoy», «Ver mis ventas», «Ver ventas en espera» | Solo con una sola sucursal en el alcance | Idem; abren `/pos` filtrado (por «Completada», lo que deja fuera las ventas `Devuelta` que sí suma «Vendido hoy», RN-DAS-014) |
+| Sección «Suscripciones» | Solo si la cuenta es operador de plataforma (el rol Admin no basta) | No la ve |
 | Sin ningún permiso de lectura | — | «Tu usuario no tiene indicadores disponibles aquí. Usa el menú lateral para ir a tus módulos.» |
 | Caja sin abrir | — | «No tienes una caja abierta» y botón **Abrir caja** (con `POS:AperturarCaja`) |
 
@@ -984,6 +989,88 @@ flowchart TD
 | Fallan los permisos del usuario | RN-DAS-001 | «No se pudieron cargar tus permisos.» con **Reintentar** | Reintentar o volver a iniciar sesión |
 
 **Postcondiciones.** El dashboard es de solo lectura: no escribe nada. Los montos son brutos (las devoluciones se muestran aparte, RN-DAS-005), «hoy» depende de la zona horaria del navegador y las cifras de lotes cuentan filas de stock (un lote presente en dos sucursales cuenta dos veces, RN-DAS-017).
+
+---
+
+## 10 bis. Proceso 10 — Suscripción de la empresa: alta, cobro y renovación
+
+**Objetivo.** Que cada empresa use SOFIA mientras su suscripción esté vigente: 30 días de prueba al registrarse, pago manual por Yape con captura por WhatsApp, activación con fecha de vencimiento por el operador de plataforma, renovación y bloqueo automático al vencer.
+
+**Actores.** Operador de plataforma (cuenta con la marca `Es_Admin_Plataforma`, puesta en la base de datos, [RN-CTA-021](reglas/administracion-y-seguridad.md)); administrador o usuario de la empresa; el sistema.
+
+**Disparador.** El registro de una empresa (proceso 1), el aviso a 7 días del vencimiento, el vencimiento mismo, o la llegada de la captura de un pago al WhatsApp del operador.
+
+**Precondiciones.** Existe al menos una cuenta de operador de plataforma. El operador publicó la configuración de pago ([RN-EMP-023](reglas/administracion-y-seguridad.md)); sin ella, el bloque de pago dice «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.».
+
+```mermaid
+flowchart TD
+    A["Registro de la empresa"] --> B["Estado TrialActivo, vence a los 30 dias"]
+    B --> C["7 dias antes: aviso en el panel con Como pagar"]
+    C --> D["La empresa paga por Yape y envia la captura por WhatsApp"]
+    D --> E["El operador abre Empresas y elige Activar suscripcion con una fecha"]
+    E --> F["Estado Activo hasta esa fecha"]
+    F --> G{"Llega el vencimiento"}
+    G -- "Sin renovar" --> H["La empresa deja de estar vigente sin cambiar de estado"]
+    H --> I["Inicio de sesion rechazado con el bloque Paga tu suscripcion con Yape"]
+    I --> D
+    F --> C
+    B --> J["Extender prueba: nueva fecha futura"]
+    J --> B
+    F --> K["Suspender o Cancelar: perdida de acceso inmediata"]
+    B --> K
+    K --> E
+```
+
+```mermaid
+sequenceDiagram
+    actor U as Usuario de la empresa
+    participant S as SPA
+    participant API as API
+    actor O as Operador de plataforma
+    U->>S: Iniciar sesion
+    S->>API: POST auth/login
+    API-->>S: 403 Auth.EmpresaNoVigente
+    S->>API: GET plataforma/pago (anonimo)
+    API-->>S: QR, Yape, WhatsApp, indicaciones
+    U->>O: Captura del pago por WhatsApp (fuera del sistema)
+    O->>S: Empresas, detalle, Activar suscripcion, fecha
+    S->>API: PUT empresas/id/suscripcion/activar
+    API-->>S: 204, Estado Activo con vencimiento
+    U->>S: Iniciar sesion
+    S->>API: POST auth/login
+    API-->>S: 200 con el token
+```
+
+### 10 bis.1 Pasos
+
+| # | Quién | Pantalla o endpoint | Qué ocurre | Regla |
+|---|---|---|---|---|
+| 1 | Operador | «Configuración de Pago» (`/configuracion-pago`), `PUT plataforma/pago` | Publica el WhatsApp para recibir capturas, el Yape, las indicaciones y el QR (PNG o JPEG de hasta 1 MB). Es una sola fila para todas las empresas | [RN-EMP-023](reglas/administracion-y-seguridad.md), [RN-EMP-024](reglas/administracion-y-seguridad.md), [RN-EMP-027](reglas/administracion-y-seguridad.md) |
+| 2 | Sistema | `POST empresas/registrar` | La empresa nace en `TrialActivo` con vencimiento a 30 días | [RN-EMP-012](reglas/administracion-y-seguridad.md) |
+| 3 | Sistema | Panel principal | Siete días antes del vencimiento (de la prueba o de la suscripción) muestra el aviso «Tu periodo de prueba vence en N días (fecha)» o «Tu suscripción vence…» con el botón «Cómo pagar» | [RN-EMP-026](reglas/administracion-y-seguridad.md) |
+| 4 | Empresa | Diálogo «Cómo pagar» o inicio de sesión | Ve el QR de Yape (o el número), las indicaciones y el botón «Enviar captura por WhatsApp», que abre `wa.me` con el nombre de la empresa o el usuario. El pago y el envío ocurren fuera de SOFIA | [RN-EMP-025](reglas/administracion-y-seguridad.md), [RN-AUT-040](reglas/administracion-y-seguridad.md) |
+| 5 | Operador | «Empresas», detalle, «Activar suscripción» (`PUT empresas/{id}/suscripcion/activar`) | Elige hasta qué día queda activa (atajos de 1, 3, 6 o 12 meses; si renueva antes, parte del vencimiento actual) y confirma. La empresa pasa a `Activo` hasta el final de ese día | [RN-EMP-019](reglas/administracion-y-seguridad.md), [RN-EMP-022](reglas/administracion-y-seguridad.md), [RN-EMP-028](reglas/administracion-y-seguridad.md) |
+| 6 | Sistema | Cada petición, login y renovación de sesión | La empresa está vigente solo hasta su vencimiento; al llegar, deja de estarlo sin cambiar de estado. Los tokens vivos dejan de servir en un minuto como máximo | [RN-EMP-014](reglas/administracion-y-seguridad.md), [RN-GEN-018](reglas/administracion-y-seguridad.md) |
+| 7 | Empresa | «Iniciar sesión» | Con la clave correcta pero sin vigencia: «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» y el bloque de pago. Se vuelve al paso 4 | [RN-AUT-009](reglas/administracion-y-seguridad.md), [RN-AUT-040](reglas/administracion-y-seguridad.md) |
+| 8 | Operador | Detalle de la empresa | Variantes: «Extender prueba» (solo en prueba), «Suspender» o «Cancelar suscripción» (nunca la propia empresa). Cualquiera se revierte con «Activar suscripción» | [RN-EMP-020](reglas/administracion-y-seguridad.md), [RN-EMP-021](reglas/administracion-y-seguridad.md) |
+| 9 | Operador | Panel, sección «Suscripciones» | Ve cuántas empresas están vigentes, por vencer en 7 días, vencidas, suspendidas, canceladas y registradas este mes, y la lista de las próximas a vencer | [RN-DAS-025](reglas/caja-devoluciones-y-dashboard.md), [RN-DAS-026](reglas/caja-devoluciones-y-dashboard.md) |
+
+### 10 bis.2 Excepciones
+
+| Situación | Regla | Mensaje que ve el usuario | Qué hacer |
+|---|---|---|---|
+| Fecha de vencimiento no posterior a hoy | [RN-EMP-019](reglas/administracion-y-seguridad.md), [RN-EMP-020](reglas/administracion-y-seguridad.md) | «La fecha de vencimiento debe ser posterior a hoy.» | Elegir una fecha futura (el calendario no admite menos de mañana) |
+| Extender la prueba de una empresa que ya no está en prueba | [RN-EMP-020](reglas/administracion-y-seguridad.md) | «Solo se puede extender la prueba de una empresa que sigue en periodo de prueba.» | Usar «Activar suscripción» |
+| Suspender o cancelar la propia empresa | [RN-EMP-021](reglas/administracion-y-seguridad.md) | «No puedes suspender ni cancelar tu propia empresa.» (el botón ni aparece) | Pedirlo a otro operador |
+| Un usuario que no es operador intenta activar, suspender o cancelar | [RN-GEN-042](reglas/administracion-y-seguridad.md) | Sin botones; por API, 403 y, en pantalla, «No tienes permisos para esta operación.» | — |
+| Imagen del QR que no es PNG ni JPG, o de más de 1 MB | [RN-EMP-024](reglas/administracion-y-seguridad.md) | «La imagen debe ser PNG o JPG.» / «La imagen no puede pesar más de 1 MB.» | Elegir otra imagen |
+| WhatsApp o Yape con formato inválido | [RN-EMP-023](reglas/administracion-y-seguridad.md) | «Ingresa de 8 a 15 dígitos, con código de país y sin espacios ni signos» / «Ingresa exactamente 9 dígitos» | Corregir el número |
+| No hay datos de pago publicados | [RN-EMP-025](reglas/administracion-y-seguridad.md) | «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.» | Que el operador publique la configuración |
+| Los datos de pago no cargan | [RN-GEN-043](reglas/administracion-y-seguridad.md) | «No pudimos cargar los datos de pago.» con «Reintentar» | Reintentar (límite de 30 consultas por minuto por IP) |
+
+### 10 bis.3 Postcondiciones
+
+Tablas escritas: `Empresas` (`Estado` y `FechaVencimiento`), `Plataforma_Configuracion_Pago` y `Auditoria_Eventos_Seguridad` (eventos `EMPRESA_ACTIVAR` con «Vence: aaaa-mm-dd», `EMPRESA_EXT_PRUEBA`, `EMPRESA_SUSPENDER`, `EMPRESA_CANCELAR` y `PAGO_CONFIG_GUARDAR` con «QR sin cambio» o «QR reemplazado»). No se guarda el pago ni su monto: el sistema no cobra, no verifica el pago y no lleva historial de renovaciones fuera de la auditoría. No verificado en la aplicación: el flujo completo con un operador real.
 
 ---
 
@@ -1202,7 +1289,7 @@ stateDiagram-v2
 | 8 | No se impone la salida FEFO: el cajero puede elegir cualquier lote vendible (RN-VEN-014, RN-VEN-075) | Proceso 4 | Los lotes que vencen antes pueden quedarse |
 | 9 | Devolución sin plazo ni límite (RN-DEV-008), con método de reembolso libre respecto al pago original (RN-DEV-018) y sin supervisor ni PIN (RN-DEV-027); con destino «Cuarentena DIGEMID» no se crea el registro de cuarentena ni se repone stock (RN-DEV-024); no libera la dispensación de la receta (RN-DEV-026); la nota de crédito no se imprime ni se muestra como documento (RN-DEV-022); el permiso `Devoluciones:ProcesarDevolucion` no lo siembra ningún script (RN-DEV-001) | Proceso 5 | — |
 | 10 | El mensaje de «Esta venta tiene devoluciones registradas…» remite a una pantalla «Devoluciones» que no existe (`producto/pantallas/punto-de-venta` §8) | Proceso 5 | Texto engañoso |
-| 11 | Ningún endpoint ni pantalla cambia el estado de suscripción de la empresa (RN-EMP-015): una empresa nueva nace en `TrialActivo` por 30 días y, al vencer, no puede iniciar sesión (RN-EMP-014) sin intervención en la base de datos | Procesos 1 y 2 | Bloqueo total al vencer la prueba |
+| 11 | El pago de la suscripción es manual: no hay cobro en línea, el sistema no verifica el pago ni guarda un historial de pagos o renovaciones (solo la auditoría de cada cambio, RN-EMP-019). Quien activa la suscripción es el operador de plataforma, una cuenta marcada solo en la base de datos (RN-CTA-021) | Procesos 1 y 10 | Una empresa sin operador disponible queda bloqueada al vencer la prueba |
 | 12 | El escaneo de receta no guarda ni vincula nada (RN-REC-029); las tablas `Recetas_Digitalizadas_IA` y `Registro_Privacidad_Presidio` no se usan (RN-REC-030); el SPA muestra un único mensaje de error aunque la causa sea el límite de 10 por minuto | Proceso 7 | — |
 | 13 | Transferencias: la diferencia enviada y no recibida se pierde sin sustento (RN-TRA-020); las líneas no listadas se ignoran y la transferencia puede quedar `Completada` (RN-TRA-019); `Forbidden` responde 400 (RN-TRA-012); se pueden transferir lotes vencidos o retenidos (RN-TRA-007). Los textos del SPA hablan de «sustento obligatorio» que el backend no implementa (RN-TRA-020) | Proceso 9 | Descuadre de inventario entre sucursales |
 | 14 | Cuarentena: ningún endpoint libera, destruye o elimina un registro `Retenido` (RN-CUA-009); el acta no lista lotes ni cantidades (RN-CUA-017); solo la venta respeta la cuarentena (RN-CUA-008) | Proceso 9 | Bloqueo permanente de un lote hasta intervenir la base de datos |
@@ -1225,7 +1312,7 @@ stateDiagram-v2
 
 ### 12.3 En curso (sin commitear)
 
-Ninguno. `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (`eeffbb6`) al empezar.
+Ninguno. `git status --short` está vacío en `sofia-apis` (`6f6b837`) y en `sofia-web-spa` (`558ad35`).
 
 ---
 
@@ -1244,6 +1331,7 @@ Ninguno. `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `so
 | 7. Recetas con IA | 9 | Sí | Sí | Sí | Sí | Sí | Sí | Sí | Sí | Sí (estado real) |
 | 8. Dashboard | 10 | Sí | Sí | Sí | Sí | Sí | No aporta: solo lectura sin camino de escritura | Sí (10.1) | Sí | Sí |
 | 9. Solo API (transferencias, cuarentena y actas, magistrales, servicios e inmunizaciones, delivery) | 11 (11.1 a 11.5) | Sí | Sí | Sí | Sí | Diagrama de estados (`stateDiagram-v2`) por proceso | No aporta: sin pantalla | Sí | Sí | Sí |
+| 10. Suscripción: alta, cobro y renovación | 10 bis | Sí | Sí | Sí | Sí | Sí | Sí | Sí | Sí | Sí |
 | Mapa general | 2 | — | — | — | — | Sí | — | — | — | — |
 
 ### 13.2 Reglas de negocio citadas
@@ -1252,14 +1340,14 @@ Se extrajeron con un script de lectura todos los IDs `RN-…` citados en este do
 
 | Prefijos | Citados en los procesos |
 |---|---|
-| `GEN`, `IMP` | 1 a 9 |
-| `AUT`, `EMP`, `CTA` | 1 y 2 |
+| `GEN`, `IMP` | 1 a 10 |
+| `AUT`, `EMP`, `CTA` | 1, 2 y 10 |
 | `SUC`, `SER`, `EPL`, `ROL` | 2 |
 | `UDM`, `JER`, `LAB`, `ING`, `MED`, `PRE`, `PRV`, `LOT`, `STK` | 3 |
 | `VEN`, `CMP`, `REC` | 4 y 7 |
 | `DEV` | 5 |
 | `CAJ` | 6 |
-| `DAS` | 8 |
+| `DAS` | 8 y 10 |
 | `TRA`, `DEL`, `MAG`, `SRV`, `CUA` | 9 |
 
 No se citan `AUD` (Auditoría, sin pantalla ni proceso de negocio de punta a punta), `FOR`, `PAC`, `PRO`, `ASE` y `DIG` (catálogos de apoyo sin pantalla de proceso propia en esta lista; se mencionan solo por su pantalla donde interviene el flujo).
@@ -1285,7 +1373,9 @@ No se citan `AUD` (Auditoría, sin pantalla ni proceso de negocio de punta a pun
 - Handlers de `SOFIA.Application/Transferencias`, `Delivery`, `Magistrales`, `DIGEMID` y `Servicios` (códigos de error y estados HTTP de la sección 11)
 - Lista de comandos que implementan `IAuditableCommand` (búsqueda en `sofia-apis/src/SOFIA.Application`)
 - `sofia-apis/src/SOFIA.Infrastructure/Services/OutboxProcessor.cs` (único servicio en segundo plano, búsqueda de `BackgroundService` e `IHostedService`)
-- `sofia-web-spa/src/app/pages/empresa/empresa-register/empresa-register.component.ts:23-25` (mapa de errores del registro), `sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:236-237` y `:286-287`, `sofia-web-spa/src/app/pages/roles/services/rol.service.ts`, `sofia-web-spa/src/app/pages/seguridad/services/cuenta.service.ts`
+- `sofia-web-spa/src/app/pages/empresa/empresa-register/empresa-register.component.ts:23-25` (mapa de errores del registro), `sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:248-249` y `:299`, `sofia-web-spa/src/app/pages/roles/services/rol.service.ts`, `sofia-web-spa/src/app/pages/seguridad/services/cuenta.service.ts`
 - `sofia-web-spa/public/i18n/es.json` y los `es.json` de `jerarquias`, `laboratorios`, `unidadesMedida`, `ingredientesActivos`, `proveedores` y `medicamentos` (textos de duplicados y de «en uso» y claves de carga masiva)
 
-**Scripts DbUp mencionados:** `0017` (permiso `Ventas:Anular`), `0019` (`RowVersion`), `0025` (receta flexible), `0028` (`Sesion_Anulacion_ID`).
+**Scripts DbUp mencionados:** `0017` (permiso `Ventas:Anular`), `0019` (`RowVersion`), `0025` (receta flexible), `0028` (`Sesion_Anulacion_ID`), `0029` (operador de plataforma y configuración de pago).
+
+**Código del proceso 10 (versión 1.2):** `sofia-apis/src/SOFIA.API/Controllers/PlataformaController.cs` y `EmpresasController.cs`, `SOFIA.Application/Empresas/Commands/{ActivarSuscripcionEmpresa,ExtenderPruebaEmpresa,SuspenderEmpresa,CancelarEmpresa}`, `SOFIA.Application/Plataforma/`, `SOFIA.Domain/Entities/Empresa.cs` y `PlataformaConfiguracionPago.cs`; `sofia-web-spa/src/app/pages/plataforma/configuracion-pago/`, `pages/empresa/empresa-detail/`, `pages/empresa/dialogs/suscripcion-fecha-dialog/`, `pages/dashboard/suscripcion-aviso/`, `shared/components/pago-suscripcion/` y `public/i18n/suscripcion/es.json`. El detalle por regla está en el catálogo (RN-EMP-019 a RN-EMP-028, RN-GEN-042, RN-GEN-043, RN-AUT-040, RN-CTA-021).
