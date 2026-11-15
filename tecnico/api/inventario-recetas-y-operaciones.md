@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (revisión: solo se corrigió la cita de `RateLimitingExtensions.cs`; las fichas de esta parte no cambiaron) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
 | **Método** | Lectura de código y llamadas reales a la API local |
 
 ## Contenido
@@ -1139,7 +1139,7 @@ HTTP/1.1 400 Bad Request
 { "status": 400, "detail": "'Especialidad Contexto' is not in the correct format.", "code": "AnalizarRecetaQuery.EspecialidadContexto" }
 ```
 
-El 400 «Image is required.», el 413, el 429 y el 500 **no se provocaron** para no consumir el cupo de dos llamadas ni dañar la configuración: **Ejemplo no verificado** (se documentan desde `RecetasController.cs:47-63`, `RateLimitingExtensions.cs:43-50` y [tecnico/integraciones.md, apartado 2.5](../integraciones.md)). En este entorno, Gemini y Presidio respondieron correctamente.
+El 400 «Image is required.», el 413, el 429 y el 500 **no se provocaron** para no consumir el cupo de dos llamadas ni dañar la configuración: **Ejemplo no verificado** (se documentan desde `RecetasController.cs:47-63`, `RateLimitingExtensions.cs:51-58` y [tecnico/integraciones.md, apartado 2.5](../integraciones.md)). En este entorno, Gemini y Presidio respondieron correctamente.
 
 #### `PUT /api/v1/Recetas/{id}`
 
