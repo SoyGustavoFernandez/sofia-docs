@@ -3,13 +3,31 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-15 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de código (handlers, entidades, middlewares, configuración de infraestructura, scripts DbUp, interceptores y guards del SPA). No se ejecutó la aplicación ni se llamó a la API. Árbol de trabajo sin cambios locales en ambos repos al iniciar (`git status --short` vacío). |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Método** | Lectura de código (handlers, entidades, middlewares, configuración de infraestructura, scripts DbUp, interceptores y guards del SPA). No se ejecutó la aplicación ni se llamó a la API. Versión 1.1: los dos repositorios tenían cambios locales de otra tarea sin commitear (devoluciones, textos y rutas del SPA); no se usaron, todo se leyó de `6f6b837` y `558ad35` con `git archive`/`git show`. |
 
 Este documento es la parte A de la documentación de seguridad. La parte B es la matriz de permisos (módulo × acción × endpoint × pantalla): [tecnico/seguridad/matriz-de-permisos.md](matriz-de-permisos.md); aquí no se repite. Las reglas de negocio con sus IDs (`RN-GEN-…`, `RN-AUT-…`) están en [negocio/reglas/administracion-y-seguridad.md](../../negocio/reglas/administracion-y-seguridad.md) y se citan por ID. Contexto relacionado: [tecnico/arquitectura.md](../arquitectura.md), [tecnico/integraciones.md](../integraciones.md), [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md), [desarrollo/despliegue-y-operacion.md](../../desarrollo/despliegue-y-operacion.md) y [producto/pantallas/acceso-layout-y-compartidos.md](../../producto/pantallas/acceso-layout-y-compartidos.md).
+
+## Historial de cambios
+
+### Versión 1.1 (2026-11-14)
+
+Revisión contra el código y reconciliación con la gestión de suscripciones por el operador de plataforma (`sofia-apis` `43f5529` → `6f6b837`, `sofia-web-spa` `eeffbb6` → `558ad35`). Se comprobaron por script las citas `archivo:línea` (se corrigieron 7 que ya no apuntaban a nada por estar fuera del archivo y las desplazadas por los commits nuevos) y los 7 endpoints anónimos y de autenticación.
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 1.1, 2.1, 2.4, 5.3 | La empresa debe estar vigente siempre. | La cuenta de operador de plataforma queda exenta en login, renovación, recuperación y validación del token (`PuedeOperarAsync`, RN-AUT-009, RN-AUT-017, RN-AUT-034, RN-GEN-042). | `6f6b837` |
+| 1.3 | 10 claims. | 11: agrega `plat_admin` (`JwtProvider.cs:43-46`, RN-AUT-011). | `6f6b837` |
+| 2.4 | Se sincroniza solo `pwd_change`; la vigencia se comprueba siempre. | Se sincronizan `pwd_change` y `plat_admin` (`SyncFlagClaim`); si la cuenta es operador no se comprueba la vigencia de su empresa. | `6f6b837` |
+| 7 | Un solo atributo y una sola política de permisos. | Suma `[HasPermissionOrPlataforma]` y la política `PLATAFORMA_ADMIN`. | `6f6b837` |
+| 8.2 | El filtro de empresa descarta siempre `TenantId` nulo. | Excepción: `IGlobalReadEntity` (catálogo DIGEMID compartido). | `9c16f35` |
+| 8.4 | 18 usos de `IgnoreQueryFilters`; «ninguno lee datos de negocio de otra empresa». | 26 usos; los handlers del operador sí leen y modifican empresas de otros y la configuración de pago (por diseño, solo con el claim). | `6f6b837` |
+| 11.5 | Tres políticas con nombre. | Cuatro: agrega `public-info` (30 por minuto por IP) en `GET plataforma/pago` (RN-GEN-043). | `6f6b837` |
+| A01 | 7 anónimos (con `health`). | 8: agrega `GET plataforma/pago`; además 6 endpoints con la política `PLATAFORMA_ADMIN`. | `6f6b837` |
+| Citas | Numeradas sobre `43f5529` / `eeffbb6`. | Corridas las de `Cuenta.cs`, `Empresa.cs`, `DependencyInjection.cs`, `PermissionAuthorizationHandler.cs`, `PermissionPolicyProvider.cs`, `ApplicationDbContext.cs`, `RateLimitingExtensions.cs`, `CurrentUser.cs`, `JwtProvider.cs`, `EmpresaVigencia.cs` y de los archivos del SPA que tocó `558ad35`. | `6f6b837`, `558ad35` |
 
 ## Convenciones
 
@@ -39,30 +57,30 @@ Endpoint: `POST api/v1/auth/login`, anónimo, con la política de límite `auth`
 | Hash de contraseñas | BCrypt «enhanced» (`BCrypt.Net.BCrypt.EnhancedHashPassword` y `EnhancedVerify`). El factor de coste **no se fija en el código**: se usa el valor por defecto de la librería `BCrypt.Net-Next` 4.1.0 (no verificado cuál es; ver «No verificado»). | `INF/Authentication/PasswordHasher.cs:7-10`; `INF/SOFIA.Infrastructure.csproj:10` |
 | Tiempo uniforme | La contraseña siempre se verifica con BCrypt, contra el hash real o contra un hash ficticio (GUID aleatorio, construido una vez con el mismo hasher) si la cuenta no existe. | `APP/Security/Commands/Login/LoginCommandHandler.cs:20-23,38-39` |
 | Respuesta uniforme | Cuenta inexistente, inactiva, bloqueada, clave incorrecta o sucursal base de otra empresa: todas devuelven 401 `Auth.InvalidCredentials` con el mismo texto. | `LoginCommandHandler.cs:41-45,47-52,54-60,62-66` |
-| Empresa vigente | Se comprueba **después** de validar la contraseña; si no está vigente responde 403 `Auth.EmpresaNoVigente` (el único rechazo distinguible, y solo para quien ya conoce la clave). | `LoginCommandHandler.cs:68-73`; `APP/Security/EmpresaVigencia.cs:9-10,13-26` |
+| Empresa vigente | Se comprueba **después** de validar la contraseña; si no está vigente responde 403 `Auth.EmpresaNoVigente` (el único rechazo distinguible, y solo para quien ya conoce la clave). La cuenta marcada como operador de plataforma (`Es_Admin_Plataforma`) queda exenta: `PuedeOperarAsync` devuelve verdadero para ella sin consultar su empresa, para que nadie quede sin poder reactivarla (`EmpresaVigencia.cs:13-15`; RN-AUT-009, RN-GEN-042). Cuando el inicio de sesión falla con ese código, el SPA muestra debajo del mensaje cómo pagar (RN-AUT-040). | `LoginCommandHandler.cs:68-73`; `APP/Security/EmpresaVigencia.cs:10-11,18-31` |
 | Éxito | Pone a 0 los intentos, quita el bloqueo, emite token de acceso y token de refresco, y devuelve `{ accessToken, requiereCambioClave }`; el token de refresco va en cookie, nunca en el cuerpo. | `LoginCommandHandler.cs:75-86`; `API/Controllers/AuthController.cs:29-30` |
 
 ### 1.2 Bloqueo por intentos
 
 | Pregunta | Respuesta | Evidencia |
 |---|---|---|
-| ¿Cuántos intentos? | 5 fallos acumulados. | `DOM/Entities/Cuenta.cs:85-86` |
-| ¿Cuánto dura? | 15 minutos desde el quinto fallo (`Bloqueado_Hasta`). | `DOM/Entities/Cuenta.cs:88` |
+| ¿Cuántos intentos? | 5 fallos acumulados. | `DOM/Entities/Cuenta.cs:89-90` |
+| ¿Cuánto dura? | 15 minutos desde el quinto fallo (`Bloqueado_Hasta`). | `DOM/Entities/Cuenta.cs:92` |
 | ¿Qué pasa durante el bloqueo? | El login se rechaza aunque la clave sea correcta, con la misma respuesta uniforme; no suma más intentos (por eso el bloqueo no se extiende). | `LoginCommandHandler.cs:47-52` |
-| ¿Cuándo se reinicia el contador? | Al vencer el bloqueo (el siguiente fallo empieza en 0), con un login correcto, al restablecer la clave por recuperación y cuando un administrador usa «resetear intentos». | `DOM/Entities/Cuenta.cs:79-83,92-96,125-126`; `APP/Security/Commands/Cuentas/UpdateCuenta/UpdateCuentaCommandHandler.cs:137-140` |
+| ¿Cuándo se reinicia el contador? | Al vencer el bloqueo (el siguiente fallo empieza en 0), con un login correcto, al restablecer la clave por recuperación y cuando un administrador usa «resetear intentos». | `DOM/Entities/Cuenta.cs:83-87,96-100,129-130`; `APP/Security/Commands/Cuentas/UpdateCuenta/UpdateCuentaCommandHandler.cs:39-42` |
 | ¿Cómo se desbloquea? | Esperando los 15 minutos, restableciendo la clave por el enlace de correo, o con un administrador (`ResetearIntentos` en la edición de cuenta, permiso `Seguridad:Actualizar`; ver [`tecnico/seguridad/matriz-de-permisos`](matriz-de-permisos.md)). | Las tres referencias anteriores |
 | ¿Se persiste el fallo? | Sí: el handler guarda el intento fallido antes de devolver el error (el `TransactionBehavior` no revierte un `Result.Failure`, RN-GEN-012). | `LoginCommandHandler.cs:56-57` |
-| Alcance del bloqueo | Por cuenta, no por IP. La política `auth` limita por IP (10 por minuto). Consecuencia verificable en el código: quien conoce un nombre de usuario puede provocar el bloqueo de esa cuenta (5 fallos) y repetirlo cada 15 minutos. | `DOM/Entities/Cuenta.cs:77-90`; `API/Extensions/RateLimitingExtensions.cs:26-32` |
+| Alcance del bloqueo | Por cuenta, no por IP. La política `auth` limita por IP (10 por minuto). Consecuencia verificable en el código: quien conoce un nombre de usuario puede provocar el bloqueo de esa cuenta (5 fallos) y repetirlo cada 15 minutos. | `DOM/Entities/Cuenta.cs:81-94`; `API/Extensions/RateLimitingExtensions.cs:27-33` |
 
 ### 1.3 Token de acceso (JWT)
 
 | Aspecto | Valor | Evidencia |
 |---|---|---|
-| Algoritmo de firma | HS256 (HMAC-SHA256) con clave simétrica; la validación solo acepta `HmacSha256` (`ValidAlgorithms`). | `INF/Authentication/JwtProvider.cs:49-50`; `INF/DependencyInjection.cs:71` |
+| Algoritmo de firma | HS256 (HMAC-SHA256) con clave simétrica; la validación solo acepta `HmacSha256` (`ValidAlgorithms`). | `INF/Authentication/JwtProvider.cs:54-55`; `INF/DependencyInjection.cs:71` |
 | Clave | Clave de configuración `Jwt:SecretKey`; mínimo 32 bytes UTF-8 o la API no arranca. | `INF/Authentication/JwtOptions.cs:8,17-25`; `INF/DependencyInjection.cs:54-57` |
 | Emisor / audiencia | Claves `Jwt:Issuer` y `Jwt:Audience`, obligatorias (no arranca sin ellas); se validan ambas. | `JwtOptions.cs:27-30`; `INF/DependencyInjection.cs:64-65,68-69` |
-| Duración | `Jwt:ExpiryMinutes` minutos desde la emisión (el valor lo da la configuración del entorno; el código no tiene un valor por defecto: la propiedad vale 0 si falta). Desfase de reloj tolerado: 30 segundos. | `JwtProvider.cs:57`; `JwtOptions.cs:13`; `INF/DependencyInjection.cs:72` |
-| Validaciones | Emisor, audiencia, vigencia, firma. `nbf` no se informa (parámetro `null` en la construcción). | `INF/DependencyInjection.cs:64-67`; `JwtProvider.cs:56` |
+| Duración | `Jwt:ExpiryMinutes` minutos desde la emisión (el valor lo da la configuración del entorno; el código no tiene un valor por defecto: la propiedad vale 0 si falta). Desfase de reloj tolerado: 30 segundos. | `JwtProvider.cs:62`; `JwtOptions.cs:13`; `INF/DependencyInjection.cs:72` |
+| Validaciones | Emisor, audiencia, vigencia, firma. `nbf` no se informa (parámetro `null` en la construcción). | `INF/DependencyInjection.cs:64-67`; `JwtProvider.cs:61` |
 | Mapeo de claims | `JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear()`: los nombres de claim se conservan tal cual vienen en el token. | `API/Program.cs:14` |
 
 Claims que emite `JwtProvider.Generate`:
@@ -78,7 +96,8 @@ Claims que emite `JwtProvider.Generate`:
 | `securityStamp` | Sello de seguridad de la cuenta (GUID) | `JwtProvider.cs:30` |
 | `empresaId` | Empresa de la cuenta (`cuenta.TenantId`, nunca la de la sucursal); solo se agrega si tiene valor | `JwtProvider.cs:18-19,33-36` |
 | `pwd_change` | `"true"` si la cuenta debe cambiar su clave | `JwtProvider.cs:38-41`; `APP/Security/PasswordChangePolicy.cs:8` |
-| `role` (tipo `ClaimTypes.Role`) | Un claim por rol de la cuenta | `JwtProvider.cs:44-47` |
+| `plat_admin` | `"true"` solo si `Seguridad_Cuentas.Es_Admin_Plataforma = 1` (operador de plataforma). Es informativo para el cliente: la API lo vuelve a sincronizar con la base de datos en cada petición, de modo que el token por sí solo no concede nada (RN-AUT-011, RN-GEN-042) | `JwtProvider.cs:43-46`; `APP/Security/PlataformaAdminPolicy.cs:10`; `API/Services/CurrentUser.cs:27-28` |
+| `role` (tipo `ClaimTypes.Role`) | Un claim por rol de la cuenta | `JwtProvider.cs:49-52` |
 
 El token **no** lleva permisos: los permisos se resuelven en cada petición contra la tabla de permisos (apartado 7). El token tampoco lleva correo, documento ni otros datos personales más allá del nombre de usuario y el nombre completo.
 
@@ -156,8 +175,8 @@ Endpoint: `POST api/v1/auth/refresh`, anónimo, protegido por la cabecera `X-SOF
 2. El handler calcula el SHA-256 del valor y busca la fila sin filtro de empresa (la petición es anónima) (`APP/Security/Commands/RefreshToken/RefreshTokenCommandHandler.cs:22-28`).
 3. Si no existe o `ExpiresAt` ya pasó: 401 `Auth.InvalidRefreshToken` (`RefreshTokenCommandHandler.cs:30-33,116-117`).
 4. Si está revocado, ver detección de reutilización (2.3).
-5. Recarga la cuenta (activa y no eliminada) con sus roles vivos de su empresa y su sucursal base, y exige que la sucursal base sea de la misma empresa (`RefreshTokenCommandHandler.cs:53-70`; `DOM/Entities/Cuenta.cs:134-135`).
-6. Exige empresa vigente; si no lo está rechaza **sin revocar** el token, para que al reactivar la empresa no parezca un robo (`RefreshTokenCommandHandler.cs:72-77`).
+5. Recarga la cuenta (activa y no eliminada) con sus roles vivos de su empresa y su sucursal base, y exige que la sucursal base sea de la misma empresa (`RefreshTokenCommandHandler.cs:53-70`; `DOM/Entities/Cuenta.cs:138-139`).
+6. Exige empresa vigente (salvo que la cuenta sea operador de plataforma: `PuedeOperarAsync`, RN-AUT-017); si no lo está rechaza **sin revocar** el token, para que al reactivar la empresa no parezca un robo (`RefreshTokenCommandHandler.cs:72-77`).
 7. Rotación: revoca el token usado, emite un token de acceso nuevo (con los roles, la sucursal base y el indicador de cambio de clave actuales) y un token de refresco nuevo de 7 días, y los guarda en una sola transacción (`RefreshTokenCommandHandler.cs:79-86,90`).
 8. El controlador coloca la cookie nueva y devuelve `{ accessToken, requiereCambioClave }` (`AuthController.cs:50-51`).
 
@@ -177,19 +196,20 @@ Cada renovación exitosa revoca el token usado y crea uno nuevo (`RefreshToken.R
 
 ### 2.4 `SecurityStamp` y validación en cada petición autenticada
 
-El `SecurityStamp` es un GUID de la cuenta (`DOM/Entities/Cuenta.cs:18,60`; columna `Security_Stamp` en `DBUP/0001_Initial_Schema.sql:797`). Cambia en: cambio de clave (`Cuenta.cs:71`), restablecimiento por recuperación (`Cuenta.cs:121`), cierre de sesión (`LogoutCommandHandler.cs:76-79`), asignar o quitar un rol a una cuenta (`APP/Security/Commands/Roles/AssignRol/AssignRolToUserCommandHandler.cs:44`, `RemoveRol/RemoveRolFromUserCommandHandler.cs:92`) y reutilización de un token de refresco (`RefreshTokenCommandHandler.cs:111`). El resto de los puntos en que RN-GEN-017 dice que cambia (sucursal base del empleado) se detallan en esa regla; no se re-verificaron aquí.
+El `SecurityStamp` es un GUID de la cuenta (`DOM/Entities/Cuenta.cs:18,63`; columna `Security_Stamp` en `DBUP/0001_Initial_Schema.sql:797`). Cambia en: cambio de clave (`Cuenta.cs:75`), restablecimiento por recuperación (`Cuenta.cs:125`), cierre de sesión (`LogoutCommandHandler.cs:76-79`), asignar o quitar un rol a una cuenta (`APP/Security/Commands/Roles/AssignRol/AssignRolToUserCommandHandler.cs:44`, `RemoveRol/RemoveRolFromUserCommandHandler.cs:42`) y reutilización de un token de refresco (`RefreshTokenCommandHandler.cs:111`). El resto de los puntos en que RN-GEN-017 dice que cambia (sucursal base del empleado) se detallan en esa regla; no se re-verificaron aquí.
 
-Validación en cada petición con token (evento `OnTokenValidated` de JwtBearer, `INF/DependencyInjection.cs:77-131`):
+Validación en cada petición con token (evento `OnTokenValidated` de JwtBearer, `INF/DependencyInjection.cs:77-138`):
 
 | Orden | Comprobación | Caché | Falla con |
 |---|---|---|---|
 | 1 | Existen `sub` y `securityStamp` y ambos son GUID | — | 401 |
-| 2 | Consulta a la base: cuenta con ese id, mismo `SecurityStamp`, `CuentaActiva` y no eliminada (sin filtro de empresa porque el principal aún no está poblado) | **Sin caché**: una consulta por petición | 401 |
-| 3 | Sincroniza el claim `pwd_change` con el valor de la base (la base manda sobre el token) | — | — |
+| 2 | Consulta a la base: cuenta con ese id, mismo `SecurityStamp`, `CuentaActiva` y no eliminada, y lee `RequiereCambioClave` y `EsAdminPlataforma` (sin filtro de empresa porque el principal aún no está poblado) | **Sin caché**: una consulta por petición | 401 |
+| 3 | Sincroniza los claims `pwd_change` y `plat_admin` con los valores de la base (la base manda sobre el token; `SyncFlagClaim`, `DependencyInjection.cs:111-112`) | — | — |
 | 4 | El token trae un `empresaId` válido | — | 401 |
-| 5 | La empresa está vigente (existe, no eliminada, no suspendida ni vencida) | `IMemoryCache`, clave `empresa-vigente:{empresaId}`, **1 minuto** absoluto (`DependencyInjection.cs:26,121-125`) | 401 |
+| 4b | Si la cuenta es operador de plataforma, la validación termina aquí: no se comprueba la vigencia de su empresa (`DependencyInjection.cs:120-124`) | — | — |
+| 5 | La empresa está vigente (existe, no eliminada, no suspendida ni vencida) | `IMemoryCache`, clave `empresa-vigente:{empresaId}`, **1 minuto** absoluto (`DependencyInjection.cs:26,128-132`) | 401 |
 
-Consecuencias verificables: un cambio de clave, un cierre de sesión, un cambio de rol o la desactivación de la cuenta cortan los tokens de acceso vivos en la siguiente petición (no hay ventana); una suspensión o vencimiento de la empresa los corta en como máximo 1 minuto (por instancia de la API, porque el caché es en memoria del proceso).
+Consecuencias verificables: un cambio de clave, un cierre de sesión, un cambio de rol, la desactivación de la cuenta o quitar la marca de operador (en la base de datos) cortan los tokens de acceso vivos en la siguiente petición (no hay ventana); una suspensión o vencimiento de la empresa los corta en como máximo 1 minuto (por instancia de la API, porque el caché es en memoria del proceso).
 
 Otras condiciones de la política de tokens: firma HS256, emisor, audiencia, vigencia con 30 segundos de desfase (apartado 1.3). El esquema por defecto es JwtBearer (`AddAuthentication(JwtBearerDefaults.AuthenticationScheme)`, `DependencyInjection.cs:59`) y existe una política de reserva que exige usuario autenticado (apartado 7).
 
@@ -255,7 +275,7 @@ Endpoint: `POST api/v1/auth/logout`, **anónimo** y con `X-SOFIA-CSRF` obligator
 | Endpoints que lo exigen | Solo `POST auth/refresh` y `POST auth/logout` (los únicos que se autentican con la cookie) | `AuthController.cs:35,72` |
 | Por qué | Un formulario de otro sitio no puede añadir cabeceras personalizadas y un `fetch` entre orígenes con una cabecera personalizada requiere un preflight CORS, que solo aprueban los orígenes de la lista permitida (comentario del código) | `RequireCsrfHeaderAttribute.cs:5`; CORS en `API/Program.cs:39-64` |
 | Qué NO cubre | Los demás endpoints no usan cookie: se autentican con el encabezado `Authorization: Bearer`, que un sitio externo no puede añadir. `login` (anónimo) se autentica con las credenciales del cuerpo y `change-password` con el Bearer más la contraseña actual; ninguno de los dos usa la cookie para identificar al usuario. | `API/Controllers/AuthController.cs:18-21,84-88` |
-| Cliente | El SPA envía `X-SOFIA-CSRF: 1` en refresh y logout | `SPA/core/auth/auth.service.ts:36,89,115` |
+| Cliente | El SPA envía `X-SOFIA-CSRF: 1` en refresh y logout | `SPA/core/auth/auth.service.ts:38,93,119` |
 
 Observación: la comprobación es de **presencia**, no de valor; es una defensa de «cabecera personalizada» y no un token anti-CSRF sincronizado. Con `SameSite=None` en la cookie (apartado 1.4), esta cabecera más la lista de orígenes CORS son las dos barreras. Un cliente que sí esté en un origen permitido puede enviar cualquier valor.
 
@@ -272,7 +292,7 @@ Observación: la comprobación es de **presencia**, no de valor; es una defensa 
 | Alta de cuenta por un administrador | Contraseña inicial obligatoria, mínimo 8 | `APP/Security/Commands/Register/RegisterAccountCommandValidator.cs:16-18` |
 | Registro público de empresa | Contraseña obligatoria, mínimo 8; usuario de 4 a 50 caracteres | `APP/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandValidator.cs:19-26` (usuario y contraseña) |
 
-La política real es **solo longitud mínima de 8**: no hay requisito de mayúsculas, minúsculas, dígitos ni símbolos, ni lista de contraseñas comunes, ni historial de contraseñas anteriores, ni **longitud máxima** en ningún validador del backend (el SPA limita la clave inicial de una cuenta a 8–128 caracteres; ver RN-CTA-004 y RN-AUT-026). El hash es BCrypt «enhanced» (apartado 1.1). Las cuentas creadas por un administrador nacen con `RequiereCambioClave = true`; la cuenta creada en el registro de empresa nace con `false` (`DOM/Entities/Cuenta.cs:38`; `RegistrarEmpresaCommandHandler.cs:109`).
+La política real es **solo longitud mínima de 8**: no hay requisito de mayúsculas, minúsculas, dígitos ni símbolos, ni lista de contraseñas comunes, ni historial de contraseñas anteriores, ni **longitud máxima** en ningún validador del backend (el SPA limita la clave inicial de una cuenta a 8–128 caracteres; ver RN-CTA-004 y RN-AUT-026). El hash es BCrypt «enhanced» (apartado 1.1). Las cuentas creadas por un administrador nacen con `RequiereCambioClave = true`; la cuenta creada en el registro de empresa nace con `false` (`DOM/Entities/Cuenta.cs:41`; `RegistrarEmpresaCommandHandler.cs:109`).
 
 ### 4.2 Efectos del cambio
 
@@ -280,7 +300,7 @@ La política real es **solo longitud mínima de 8**: no hay requisito de mayúsc
 
 1. Busca la cuenta activa y no eliminada (sin filtro de empresa); si no, 401 `Auth.InvalidCredentials`.
 2. Verifica la clave actual; si falla responde **400** `Auth.ClaveActualIncorrecta` (no 401, para que el cliente no lo confunda con una sesión vencida).
-3. `UpdatePassword`: nuevo hash, **nuevo `SecurityStamp`**, apaga `RequiereCambioClave` y anula el token de recuperación pendiente (`DOM/Entities/Cuenta.cs:68-75`).
+3. `UpdatePassword`: nuevo hash, **nuevo `SecurityStamp`**, apaga `RequiereCambioClave` y anula el token de recuperación pendiente (`DOM/Entities/Cuenta.cs:72-79`).
 4. Revoca **todos** los tokens de refresco de la cuenta (`RefreshTokenRevocation.cs:10-21`).
 5. El controlador borra la cookie (`AuthController.cs:96-99`).
 6. Se audita como `CLAVE_CAMBIAR` (tabla `Seguridad_Cuentas`, id de la cuenta, IP del cliente) (`ChangePasswordCommand.cs:6-9`).
@@ -298,7 +318,7 @@ Resultado: todas las sesiones quedan cerradas, la actual incluida; el cliente de
 
 Rutas que deja pasar: los endpoints anónimos (`login`, `refresh`, `logout`, `forgot-password`, `reset-password`, `POST empresas/registrar`, `GET /health`) y los dos marcados con `[AllowDuringPasswordChange]`: `GET auth/me` y `POST auth/change-password` (`AuthController.cs:54-56,84-87`). Todo el resto de los endpoints autenticados responde 403.
 
-El indicador se lee de la base en **cada petición** (paso 3 de 2.4: `SyncPasswordChangeClaim`, `INF/DependencyInjection.cs:111,201-218`), así que un administrador que fuerza el cambio lo aplica también a los tokens vivos, y quitar el indicador (al cambiar la clave) no depende del token. Cliente: el interceptor navega a `/cambiar-clave` ante ese código y `passwordChangeGuard` impide salir de esa ruta mientras el claim sea verdadero (`SPA/core/interceptors/auth.interceptor.ts:30-33`; `SPA/core/auth/password-change.guard.ts:5,8-12`; registro en `SPA/app.routes.ts:37`).
+El indicador se lee de la base en **cada petición** (paso 3 de 2.4: `SyncFlagClaim`, `INF/DependencyInjection.cs:111-112,217-232`), así que un administrador que fuerza el cambio lo aplica también a los tokens vivos, y quitar el indicador (al cambiar la clave) no depende del token. Cliente: el interceptor navega a `/cambiar-clave` ante ese código y `passwordChangeGuard` impide salir de esa ruta mientras el claim sea verdadero (`SPA/core/interceptors/auth.interceptor.ts:30-33`; `SPA/core/auth/password-change.guard.ts:5,8-12`; registro en `SPA/app.routes.ts:38`).
 
 ---
 
@@ -311,11 +331,11 @@ Endpoints anónimos con la política `auth`: `POST auth/forgot-password` y `POST
 | Aspecto | Valor | Evidencia |
 |---|---|---|
 | Generación | 32 bytes aleatorios criptográficos codificados en Base64 seguro para URL | `APP/Security/TokenHasher.cs:15-20` |
-| Almacenamiento | **Solo el hash SHA-256 en hexadecimal** (`Recovery_Token`, `VARCHAR(100)`); el token en claro solo viaja en el correo | `DOM/Entities/Cuenta.cs:104-109`; `DBUP/0001_Initial_Schema.sql:795` |
-| Caducidad | 1 hora (`Recovery_Token_Expiry`) | `DOM/Entities/Cuenta.cs:108` |
-| Un solo uso | Al restablecer se pone `RecoveryToken` en nulo; cambiar la clave por `change-password` también lo anula | `DOM/Entities/Cuenta.cs:73-74,123-124` |
-| Reemplazo | Pedir otro enlace sustituye al token anterior (solo hay una columna por cuenta) | `DOM/Entities/Cuenta.cs:105-109` |
-| Comparación | En tiempo constante (`CryptographicOperations.FixedTimeEquals`); falla si no hay token, venció o no coincide | `DOM/Entities/Cuenta.cs:111-118` |
+| Almacenamiento | **Solo el hash SHA-256 en hexadecimal** (`Recovery_Token`, `VARCHAR(100)`); el token en claro solo viaja en el correo | `DOM/Entities/Cuenta.cs:108-113`; `DBUP/0001_Initial_Schema.sql:795` |
+| Caducidad | 1 hora (`Recovery_Token_Expiry`) | `DOM/Entities/Cuenta.cs:112` |
+| Un solo uso | Al restablecer se pone `RecoveryToken` en nulo; cambiar la clave por `change-password` también lo anula | `DOM/Entities/Cuenta.cs:77-78,127-128` |
+| Reemplazo | Pedir otro enlace sustituye al token anterior (solo hay una columna por cuenta) | `DOM/Entities/Cuenta.cs:109-113` |
+| Comparación | En tiempo constante (`CryptographicOperations.FixedTimeEquals`); falla si no hay token, venció o no coincide | `DOM/Entities/Cuenta.cs:115-122` |
 | Error | Usuario inexistente y token incorrecto devuelven el mismo `Auth.InvalidToken` (400) | `DOM/Entities/Cuenta.cs:10-11`; `ResetPasswordCommandHandler.cs:24-27` |
 
 ### 5.2 Enlace y correo
@@ -324,19 +344,19 @@ Endpoints anónimos con la política `auth`: `POST auth/forgot-password` y `POST
 |---|---|---|
 | Enlace | `{App:FrontendBaseUrl}/auth/reset-password#token=…&usuario=…`, valores codificados con `Uri.EscapeDataString` | `INF/Email/FrontendLinks.cs:8-9` |
 | Fragmento | El token va tras `#`: el navegador no lo envía a ningún servidor. El SPA lo lee, lo guarda en memoria y lo quita de la barra de direcciones y del historial (`location.replaceState`) | `SPA/pages/auth/reset-password/reset-password.component.ts:74-79` |
-| URL base | `App:FrontendBaseUrl` debe ser una URL absoluta `https` (`http` solo en Desarrollo y Pruebas) o la API no arranca | `INF/Email/AppOptions.cs:9-19`; `INF/DependencyInjection.cs:163-167` |
+| URL base | `App:FrontendBaseUrl` debe ser una URL absoluta `https` (`http` solo en Desarrollo y Pruebas) o la API no arranca | `INF/Email/AppOptions.cs:9-16`; `INF/DependencyInjection.cs:178-182` |
 | Destinatario y asunto | Correo del empleado de la cuenta; asunto «Restablece tu contraseña de SOFIA» | `APP/Security/Commands/ForgotPassword/ForgotPasswordCommandHandler.cs:24,31`; `APP/Security/PasswordRecoveryEmail.cs:8` |
 | Contenido | Saludo con nombre, usuario y enlace; indica vigencia de 1 hora y un solo uso. En la parte HTML todos los valores se codifican con `HtmlEncode` | `APP/Security/Templates/PasswordRecovery.txt`; `PasswordRecoveryEmail.cs:13-27` |
-| Proveedor | SMTP o Azure Communication Services según `Email:Provider`; sin proveedor solo se acepta en Desarrollo y Pruebas (el correo se descarta) y en otros entornos la API no arranca | `INF/DependencyInjection.cs:157-186` |
+| Proveedor | SMTP o Azure Communication Services según `Email:Provider`; sin proveedor solo se acepta en Desarrollo y Pruebas (el correo se descarta) y en otros entornos la API no arranca | `INF/DependencyInjection.cs:172-201` |
 | Fallo de envío | Se registra una advertencia con el id de cuenta y el código de error; el token sigue válido la hora y la respuesta es la misma | `ForgotPasswordCommandHandler.cs:32-37` |
 
 ### 5.3 Respuesta uniforme
 
-`forgot-password` descarta el resultado del comando y siempre responde 200 con el mismo mensaje fijo, exista o no la cuenta, aunque falle el validador (`AuthController.cs:107-111`). Solo se genera token y correo si la cuenta existe, no está eliminada y está activa, su empleado no está eliminado y tiene correo, y la empresa está vigente (`ForgotPasswordCommandHandler.cs:18-25`). Observación verificada en el código: la respuesta es idéntica en contenido, pero el camino con cuenta válida hace además una escritura en base y el envío del correo antes de responder, mientras que los demás caminos devuelven de inmediato; no se midió si la diferencia de tiempo es perceptible (ver «No verificado»). En `reset-password` el hash BCrypt de la nueva clave se calcula antes de comprobar si la cuenta existe, para igualar tiempos (`ResetPasswordCommandHandler.cs:21-27`).
+`forgot-password` descarta el resultado del comando y siempre responde 200 con el mismo mensaje fijo, exista o no la cuenta, aunque falle el validador (`AuthController.cs:107-111`). Solo se genera token y correo si la cuenta existe, no está eliminada y está activa, su empleado no está eliminado y tiene correo, y la empresa está vigente o la cuenta es operador de plataforma (`ForgotPasswordCommandHandler.cs:18-25`; RN-AUT-034). Observación verificada en el código: la respuesta es idéntica en contenido, pero el camino con cuenta válida hace además una escritura en base y el envío del correo antes de responder, mientras que los demás caminos devuelven de inmediato; no se midió si la diferencia de tiempo es perceptible (ver «No verificado»). En `reset-password` el hash BCrypt de la nueva clave se calcula antes de comprobar si la cuenta existe, para igualar tiempos (`ResetPasswordCommandHandler.cs:21-27`).
 
 ### 5.4 Efectos del restablecimiento
 
-Nuevo hash, nuevo `SecurityStamp`, apaga `RequiereCambioClave`, consume el token, pone intentos en 0 y quita el bloqueo (`DOM/Entities/Cuenta.cs:120-126`); revoca todos los tokens de refresco (`ResetPasswordCommandHandler.cs:36-37`); y registra el evento `CLAVE_RESTABLECER` con el empleado dueño de la cuenta como actor y la IP del cliente, porque el flujo anónimo no pasa por `AuditBehavior` (`ResetPasswordCommandHandler.cs:39-44`). El handler no vuelve a comprobar que la cuenta esté activa ni la vigencia de la empresa en este paso (RN-AUT-039).
+Nuevo hash, nuevo `SecurityStamp`, apaga `RequiereCambioClave`, consume el token, pone intentos en 0 y quita el bloqueo (`DOM/Entities/Cuenta.cs:124-130`); revoca todos los tokens de refresco (`ResetPasswordCommandHandler.cs:36-37`); y registra el evento `CLAVE_RESTABLECER` con el empleado dueño de la cuenta como actor y la IP del cliente, porque el flujo anónimo no pasa por `AuditBehavior` (`ResetPasswordCommandHandler.cs:39-44`). El handler no vuelve a comprobar que la cuenta esté activa ni la vigencia de la empresa en este paso (RN-AUT-039).
 
 ### 5.5 Diagrama de secuencia de la recuperación
 
@@ -378,7 +398,7 @@ sequenceDiagram
 
 ### 6.1 Dónde vive el token de acceso
 
-El token de acceso se guarda en `localStorage` bajo la clave `sofia_token` y se refleja en una señal en memoria (`SPA/core/auth/auth.service.ts:33,44,147-152,167-169`). El SPA lo decodifica sin verificar la firma para leer `sub`, `empresaId`, `sucursalId`, `empleadoId`, `pwd_change` y `exp` (`auth.service.ts:47-68`); solo sirve para la interfaz, el servidor valida de nuevo en cada petición. El token de refresco **no** es accesible desde JavaScript (cookie `HttpOnly`).
+El token de acceso se guarda en `localStorage` bajo la clave `sofia_token` y se refleja en una señal en memoria (`SPA/core/auth/auth.service.ts:35,46,153-158,173-175`). El SPA lo decodifica sin verificar la firma para leer `sub`, `empresaId`, `sucursalId`, `empleadoId`, `pwd_change` y `exp` (`auth.service.ts:49-70`); solo sirve para la interfaz, el servidor valida de nuevo en cada petición. El token de refresco **no** es accesible desde JavaScript (cookie `HttpOnly`).
 
 Riesgo asociado: cualquier script que se ejecute en el origen del SPA (XSS o dependencia comprometida) puede leer `localStorage` y robar el token de acceso, que vale hasta que vence o hasta que el `SecurityStamp` cambie (cambio de clave, cierre de sesión, cambio de rol). La cookie de refresco `HttpOnly` limita el daño a la ventana del token de acceso, no permite renovar desde un script. Mitigaciones presentes en el código del SPA: el token solo se envía a la API (6.2) y los datos que se muestran con `[innerHTML]` se escapan antes (apartado 13, A03). El SPA declara su propia `Content-Security-Policy` en `sofia-web-spa/public/staticwebapp.config.json:3` (Azure Static Web Apps) con `script-src 'self'` (sin `unsafe-inline` ni `unsafe-eval` en scripts), que reduce la superficie de XSS; el detalle de cabeceras está en el apartado 11.6 y el despliegue en [desarrollo/despliegue-y-operacion.md](../../desarrollo/despliegue-y-operacion.md). Que ese archivo se aplique depende del alojamiento real (no verificado).
 
@@ -389,11 +409,11 @@ Riesgo asociado: cualquier script que se ejecute en el origen del SPA (XSS o dep
 | `authInterceptor` (registrado primero) | Agrega `Authorization: Bearer <token>` **solo** a URLs que empiezan por `{environment.api.baseurl}/api/`; no a archivos estáticos (`/i18n`) ni a otros hosts | `SPA/core/interceptors/auth.interceptor.ts:18-27,66-69`; registro `SPA/app.config.ts:45-47` (`withInterceptors([authInterceptor, CSLoadingInterceptor])`) |
 | 401 en endpoints no de autenticación | Pide un token nuevo a `/auth/refresh` y repite la petición una vez; si el refresco falla llama a `auth.logout()` | `auth.interceptor.ts:34-35,46,51-63` |
 | 401 en `login`, `refresh`, `logout` | No reintenta (evita bucles); en `refresh` y `logout` borra la sesión local sin llamada extra; en `login` solo propaga | `auth.interceptor.ts:37-45,71-73` |
-| «Cola» de peticiones | No hay cola explícita: `refreshAccessToken()` comparte una sola petición en vuelo (`shareReplay`) entre el guard y todas las peticiones que reciben 401 a la vez, y cada una se repite al llegar el token nuevo | `auth.service.ts:83-97`; `auth.interceptor.ts:57-58` |
+| «Cola» de peticiones | No hay cola explícita: `refreshAccessToken()` comparte una sola petición en vuelo (`shareReplay`) entre el guard y todas las peticiones que reciben 401 a la vez, y cada una se repite al llegar el token nuevo | `auth.service.ts:87-101`; `auth.interceptor.ts:57-58` |
 | 403 `Auth.CambioClaveRequerido` | Navega a `/cambiar-clave` | `auth.interceptor.ts:16,30-33` |
-| `authGuard` (rutas del shell) | Si el token local no venció, deja pasar; si venció, intenta un refresco silencioso y si falla limpia la sesión local y redirige a `/auth/login` | `SPA/core/auth/auth.guard.ts:6-19`; `SPA/app.routes.ts:35` |
-| `passwordChangeGuard`, `permissionGuard` | Cambio obligatorio y permiso de lectura de la ruta; ver `producto/pantallas/acceso-layout-y-compartidos` | `SPA/app.routes.ts:37`; [`producto/pantallas/acceso-layout-y-compartidos`](../../producto/pantallas/acceso-layout-y-compartidos.md) |
-| Cookies entre sitios | `login`, `refresh`, `logout`, `change-password` y el registro de empresa envían `withCredentials: true`; `forgot-password` y `reset-password` no | `auth.service.ts:74,89,101,115`; `SPA/pages/empresa/services/empresa.service.ts:41` |
+| `authGuard` (rutas del shell) | Si el token local no venció, deja pasar; si venció, intenta un refresco silencioso y si falla limpia la sesión local y redirige a `/auth/login` | `SPA/core/auth/auth.guard.ts:6-19`; `SPA/app.routes.ts:36` |
+| `passwordChangeGuard`, `permissionGuard` | Cambio obligatorio y permiso de lectura de la ruta; ver `producto/pantallas/acceso-layout-y-compartidos` | `SPA/app.routes.ts:38`; [`producto/pantallas/acceso-layout-y-compartidos`](../../producto/pantallas/acceso-layout-y-compartidos.md) |
+| Cookies entre sitios | `login`, `refresh`, `logout`, `change-password` y el registro de empresa envían `withCredentials: true`; `forgot-password` y `reset-password` no | `auth.service.ts:78,93,105,119`; `SPA/pages/empresa/services/empresa.service.ts:41` |
 
 No hay interceptor que atienda 429 ni que muestre errores globales (RN: sección 2 de `negocio/reglas/administracion-y-seguridad`).
 
@@ -401,10 +421,10 @@ No hay interceptor que atienda 429 ni que muestre errores globales (RN: sección
 
 | Momento | Qué se borra | Qué se conserva | Evidencia |
 |---|---|---|---|
-| Cierre de sesión explícito (menú del encabezado) o refresco fallido en el interceptor | Llama a `POST /auth/logout`; `clearUserStorage()` elimina las claves de `localStorage` con prefijos `sofia_menu_cache` (heredado) y `pos-nueva-venta-draft` (borradores del POS); `clearLocalSession()` quita `sofia_token`, los filtros de búsqueda en memoria y el perfil de permisos | Otras claves de `localStorage` como la zona horaria (`TimezoneService`) | `auth.service.ts:113-123,154-160`; `SPA/core/auth/user-storage.ts:1-6,13-15`; `SPA/matdash/layouts/full/vertical/header/header.component.ts:106` |
-| Sesión vencida sin cierre explícito (`authGuard`, 401 en `refresh` o `logout`) | Solo `clearLocalSession()` (token, filtros, perfil) | Borradores del POS: sobreviven a una sesión vencida | `auth.service.ts:154`; `auth.guard.ts:15` |
-| Inicio de sesión | `clearOtherUsersStorage(userId)`: borra las claves por usuario que no sean del usuario que entra (terminal compartida) | Las del propio usuario | `auth.service.ts:75-79`; `user-storage.ts:18-25` |
-| Cambio de usuario en `storeToken` | Reinicia el perfil de permisos en memoria | — | `auth.service.ts:147-152,162-165` |
+| Cierre de sesión explícito (menú del encabezado) o refresco fallido en el interceptor | Llama a `POST /auth/logout`; `clearUserStorage()` elimina las claves de `localStorage` con prefijos `sofia_menu_cache` (heredado) y `pos-nueva-venta-draft` (borradores del POS); `clearLocalSession()` quita `sofia_token`, los filtros de búsqueda en memoria y el perfil de permisos | Otras claves de `localStorage` como la zona horaria (`TimezoneService`) | `auth.service.ts:117-127,160-166`; `SPA/core/auth/user-storage.ts:1-6,13-15`; `SPA/matdash/layouts/full/vertical/header/header.component.ts:106` |
+| Sesión vencida sin cierre explícito (`authGuard`, 401 en `refresh` o `logout`) | Solo `clearLocalSession()` (token, filtros, perfil) | Borradores del POS: sobreviven a una sesión vencida | `auth.service.ts:160`; `auth.guard.ts:15` |
+| Inicio de sesión | `clearOtherUsersStorage(userId)`: borra las claves por usuario que no sean del usuario que entra (terminal compartida) | Las del propio usuario | `auth.service.ts:79-83`; `user-storage.ts:18-25` |
+| Cambio de usuario en `storeToken` | Reinicia el perfil de permisos en memoria | — | `auth.service.ts:153-158,168-171` |
 
 Los borradores del POS se guardan con clave `pos-nueva-venta-draft:{userId}` (más sufijo por venta), conservan solo identificadores (sin datos personales del cliente), caducan a las 12 horas y se descartan los borradores antiguos que traían datos personales (`SPA/pages/pos/nueva-venta/pos-draft.ts:1-2,36-46`; `user-storage.ts:3-10`). Las demás claves de `localStorage` que usa el SPA: `sofia_token`, la zona horaria (`SPA/core/services/shared/timezone.service.ts:12,17`) y los borradores del POS. No se usa `sessionStorage` ni IndexedDB (búsqueda en `src/`).
 
@@ -417,14 +437,15 @@ El detalle (cada endpoint, permiso y pantalla) está en [tecnico/seguridad/matri
 | Pieza | Comportamiento | Evidencia |
 |---|---|---|
 | Atributo | `[HasPermission("Módulo", "Acción")]` es un `AuthorizeAttribute` con política `PERMISSION:{Módulo}:{Acción}`; admite varios por método | `INF/Authentication/HasPermissionAttribute.cs:5-10` |
-| Proveedor de políticas | Crea la política al vuelo: exige usuario autenticado y un `PermissionRequirement(módulo, acción)`; no hay que registrar cada permiso | `INF/Authentication/PermissionPolicyProvider.cs:15-37` |
-| Handler | Toma los roles del token (claims de rol). Sin roles: no autoriza. Con el rol `Admin` (sin distinguir mayúsculas): **autoriza sin consultar permisos**. Si no hay `empresaId` válido: no autoriza. Para cada rol busca sus permisos (caché o base) y autoriza si alguno coincide en módulo y acción sin distinguir mayúsculas | `INF/Authentication/PermissionAuthorizationHandler.cs:17-56` |
-| Consulta de permisos | `PermisosRol` filtrados por nombre de rol; el filtro global de empresa aplica porque la consulta usa el contexto de la petición | `PermissionAuthorizationHandler.cs:58-79` |
+| Atributo del operador | `[HasPermissionOrPlataforma("Módulo", "Acción")]` (clase sellada que hereda de `AuthorizeAttribute`) fija la política `PERMISSION_OR_PLATFORM:{Módulo}:{Acción}`: pasa quien tenga el permiso o el operador de plataforma; hoy solo `Empresas:Leer` (3 endpoints). Los 6 endpoints de suscripción y de datos de pago del operador usan en cambio `[Authorize(Policy = "PLATAFORMA_ADMIN")]`, que exige el claim `plat_admin` y a la que el rol `Admin` **no** llega; cada handler vuelve a comprobar `currentUser.EsAdminPlataforma` y responde 403 `Auth.PlataformaAdminRequerido` (RN-GEN-042, RN-EMP-019 a RN-EMP-023) | `INF/Authentication/HasPermissionOrPlataformaAttribute.cs:6-11`; `APP/Security/PlataformaAdminPolicy.cs:5-14`; `INF/DependencyInjection.cs:163-165` |
+| Proveedor de políticas | Crea la política al vuelo: exige usuario autenticado y un `PermissionRequirement(módulo, acción, permitirOperador)`; no hay que registrar cada permiso. El prefijo `PERMISSION_OR_PLATFORM` activa `permitirOperador` | `INF/Authentication/PermissionPolicyProvider.cs:18-41` |
+| Handler | Si el requisito permite al operador y el token trae `plat_admin = "true"`, autoriza antes de mirar los roles (`PermissionAuthorizationHandler.cs:22-27`). Toma los roles del token (claims de rol). Sin roles: no autoriza. Con el rol `Admin` (sin distinguir mayúsculas): **autoriza sin consultar permisos**. Si no hay `empresaId` válido: no autoriza. Para cada rol busca sus permisos (caché o base) y autoriza si alguno coincide en módulo y acción sin distinguir mayúsculas | `INF/Authentication/PermissionAuthorizationHandler.cs:18-64` |
+| Consulta de permisos | `PermisosRol` filtrados por nombre de rol; el filtro global de empresa aplica porque la consulta usa el contexto de la petición | `PermissionAuthorizationHandler.cs:66-87` |
 | Caché | `IMemoryCache` del proceso, clave `permissions:{empresaId}:{ROL}` (mayúsculas), **5 minutos** | `INF/Authentication/MemoryPermissionCache.cs:9,20` |
 | Invalidación | Inmediata, **solo en la instancia que atiende** la petición, al asignar o revocar un permiso y al eliminar un rol. Asignar o quitar un rol a una cuenta no usa la caché de permisos: cambia el `SecurityStamp` de la cuenta | `APP/Common/Extensions/PermissionCacheExtensions.cs:8-15`; `AssignPermissionToRolCommandHandler.cs:50,62`; `RevokePermissionFromRolCommandHandler.cs:33`; `DeleteRolCommandHandler.cs:32` |
-| Política por defecto | Todo endpoint sin metadatos de autorización exige usuario autenticado (`FallbackPolicy`); los anónimos llevan `[AllowAnonymous]` | `INF/DependencyInjection.cs:148-151` |
-| Rol Admin | El nombre es la constante `Admin`; cada empresa recibe su propio rol `Admin` al registrarse. `ICurrentUser.IsInRole` usa la misma comparación, así que ambas capas coinciden | `DOM/Entities/Rol.cs:10,21`; `APP/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:115-116`; `API/Services/CurrentUser.cs:29-32` |
-| Protecciones en handlers | Nadie puede cambiarse sus propios roles (`Rol.AutoAsignacion`, 403); solo un Admin asigna o quita el rol Admin (`Rol.AdminReservado`); solo un Admin edita o elimina una cuenta Admin (`Cuenta.AdminProtegida`); quien no es Admin no amplía los permisos de un rol que él mismo tiene (`Rol.PermisosPropios`) | `AssignRolToUserCommandHandler.cs:22-39`; `RemoveRolFromUserCommandHandler.cs:72-87`; `UpdateCuentaCommandHandler.cs:121-125`; `AssignPermissionToRolCommandHandler.cs:26-29` |
+| Política por defecto | Todo endpoint sin metadatos de autorización exige usuario autenticado (`FallbackPolicy`); los anónimos llevan `[AllowAnonymous]` | `INF/DependencyInjection.cs:158-160` |
+| Rol Admin | El nombre es la constante `Admin`; cada empresa recibe su propio rol `Admin` al registrarse. `ICurrentUser.IsInRole` usa la misma comparación, así que ambas capas coinciden | `DOM/Entities/Rol.cs:10,21`; `APP/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:115-116`; `API/Services/CurrentUser.cs:33-36` |
+| Protecciones en handlers | Nadie puede cambiarse sus propios roles (`Rol.AutoAsignacion`, 403); solo un Admin asigna o quita el rol Admin (`Rol.AdminReservado`); solo un Admin edita o elimina una cuenta Admin (`Cuenta.AdminProtegida`); quien no es Admin no amplía los permisos de un rol que él mismo tiene (`Rol.PermisosPropios`) | `AssignRolToUserCommandHandler.cs:22-39`; `RemoveRolFromUserCommandHandler.cs:22-37`; `UpdateCuentaCommandHandler.cs:23-27`; `AssignPermissionToRolCommandHandler.cs:26-29` |
 
 Ventana de revocación: quitar un permiso a un rol tiene efecto inmediato en la instancia donde se hace y como máximo a los 5 minutos en otras instancias. Cambiar los roles de una cuenta corta su token en la siguiente petición (el SPA lo renueva solo vía el 401). Las reglas por ID son RN-GEN-020 a RN-GEN-022 y RN-ROL-010.
 
@@ -436,26 +457,26 @@ El SPA solo oculta o bloquea lo que la API ya rechaza: `permissionGuard`, `*appP
 
 ### 8.1 De dónde sale la empresa
 
-El `TenantId` de toda consulta y escritura sale del claim `empresaId` del token de acceso (`CurrentUser.EmpresaId`, `API/Services/CurrentUser.cs:22`), que a su vez se fijó al emitir el token con la empresa de la **cuenta** (`JwtProvider.cs:18-19,33-36`). Los comandos y consultas no leen la empresa de la petición: en `APP/` ningún handler asigna `TenantId` desde el cuerpo (búsqueda de `tenantId:` y de `TenantId` junto a `request.`/`command.`; solo aparecen los flujos de 8.3). La coherencia entre la cuenta y la sucursal base se exige al iniciar sesión y al renovar (`Cuenta.SucursalBasePerteneceAlTenant`, `DOM/Entities/Cuenta.cs:134-135`).
+El `TenantId` de toda consulta y escritura sale del claim `empresaId` del token de acceso (`CurrentUser.EmpresaId`, `API/Services/CurrentUser.cs:23`), que a su vez se fijó al emitir el token con la empresa de la **cuenta** (`JwtProvider.cs:18-19,33-36`). Los comandos y consultas no leen la empresa de la petición: en `APP/` ningún handler asigna `TenantId` desde el cuerpo (búsqueda de `tenantId:` y de `TenantId` junto a `request.`/`command.`; solo aparecen los flujos de 8.3). La coherencia entre la cuenta y la sucursal base se exige al iniciar sesión y al renovar (`Cuenta.SucursalBasePerteneceAlTenant`, `DOM/Entities/Cuenta.cs:138-139`).
 
 ### 8.2 Filtros globales
 
-`ApplicationDbContext.OnModelCreating` aplica a **toda entidad que hereda de `BaseEntity`** (salvo las de propiedad anidada) dos filtros con nombre (`INF/Persistence/ApplicationDbContext.cs:82-86,91-110`):
+`ApplicationDbContext.OnModelCreating` aplica a **toda entidad que hereda de `BaseEntity`** (salvo las de propiedad anidada) dos filtros con nombre (`INF/Persistence/ApplicationDbContext.cs:83-87,92-117`):
 
 | Filtro | Expresión | Línea |
 |---|---|---|
-| `SoftDelete` | `IsDeleted = false` | `ApplicationDbContext.cs:95-96` |
-| `Tenant` | `empresa del token` no nula **y** `TenantId` igual a ella; sin empresa en el contexto (anónimo, tarea de fondo) o con `TenantId` nulo no coincide ninguna fila | `ApplicationDbContext.cs:98-109`; nombres en `APP/Common/Models/QueryFilters.cs` |
+| `SoftDelete` | `IsDeleted = false` | `ApplicationDbContext.cs:96-97` |
+| `Tenant` | `empresa del token` no nula **y** `TenantId` igual a ella; sin empresa en el contexto (anónimo, tarea de fondo) o con `TenantId` nulo no coincide ninguna fila, **salvo** en las entidades `IGlobalReadEntity` (hoy solo `DigemidCatalogoProducto`): ahí las filas con `TenantId` nulo las ve toda empresa (`ApplicationDbContext.cs:109-113`, desde `9c16f35`) y ninguna puede modificarlas (403 `DigemidCatalogo.Global.SoloLectura`) | `ApplicationDbContext.cs:99-116`; nombres en `APP/Common/Models/QueryFilters.cs` |
 
 Entidades sin filtro porque no heredan de `BaseEntity`: las tres tablas de unión `CuentaRol`, `CuentaSucursal` y `RolSucursal` (`DOM/Entities/CuentaRol.cs`, `CuentaSucursal.cs`, `RolSucursal.cs`). Se consultan a través de las navegaciones de entidades que sí tienen filtro; `SucursalAccess` lo documenta y cruza el resultado con las sucursales filtradas (`APP/Common/Services/SucursalAccess.cs:48-53`).
 
 ### 8.3 Asignación del tenant al guardar
 
-Al insertar una entidad auditable que hereda de `BaseEntity`, `AssignTenant` escribe la empresa del token en `TenantId` **solo si la entidad no trae uno** (`??=`); sin empresa en el token no asigna nada (`ApplicationDbContext.cs:136-137,168-178`). Consecuencia: los flujos anónimos que crean datos deben fijar el `TenantId` ellos mismos (registro de empresa: `RegistrarEmpresaCommandHandler.cs:99-116` pasa `tenantId: empresa.Id`; restablecimiento de clave: `ResetPasswordCommandHandler.cs:40`), y las filas anónimas sin tenant (los `RefreshTokens`, `TenantId` nulo) son invisibles para el filtro, por eso sus handlers lo omiten explícitamente.
+Al insertar una entidad auditable que hereda de `BaseEntity`, `AssignTenant` escribe la empresa del token en `TenantId` **solo si la entidad no trae uno** (`??=`); sin empresa en el token no asigna nada (`ApplicationDbContext.cs:143-144,175-185`). Consecuencia: los flujos anónimos que crean datos deben fijar el `TenantId` ellos mismos (registro de empresa: `RegistrarEmpresaCommandHandler.cs:99-116` pasa `tenantId: empresa.Id`; restablecimiento de clave: `ResetPasswordCommandHandler.cs:40`), y las filas anónimas sin tenant (los `RefreshTokens`, `TenantId` nulo) son invisibles para el filtro, por eso sus handlers lo omiten explícitamente.
 
 ### 8.4 `IgnoreQueryFilters`: cada uso en el código
 
-Búsqueda en `SOFIA.API`, `SOFIA.Application` y `SOFIA.Infrastructure` (sin proyectos de prueba). Total: **18 usos**.
+Búsqueda en `SOFIA.API`, `SOFIA.Application` y `SOFIA.Infrastructure` (sin proyectos de prueba). Total: **26 usos** (los 8 nuevos, 19 a 26, son del operador de plataforma desde `6f6b837`).
 
 | # | Archivo:línea | Filtro omitido | Por qué |
 |---|---|---|---|
@@ -475,10 +496,18 @@ Búsqueda en `SOFIA.API`, `SOFIA.Application` y `SOFIA.Infrastructure` (sin proy
 | 14 | `RegistrarEmpresaCommandHandler.cs:41` | Tenant | Registro anónimo: el usuario es único entre empresas |
 | 15 | `APP/Empresas/Commands/UpdateEmpresa/UpdateEmpresaCommandHandler.cs:29` | Tenant | El RUC es único entre empresas (consulta de existencia, no devuelve datos) |
 | 16 | `APP/Security/Commands/Roles/AssignPermission/AssignPermissionToRolCommandHandler.cs:33` | SoftDelete | Ver permisos revocados para restaurarlos; el filtro de empresa sigue activo |
-| 17 | `APP/Security/EmpresaVigencia.cs:21` | Todos | Comprobar la vigencia de una empresa por su id aunque no sea la del contexto o esté eliminada |
+| 17 | `APP/Security/EmpresaVigencia.cs:26` | Todos | Comprobar la vigencia de una empresa por su id aunque no sea la del contexto o esté eliminada |
 | 18 | `INF/Services/OutboxProcessor.cs:43` | Tenant | Tarea de fondo sin empresa: procesa los eventos de todas las empresas |
+| 19 | `APP/Empresas/Common/EmpresaPlataformaExtensions.cs:17` | Tenant | `EmpresasVisibles`: si el usuario es operador de plataforma, el listado y el detalle de empresas ven todas las empresas (`GetEmpresasQueryHandler`, `GetEmpresaByIdQueryHandler`) |
+| 20 | `APP/Empresas/Commands/ActivarSuscripcionEmpresa/ActivarSuscripcionEmpresaCommandHandler.cs:22` | Tenant | El operador activa la suscripción de cualquier empresa; antes comprueba `EsAdminPlataforma` (`:16`) |
+| 21 | `APP/Empresas/Commands/ExtenderPruebaEmpresa/ExtenderPruebaEmpresaCommandHandler.cs:22` | Tenant | Ídem, extender la prueba |
+| 22 | `APP/Empresas/Commands/SuspenderEmpresa/SuspenderEmpresaCommandHandler.cs:29` | Tenant | Ídem, suspender; no permite la propia empresa (`:23`) |
+| 23 | `APP/Empresas/Commands/CancelarEmpresa/CancelarEmpresaCommandHandler.cs:29` | Tenant | Ídem, cancelar; no permite la propia empresa (`:23`) |
+| 24 | `APP/Plataforma/Commands/GuardarConfiguracionPago/GuardarConfiguracionPagoCommandHandler.cs:23` | Tenant | La configuración de pago es una sola fila para todas las empresas; solo la guarda el operador (`:17`) |
+| 25 | `APP/Plataforma/Queries/GetConfiguracionPago/GetConfiguracionPagoQueryHandler.cs:16` | Tenant | La lee cualquiera, también una empresa bloqueada sin sesión (anónimo); la fila no pertenece a ninguna empresa en la práctica |
+| 26 | `APP/Plataforma/Queries/GetDashboardPlataforma/GetDashboardPlataformaQueryHandler.cs:32` | Tenant | Cifras de todas las empresas para el operador; antes comprueba `EsAdminPlataforma` (`:22`) |
 
-Los usos 1–15 y 18 omiten solo el filtro de empresa; el 16 solo el de borrado lógico; el 17 ambos (`IgnoreQueryFilters()` sin argumentos). Ninguno lee datos de negocio de otra empresa: los accesos a cuentas, tokens y vigencia filtran siempre por un identificador del propio llamante o devuelven un booleano.
+Los usos 1–15 y 18 a 26 omiten solo el filtro de empresa; el 16 solo el de borrado lógico; el 17 ambos (`IgnoreQueryFilters()` sin argumentos). Hasta `9c16f35` ninguno leía datos de negocio de otra empresa: los accesos a cuentas, tokens y vigencia filtran siempre por un identificador del propio llamante o devuelven un booleano. **Desde `6f6b837` los usos 19 a 24 y 26 sí leen o modifican filas de otras empresas** (la fila de la empresa, su estado y vencimiento, o la configuración de pago compartida), y solo los alcanza quien lleva el claim `plat_admin` (política `PLATAFORMA_ADMIN`; `[HasPermissionOrPlataforma]` en la lectura), con la comprobación repetida en el handler (RN-GEN-042, RN-EMP-019 a RN-EMP-025).
 
 ### 8.5 Índices únicos por empresa
 
@@ -488,10 +517,10 @@ El script `0020_SoftDeleteAware_Uniques_And_Checks.sql` recrea **18** índices �
 
 | # | Riesgo | Evidencia | Estado |
 |---|---|---|---|
-| 1 | Una entidad insertada con un `TenantId` explícito distinto del del token se guarda con ese valor (`??=`). Hoy los únicos que lo fijan a mano son los flujos anónimos citados en 8.3; cualquier handler nuevo que copie un `TenantId` desde la petición rompería el aislamiento | `ApplicationDbContext.cs:176-177` | Riesgo de diseño; no se encontró un handler autenticado que lo haga (búsqueda en `APP/` de `tenantId:`; solo el registro de empresa y el restablecimiento de clave) |
+| 1 | Una entidad insertada con un `TenantId` explícito distinto del del token se guarda con ese valor (`??=`). Hoy los únicos que lo fijan a mano son los flujos anónimos citados en 8.3; cualquier handler nuevo que copie un `TenantId` desde la petición rompería el aislamiento | `ApplicationDbContext.cs:183-184` | Riesgo de diseño; no se encontró un handler autenticado que lo haga (búsqueda en `APP/` de `tenantId:`; solo el registro de empresa y el restablecimiento de clave) |
 | 2 | Las tablas de unión `CuentaRol`, `CuentaSucursal` y `RolSucursal` no tienen filtro de empresa | 8.2 | Mitigado: se consultan por navegación o se cruzan con entidades filtradas |
-| 3 | El único SQL crudo es el incremento del correlativo de series: se ejecuta por `serieId` sin filtro de empresa | `ApplicationDbContext.cs:180-188` | El id proviene de series cargadas antes con el filtro activo (`VentaComprobanteGenerator.cs`, `ProcesarDevolucionCommandHandler.cs`); no se verificó cada llamada |
-| 4 | Cachés compartidas entre empresas | `MemoryPermissionCache.cs:20` (clave con empresa); `DependencyInjection.cs:121` (clave con empresa) | Sin riesgo: ambas claves incluyen la empresa |
+| 3 | El único SQL crudo es el incremento del correlativo de series: se ejecuta por `serieId` sin filtro de empresa | `ApplicationDbContext.cs:187-195` | El id proviene de series cargadas antes con el filtro activo (`VentaComprobanteGenerator.cs`, `ProcesarDevolucionCommandHandler.cs`); no se verificó cada llamada |
+| 4 | Cachés compartidas entre empresas | `MemoryPermissionCache.cs:20` (clave con empresa); `DependencyInjection.cs:128` (clave con empresa) | Sin riesgo: ambas claves incluyen la empresa |
 | 5 | Unicidad global del usuario permite saber (por el error 409 de alta) que un nombre de usuario existe en otra empresa | `RegisterAccountCommandHandler.cs:22-25,37-40` | Fuga de información acotada a quien tiene `Seguridad:Crear` o al registro público |
 
 ---
@@ -502,7 +531,7 @@ El script `0020_SoftDeleteAware_Uniques_And_Checks.sql` recrea **18** índices �
 
 | Criterio | Dónde está | Evidencia |
 |---|---|---|
-| Sucursal base | Claim `sucursalId` del token (sucursal base del empleado al emitirlo) | `JwtProvider.cs:20,29`; `API/Services/CurrentUser.cs:20`; `APP/Common/Extensions/CurrentUserExtensions.cs:8-21` |
+| Sucursal base | Claim `sucursalId` del token (sucursal base del empleado al emitirlo) | `JwtProvider.cs:20,29`; `API/Services/CurrentUser.cs:21`; `APP/Common/Extensions/CurrentUserExtensions.cs:8-21` |
 | Sucursales permitidas | `SucursalAccess`: Admin → `null` (sin restricción); resto → unión de la sucursal base, las sucursales asignadas a la cuenta (`CuentaSucursal`) y las de sus roles (`RolSucursal`), cruzada con las sucursales vivas de la empresa; sin autenticación → conjunto vacío. Se calcula una vez por petición (servicio `Scoped`) | `APP/Common/Services/SucursalAccess.cs:12-56`; registro en `APP/DependencyInjection.cs:22`; filtro `WhereSucursalIn` en `APP/Common/Extensions/QueryableExtensions.cs:41-56` |
 | Quién administra las asignaciones | `Seguridad:Actualizar` (cuenta) y `Seguridad:GestionarPermisos` (rol); ver [`tecnico/seguridad/matriz-de-permisos`](matriz-de-permisos.md) | `AssignSucursalToCuentaCommandHandler.cs`, `SetRolSucursalesCommandHandler.cs` |
 
@@ -579,11 +608,11 @@ Los eventos de seguridad los produce `AuditBehavior` para todo comando que imple
 
 ### 10.2 Quién puede consultar los eventos
 
-**Nadie, por la API ni por el SPA.** No existe endpoint ni query que lea `Auditoria_Eventos_Seguridad`: en `SOFIA.API`, `SOFIA.Application` y `SOFIA.Infrastructure` la propiedad `AuditoriasEventosSeguridad` solo se usa para insertar (`AuditBehavior.cs:44`, `ResetPasswordCommandHandler.cs:43`). El único endpoint del controlador `Auditoria` es `POST api/v1/Auditoria/anonimizar` (`[HasPermission("Auditoria","AnonimizarDatos")]`), que **no está implementado**: siempre responde 501 `Auditoria.Anonimizacion.NoImplementada` sin tocar datos, para no confirmar falsamente una solicitud de titular de datos (Ley 29733) (`API/Controllers/AuditoriaController.cs:11-17`; `APP/Auditoria/Commands/AnonimizarDatos/AnonimizarDatosCommandHandler.cs:17-22`). No hay pantalla de auditoría. La consulta solo es posible leyendo la base directamente.
+**Nadie, por la API ni por el SPA.** No existe endpoint ni query que lea `Auditoria_Eventos_Seguridad`: en `SOFIA.API`, `SOFIA.Application` y `SOFIA.Infrastructure` la propiedad `AuditoriasEventosSeguridad` solo se usa para insertar (`AuditBehavior.cs:44`, `ResetPasswordCommandHandler.cs:43`). El único endpoint del controlador `Auditoria` es `POST api/v1/Auditoria/anonimizar` (`[HasPermission("Auditoria","AnonimizarDatos")]`), que **no está implementado**: siempre responde 501 `Auditoria.Anonimizacion.NoImplementada` sin tocar datos, para no confirmar falsamente una solicitud de titular de datos (Ley 29733) (`API/Controllers/AuditoriaController.cs:11-17`; `APP/Auditoria/Commands/AnonimizarDatos/AnonimizarDatosCommandHandler.cs:8-13`). No hay pantalla de auditoría. La consulta solo es posible leyendo la base directamente.
 
 ### 10.3 Retención
 
-No hay política de retención ni purga de los eventos de auditoría en el código: el único servicio en segundo plano es `OutboxProcessor`, que procesa la bandeja de eventos de dominio y no toca la auditoría (`INF/DependencyInjection.cs:139`; `INF/Services/OutboxProcessor.cs`). La tabla es de solo inserción desde la aplicación; el borrado lógico existe en la columna `IsDeleted` heredada, pero ningún código lo usa para estas filas. La retención de los **logs** de archivo es de 30 archivos diarios de hasta 50 MB (`API/Program.cs:24-29`).
+No hay política de retención ni purga de los eventos de auditoría en el código: el único servicio en segundo plano es `OutboxProcessor`, que procesa la bandeja de eventos de dominio y no toca la auditoría (`INF/DependencyInjection.cs:146`; `INF/Services/OutboxProcessor.cs`). La tabla es de solo inserción desde la aplicación; el borrado lógico existe en la columna `IsDeleted` heredada, pero ningún código lo usa para estas filas. La retención de los **logs** de archivo es de 30 archivos diarios de hasta 50 MB (`API/Program.cs:24-29`).
 
 ---
 
@@ -623,18 +652,19 @@ El archivo `appsettings.json` base no define `AllowedOrigins`; debe venir de la 
 
 ### 11.4 HTTPS e IP del cliente
 
-`UseHttpsRedirection` siempre activo (`Program.cs:125`). La IP real solo se toma de `X-Forwarded-For` y `X-Forwarded-Proto` si la petición viene de un proxy listado en `ForwardedHeaders:KnownProxies`; sin proxies configurados se ignoran las cabeceras reenviadas (`Program.cs:79-95,114`). Importante para el límite de peticiones y la auditoría: tras un proxy no listado, todas las peticiones comparten la IP del proxy y los límites por IP se aplican al conjunto (`RateLimitingExtensions.cs:52-53`). La cookie `Secure` exige HTTPS de extremo a extremo hacia el navegador.
+`UseHttpsRedirection` siempre activo (`Program.cs:125`). La IP real solo se toma de `X-Forwarded-For` y `X-Forwarded-Proto` si la petición viene de un proxy listado en `ForwardedHeaders:KnownProxies`; sin proxies configurados se ignoran las cabeceras reenviadas (`Program.cs:79-95,114`). Importante para el límite de peticiones y la auditoría: tras un proxy no listado, todas las peticiones comparten la IP del proxy y los límites por IP se aplican al conjunto (`RateLimitingExtensions.cs:61-62`). La cookie `Secure` exige HTTPS de extremo a extremo hacia el navegador.
 
 ### 11.5 Límites de peticiones
 
-`UseRateLimiter` va después de la autorización (`Program.cs:132`); un `GlobalLimiter` aplica a todo y las políticas con nombre se suman en los endpoints marcados (`API/Extensions/RateLimitingExtensions.cs:12-50`). Respuesta al excederlos: 429 sin cuerpo de error propio (`:14`).
+`UseRateLimiter` va después de la autorización (`Program.cs:132`); un `GlobalLimiter` aplica a todo y las políticas con nombre se suman en los endpoints marcados (`API/Extensions/RateLimitingExtensions.cs:13-59`). Respuesta al excederlos: 429 sin cuerpo de error propio (`:15`).
 
 | Política | Límite | Partición | Cola | Endpoints | Evidencia |
 |---|---|---|---|---|---|
-| Global | 200 por minuto (ventana fija) | IP | 10 (más antiguo primero) | Todos | `RateLimitingExtensions.cs:17-24` |
-| `auth` | 10 por minuto | IP | 0 | `POST auth/login`, `POST auth/change-password`, `POST auth/forgot-password`, `POST auth/reset-password` | `:26-32`; `AuthController.cs:19,85,105,114` |
-| `signup` | 5 por hora | IP | 0 | `POST empresas/registrar` | `:34-40`; `EmpresasController.cs:20` |
-| `ai-endpoints` | 10 por minuto | Empresa del token (o IP si no hay) | 2 | `POST recetas/analizar` | `:42-49,55-58`; `RecetasController.cs:49` |
+| Global | 200 por minuto (ventana fija) | IP | 10 (más antiguo primero) | Todos | `RateLimitingExtensions.cs:18-25` |
+| `auth` | 10 por minuto | IP | 0 | `POST auth/login`, `POST auth/change-password`, `POST auth/forgot-password`, `POST auth/reset-password` | `:27-33`; `AuthController.cs:19,85,105,114` |
+| `signup` | 5 por hora | IP | 0 | `POST empresas/registrar` | `:35-41`; `EmpresasController.cs:25` |
+| `public-info` | 30 por minuto | IP | 0 | `GET plataforma/pago` (anónimo; devuelve una imagen incrustada) | `RateLimitingExtensions.cs:11,43-49`; `PlataformaController.cs:20` (RN-GEN-043) |
+| `ai-endpoints` | 10 por minuto | Empresa del token (o IP si no hay) | 2 | `POST recetas/analizar` | `:51-58,64-67`; `RecetasController.cs:49` |
 
 `refresh` y `logout` solo tienen el límite global.
 
@@ -672,12 +702,12 @@ Es una defensa de salida/almacenamiento; la protección contra inyección SQL no
 |---|---|---|
 | `Jwt:SecretKey`, `Issuer`, `Audience` | Obligatorias; la clave de al menos 32 bytes | `INF/Authentication/JwtOptions.cs:15-31`; `INF/DependencyInjection.cs:54-57` |
 | `AllowedOrigins` | Obligatoria fuera de Desarrollo | `API/Program.cs:53-56` |
-| `Email:*` | `EnsureValid`; sin proveedor solo en Desarrollo y Pruebas | `INF/DependencyInjection.cs:157-167` |
-| `App:FrontendBaseUrl` | URL absoluta `https` (`http` solo en Desarrollo y Pruebas) | `INF/Email/AppOptions.cs:9-19` |
-| `PresidioApi:BaseUrl` | Obligatoria al resolver el cliente HTTP | `INF/DependencyInjection.cs:188-191` |
+| `Email:*` | `EnsureValid`; sin proveedor solo en Desarrollo y Pruebas | `INF/DependencyInjection.cs:172-182` |
+| `App:FrontendBaseUrl` | URL absoluta `https` (`http` solo en Desarrollo y Pruebas) | `INF/Email/AppOptions.cs:9-16` |
+| `PresidioApi:BaseUrl` | Obligatoria al resolver el cliente HTTP | `INF/DependencyInjection.cs:203-206` |
 | `ForwardedHeaders:KnownProxies` | Debe contener IP válidas (`IPAddress.Parse`) | `API/Program.cs:81-95` |
 | `ConnectionStrings:DefaultConnection` | No se valida explícitamente en el código (el valor del repositorio está vacío) | `INF/DependencyInjection.cs:32` |
-| `GeminiApi:ApiKey` | No se valida al arrancar (el valor del repositorio está vacío) | `INF/DependencyInjection.cs:143` |
+| `GeminiApi:ApiKey` | No se valida al arrancar (el valor del repositorio está vacío) | `INF/DependencyInjection.cs:150` |
 
 ---
 
@@ -738,7 +768,7 @@ No se encontraron registros que escriban documentos de identidad, nombres de pac
 | Clave compartida con Presidio | `PresidioApi:InternalKey` | `PRESIDIO_INTERNAL_KEY` | no está en los `appsettings` |
 | Correo (SMTP y Azure) | `Email:*`, `App:FrontendBaseUrl` | `EMAIL_*`, `APP_FRONTEND_BASE_URL` | no está en los `appsettings` |
 
-Evidencia: `INF/DependencyInjection.cs:52-57,142,188-198`; `sofia-apis/.env.example`; `sofia-apis/docker-compose.yml:45-50`. Reglas del repositorio contra fugas: `.gitignore` excluye `.env`, existe `.gitleaksignore` (con un caso de fixture de prueba) y el flujo `security.yml` ejecuta un escaneo de secretos con gitleaks sobre el historial completo (`sofia-apis/.github/workflows/security.yml:110-118`). El valor de `Jwt:Issuer`, `Jwt:Audience` (y `ExpiryMinutes=15` del compose local, `docker-compose.yml:48-50`) no son secretos. La guía completa de configuración está en [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md) y [desarrollo/despliegue-y-operacion.md](../../desarrollo/despliegue-y-operacion.md).
+Evidencia: `INF/DependencyInjection.cs:52-57,149,203-213`; `sofia-apis/.env.example`; `sofia-apis/docker-compose.yml:45-50`. Reglas del repositorio contra fugas: `.gitignore` excluye `.env`, existe `.gitleaksignore` (con un caso de fixture de prueba) y el flujo `security.yml` ejecuta un escaneo de secretos con gitleaks sobre el historial completo (`sofia-apis/.github/workflows/security.yml:110-118`). El valor de `Jwt:Issuer`, `Jwt:Audience` (y `ExpiryMinutes=15` del compose local, `docker-compose.yml:48-50`) no son secretos. La guía completa de configuración está en [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md) y [desarrollo/despliegue-y-operacion.md](../../desarrollo/despliegue-y-operacion.md).
 
 ### 12.5 Datos que salen a servicios externos
 
@@ -764,20 +794,20 @@ Solo se listan brechas que se pueden sustentar con código. «Brecha» significa
 
 | Controles implementados | Evidencia |
 |---|---|
-| Denegación por defecto: todo endpoint sin metadatos exige usuario autenticado; solo 7 endpoints son anónimos (login, refresh, logout, forgot-password, reset-password, registrar empresa, health) y 3 exigen solo estar autenticado (`auth/me`, `auth/change-password`, `sucursales/permitidas`) | `INF/DependencyInjection.cs:148-151`; [`tecnico/seguridad/matriz-de-permisos`](matriz-de-permisos.md) |
+| Denegación por defecto: todo endpoint sin metadatos exige usuario autenticado; solo 8 endpoints son anónimos (login, refresh, logout, forgot-password, reset-password, registrar empresa, `GET plataforma/pago` y health), 3 exigen solo estar autenticado (`auth/me`, `auth/change-password`, `sucursales/permitidas`) y 6 exigen la política `PLATAFORMA_ADMIN` (suscripciones y datos de pago del operador) | `INF/DependencyInjection.cs:158-160`; [`tecnico/seguridad/matriz-de-permisos`](matriz-de-permisos.md) |
 | Permiso por endpoint con `[HasPermission]`, comprobado contra la base en cada petición (con caché de 5 min) | apartado 7 |
 | Aislamiento por empresa con filtro global en toda entidad `BaseEntity` | apartado 8.2 |
 | Acceso por sucursal con `SucursalAccess` | apartado 9 |
-| Sin autopromoción: nadie cambia sus roles, solo Admin toca el rol Admin y las cuentas Admin, no se amplía un rol propio | `AssignRolToUserCommandHandler.cs:22-39`; `UpdateCuentaCommandHandler.cs:121-125`; `AssignPermissionToRolCommandHandler.cs:26-29` |
+| Sin autopromoción: nadie cambia sus roles, solo Admin toca el rol Admin y las cuentas Admin, no se amplía un rol propio | `AssignRolToUserCommandHandler.cs:22-39`; `UpdateCuentaCommandHandler.cs:23-27`; `AssignPermissionToRolCommandHandler.cs:26-29` |
 | Revocación inmediata de tokens vivos ante cambio de rol o de clave (`SecurityStamp`) | apartado 2.4 |
-| Rutas del SPA protegidas por `authGuard`, `passwordChangeGuard` y `permissionGuard` (la API vuelve a validar) | `SPA/app.routes.ts:35-37` |
+| Rutas del SPA protegidas por `authGuard`, `passwordChangeGuard` y `permissionGuard` (la API vuelve a validar) | `SPA/app.routes.ts:36-38` |
 
 | Brechas verificadas | Evidencia |
 |---|---|
 | B-01. La revocación de un permiso a un rol tarda hasta 5 minutos en otras instancias de la API (la invalidación es local al proceso). | `MemoryPermissionCache.cs:8-9` |
-| B-02. Una empresa suspendida sigue operando hasta 1 minuto por instancia con tokens vivos. | `INF/DependencyInjection.cs:26,119-125` |
+| B-02. Una empresa suspendida sigue operando hasta 1 minuto por instancia con tokens vivos. | `INF/DependencyInjection.cs:26,126-132` |
 | B-03. Las operaciones de ventas, caja, devoluciones, transferencias y magistrales actúan solo sobre la sucursal base del token, incluso para Admin, mientras los listados usan el conjunto de sucursales permitidas: dos criterios conviven. No es fuga entre empresas. | apartado 9.3 |
-| B-04. `AssignTenant` respeta un `TenantId` explícito; un handler futuro que lo copie de la petición rompería el aislamiento. Hoy ningún handler autenticado lo hace. | `ApplicationDbContext.cs:176-177`; apartado 8.6 |
+| B-04. `AssignTenant` respeta un `TenantId` explícito; un handler futuro que lo copie de la petición rompería el aislamiento. Hoy ningún handler autenticado lo hace. | `ApplicationDbContext.cs:183-184`; apartado 8.6 |
 
 Documentos: [`tecnico/seguridad/matriz-de-permisos`](matriz-de-permisos.md), [`negocio/reglas/administracion-y-seguridad`](../../negocio/reglas/administracion-y-seguridad.md) (RN-GEN-015 a RN-GEN-024, RN-ROL-010, RN-CTA-010).
 
@@ -786,7 +816,7 @@ Documentos: [`tecnico/seguridad/matriz-de-permisos`](matriz-de-permisos.md), [`n
 | Controles implementados | Evidencia |
 |---|---|
 | Contraseñas con BCrypt «enhanced» | `PasswordHasher.cs:7-10` |
-| Tokens de refresco y de recuperación: 32 bytes del generador criptográfico y solo su hash SHA-256 en base; comparación del token de recuperación en tiempo constante | `TokenHasher.cs:9-23`; `Cuenta.cs:111-118` |
+| Tokens de refresco y de recuperación: 32 bytes del generador criptográfico y solo su hash SHA-256 en base; comparación del token de recuperación en tiempo constante | `TokenHasher.cs:9-23`; `Cuenta.cs:115-122` |
 | JWT firmado con HS256 con algoritmo fijado y clave mínima de 32 bytes | `DependencyInjection.cs:71`; `JwtOptions.cs:8,22-25` |
 | HTTPS obligatorio, HSTS 365 días con subdominios, cookie de refresco `Secure` | `Program.cs:31-36,120-125`; `RefreshTokenCookieExtensions.cs:18` |
 | Secretos fuera del repositorio (valores vacíos en `appsettings`) y escaneo con gitleaks en CI | apartado 12.4 |
@@ -794,7 +824,7 @@ Documentos: [`tecnico/seguridad/matriz-de-permisos`](matriz-de-permisos.md), [`n
 | Brechas verificadas | Evidencia |
 |---|---|
 | B-05. Los datos personales y de salud (pacientes, recetas, empleados, direcciones) se guardan sin cifrado de columnas. | apartado 12.2 |
-| B-06. El JWT usa una sola clave simétrica compartida, sin identificador de clave (`kid`) ni mecanismo de rotación en el código. | `JwtProvider.cs:49-60` |
+| B-06. El JWT usa una sola clave simétrica compartida, sin identificador de clave (`kid`) ni mecanismo de rotación en el código. | `JwtProvider.cs:54-65` |
 | B-07. El factor de coste de BCrypt no se fija en el código (se usa el de la librería). | `PasswordHasher.cs:7` |
 
 Documentos: este apartado 1, 5 y 12.
@@ -803,7 +833,7 @@ Documentos: este apartado 1, 5 y 12.
 
 | Controles implementados | Evidencia |
 |---|---|
-| Acceso a datos con EF Core (consultas parametrizadas); el único SQL crudo es `UPDATE … OUTPUT` con interpolación convertida en parámetro por `SqlQuery` | `ApplicationDbContext.cs:180-188` |
+| Acceso a datos con EF Core (consultas parametrizadas); el único SQL crudo es `UPDATE … OUTPUT` con interpolación convertida en parámetro por `SqlQuery` | `ApplicationDbContext.cs:187-195` |
 | Saneamiento de HTML en todas las propiedades de texto de primer nivel de los requests | apartado 11.7 |
 | Validación de todos los comandos con FluentValidation antes del handler | `ValidationBehavior.cs:12-47` |
 | El pipe del SPA que usa `bypassSecurityTrustHtml` escapa antes `& < > " '` y no tiene usos en plantillas | `SPA/shared/pipes/line-break-to-br.pipe.ts:13-31` (búsqueda de `lineBreakToBr` en `.html`: sin resultados) |
@@ -826,11 +856,11 @@ Documentos: [tecnico/carga-masiva-y-exportacion.md](../carga-masiva-y-exportacio
 | Respuestas uniformes y tiempo parejo en login, recuperación y restablecimiento | apartados 1.1 y 5.3 |
 | Cierre de sesión que revoca todas las sesiones | apartado 3.1 |
 | Presidio falla cerrado (si no puede anonimizar, el análisis no continúa) | [`tecnico/integraciones`](../integraciones.md) apartado 3.5 |
-| Registro público de empresas con límite de 5 por hora por IP | `RateLimitingExtensions.cs:34-40` |
+| Registro público de empresas con límite de 5 por hora por IP | `RateLimitingExtensions.cs:35-41` |
 
 | Brechas verificadas | Evidencia |
 |---|---|
-| B-33. El bloqueo es por cuenta: cualquiera que conozca un nombre de usuario puede mantener esa cuenta bloqueada repitiendo cinco fallos cada 15 minutos (el límite por IP es de 10 por minuto). | `Cuenta.cs:77-90`; `RateLimitingExtensions.cs:26-32` |
+| B-33. El bloqueo es por cuenta: cualquiera que conozca un nombre de usuario puede mantener esa cuenta bloqueada repitiendo cinco fallos cada 15 minutos (el límite por IP es de 10 por minuto). | `Cuenta.cs:81-94`; `RateLimitingExtensions.cs:27-33` |
 | B-10. No hay segundo factor de autenticación. | apartado 1.7 |
 | B-11. La imagen completa de la receta sale hacia Google sin anonimizar; Presidio solo protege la segunda llamada. | [`tecnico/integraciones`](../integraciones.md) apartado 2.3 |
 | B-12. La solicitud de derechos del titular de datos (anonimización) no está implementada: el endpoint responde 501. | apartado 10.2 |
@@ -887,7 +917,7 @@ Los resultados reales del análisis de dependencias no se revisaron (ver «No ve
 
 | Brechas verificadas | Evidencia |
 |---|---|
-| B-21. El registro público de empresas responde distinto si el usuario o el RUC ya existen (409 `Auth.DuplicateUsername` y 409 `Empresa.RUC.Duplicado`) sin autenticación: permite averiguar si un usuario o RUC existe, con el límite de 5 solicitudes por hora por IP. | `RegistrarEmpresaCommandHandler.cs:32-46`; `RateLimitingExtensions.cs:34-40` |
+| B-21. El registro público de empresas responde distinto si el usuario o el RUC ya existen (409 `Auth.DuplicateUsername` y 409 `Empresa.RUC.Duplicado`) sin autenticación: permite averiguar si un usuario o RUC existe, con el límite de 5 solicitudes por hora por IP. | `RegistrarEmpresaCommandHandler.cs:32-46`; `RateLimitingExtensions.cs:35-41` |
 | B-22. La política de contraseñas es solo longitud mínima de 8; sin complejidad, sin lista de contraseñas comunes, sin historial y sin longitud máxima en la API. | apartado 4.1 |
 | B-23. En `forgot-password` la respuesta es idéntica, pero el camino con cuenta válida hace escritura en base y envío de correo antes de responder; no se midió si el tiempo es distinguible. | `ForgotPasswordCommandHandler.cs:18-41` |
 | B-24. El inicio de sesión no limita ni revoca las sesiones previas de la cuenta. | `LoginCommandHandler.cs:75-83` |
@@ -936,7 +966,7 @@ Documentos: apartado 10, [`negocio/reglas/administracion-y-seguridad`](../../neg
 
 | Controles implementados | Evidencia |
 |---|---|
-| Las únicas salidas HTTP del backend son a Gemini y a Presidio, con direcciones fijadas por configuración (`GeminiApi:BaseUrl`, `PresidioApi:BaseUrl`); ningún endpoint recibe una URL del usuario para consultarla | `INF/DependencyInjection.cs:142-143,188-191`; búsqueda de `HttpClient` en `src/`: solo `GeminiRecetaAnalyzer` y `PresidioPrivacyService` |
+| Las únicas salidas HTTP del backend son a Gemini y a Presidio, con direcciones fijadas por configuración (`GeminiApi:BaseUrl`, `PresidioApi:BaseUrl`); ningún endpoint recibe una URL del usuario para consultarla | `INF/DependencyInjection.cs:149-150,203-206`; búsqueda de `HttpClient` en `src/`: solo `GeminiRecetaAnalyzer` y `PresidioPrivacyService` |
 | El correo de recuperación se envía al correo guardado del empleado, no a uno indicado en la solicitud | `ForgotPasswordCommandHandler.cs:24,31` |
 
 | Brechas verificadas | Evidencia |
@@ -957,6 +987,7 @@ Documentos: apartado 10, [`negocio/reglas/administracion-y-seguridad`](../../neg
 | P-04 | Decisión sobre cifrado de columnas con datos personales y de salud (B-05). |
 | P-05 | Decisión sobre anonimizar la imagen de la receta antes de enviarla a Gemini (B-11). |
 | P-06 | Unificar la respuesta del registro público ante usuario o RUC repetidos (B-21) y decidir el tratamiento del bloqueo por cuenta (B-33). |
+| P-07 | La marca de operador de plataforma solo se asigna en la base de datos; ninguna pantalla ni comando la gestiona ni la audita (RN-CTA-021). `GET plataforma/pago` es público por diseño y entrega el QR de pago a cualquiera sin sesión (RN-EMP-025). |
 
 Los demás B-xx de la tabla de OWASP son observaciones de diseño; no se decidió su prioridad.
 
@@ -978,10 +1009,12 @@ Los demás B-xx de la tabla de OWASP son observaciones de diseño; no se decidi�
 | NV-12 | Que no existan otros handlers con filtro de sucursal propio fuera de las búsquedas del apartado 9 | Solo se buscó `ISucursalAccess`, `GetSucursalId()` y `currentUser.SucursalId` |
 | NV-13 | Que cada llamada a `IncrementarCorrelativoSunatAsync` reciba un id de serie cargado con filtros activos | Se revisaron los dos llamadores principales por nombre, no línea a línea |
 | NV-14 | Otras columnas con datos personales (proveedores, aseguradoras, ventas) | El modelo de datos completo está en la carpeta `tecnico/modelo-de-datos`; aquí se listaron las tablas con datos personales más claros |
+| NV-15 | Que una cuenta concreta esté marcada como operador de plataforma en una base real, y cómo se asigna en producción | Se lee solo del código y del script `0029`; no se consultó ninguna base ni se ejecutó la aplicación |
+| NV-16 | Respuestas reales de los 7 endpoints nuevos (`PlataformaController`, suscripciones de `EmpresasController`) | No se llamó a la API; códigos HTTP leídos de los handlers |
 
 ### En curso (sin commitear)
 
-Ninguno: `git status --short` estaba vacío en `sofia-apis` y `sofia-web-spa` al iniciar, y ambos commits coinciden con la línea base (`43f5529` y `eeffbb6`).
+Ninguno. Al revisar la versión 1.1 los dos repositorios tenían cambios locales de otra tarea; ninguna afirmación de este documento se apoya en ellos (se leyó de `6f6b837` y `558ad35`).
 
 ---
 
@@ -1029,8 +1062,8 @@ Ninguno: `git status --short` estaba vacío en `sofia-apis` y `sofia-web-spa` al
 | `UseHsts` / `UseHttpsRedirection` | 11.2; 11.4 |
 | CORS (`SofiaCorsPolicy`) | 11.3 |
 | `UseAuthentication` (JwtBearer, `OnTokenValidated`) | 1.3; 2.4 |
-| `UseAuthorization` (`PermissionPolicyProvider`, `PermissionAuthorizationHandler`, `FallbackPolicy`) | 7 |
-| `UseRateLimiter` (global, `auth`, `signup`, `ai-endpoints`) | 11.5 |
+| `UseAuthorization` (`PermissionPolicyProvider`, `PermissionAuthorizationHandler`, `FallbackPolicy`, `HasPermissionOrPlataforma`, política `PLATAFORMA_ADMIN`) | 7 |
+| `UseRateLimiter` (global, `auth`, `signup`, `public-info`, `ai-endpoints`) | 11.5 |
 | `SanitizationBehavior` | 11.7 |
 | `ValidationBehavior`, `TransactionBehavior` | 11.7; [`negocio/reglas/administracion-y-seguridad`](../../negocio/reglas/administracion-y-seguridad.md) RN-GEN-011 y RN-GEN-012 |
 | `AuditBehavior` | 10.1 |
