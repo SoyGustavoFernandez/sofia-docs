@@ -3,11 +3,21 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-08 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9dd1705` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `063817c` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-14 |
+| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
 | **Método** | Lectura de código (controladores, validadores, entidades, handlers, configuraciones EF, scripts DbUp, componentes Angular y archivos `es.json`). No se ejecutó la aplicación ni se llamó a la API. |
+
+## Historial de cambios
+
+### Versión 1.1 (2026-11-14)
+
+Reconciliación con `sofia-apis` `6f6b837` y `sofia-web-spa` `558ad35`. Ninguna regla de lotes, stock o recetas cambia.
+
+| Apartado o ID | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| RN-STK-011 | `I18N/es.json:158`. | `:160` (el archivo ganó dos claves de menú). | `558ad35` |
 
 ## 1. Alcance y convenciones
 
@@ -113,7 +123,7 @@ El stock por sucursal guarda cuántas unidades físicas hay de cada lote en cada
 | RN-STK-008 | Si ya existe stock del mismo lote en esa sucursal, el ingreso **suma** la cantidad a la existente; solo reemplaza la cantidad si la petición trae `EsAjusteDirecto = true`. La pantalla nunca envía ese indicador, por lo que desde el SPA el ingreso siempre suma. Un reemplazo directo genera un evento de auditoría `STOCK_AJUSTAR`; la suma no genera evento (RN-GEN-013). | Cálculo | `RegisterInventarioCommandHandler.cs:37-54`; `DOM/InventarioSucursal.cs:48-50`; `RegisterInventarioCommand.cs:12-20`; `SPA/pages/stock-por-sucursal/models/stock.model.ts:34-38` | — | 200 con el identificador de la fila | «Stock registrado correctamente» (`stockPorSucursal.create.save-success`, `es.json:18`). |
 | RN-STK-009 | Si no existe stock de ese lote en esa sucursal, el ingreso crea una fila nueva con la cantidad indicada. | Automática | `RegisterInventarioCommandHandler.cs:56-63`, `:75` | — | 200 con el identificador de la fila (el 201 del handler no llega al cliente; sección 2, punto 3) | «Stock registrado correctamente» (`stockPorSucursal.create.save-success`). |
 | RN-STK-010 | Una sucursal tiene como máximo una fila de stock por lote (entre las no eliminadas). Si dos ingresos simultáneos intentan crear la misma fila, el segundo falla y debe reintentarse. | Unicidad | Handler `RegisterInventarioCommandHandler.cs:14`, `:65-73` (captura el error del índice por su nombre `UX_Inventario_Sucursal_Lote`; `APP/Common/Extensions/DbUpdateExceptionExtensions.cs:8-9`); índice único filtrado `UX_Inventario_Sucursal_Lote (Sucursal_ID, Lote_ID) WHERE IsDeleted = 0` en `DBUP/0018_SeriesFiscales_UniqueNumbering.sql:27-31` y `CFG/InventarioSucursalConfiguration.cs:56-60` | `InventarioSucursal.RegistroConcurrente` (carrera detectada por el handler) | 409 | Sin traducción → `stockPorSucursal.create.save-error`. |
-| RN-STK-011 | Control de concurrencia: cada fila de stock tiene una versión (`RowVersion`). Si entre la lectura y el guardado otra operación (por ejemplo una venta o un ajuste) cambia la fila, el guardado se rechaza en vez de pisar el cambio (RN-GEN-035). | Integridad | `DOM/InventarioSucursal.cs:13-14`; `CFG/InventarioSucursalConfiguration.cs:32-34`; `DBUP/0019_Concurrency_RowVersion.sql:2-3` | `Concurrency.Conflict` | 409 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» (`errors.concurrencyConflict`, `I18N/es.json:158`; mapa en `stock-detail.component.ts:224`), tanto al ingresar como al ajustar. |
+| RN-STK-011 | Control de concurrencia: cada fila de stock tiene una versión (`RowVersion`). Si entre la lectura y el guardado otra operación (por ejemplo una venta o un ajuste) cambia la fila, el guardado se rechaza en vez de pisar el cambio (RN-GEN-035). | Integridad | `DOM/InventarioSucursal.cs:13-14`; `CFG/InventarioSucursalConfiguration.cs:32-34`; `DBUP/0019_Concurrency_RowVersion.sql:2-3` | `Concurrency.Conflict` | 409 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» (`errors.concurrencyConflict`, `I18N/es.json:160`; mapa en `stock-detail.component.ts:224`), tanto al ingresar como al ajustar. |
 | RN-STK-012 | Ajustar el stock fija la cantidad física al valor indicado (no es una suma). El identificador del registro es obligatorio. El ajuste genera un evento de auditoría `STOCK_AJUSTAR` con la nueva cantidad (RN-GEN-013). | Cálculo | `AdjustStockCommandHandler.cs:26-34`; `DOM/InventarioSucursal.cs:52-61`; validador `AdjustStockCommandValidator.cs:9-10`; auditoría `AdjustStockCommand.cs:7-11`; `API/StockPorSucursalController.cs:30-36` | `AdjustStockCommand.Id` (el controlador lo toma de la URL) | 400 / 204 | «Cantidad ajustada correctamente» (`stockPorSucursal.detail.save-success`, `es.json:12`). Fallo: `stockPorSucursal.detail.save-error`. |
 | RN-STK-013 | Ajustar o consultar un registro de stock que no existe (o eliminado, o de otra empresa) devuelve «no encontrado». Al **consultar**, un registro de una sucursal a la que el usuario no tiene acceso también se informa como no encontrado (404); al **ajustar**, el mismo caso responde 403 (RN-STK-006). | Integridad | `AdjustStockCommandHandler.cs:13-19`; `APP/Inventarios/Queries/GetStockPorSucursalById/GetStockPorSucursalByIdQueryHandler.cs:14-37` | `InventarioSucursal.NotFound` | 404 | Ajustar: `stockPorSucursal.detail.save-error`. Abrir el detalle: «Error al cargar el registro de stock» (`stockPorSucursal.detail.load-error`, `es.json:11`). |
 | RN-STK-014 | Alcance por sucursales: el listado y el detalle solo devuelven stock de las sucursales a las que el usuario tiene acceso (Admin: todas). Quedan excluidos los registros cuya sucursal, lote o producto no existan o estén eliminados. | Autorización | `APP/Inventarios/Queries/GetStockPorSucursal/GetStockPorSucursalQueryHandler.cs:15-21`; `GetStockPorSucursalByIdQueryHandler.cs:14-21`; `APP/Common/Extensions/QueryableExtensions.cs:41-55` | — | 200 | Si falla la búsqueda: «Error al consultar el stock» (`stockPorSucursal.search.search-error`, `es.json:5`). |
@@ -191,7 +201,7 @@ Notas del módulo:
 
 ### 6.2 En curso (sin commitear)
 
-Ninguna regla de este documento se apoya en los archivos con cambios locales sin commitear listados en la sección 3 de las reglas de los agentes (`README.md` y `angular.json` de ambos repos, `src/index.html` y archivos de empresa del SPA). Se comprobó con `git status --short` en ambos repos y con `git diff --name-only` entre los commits anteriores (`00991bc`, `31af681`) y los actuales (`9dd1705`, `063817c`): ningún archivo de lotes, stock, recetas, búsqueda ni de los servicios de IA cambió.
+Ninguna. `git status --short` está limpio en `sofia-apis` (`6f6b837`) y en `sofia-web-spa` (`558ad35`).
 
 ### 6.3 Hallazgos del código
 
