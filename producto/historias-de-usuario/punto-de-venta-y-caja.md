@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de los documentos validados (reglas de negocio `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; glosario; manual de usuario capítulos 3 y 5) y comprobación puntual en el código y en los `es.json` del SPA. `git status --short` está limpio en ambos repositorios. No se usó el navegador ni se llamó a la API: los mensajes salen de los documentos fuente y de los archivos `es.json`. |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevas HU-DEV-009 y HU-DEV-010 (búsqueda y detalle de devoluciones); HU-DEV-007 y HU-DEV-008 actualizadas; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas de negocio `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; glosario; manual de usuario capítulos 3 y 5) y comprobación puntual en el código y en los `es.json` del SPA. `git status --short` está limpio en ambos repositorios. No se usó el navegador ni se llamó a la API: los mensajes salen de los documentos fuente y de los archivos `es.json`. |
 
 ## 1. Cómo leer este documento
 
@@ -46,7 +46,7 @@ Los flujos de punta a punta están en el [documento de procesos de negocio](../.
 | 7. Anulación de ventas | HU-VEN-023 a HU-VEN-025 |
 | 8. Consulta de ventas | HU-VEN-026 a HU-VEN-028 |
 | 9. Caja: apertura, cierre y arqueo | HU-CAJ-001 a HU-CAJ-008 |
-| 10. Devoluciones | HU-DEV-001 a HU-DEV-008 |
+| 10. Devoluciones | HU-DEV-001 a HU-DEV-010 |
 | 11. Dashboard (Inicio) | HU-DAS-001 a HU-DAS-010 |
 | 12. Módulos que solo existen en la API | HU-OPS-001 a HU-OPS-022 (transferencias 001 a 005, cuarentena y actas 006 a 010, magistrales 011 a 013, servicios e inmunizaciones 014 a 017, delivery 018 a 020, auditoría 021 y 022) |
 | 13. Trazabilidad | Historia → reglas, pantallas y endpoints |
@@ -54,7 +54,7 @@ Los flujos de punta a punta están en el [documento de procesos de negocio](../.
 | 15. Tabla de cobertura | Reglas, rutas, diálogos y endpoints → historias; verificación |
 | 16. Fuentes | — |
 
-Total: 76 historias (28 de ventas, 8 de caja, 8 de devoluciones, 10 de dashboard y 22 de módulos solo API); 46 «Implementada», 17 «Parcial» y 13 «Solo API».
+Total: 78 historias (28 de ventas, 8 de caja, 10 de devoluciones, 10 de dashboard y 22 de módulos solo API); 50 «Implementada», 16 «Parcial» y 12 «Solo API» (HU-DEV-007 y HU-DEV-008 pasaron de «Parcial» y «Solo API» a «Implementada» con las pantallas de `37048ea`; HU-DEV-009 y HU-DEV-010 son nuevas).
 
 ---
 
@@ -2424,7 +2424,7 @@ Escenario: Error no traducido
   Entonces veo "Error al procesar la devolución."
 ```
 
-> **Brecha conocida.** El diálogo no tiene listado ni pantalla de devoluciones: solo se llega desde el detalle de una venta (ver HU-DEV-007 y HU-DEV-008). El permiso `Devoluciones:ProcesarDevolucion` no lo siembra ningún rol: hay que concederlo (RN-DEV-001). No hay plazo máximo para devolver ni límite de devoluciones por venta (RN-DEV-008). La operación no tiene clave de idempotencia (RN-DEV-028).
+> **Brecha conocida.** El diálogo se abre solo desde el detalle de una venta (ver HU-DEV-007); las devoluciones ya hechas se consultan en `/devoluciones` (HU-DEV-009 y HU-DEV-010). El permiso `Devoluciones:ProcesarDevolucion` no lo siembra ningún rol: hay que concederlo (RN-DEV-001). No hay plazo máximo para devolver ni límite de devoluciones por venta (RN-DEV-008). La operación no tiene clave de idempotencia (RN-DEV-028).
 
 ### HU-DEV-002 — Elegir la cantidad y el destino de cada línea devuelta
 
@@ -2734,11 +2734,11 @@ Escenario: No hay plazo ni límite de devoluciones
 | | |
 |---|---|
 | **Módulo** | Devoluciones |
-| **Pantalla** | `/pos/:id` — columna «Devuelto» y sección «Devoluciones / Notas de crédito» |
+| **Pantalla** | `/pos/:id` — columna «Devuelto» y sección «Devoluciones / Notas de crédito» (con enlace a `/devoluciones/:id`, HU-DEV-010) |
 | **Endpoint(s)** | `GET /api/v1/ventas/{id}` |
 | **Permiso** | `Ventas:Leer` |
 | **Reglas** | [RN-DEV-022, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-VEN-074](../../negocio/reglas/ventas-y-comprobantes.md) |
-| **Estado** | Parcial (solo se ven dentro del detalle de la venta; no existe pantalla de listado ni de detalle de devoluciones) |
+| **Estado** | Implementada (desde `37048ea` también hay listado y detalle de devoluciones: HU-DEV-009 y HU-DEV-010) |
 
 **Criterios de aceptación**
 
@@ -2766,11 +2766,11 @@ Escenario: El dashboard cuenta las devoluciones del día
 | | |
 |---|---|
 | **Módulo** | Devoluciones |
-| **Pantalla** | Solo API (sin pantalla) |
-| **Endpoint(s)** | `GET /api/v1/devoluciones`, `GET /api/v1/devoluciones/{id}` |
+| **Pantalla** | `/devoluciones` y `/devoluciones/:id` (HU-DEV-009 y HU-DEV-010); también se consumen por API |
+| **Endpoint(s)** | `GET /api/v1/devoluciones`, `GET /api/v1/devoluciones/{id}`, `POST /api/v1/devoluciones/exportar` |
 | **Permiso** | `Devoluciones:Leer` |
-| **Reglas** | [RN-DEV-030, RN-DEV-031, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md) |
-| **Estado** | Solo API |
+| **Reglas** | [RN-DEV-030, RN-DEV-031, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (describen la versión anterior, sin pantalla) |
+| **Estado** | Implementada |
 
 **Criterios de aceptación**
 
@@ -2779,8 +2779,9 @@ Escenario: Listar devoluciones
   Dado que tengo "Devoluciones:Leer"
   Cuando llamo a "GET /api/v1/devoluciones" con fechas desde y hasta
   Entonces recibo las devoluciones de las sucursales a las que tengo acceso, ordenadas por fecha descendente
-  Y cada fila trae solo identificador, comprobante de origen, empleado que autoriza, fecha, motivo SUNAT y sustento
-  Y no trae monto, método de reembolso, nota de crédito, líneas ni destino
+  Y cada fila trae identificador, comprobante de origen, empleado que autoriza (y su nombre), fecha, motivo SUNAT, sustento, id y código de la venta, número de la nota de crédito, cliente, sucursal, monto de la nota de crédito, monto reembolsado y método de reembolso
+  Y no trae las líneas ni el destino (están en el detalle)
+  Y admite además los filtros "metodoReembolso", "destino", "motivoSunatCatalogo", "numeroNotaCredito", "montoMin" y "montoMax"
   Y la paginación es de 10 por defecto
 
 Escenario: Filtro por empleado vacío
@@ -2789,16 +2790,184 @@ Escenario: Filtro por empleado vacío
 
 Escenario: Consultar una devolución
   Cuando llamo a "GET /api/v1/devoluciones/{id}" de una devolución de una sucursal accesible
-  Entonces recibo 200 con el objeto de resultado completo y los mismos seis campos en "value"
+  Entonces recibo 200 con el valor plano: los campos del listado más "lineas" (producto, lote, presentación, cantidad devuelta, precio unitario, subtotal y destino de cada línea)
 
 Escenario: La devolución no existe
   Entonces recibo 404 con el código "Devolucion.NotFound"
 
 Escenario: No existe exportación
-  Entonces no hay endpoint para exportar devoluciones
+  Entonces hay un endpoint de exportación: "POST /api/v1/devoluciones/exportar" (HU-DEV-009), que antes de `0678e40` no existía
 ```
 
-> **Brecha conocida.** Ni el listado ni el detalle tienen pantalla; el SPA solo usa `POST`. `GET Devoluciones/{id}` devuelve el objeto `Result` completo y el listado el valor directo (`negocio/reglas/caja-devoluciones-y-dashboard` hallazgo 8).
+> **Nota.** Hasta `9c16f35` ni el listado ni el detalle tenían pantalla y `GET Devoluciones/{id}` devolvía el objeto `Result` completo; desde `0678e40` ambos devuelven el valor plano y las usan `/devoluciones` y `/devoluciones/:id`. Las reglas RN-DEV-030 a RN-DEV-032 y el hallazgo 8 de `negocio/reglas/caja-devoluciones-y-dashboard` describen la versión anterior (anotado para el orquestador).
+
+### HU-DEV-009 — Buscar devoluciones y exportarlas a Excel
+
+**Como** supervisor o administrador **quiero** buscar las devoluciones por nota de crédito, autorizante, motivo, fechas, método de reembolso, destino y monto **para** revisar qué se devolvió, a quién y cuánto salió de la caja.
+
+| | |
+|---|---|
+| **Módulo** | Devoluciones |
+| **Pantalla** | `/devoluciones` — «Devoluciones» (migas «Inicio / Punto de Venta / Devoluciones») |
+| **Endpoint(s)** | `GET /api/v1/devoluciones`; `POST /api/v1/devoluciones/exportar`; `GET /api/v1/empleados` (autocompletado de «Autorizó») |
+| **Permiso** | `Devoluciones:Leer` |
+| **Reglas** | [RN-DEV-030, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-GEN-008, RN-GEN-009, RN-GEN-023](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-008, RN-IMP-009, RN-IMP-010, RN-IMP-017](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: Los resultados aparecen solo después de buscar
+  Dado que tengo "Devoluciones:Leer" y elijo Punto de Venta › «Devoluciones» en el menú
+  Entonces veo la tarjeta "Devoluciones" con "Consulta las devoluciones de tus ventas y sus notas de crédito." y los filtros "Nota de crédito", "Autorizó", "Motivo", "Fecha desde", "Fecha hasta", "Método de reembolso", "Destino" y "Monto reembolsado (S/)"
+  Y no veo ninguna tabla hasta hacer clic en "Buscar"
+
+Escenario: Buscar sin filtros
+  Dado que hay devoluciones en mis sucursales
+  Cuando hago clic en "Buscar"
+  Entonces veo "Resultados (N)" con las columnas "Nota de crédito", "Venta", "Fecha", "Cliente", "Autorizó", "Sucursal", "Motivo", "Reembolsado (S/)" y "Método de reembolso"
+  Y las filas van de la devolución más reciente a la más antigua
+
+Escenario: Filtrar por nota de crédito
+  Dado que escribo "BC01-00000007", solo "BC01" o solo "7" en "Nota de crédito"
+  Cuando presiono Enter
+  Entonces la tabla trae las devoluciones cuya nota coincide con el número impreso, con el prefijo de la serie o con el correlativo
+  Y el campo admite hasta 20 caracteres
+  Y una devolución sin nota de crédito no aparece cuando escribo un número
+
+Escenario: Filtrar por quien autorizó
+  Dado que escribo parte del nombre de un empleado en "Autorizó"
+  Entonces aparece una lista de empleados y, al elegir uno, la búsqueda trae solo sus devoluciones
+  Y si no hay coincidencias veo "Sin resultados" en la lista
+
+Escenario: Filtrar por motivo
+  Dado que elijo "Devolución total" o "Devolución por ítem" en "Motivo"
+  Entonces la tabla trae solo las devoluciones con el motivo SUNAT 06 o 07
+  Y "— Todos —" quita el filtro
+
+Escenario: Filtrar por fechas
+  Dado que elijo "Fecha desde" y "Fecha hasta"
+  Cuando hago clic en "Buscar"
+  Entonces la tabla trae las devoluciones desde el inicio del primer día hasta el fin del último día, hora local
+
+Escenario: Filtrar por método de reembolso y por destino
+  Dado que elijo "Tarjeta" en "Método de reembolso" y "Cuarentena DIGEMID" en "Destino"
+  Entonces la tabla trae las devoluciones reembolsadas con tarjeta en las que al menos una línea fue a cuarentena
+  Y las opciones del método son "Efectivo", "Yape / Plin", "Tarjeta" y "Transferencia", y las del destino "Reingreso a venta" y "Cuarentena DIGEMID"
+
+Escenario: Filtrar por monto reembolsado
+  Dado que muevo el deslizador "Monto reembolsado (S/)" entre 50 y 200
+  Entonces la tabla trae las devoluciones con monto reembolsado entre S/ 50 y S/ 200
+  Y los extremos 0 y 1000 del deslizador significan "sin límite" y no se envían
+
+Escenario: Los filtros del servidor se validan
+  Dado que llamo a la API con "montoMax" menor que "montoMin", con "montoMin" negativo, con un motivo que no tiene exactamente 2 caracteres o con un número de nota de más de 20 caracteres
+  Entonces recibo 400 con el código de validación de "GetDevolucionesQuery" y la propiedad
+
+Escenario: Solo veo las devoluciones de mis sucursales
+  Dado que mi rol está limitado a una sucursal
+  Entonces la tabla trae solo las devoluciones de ventas de esa sucursal
+  Y el rol "Admin" ve las de toda la empresa
+
+Escenario: Abrir la venta o la devolución
+  Dado que veo resultados
+  Cuando hago clic en el número de la nota de crédito
+  Entonces se abre "/devoluciones/:id"
+  Y el código de la venta es un enlace a "/pos/:id" solo si tengo "Ventas:Leer"; si no, es texto
+
+Escenario: Limpiar y paginar
+  Dado que hay filtros escritos y una tabla visible
+  Cuando hago clic en "Limpiar"
+  Entonces los filtros quedan vacíos, el deslizador vuelve a 0 y 1000 y la tabla se oculta
+  Y el paginador ofrece "Items por página" de 10, 25 o 50 con botones de primera y última página
+
+Escenario: Exportar a Excel
+  Dado que ya hice clic en "Buscar"
+  Cuando hago clic en "Exportar"
+  Entonces se descarga "devoluciones.xlsx" con las columnas "Nota de crédito", "Venta", "Fecha", "Cliente", "Autorizó", "Sucursal", "Motivo", "Monto de la nota (S/)", "Reembolsado (S/)" y "Método de reembolso"
+  Y la fecha sale como dd/MM/yyyy en español y MM/dd/yyyy en otro idioma
+  Y el archivo trae los filtros escritos en ese momento, no necesariamente los de la última búsqueda
+  Y el botón "Exportar" no aparece antes de buscar
+
+Escenario: Exportación demasiado grande
+  Dado que la consulta filtrada supera el límite de exportación
+  Cuando hago clic en "Exportar"
+  Entonces la API responde 400 "Export.TooManyRows" y no genera el archivo
+  Y veo "No se pudo exportar las devoluciones."
+
+Escenario: Error al buscar
+  Dado que la búsqueda falla
+  Entonces veo "No se pudieron cargar las devoluciones."
+
+Escenario: Sin el permiso no hay pantalla
+  Dado que mi rol no tiene "Devoluciones › Leer"
+  Entonces no veo «Devoluciones» en el menú
+  Y si escribo "/devoluciones" veo "No tienes permisos para acceder a esta pantalla." y vuelvo al panel
+```
+
+> **Nota.** Pantalla y API nuevas desde `sofia-web-spa` `37048ea` y `sofia-apis` `0678e40`. Las reglas RN-DEV del catálogo todavía no describen los filtros, la exportación ni las pantallas: **no existe un RN-DEV para ellas** y no se inventó ninguno (RN-DEV-030 y RN-DEV-032 describen la versión anterior, sin pantalla). Inventario de la pantalla en `producto/pantallas/punto-de-venta` §9A. El Excel exporta el código SUNAT del motivo (`06` o `07`) y el nombre interno del método de reembolso. **No verificado en la aplicación.**
+
+### HU-DEV-010 — Ver el detalle de una devolución y sus productos devueltos
+
+**Como** supervisor o administrador **quiero** abrir una devolución y ver su nota de crédito, la venta de origen y cada línea devuelta con su destino **para** auditar qué volvió al stock y qué fue a cuarentena.
+
+| | |
+|---|---|
+| **Módulo** | Devoluciones |
+| **Pantalla** | `/devoluciones/:id` — «Detalle de devolución» |
+| **Endpoint(s)** | `GET /api/v1/devoluciones/{id}` |
+| **Permiso** | `Devoluciones:Leer` |
+| **Reglas** | [RN-DEV-022, RN-DEV-031, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-GEN-023](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: Ver el detalle
+  Dado que abro una devolución desde "/devoluciones"
+  Entonces veo "Detalle de devolución" con la flecha de volver, el número de la nota de crédito (o "Sin nota de crédito") y la fecha dd/MM/yyyy HH:mm
+  Y los datos "Venta", "Cliente", "Autorizó", "Sucursal", "Motivo", "Método de reembolso", "Monto de la nota (S/)", "Reembolsado (S/)" y "Sustento"
+
+Escenario: Los productos devueltos
+  Dado que la devolución tiene líneas
+  Entonces veo "Productos devueltos" con "Producto", "Lote", "Presentación", "Cantidad devuelta", "Precio unitario (S/)", "Subtotal (S/)" y "Destino"
+  Y el subtotal es la cantidad devuelta por el precio unitario fijado en la línea de la venta
+  Y "Total devuelto:" muestra la suma de los subtotales
+
+Escenario: El destino de cada línea
+  Dado que una línea volvió a la venta y otra fue a cuarentena
+  Entonces la primera dice "Reingreso a venta" y la segunda "Cuarentena DIGEMID"
+
+Escenario: Una línea vendida por unidad
+  Dado que la línea no se vendió por presentación
+  Entonces la columna "Presentación" muestra "—"
+
+Escenario: Un producto o lote eliminado después de la venta
+  Dado que el producto o el lote de una línea devuelta ya no existe
+  Entonces la línea sigue apareciendo con "Producto desconocido" o "N/A" en vez de desaparecer del historial
+
+Escenario: Ver la venta de origen
+  Dado que tengo "Ventas:Leer"
+  Entonces veo el botón "Ver venta", que abre "/pos/:id"
+  Pero sin ese permiso no veo el botón y el código de la venta es texto
+
+Escenario: Llegar desde el detalle de la venta
+  Dado que tengo "Devoluciones:Leer" y abro una venta con devoluciones
+  Entonces el número de la nota de crédito en "Devoluciones / Notas de crédito" es un enlace a "/devoluciones/:id"
+  Pero sin "Devoluciones:Leer" es texto
+
+Escenario: Una devolución de otra sucursal o inexistente
+  Dado que el identificador no existe, está eliminado o es de una sucursal a la que no tengo acceso
+  Cuando abro "/devoluciones/<ese id>"
+  Entonces la API responde 404 "Devolucion.NotFound"
+  Y veo "No se pudo cargar la devolución."
+
+Escenario: Solo lectura
+  Dado que estoy en el detalle
+  Entonces no hay botones para editar, eliminar ni anular la devolución
+```
+
+> **Nota.** El detalle de la API devuelve el valor plano (no el objeto de resultado). Inventario en `producto/pantallas/punto-de-venta` §9A.2. No existe un RN-DEV para esta pantalla. **No verificado en la aplicación.**
 
 ## 11. Dashboard (Inicio)
 
@@ -3113,6 +3282,7 @@ Escenario: Un bloque por permiso
 Escenario: Sin ningún permiso de lectura
   Dado que no tengo ninguno de esos permisos
   Entonces veo "Tu usuario no tiene indicadores disponibles aquí. Usa el menú lateral para ir a tus módulos."
+  # Desde `558ad35`: el operador de plataforma sin permisos de lectura ve la sección «Suscripciones» y no este mensaje (HU-ADM-057); quien tiene `Empresas:Leer` y la empresa por vencer ve además el aviso de HU-ADM-054
 
 Escenario: El administrador ve todo
   Dado que soy administrador
@@ -3131,6 +3301,7 @@ Escenario: La ruta no exige permiso
 Escenario: Fallan mis permisos
   Cuando no se pueden cargar mis permisos
   Entonces veo "No se pudieron cargar tus permisos." con "Reintentar"
+
 ```
 
 ### HU-DAS-009 — Actualizar el resumen y reintentar una sección
@@ -4300,7 +4471,9 @@ La tabla resume las filas «Reglas», «Pantalla» y «Endpoint(s)» de cada his
 | [HU-DEV-005](#hu-dev-005--indicar-el-motivo-sunat-y-el-sustento) | RN-DEV-014, RN-DEV-015, RN-DEV-033, RN-GEN-010 | `/pos/:id` — «Motivo SUNAT», «Sustento» | `POST /api/v1/devoluciones` |
 | [HU-DEV-006](#hu-dev-006--saber-por-qué-no-se-puede-devolver-una-venta) | RN-DEV-002 a RN-DEV-008 | `/pos/:id` — diálogo «Procesar devolución» | `POST /api/v1/devoluciones` |
 | [HU-DEV-007](#hu-dev-007--ver-las-devoluciones-de-una-venta) | RN-DEV-022, RN-DEV-032, RN-VEN-074 | `/pos/:id` — «Devuelto»; «Devoluciones / Notas de crédito» | `GET /api/v1/ventas/{id}` |
-| [HU-DEV-008](#hu-dev-008--consultar-devoluciones-por-api) | RN-DEV-030 a RN-DEV-032 | Solo API | `GET /api/v1/devoluciones`, `GET /api/v1/devoluciones/{id}` |
+| [HU-DEV-008](#hu-dev-008--consultar-devoluciones-por-api) | RN-DEV-030 a RN-DEV-032 | `/devoluciones`, `/devoluciones/:id` (y API) | `GET /api/v1/devoluciones`, `GET /api/v1/devoluciones/{id}`, `POST /api/v1/devoluciones/exportar` |
+| [HU-DEV-009](#hu-dev-009--buscar-devoluciones-y-exportarlas-a-excel) | RN-DEV-030, RN-DEV-032, RN-GEN-008, RN-GEN-009, RN-GEN-023, RN-IMP-008 a RN-IMP-010, RN-IMP-017 (sin RN-DEV propio para filtros y exportación) | `/devoluciones` — «Devoluciones» | `GET /api/v1/devoluciones`; `POST /api/v1/devoluciones/exportar`; `GET /api/v1/empleados` |
+| [HU-DEV-010](#hu-dev-010--ver-el-detalle-de-una-devolución-y-sus-productos-devueltos) | RN-DEV-022, RN-DEV-031, RN-DEV-032, RN-GEN-023 | `/devoluciones/:id` — «Detalle de devolución» | `GET /api/v1/devoluciones/{id}` |
 | [HU-DAS-001](#hu-das-001--ver-el-resumen-de-ventas-de-hoy) | RN-DAS-002, RN-DAS-004 a RN-DAS-009 | `/dashboard` — «Ventas de hoy» | `GET /api/v1/dashboard/ventas` |
 | [HU-DAS-002](#hu-das-002--ver-lo-cobrado-por-método-de-pago-y-por-sucursal) | RN-DAS-003, RN-DAS-010, RN-DAS-011 | `/dashboard` — «Cobrado por método de pago», «Ventas por sucursal» | `GET /api/v1/dashboard/ventas` |
 | [HU-DAS-003](#hu-das-003--ver-la-tendencia-de-7-días-y-los-productos-más-vendidos) | RN-DAS-012, RN-DAS-013 | `/dashboard` — tendencia y más vendidos | `GET /api/v1/dashboard/ventas` |
@@ -4348,7 +4521,6 @@ La tabla resume las filas «Reglas», «Pantalla» y «Endpoint(s)» de cada his
 | HU-CAJ-007 | La pantalla no ofrece filtro por sucursal ni por cajero ni vista «solo mis sesiones» |
 | HU-DEV-002 | El destino «Cuarentena DIGEMID» solo queda anotado: no repone stock ni crea el registro de cuarentena |
 | HU-DEV-004 | La nota de crédito no se envía a SUNAT y la pantalla solo muestra su número (no la imprime) |
-| HU-DEV-007 | Las devoluciones solo se ven dentro del detalle de la venta; no hay listado ni detalle de devoluciones |
 | HU-OPS-007 | Solo la venta respeta la cuarentena; no existe forma de liberar un lote retenido |
 | HU-OPS-009 | El acta de destrucción es solo una cabecera (sin lotes ni cantidades, sin cambio de estado) |
 | HU-OPS-011 | No hay cancelación ni devolución de insumos de una orden iniciada |
@@ -4469,14 +4641,14 @@ Alcance: las reglas `RN-VEN` y `RN-CMP` de `negocio/reglas/ventas-y-comprobantes
 | RN-DEV-016 a RN-DEV-019 | HU-DEV-003 |
 | RN-DEV-020 | HU-DEV-001, HU-DEV-004 |
 | RN-DEV-021 | HU-DEV-004 |
-| RN-DEV-022 | HU-DEV-004, HU-DEV-007 |
+| RN-DEV-022 | HU-DEV-004, HU-DEV-007, HU-DEV-010 |
 | RN-DEV-023 | HU-DEV-002 |
 | RN-DEV-024 | HU-DEV-002, HU-OPS-006 |
 | RN-DEV-025 | HU-DEV-001 |
 | RN-DEV-026 | HU-VEN-010, HU-DEV-001 |
 | RN-DEV-027 a RN-DEV-029 | HU-DEV-001 |
-| RN-DEV-030, RN-DEV-031 | HU-DEV-008 |
-| RN-DEV-032 | HU-DEV-007, HU-DEV-008 |
+| RN-DEV-030, RN-DEV-031 | HU-DEV-008, HU-DEV-009, HU-DEV-010 |
+| RN-DEV-032 | HU-DEV-007, HU-DEV-008, HU-DEV-009, HU-DEV-010 |
 | RN-DEV-033 | HU-DEV-004, HU-DEV-005 |
 | RN-DEV-034 | HU-DEV-002 |
 | RN-DEV-035, RN-DEV-036 | HU-DEV-003, HU-DEV-004 |
@@ -4581,19 +4753,21 @@ Alcance: las reglas `RN-VEN` y `RN-CMP` de `negocio/reglas/ventas-y-comprobantes
 | `/sesiones-caja/:id` | HU-CAJ-003, HU-CAJ-004, HU-CAJ-005, HU-CAJ-006 |
 | `/pos` | HU-VEN-021, HU-VEN-026, HU-VEN-028 |
 | `/pos/nueva` (incluido `?continuar=<id>`) | HU-VEN-001 a HU-VEN-015, HU-VEN-016, HU-VEN-019, HU-VEN-020, HU-VEN-021, HU-VEN-022 |
-| `/pos/:id` | HU-VEN-009, HU-VEN-017, HU-VEN-018, HU-VEN-021, HU-VEN-023 a HU-VEN-025, HU-VEN-027, HU-DEV-001 a HU-DEV-007 |
+| `/pos/:id` | HU-VEN-009, HU-VEN-017, HU-VEN-018, HU-VEN-021, HU-VEN-023 a HU-VEN-025, HU-VEN-027, HU-DEV-001 a HU-DEV-007, HU-DEV-010 |
+| `/devoluciones` | HU-DEV-008, HU-DEV-009 |
+| `/devoluciones/:id` | HU-DEV-008, HU-DEV-010 |
 | `/dashboard` | HU-DAS-001 a HU-DAS-010 |
 | Diálogo «Aperturar Caja» (`AperturarCajaDialogComponent`) | HU-CAJ-002, HU-VEN-001 |
 | Diálogo «Confirmar Procesamiento de Venta» (`ConfirmarVentaDialogComponent`) | HU-VEN-015 |
 | Diálogo «Venta Procesada Exitosamente» (`ComprobanteDialogComponent`) | HU-VEN-017, HU-VEN-018 |
 | Diálogo «Anular Venta» (`AnularVentaDialogComponent`) | HU-VEN-023, HU-VEN-024, HU-VEN-025 |
 | Diálogo «Procesar devolución» (`DevolverVentaDialogComponent`) | HU-DEV-001 a HU-DEV-006 |
-| Menú «Punto de Venta» → «Sesiones de Caja» y «Ventas» | HU-CAJ-007, HU-VEN-026 |
-| Sin opción de menú (terminal, devoluciones) | HU-VEN-001, HU-DEV-007 |
+| Menú «Punto de Venta» → «Sesiones de Caja», «Ventas» y «Devoluciones» | HU-CAJ-007, HU-VEN-026, HU-DEV-009 |
+| Sin opción de menú (terminal) | HU-VEN-001 |
 
 ### 15.3 Endpoints del alcance → historias
 
-Los 54 endpoints de `Ventas`, `POS`, `Devoluciones`, `Dashboard`, `Transferencias`, `Delivery`, `Magistrales`, `Servicios`, `Auditoria` y las cuatro operaciones de cuarentena y actas de `DIGEMID` figuran en [`endpoints.csv`](../../_inventario/endpoints.csv) y aparecen en la fila «Endpoint(s)» de alguna historia.
+Los 55 endpoints de `Ventas`, `POS`, `Devoluciones`, `Dashboard`, `Transferencias`, `Delivery`, `Magistrales`, `Servicios`, `Auditoria` y las cuatro operaciones de cuarentena y actas de `DIGEMID` figuran en [`endpoints.csv`](../../_inventario/endpoints.csv) y aparecen en la fila «Endpoint(s)» de alguna historia.
 
 | Método y ruta | Permiso | Historias |
 |---|---|---|
@@ -4614,8 +4788,9 @@ Los 54 endpoints de `Ventas`, `POS`, `Devoluciones`, `Dashboard`, `Transferencia
 | `PUT /api/v1/Delivery/{id}` | `Delivery:Actualizar` | HU-OPS-020 |
 | `DELETE /api/v1/Delivery/{id}` | `Delivery:Eliminar` | HU-OPS-020 |
 | `POST /api/v1/Devoluciones` | `Devoluciones:ProcesarDevolucion` | HU-DEV-001 a HU-DEV-006 |
-| `GET /api/v1/Devoluciones` | `Devoluciones:Leer` | HU-DEV-008 |
-| `GET /api/v1/Devoluciones/{id}` | `Devoluciones:Leer` | HU-DEV-008 |
+| `GET /api/v1/Devoluciones` | `Devoluciones:Leer` | HU-DEV-008, HU-DEV-009 |
+| `GET /api/v1/Devoluciones/{id}` | `Devoluciones:Leer` | HU-DEV-008, HU-DEV-010 |
+| `POST /api/v1/Devoluciones/exportar` | `Devoluciones:Leer` | HU-DEV-008, HU-DEV-009 |
 | `POST /api/v1/Magistrales/iniciar` | `Magistrales:IniciarOrdenMagistral` | HU-OPS-011 |
 | `POST /api/v1/Magistrales/completar` | `Magistrales:CompletarOrdenMagistral` | HU-OPS-012 |
 | `GET /api/v1/Magistrales/ordenes` | `Magistrales:Leer` | HU-OPS-013 |
@@ -4652,7 +4827,7 @@ Los 54 endpoints de `Ventas`, `POS`, `Devoluciones`, `Dashboard`, `Transferencia
 | `PUT /api/v1/Ventas/{id}/detalles` | `Ventas:Actualizar` | HU-VEN-021 |
 | `POST /api/v1/Ventas/exportar` | `Ventas:Leer` | HU-VEN-028 |
 
-Sin pantalla (Solo API): los cuatro endpoints de cuarentena y actas, los de Transferencias, Delivery, Magistrales, Servicios y Auditoría, y `GET /api/v1/Devoluciones` y `GET /api/v1/Devoluciones/{id}`.
+Sin pantalla (Solo API): los cuatro endpoints de cuarentena y actas, los de Transferencias, Delivery, Magistrales, Servicios y Auditoría, (los endpoints de devoluciones ya no están sin pantalla desde `37048ea`).
 
 ### 15.4 Verificación
 
@@ -4663,7 +4838,7 @@ Se ejecutaron scripts de lectura (Node, en el directorio temporal de la sesión,
 3. Comprobaron que los **54 endpoints** del alcance de `endpoints.csv` se mencionan en el documento (la tabla 15.3 asocia cada uno con sus historias, sin ninguno «SIN HISTORIA»), que las **7 rutas** del SPA (`/sesiones-caja`, `/sesiones-caja/nueva`, `/sesiones-caja/:id`, `/pos`, `/pos/nueva`, `/pos/:id`, `/dashboard`) y los **5 diálogos** de `pages/pos` (Aperturar Caja, Confirmar Procesamiento de Venta, Venta Procesada Exitosamente, Anular Venta y Procesar devolución) aparecen.
 4. Extrajeron los 584 textos entre comillas del documento y los contrastaron con todos los `es.json` del SPA (`public/i18n/**/es.json`): los mensajes de interfaz coinciden con el archivo (las cadenas sin coincidencia son códigos de error, rutas, permisos, nombres de campo, datos de ejemplo y frases propias del documento). Se corrigió un texto: «Estado de caja» no es un título visible de la tarjeta (es solo una descripción del inventario de pantallas) y se quitó.
 
-Resultado: 76 historias (46 «Implementada», 17 «Parcial», 13 «Solo API»), 312 reglas cubiertas, 7 rutas, 5 diálogos y 54 endpoints, sin elementos sin cubrir.
+Resultado: 78 historias (50 «Implementada», 16 «Parcial», 12 «Solo API»), 312 reglas cubiertas (las dos historias nuevas no tienen RN-DEV propio), 9 rutas (`/devoluciones` y `/devoluciones/:id` nuevas), 5 diálogos y 55 endpoints (se suma `POST /api/v1/Devoluciones/exportar`), sin elementos sin cubrir.
 
 ---
 
