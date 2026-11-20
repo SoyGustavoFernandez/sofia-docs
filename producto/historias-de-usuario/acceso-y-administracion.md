@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
-| **Método** | Lectura de los documentos validados (reglas de negocio `negocio/reglas/administracion-y-seguridad` v1.1, inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/administracion` v1.1, matriz de permisos `tecnico/seguridad/matriz-de-permisos`, autenticación `tecnico/seguridad/autenticacion-y-controles`, manual de usuario capítulos 1 a 3, glosario) y comprobación puntual en el código. No se ejecutó la aplicación ni se llamó a la API: los mensajes exactos salen de los documentos fuente, que los comprobaron en la aplicación local. |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
+| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevas HU-ADM-051 a HU-ADM-057 (operador de plataforma y suscripciones); escenarios corregidos de HU-ADM-002, 010, 013, 016 y 030; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas de negocio `negocio/reglas/administracion-y-seguridad` v1.1, inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/administracion` v1.1, matriz de permisos `tecnico/seguridad/matriz-de-permisos`, autenticación `tecnico/seguridad/autenticacion-y-controles`, manual de usuario capítulos 1 a 3, glosario) y comprobación puntual en el código. No se ejecutó la aplicación ni se llamó a la API: los mensajes exactos salen de los documentos fuente, que los comprobaron en la aplicación local. |
 
 ## 1. Cómo leer este documento
 
@@ -48,7 +48,7 @@ Los flujos de punta a punta (alta de empresa y configuración inicial) están en
 | 8. Roles y permisos | HU-ADM-027 a HU-ADM-033 |
 | 9. Cuentas de usuario | HU-ADM-034 a HU-ADM-039 |
 | 10. Series fiscales | HU-ADM-040 a HU-ADM-044 |
-| 11. Reglas transversales y de plataforma | HU-ADM-045 a HU-ADM-050 |
+| 11. Reglas transversales y de plataforma | HU-ADM-045 a HU-ADM-050 y, desde `6f6b837`/`558ad35`, HU-ADM-051 a HU-ADM-057 (operador de plataforma y suscripciones) |
 
 ---
 
@@ -233,7 +233,8 @@ Escenario: La empresa no tiene suscripción vigente
   Dado que la contraseña es correcta
   Pero la empresa está suspendida, cancelada o con la prueba vencida
   Cuando hago clic en "Ingresar"
-  Entonces veo "La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla."
+  Entonces veo "La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla."
+  Y debajo veo cómo pagar (HU-ADM-053)
   # No verificado en la aplicación: la empresa de prueba está vigente
 
 Escenario: La vigencia solo se comprueba con la contraseña correcta
@@ -775,7 +776,7 @@ Escenario: Error del servidor
 Escenario: El administrador ve todo el menú
   Dado que mi cuenta tiene el rol "Admin"
   Cuando entro al sistema
-  Entonces el menú lateral muestra 8 grupos y 24 opciones: Dashboard; Empresa, Sucursales, Empleados, Roles & Permisos y Cuentas de Usuario; los nueve catálogos; Lotes y Stock por Sucursal; Sesiones de Caja y Ventas; Pacientes, Profesionales de Salud y Recetas Médicas; Catálogo DIGEMID; y Series Fiscales
+  Entonces el menú lateral muestra 8 grupos y 25 opciones: Dashboard; Empresa, Sucursales, Empleados, Roles & Permisos y Cuentas de Usuario; los nueve catálogos; Lotes y Stock por Sucursal; Sesiones de Caja, Ventas y Devoluciones; Pacientes, Profesionales de Salud y Recetas Médicas; Catálogo DIGEMID; y Series Fiscales
 
 Escenario: El cajero ve solo lo que su rol puede leer
   Dado que el rol "Cajero" tiene "Leer" en Empleados, Medicamentos, Aseguradoras, Inventario, Ventas, Sesiones de Caja, Pacientes, Profesionales de Salud, Recetas Médicas y DIGEMID
@@ -951,7 +952,7 @@ Escenario: El idioma no se conserva
 | **Módulo** | Empresas |
 | **Pantalla** | `/empresas` — «Empresas» (migas «Inicio / Administración / Empresa») |
 | **Endpoint(s)** | `GET /api/v1/Empresas`; `POST /api/v1/Empresas/exportar` |
-| **Permiso** | `Empresas:Leer` |
+| **Permiso** | `Empresas:Leer` (o ser operador de plataforma, HU-ADM-056) |
 | **Reglas** | [RN-EMP-001, RN-EMP-017, RN-EMP-018](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-001, RN-GEN-009](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-008, RN-IMP-009, RN-IMP-010, RN-IMP-017](../../negocio/reglas/administracion-y-seguridad.md) |
 | **Estado** | Implementada |
 
@@ -966,9 +967,9 @@ Escenario: Los resultados no aparecen hasta buscar
 Escenario: Buscar sin filtros
   Dado que mi empresa es "Botica Manual Demo S.A.C."
   Cuando hago clic en "Buscar"
-  Entonces veo "Resultados (1)" con una fila con las columnas "Empresa", "RUC", "Estado" y "Vigente"
-  Y la fila dice "Botica Manual Demo S.A.C.", "20538291746", "Trial Activo" y una marca verde en "Vigente"
-  Y solo veo mi propia empresa: las demás se comportan como inexistentes
+  Entonces veo "Resultados (1)" con una fila con las columnas "Empresa", "RUC", "Estado", "Vencimiento" y "Vigente"
+  Y la fila dice "Botica Manual Demo S.A.C.", "20538291746", "Trial Activo", "13/11/2026" y una marca verde en "Vigente"
+  Y solo veo mi propia empresa: las demás se comportan como inexistentes (salvo que sea operador de plataforma: HU-ADM-056)
 
 Escenario: Filtrar por nombre sin distinguir mayúsculas
   Dado que escribo "manual" en "Nombre de la Empresa"
@@ -1141,32 +1142,32 @@ Escenario: Otra empresa no se puede editar
 | | |
 |---|---|
 | **Módulo** | Empresas y autenticación |
-| **Pantalla** | `/auth/login` (mensaje); sin pantalla de gestión del estado |
+| **Pantalla** | `/auth/login` (mensaje y cómo pagar, HU-ADM-053); el estado se gestiona en `/empresas/:id` (HU-ADM-055) |
 | **Endpoint(s)** | `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/forgot-password` y toda petición autenticada |
 | **Permiso** | Anónimo / solo autenticado |
-| **Reglas** | [RN-EMP-014, RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md), [RN-AUT-009, RN-AUT-017, RN-AUT-034](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-018](../../negocio/reglas/administracion-y-seguridad.md) |
-| **Estado** | Parcial (la comprobación de vigencia funciona; ningún endpoint ni pantalla permite activar, suspender, cancelar ni extender la suscripción) |
+| **Reglas** | [RN-EMP-014, RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md), [RN-AUT-009, RN-AUT-017, RN-AUT-034, RN-AUT-040](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-018, RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada (desde `6f6b837` el operador de plataforma activa, extiende, suspende y cancela: HU-ADM-055) |
 
 **Criterios de aceptación**
 
 ```gherkin
 Escenario: Cuándo una empresa está vigente
   Dado que una empresa no está eliminada
-  Cuando su estado es "Activo", o es "Trial Activo" con vencimiento posterior a la hora actual
+  Cuando su estado es "Activo" o "Trial Activo" y su vencimiento es posterior a la hora actual
   Entonces está vigente
 
 Escenario: Cuándo no está vigente
-  Dado que el estado es "Suspendido" o "Cancelado", o la prueba venció, o la empresa no existe
+  Dado que el estado es "Suspendido" o "Cancelado", o la prueba o la suscripción venció, o la empresa no existe
   Entonces no está vigente
 
 Escenario: En estado Activo la fecha de vencimiento no se evalúa
   Dado que la empresa está en estado "Activo" con un vencimiento pasado
-  Entonces sigue vigente
+  Entonces deja de estar vigente (desde `sofia-apis` `6f6b837` la suscripción pagada vence sola en su fecha, igual que la prueba; hasta `9c16f35` el estado "Activo" no evaluaba el vencimiento)
 
 Escenario: No se puede iniciar sesión
   Dado que la empresa no está vigente y la contraseña es correcta
   Cuando inicio sesión
-  Entonces veo "La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla."
+  Entonces veo "La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla."
 
 Escenario: Las sesiones vivas se cortan en un minuto como máximo
   Dado que tengo la sesión abierta y mi empresa deja de estar vigente
@@ -1186,7 +1187,7 @@ Escenario: No se envía el correo de recuperación
   Entonces veo el mensaje uniforme y no se envía ningún correo
 ```
 
-> **Pendiente.** Activar, suspender, cancelar y extender la prueba existen en la entidad `Empresa` pero ningún handler ni endpoint las invoca (solo las pruebas automáticas): hoy el estado solo puede cambiarse directamente en la base de datos ([RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md)). **No verificado en la aplicación:** el mensaje de inicio de sesión con empresa no vigente (la empresa de prueba está vigente; manual cap. 1, §12).
+> **Nota.** Desde `sofia-apis` `6f6b837` el operador de plataforma cambia el estado con cuatro endpoints (HU-ADM-055, [RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md)); un administrador de empresa sigue sin poder hacerlo. No hay cambio automático de estado: al llegar el vencimiento la empresa deja de estar vigente sin cambiar de estado. **No verificado en la aplicación:** el mensaje de inicio de sesión con empresa no vigente (la empresa de prueba está vigente; manual cap. 1, §12).
 
 ---
 
@@ -2057,7 +2058,8 @@ Escenario: La matriz de permisos
 
 Escenario: El catálogo sale de la API
   Dado que la matriz muestra los permisos que se pueden asignar
-  Entonces son exactamente los pares módulo y acción declarados en los controladores de la API (105 pares en 27 módulos), agrupados por módulo y ordenados alfabéticamente
+  Entonces son exactamente los pares módulo y acción declarados con "[HasPermission]" en los controladores de la API (104 pares en 27 módulos), agrupados por módulo y ordenados alfabéticamente
+  Y "Empresas › Leer" ya no figura entre ellos: desde `sofia-apis` `6f6b837` ese permiso se declara con "[HasPermissionOrPlataforma]" y el catálogo solo recorre "[HasPermission]", así que en «Empresa» solo queda "Actualizar"
 
 Escenario: Marcar casillas no guarda nada
   Dado que marco "Ventas › Leer", "Ventas › Crear", "Ventas › Actualizar" y "Ventas › Anular"
@@ -2993,7 +2995,7 @@ Escenario: Dos emisiones simultáneas
   Y además existe un índice único por serie y correlativo en los comprobantes
 ```
 
-> **Nota.** El formato impreso del comprobante (por ejemplo `B001-00000001`) y los avisos «Esta sucursal no tiene una serie de boletas activa…» son de las historias de la parte C. **No verificado en la aplicación:** el comportamiento concurrente (viene del código, `ApplicationDbContext.cs:180-188`, citado en [RN-SER-013](../../negocio/reglas/administracion-y-seguridad.md)).
+> **Nota.** El formato impreso del comprobante (por ejemplo `B001-00000001`) y los avisos «Esta sucursal no tiene una serie de boletas activa…» son de las historias de la parte C. **No verificado en la aplicación:** el comportamiento concurrente (viene del código, `ApplicationDbContext.cs:187-195`, citado en [RN-SER-013](../../negocio/reglas/administracion-y-seguridad.md)).
 
 ---
 
@@ -3409,6 +3411,464 @@ Escenario: El mensaje del backend no se muestra
 
 > **Brecha conocida.** No existe un traductor global de códigos; cada pantalla declara su mapa. Los códigos de negocio de este alcance sin texto propio están listados en el hallazgo 2 de la sección 12.3 del catálogo de reglas (por ejemplo `Rol.NotFound`, `Empresa.NotFound`, `Empresa.RUC.Duplicado` en el detalle de empresa y `Export.TooManyRows`; `Rol.DuplicateName`, `Rol.InUse`, `Permiso.Duplicate`, `Auth.DuplicateAccount`, `Auth.DuplicateUsername` y `Empleado.SucursalBase.AutoAsignacion` ya tienen texto propio desde `sofia-web-spa` `37d053d`). Las claves `errors.forbidden`, `errors.unauthorized`, `errors.notFound`, `errors.serverError` y `errors.networkError` existen y no se usan.
 
+### HU-ADM-051 — Reconocer al operador de plataforma
+
+**Como** equipo de SOFIA **quiero** que una cuenta marcada como operador de plataforma pueda gestionar las suscripciones de todas las empresas **para** cobrar renovaciones y reactivar a quien paga, sin depender de un rol dentro de su propia empresa.
+
+| | |
+|---|---|
+| **Módulo** | Plataforma (autenticación y autorización) |
+| **Pantalla** | Ninguna propia; condiciona `/configuracion-pago`, la sección «Suscripciones» del panel y los botones de suscripción de `/empresas/:id` |
+| **Endpoint(s)** | Todos los de la política `PLATAFORMA_ADMIN` (`GET /api/v1/plataforma/dashboard`, `PUT /api/v1/plataforma/pago`, `PUT /api/v1/Empresas/{id}/suscripcion/activar`, `…/extender-prueba`, `…/suspender`, `…/cancelar`) y los `[HasPermissionOrPlataforma]` (`GET /api/v1/Empresas`, `GET /api/v1/Empresas/{id}`, `POST /api/v1/Empresas/exportar`) |
+| **Permiso** | Marca de operador de plataforma (claim `plat_admin`); el rol `Admin` no la sustituye |
+| **Reglas** | [RN-GEN-042, RN-GEN-021, RN-GEN-018](../../negocio/reglas/administracion-y-seguridad.md), [RN-CTA-021, RN-CTA-008](../../negocio/reglas/administracion-y-seguridad.md), [RN-AUT-009, RN-AUT-011, RN-AUT-017, RN-AUT-034](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada (sin pantalla; la marca se pone a mano en la base de datos) |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: La marca de operador solo se cambia en la base de datos
+  Dado que una cuenta tiene "Es_Admin_Plataforma" en 0
+  Cuando un administrador de empresa crea o edita cuentas desde la aplicación
+  Entonces ninguna pantalla ni endpoint permite marcar a una cuenta como operador
+  Y toda cuenta nueva nace sin la marca
+
+Escenario: El token del operador lleva la marca
+  Dado que la cuenta tiene la marca de operador
+  Cuando inicio sesión
+  Entonces mi token de acceso trae el claim "plat_admin" con valor "true"
+  Y el SPA me muestra la opción «Configuración de Pago» y la sección «Suscripciones» del panel
+
+Escenario: El rol Admin no basta
+  Dado que mi cuenta tiene el rol "Admin" pero no la marca de operador
+  Cuando llamo a un endpoint de la política "PLATAFORMA_ADMIN"
+  Entonces la API responde 403
+  Y la pantalla «Configuración de Pago» me devuelve al panel con "No tienes permisos para acceder a esta pantalla."
+
+Escenario: Quitar la marca corta el privilegio sin esperar al vencimiento del token
+  Dado que tengo la sesión abierta como operador
+  Cuando alguien quita la marca de mi cuenta en la base de datos
+  Entonces en mi siguiente petición autenticada el claim "plat_admin" se retira y las rutas del operador responden 403
+
+Escenario: El operador lee las empresas sin tener el permiso en un rol
+  Dado que mi cuenta es operador y mi rol no tiene "Empresas › Leer"
+  Cuando abro "/empresas"
+  Entonces el menú muestra «Empresa» y la pantalla abre
+  Y el SPA me concede solo esa lectura, no los demás permisos de «Empresa»
+
+Escenario: El operador no se bloquea por la vigencia de su propia empresa
+  Dado que la empresa del operador está vencida o suspendida
+  Cuando inicio sesión, renuevo la sesión o pido recuperar la contraseña
+  Entonces la cuenta del operador no se rechaza por la vigencia de su empresa
+  Y no es necesario que ese estado se revierta para poder activar a las demás
+```
+
+> **Nota.** El detalle de implementación está en las reglas RN-GEN-042 y RN-CTA-021. **No verificado en la aplicación:** ningún recorrido del manual incluyó una cuenta de operador; los escenarios salen del código (`PlataformaAdminPolicy.cs`, `PermissionAuthorizationHandler.cs:22-27`, `DependencyInjection.cs`, `EmpresaVigencia.cs:8-9`, `route-permissions.ts` `PLATFORM_OPERATOR_GRANTS`).
+
+### HU-ADM-052 — Publicar los datos de pago de la plataforma
+
+**Como** operador de plataforma **quiero** publicar el WhatsApp, el número de Yape, las indicaciones y el código QR de pago **para** que las empresas que deben pagar sepan cómo hacerlo.
+
+| | |
+|---|---|
+| **Módulo** | Plataforma |
+| **Pantalla** | `/configuracion-pago` — «Configuración de Pago» (migas «Inicio / Administración / Configuración de Pago») |
+| **Endpoint(s)** | `GET /api/v1/plataforma/pago`; `PUT /api/v1/plataforma/pago` (`multipart/form-data`) |
+| **Permiso** | Operador de plataforma (política `PLATAFORMA_ADMIN`) para guardar; la lectura es anónima |
+| **Reglas** | [RN-EMP-023, RN-EMP-024, RN-EMP-025, RN-EMP-027](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-042, RN-GEN-039](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: Abrir la pantalla por primera vez
+  Dado que soy operador de plataforma y nunca se guardaron datos de pago
+  Cuando abro "/configuracion-pago"
+  Entonces veo "Configuración de Pago" con "Estos datos se muestran a las empresas que deben pagar su suscripción."
+  Y los campos "WhatsApp para recibir capturas", "Número de Yape (opcional)" e "Indicaciones de pago (opcional)" vacíos y deshabilitados
+  Y el panel del QR dice "Aún no has subido un código QR."
+
+Escenario: Guardar solo el WhatsApp
+  Dado que hago clic en "Editar"
+  Cuando escribo "51987654321" en "WhatsApp para recibir capturas" y hago clic en "Guardar"
+  Entonces veo "Configuración de pago guardada."
+  Y la pantalla vuelve al modo ver con los datos recargados
+
+Escenario: El WhatsApp es obligatorio y de 8 a 15 dígitos
+  Dado que estoy en modo editar
+  Cuando dejo "WhatsApp para recibir capturas" vacío
+  Entonces veo "Este campo es obligatorio" y no se envía nada
+  Y con "5198-765" veo "Ingresa de 8 a 15 dígitos, con código de país y sin espacios ni signos"
+
+Escenario: El número de Yape tiene exactamente 9 dígitos
+  Dado que escribo "98765" en "Número de Yape (opcional)"
+  Entonces veo "Ingresa exactamente 9 dígitos"
+  Y con 9 dígitos o con el campo vacío el formulario es válido
+
+Escenario: Las indicaciones admiten hasta 500 caracteres
+  Dado que escribo indicaciones
+  Entonces el campo se detiene en 500 caracteres
+  Y un texto en blanco se guarda como vacío
+
+Escenario: Subir el código QR
+  Dado que estoy en modo editar
+  Cuando hago clic en "Elegir imagen" y elijo un PNG de 200 KB
+  Entonces veo la imagen con "Imagen nueva, se publicará al guardar"
+  Y al guardar el QR queda publicado y el botón pasa a decir "Cambiar imagen"
+
+Escenario: Formato o tamaño de imagen no admitidos
+  Dado que elijo un archivo GIF o una imagen de más de 1 MB
+  Entonces veo "La imagen debe ser PNG o JPG." o "La imagen no puede pesar más de 1 MB." bajo el panel y la imagen no se cambia
+
+Escenario: Guardar sin elegir imagen conserva el QR publicado
+  Dado que ya hay un QR publicado
+  Cuando edito solo el número de Yape y hago clic en "Guardar"
+  Entonces el QR publicado no cambia
+
+Escenario: El servidor decide el formato por el contenido del archivo
+  Dado que llamo a "PUT /api/v1/plataforma/pago" con un archivo cuyo contenido no es PNG ni JPEG
+  Entonces la API responde 400 "ConfiguracionPago.Qr.Formato"
+  Y con un archivo de más de 1 MB responde 400 "ConfiguracionPago.Qr.Tamano"
+
+Escenario: Cancelar descarta los cambios
+  Dado que escribí otro WhatsApp y elegí otra imagen
+  Cuando hago clic en "Cancelar"
+  Entonces vuelven los datos publicados, se descarta la imagen elegida y la pantalla vuelve al modo ver
+
+Escenario: Hay un único conjunto de datos de pago
+  Dado que ya existe un registro de datos de pago
+  Cuando guardo de nuevo
+  Entonces se actualiza el registro existente y no se crea otro
+  Y se registra el evento de auditoría "PAGO_CONFIG_GUARDAR"
+
+Escenario: Solo el operador entra
+  Dado que mi cuenta tiene el rol "Admin" pero no es operador de plataforma
+  Cuando escribo "/configuracion-pago" en la barra de direcciones
+  Entonces veo "No tienes permisos para acceder a esta pantalla." y vuelvo al panel
+  Y la opción «Configuración de Pago» no aparece en mi menú
+  Y si llamo a "PUT /api/v1/plataforma/pago" la API responde 403
+
+Escenario: Error al guardar
+  Dado que la API falla por un motivo sin mensaje propio
+  Entonces veo "No se pudo guardar la configuración de pago."
+```
+
+> **Nota.** Los textos salen de `suscripcion.config.*` (`public/i18n/suscripcion/es.json`); el inventario de pantallas está en `producto/pantallas/administracion` §1.3. **No verificado en la aplicación:** el aspecto del panel del QR y la subida real de una imagen (solo lectura de código y de las pruebas de la pantalla).
+
+### HU-ADM-053 — Ver cómo pagar al iniciar sesión con la suscripción vencida
+
+**Como** administrador de una empresa suspendida, cancelada o con la prueba o la suscripción vencida **quiero** ver cómo pagar en la misma pantalla de inicio de sesión **para** reactivar mi acceso sin pedir ayuda.
+
+| | |
+|---|---|
+| **Módulo** | Autenticación y plataforma |
+| **Pantalla** | `/auth/login` — «Iniciar sesión» (bloque «Paga tu suscripción con Yape») |
+| **Endpoint(s)** | `POST /api/v1/auth/login`; `GET /api/v1/plataforma/pago` |
+| **Permiso** | Anónimo (la lectura de los datos de pago tiene el límite `public-info`: 30 peticiones por minuto por IP) |
+| **Reglas** | [RN-AUT-009, RN-AUT-040](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-025](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-043](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: Mi empresa no está vigente y el operador publicó los datos
+  Dado que mi contraseña es correcta pero la empresa no está vigente
+  Cuando hago clic en "Ingresar"
+  Entonces veo "La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla."
+  Y debajo veo "Paga tu suscripción con Yape" con el código QR, las indicaciones del operador y el botón "Enviar captura por WhatsApp"
+  Y mi usuario escrito se conserva en el formulario
+
+Escenario: Si no puedo escanear el código
+  Dado que hay QR y número de Yape publicados
+  Entonces veo "Si no puedes escanear el código, yapea al número" seguido del número agrupado de tres en tres
+  Pero sin QR publicado veo "Yapea al número"
+
+Escenario: El mensaje de WhatsApp me identifica
+  Dado que hago clic en "Enviar captura por WhatsApp"
+  Entonces se abre en otra pestaña "https://wa.me/<número del operador>" con el texto "Hola, adjunto la captura del pago de mi suscripción de SOFIA. Usuario: <mi usuario>"
+
+Escenario: Todavía no hay datos de pago
+  Dado que el operador nunca guardó datos de pago
+  Entonces veo "Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción."
+
+Escenario: No se pudieron cargar los datos de pago
+  Dado que la lectura de los datos falla (por ejemplo, por exceso de peticiones)
+  Entonces veo "No pudimos cargar los datos de pago." y el botón "Reintentar"
+  Y al hacer clic en "Reintentar" se vuelve a pedir
+
+Escenario: Con cualquier otro error no se muestra el bloque de pago
+  Dado que escribo una contraseña incorrecta
+  Cuando hago clic en "Ingresar"
+  Entonces veo "Credenciales inválidas. Verifica tu usuario y contraseña." y ningún bloque de pago
+
+Escenario: El bloque desaparece al reintentar
+  Dado que veo el bloque de pago
+  Cuando vuelvo a enviar el formulario
+  Entonces el bloque se oculta hasta la siguiente respuesta
+
+Escenario: La API de datos de pago es pública
+  Dado que no tengo sesión
+  Cuando llamo a "GET /api/v1/plataforma/pago"
+  Entonces la API responde 200 con "whatsappNumero", "yapeNumero", "instrucciones" y "qrDataUrl" (nulos si el operador no guardó nada)
+  Y a la petición 31 en un minuto desde la misma IP responde 429
+```
+
+> **Nota.** Texto exacto en `suscripcion.pago.*` y `auth.empresaNoVigente`; ver el inventario en `producto/pantallas/acceso-layout-y-compartidos` §1.1 y §6.14. **No verificado en la aplicación:** el aspecto del bloque y el enlace de WhatsApp.
+
+### HU-ADM-054 — Recibir el aviso de vencimiento y ver cómo pagar
+
+**Como** administrador de una empresa **quiero** que el panel me avise cuando mi prueba o mi suscripción está por vencer **para** pagar antes de perder el acceso.
+
+| | |
+|---|---|
+| **Módulo** | Empresas y plataforma |
+| **Pantalla** | `/dashboard` — aviso sobre la cabecera y diálogo «Cómo pagar» |
+| **Endpoint(s)** | `GET /api/v1/Empresas/{id}` (la empresa propia); `GET /api/v1/plataforma/pago` |
+| **Permiso** | `Empresas:Leer` |
+| **Reglas** | [RN-EMP-026, RN-EMP-014](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-025](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: Mi prueba vence en 7 días o menos
+  Dado que mi empresa está en "Trial Activo" y vence dentro de 5 días
+  Cuando abro el panel
+  Entonces veo "Tu periodo de prueba vence en 5 días (dd/MM/aaaa)." con el botón "Cómo pagar"
+
+Escenario: Mi suscripción vence en 7 días o menos
+  Dado que mi empresa está en estado "Activo" y vence dentro de 3 días
+  Entonces veo "Tu suscripción vence en 3 días (dd/MM/aaaa)."
+
+Escenario: Falta un día o menos
+  Dado que mi empresa vence en menos de 24 horas
+  Entonces el aviso dice "1 día" y nunca menos de 1: "Tu periodo de prueba vence en 1 día (dd/MM/aaaa)." o "Tu suscripción vence en 1 día (dd/MM/aaaa)."
+
+Escenario: Faltan más de 7 días
+  Dado que mi empresa vence dentro de 20 días
+  Entonces no veo ningún aviso
+
+Escenario: Sin permiso para leer la empresa no hay aviso
+  Dado que mi rol no tiene "Empresas › Leer"
+  Entonces el panel no muestra el aviso ni lo pide
+
+Escenario: Abrir cómo pagar
+  Dado que veo el aviso
+  Cuando hago clic en "Cómo pagar"
+  Entonces se abre un diálogo con el bloque "Paga tu suscripción con Yape" y el botón "Cerrar"
+  Y el mensaje de WhatsApp dice "Hola, adjunto la captura del pago de mi suscripción de SOFIA. Empresa: <nombre de mi empresa>"
+
+Escenario: Una empresa ya vencida no llega a ver el aviso
+  Dado que mi empresa venció
+  Entonces la API rechaza mis peticiones con 401 y soy llevado a "Iniciar sesión"
+
+Escenario: Si la carga falla, no aparece el aviso
+  Dado que la lectura de mi empresa falla
+  Entonces el panel sigue sin avisar y sin mostrar un error por ello
+```
+
+> **Nota.** **No verificado en la aplicación.** Fuente: `suscripcion-aviso.component.ts` y `suscripcion.aviso.*`; inventario en `producto/pantallas/acceso-layout-y-compartidos` §3.1.
+
+### HU-ADM-055 — Activar, extender, suspender o cancelar la suscripción de una empresa
+
+**Como** operador de plataforma **quiero** cambiar el estado y el vencimiento de la suscripción de una empresa **para** cobrar renovaciones, dar más prueba, bloquear a quien no paga y reactivar a quien paga.
+
+| | |
+|---|---|
+| **Módulo** | Empresas |
+| **Pantalla** | `/empresas/:id` — botones «Activar suscripción», «Extender prueba», «Suspender» y «Cancelar suscripción» |
+| **Endpoint(s)** | `PUT /api/v1/Empresas/{id}/suscripcion/activar`; `PUT …/extender-prueba`; `PUT …/suspender`; `PUT …/cancelar` |
+| **Permiso** | Operador de plataforma (política `PLATAFORMA_ADMIN`); el rol `Admin` no basta |
+| **Reglas** | [RN-EMP-015, RN-EMP-019, RN-EMP-020, RN-EMP-021, RN-EMP-022, RN-EMP-028](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-014, RN-GEN-018, RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: Los botones según el estado de la empresa
+  Dado que abro el detalle de una empresa que no es la mía y está en "Trial Activo"
+  Entonces veo "Activar suscripción", "Extender prueba", "Suspender" y "Cancelar suscripción"
+  Pero en una empresa "Activo" no veo "Extender prueba", en una "Suspendido" no veo "Suspender" y en una "Cancelado" no veo "Cancelar suscripción"
+
+Escenario: Activar la suscripción hasta una fecha
+  Dado que hago clic en "Activar suscripción"
+  Entonces veo el diálogo "Elige hasta qué día queda activa la suscripción de <empresa>. Al llegar esa fecha el acceso se bloquea solo." con el campo "Vigente hasta" y los atajos "1 mes", "3 meses", "6 meses" y "12 meses"
+  Y la fecha propuesta es un mes después del vencimiento actual si todavía está en el futuro, o un mes después de hoy si ya venció
+  Cuando hago clic en "Confirmar"
+  Entonces veo "Suscripción activada." y la empresa queda en "Activo" con vencimiento al final del día elegido (23:59:59 hora local)
+
+Escenario: El calendario no admite fechas pasadas
+  Dado que estoy en el diálogo de fecha
+  Entonces no puedo elegir una fecha anterior a mañana
+  Y sin fecha veo "Este campo es obligatorio"
+
+Escenario: Sumar meses a un día 31
+  Dado que la fecha base es 31/01
+  Cuando hago clic en "1 mes"
+  Entonces la fecha propuesta es el último día de febrero
+
+Escenario: Extender la prueba
+  Dado que la empresa está en "Trial Activo"
+  Cuando hago clic en "Extender prueba", elijo una fecha y hago clic en "Confirmar"
+  Entonces veo "Periodo de prueba extendido." y el vencimiento pasa a la fecha elegida sin cambiar el estado
+
+Escenario: Extender la prueba de una empresa que ya no está en prueba
+  Dado que llamo a "PUT …/suscripcion/extender-prueba" para una empresa en estado "Activo"
+  Entonces la API responde 409 "Empresa.Suscripcion.NoEstaEnPrueba"
+  Y el SPA muestra "Solo se puede extender la prueba de una empresa que sigue en periodo de prueba."
+
+Escenario: La fecha debe ser futura
+  Dado que llamo a "PUT …/suscripcion/activar" con una fecha pasada
+  Entonces la API responde 400 y el SPA muestra "La fecha de vencimiento debe ser posterior a hoy."
+
+Escenario: Suspender con confirmación
+  Dado que hago clic en "Suspender"
+  Entonces veo "Suspender empresa" con "<empresa> perderá el acceso de inmediato. Puedes devolvérselo activando su suscripción."
+  Cuando confirmo
+  Entonces veo "Empresa suspendida." y el estado pasa a "Suspendido"
+
+Escenario: Cancelar con confirmación
+  Dado que hago clic en "Cancelar suscripción" y confirmo
+  Entonces veo "Suscripción cancelada." y el estado pasa a "Cancelado"
+
+Escenario: No puedo bloquear mi propia empresa
+  Dado que abro el detalle de la empresa del operador
+  Entonces no veo "Suspender" ni "Cancelar suscripción"
+  Y si llamo a la API para suspenderla o cancelarla responde 409 "Empresa.Suscripcion.PropiaEmpresa" y el SPA dice "No puedes suspender ni cancelar tu propia empresa."
+
+Escenario: Reactivar una empresa suspendida o cancelada
+  Dado que una empresa está en "Suspendido" o "Cancelado"
+  Cuando le activo la suscripción con una fecha futura
+  Entonces la empresa vuelve a estar vigente y sus usuarios pueden iniciar sesión
+
+Escenario: El bloqueo llega a las sesiones abiertas en un minuto como máximo
+  Dado que suspendo una empresa con usuarios conectados
+  Entonces sus usuarios pierden el acceso al iniciar sesión y al renovar, y en las peticiones con un token vivo en un minuto como máximo
+
+Escenario: La empresa no existe
+  Dado que el identificador no corresponde a ninguna empresa
+  Entonces la API responde 404 "Empresa.NotFound"
+
+Escenario: Un administrador de empresa no puede
+  Dado que mi cuenta tiene el rol "Admin" pero no es operador
+  Entonces no veo los cuatro botones de suscripción
+  Y si llamo a los endpoints la API responde 403
+
+Escenario: Quedan registradas en la auditoría
+  Dado que activo, extiendo, suspendo o cancelo una suscripción
+  Entonces se registra "EMPRESA_ACTIVAR", "EMPRESA_EXT_PRUEBA", "EMPRESA_SUSPENDER" o "EMPRESA_CANCELAR"
+
+Escenario: Error al cambiar la suscripción
+  Dado que la API falla por un motivo sin mensaje propio
+  Entonces veo "No se pudo cambiar la suscripción."
+```
+
+> **Nota.** Mientras una acción se ejecuta los cuatro botones quedan deshabilitados. Textos en `empresa.suscripcion.*`; inventario en `producto/pantallas/administracion` §1.2. **No verificado en la aplicación:** ninguna de estas acciones se recorrió; salen del código.
+
+### HU-ADM-056 — Buscar y abrir cualquier empresa como operador de plataforma
+
+**Como** operador de plataforma **quiero** ver todas las empresas y sus vencimientos **para** saber a quién cobrar o reactivar.
+
+| | |
+|---|---|
+| **Módulo** | Empresas |
+| **Pantalla** | `/empresas` — «Empresas» (columna «Vencimiento») y `/empresas/:id` |
+| **Endpoint(s)** | `GET /api/v1/Empresas`; `GET /api/v1/Empresas/{id}`; `POST /api/v1/Empresas/exportar` |
+| **Permiso** | `Empresas:Leer` o ser operador de plataforma (`[HasPermissionOrPlataforma]`) |
+| **Reglas** | [RN-EMP-001, RN-EMP-017, RN-EMP-018, RN-EMP-022](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: El operador ve las empresas de todos
+  Dado que soy operador de plataforma
+  Cuando hago clic en "Buscar" en "/empresas"
+  Entonces veo "Resultados (N)" con todas las empresas no eliminadas, ordenadas por nombre
+  Y cada fila trae "Empresa", "RUC", "Estado", "Vencimiento" (dd/MM/yyyy) y "Vigente"
+
+Escenario: Un usuario de empresa sigue viendo solo la suya
+  Dado que no soy operador de plataforma
+  Cuando busco empresas
+  Entonces solo aparece mi empresa y las demás se comportan como inexistentes (404 "Empresa.NotFound")
+
+Escenario: Llegar desde el panel con el estado ya filtrado
+  Dado que en la sección «Suscripciones» hago clic en "Ver lista" de «Suspendidas»
+  Entonces se abre "/empresas" con "Estado" en "Suspendido" y los resultados ya cargados
+
+Escenario: Filtrar por vencimiento
+  Dado que elijo "Vencimiento desde" y "Vencimiento hasta"
+  Cuando hago clic en "Buscar"
+  Entonces solo veo las empresas cuyo vencimiento cae en ese rango
+
+Escenario: Editar solo mi propia empresa
+  Dado que abro el detalle de una empresa que no es la del operador
+  Entonces no veo el botón "Editar"
+  Y en la empresa del operador sí lo veo, si el rol tiene "Empresas › Actualizar"
+
+Escenario: Exportar todas las empresas
+  Dado que ya hice clic en "Buscar"
+  Cuando hago clic en "Exportar"
+  Entonces el archivo trae las empresas de todas las empresas que cumplen los filtros actuales del formulario, no solo la mía
+```
+
+> **Nota.** El permiso `Empresas:Leer` ya no figura en el catálogo de la matriz de permisos de «Roles» (HU-ADM-030): lo declaran como `[HasPermissionOrPlataforma]` y ese catálogo solo recorre `[HasPermission]`. **No verificado en la aplicación.**
+
+### HU-ADM-057 — Ver las cifras de suscripciones en el panel
+
+**Como** operador de plataforma **quiero** ver cuántas empresas están vigentes, por vencer, vencidas, suspendidas y canceladas **para** priorizar los cobros.
+
+| | |
+|---|---|
+| **Módulo** | Dashboard y plataforma |
+| **Pantalla** | `/dashboard` — sección «Suscripciones» |
+| **Endpoint(s)** | `GET /api/v1/plataforma/dashboard?inicioMes=` |
+| **Permiso** | Operador de plataforma (política `PLATAFORMA_ADMIN`) |
+| **Reglas** | [RN-DAS-025, RN-DAS-026](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-EMP-014, RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Estado** | Implementada |
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: Las tarjetas de suscripciones
+  Dado que soy operador de plataforma
+  Cuando abro el panel
+  Entonces veo la sección "Suscripciones" con "Empresas vigentes" (con "<n> en prueba · <n> con suscripción"), "Vencen en 7 días o menos", "Vencidas sin renovar", "Suspendidas", "Canceladas" y "Registradas este mes" (con "<n> empresas en total")
+
+Escenario: Qué cuenta como vencida
+  Dado que una empresa está en "Trial Activo" o "Activo" con el vencimiento ya pasado
+  Entonces cuenta en "Vencidas sin renovar" y no en "Empresas vigentes"
+
+Escenario: La tabla de próximas a vencer
+  Dado que hay empresas que vencen en los próximos 7 días
+  Entonces veo "Próximas a vencer (7 días)" con "Empresa", "Tipo" ("Prueba" o "Suscripción"), "Vence" y "Días restantes", de la más próxima a la más lejana
+  Y el nombre de la empresa abre su detalle
+
+Escenario: Solo se muestran las diez más próximas
+  Dado que hay más de 10 empresas por vencer
+  Entonces la tabla muestra 10 y debajo dice "Se muestran las 10 más próximas de <total>."
+
+Escenario: Ninguna por vencer
+  Dado que ninguna empresa vence en los próximos 7 días
+  Entonces la tabla dice "Ninguna empresa vence en los próximos días."
+
+Escenario: Ver la lista de suspendidas o canceladas
+  Dado que hago clic en "Ver lista" de «Suspendidas» o de «Canceladas»
+  Entonces se abre "/empresas" filtrada por ese estado
+  Y "Ver todas las empresas" la abre sin filtro
+
+Escenario: Fallo en la sección
+  Dado que la consulta falla
+  Entonces veo "No se pudo cargar esta sección." con "Reintentar" y el resto del panel sigue visible
+
+Escenario: Los demás no ven la sección
+  Dado que mi cuenta tiene el rol "Admin" pero no es operador
+  Entonces el panel no muestra «Suscripciones» y la API responde 403 a "GET /api/v1/plataforma/dashboard"
+```
+
+> **Nota.** El conteo «Registradas este mes» usa el inicio del mes del navegador del operador. **No verificado en la aplicación.** Inventario en `producto/pantallas/acceso-layout-y-compartidos` §3.1.
+
+
 ---
 
 ## 12. Trazabilidad
@@ -3432,7 +3892,7 @@ Cada fila resume la historia con las reglas que cita, la pantalla, los endpoints
 | HU-ADM-013 — Buscar mi empresa y exportarla a Excel | RN-EMP-001, RN-EMP-017, RN-EMP-018, RN-GEN-001, RN-GEN-009, RN-IMP-008 a RN-IMP-010, RN-IMP-017 | `/empresas` — «Empresas» | `GET /api/v1/Empresas`; `POST /api/v1/Empresas/exportar` | Cap. 2 §3.1 |
 | HU-ADM-014 — Ver los datos y la suscripción de mi empresa | RN-EMP-012, RN-EMP-014, RN-EMP-016, RN-EMP-017, RN-GEN-001 | `/empresas/:id` | `GET /api/v1/Empresas/{id}` | Cap. 2 §3.2 |
 | HU-ADM-015 — Editar el nombre y el RUC de mi empresa | RN-EMP-001, RN-EMP-002, RN-EMP-004, RN-EMP-005, RN-EMP-017, RN-GEN-013 | `/empresas/:id` (botón «Editar») | `PUT /api/v1/Empresas/{id}` | Cap. 2 §3.3 |
-| HU-ADM-016 — Restringir el acceso cuando la suscripción no está vigente | RN-AUT-009, RN-AUT-017, RN-AUT-034, RN-EMP-014, RN-EMP-015, RN-GEN-018 | `/auth/login` (mensaje); sin pantalla de gestión del estado | `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/forgot-password` y toda petición autenticada | Cap. 1 §6.5; cap. 2 §3.2 |
+| HU-ADM-016 — Restringir el acceso cuando la suscripción no está vigente | RN-AUT-009, RN-AUT-017, RN-AUT-034, RN-EMP-014, RN-EMP-015, RN-GEN-018 | `/auth/login` (mensaje y cómo pagar); el estado se gestiona en `/empresas/:id` (HU-ADM-055) | `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/forgot-password` y toda petición autenticada | Cap. 1 §6.5; cap. 2 §3.2 |
 | HU-ADM-017 — Buscar sucursales y exportarlas a Excel | RN-GEN-001, RN-GEN-009, RN-IMP-008, RN-IMP-009, RN-IMP-017, RN-SUC-001, RN-SUC-011 | `/sucursales` — «Sucursales» | `GET /api/v1/Sucursales`; `POST /api/v1/Sucursales/exportar` | Cap. 2 §6 |
 | HU-ADM-018 — Crear una sucursal | RN-GEN-024, RN-GEN-036 a RN-GEN-038, RN-SUC-001 a RN-SUC-007 | `/sucursales/nueva` | `POST /api/v1/Sucursales` | Cap. 2 §5 |
 | HU-ADM-019 — Ver y editar una sucursal | RN-EMP-010, RN-GEN-036 a RN-GEN-038, RN-SUC-002 a RN-SUC-006, RN-SUC-008 | `/sucursales/:id` | `GET /api/v1/Sucursales/{id}`; `PUT /api/v1/Sucursales/{id}`; `GET /api/v1/Empleados` | Cap. 2 §4 |
@@ -3467,6 +3927,13 @@ Cada fila resume la historia con las reglas que cita, la pantalla, los endpoints
 | HU-ADM-048 — Dejar rastro de las acciones de seguridad | RN-GEN-012 a RN-GEN-014 | Ninguna | Ninguno propio (`POST /api/v1/Auditoria/anonimizar` responde 501) | Sin capítulo (sin pantalla) |
 | HU-ADM-049 — Proteger la API contra abuso y configuraciones inseguras | RN-GEN-010, RN-GEN-011, RN-GEN-015, RN-GEN-025 a RN-GEN-027, RN-GEN-029 a RN-GEN-034 | Ninguna | Todos; `GET /health` | Sin capítulo (plataforma) |
 | HU-ADM-050 — Recibir respuestas de error coherentes de la API | RN-GEN-012, RN-GEN-024, RN-GEN-035 a RN-GEN-041 | Todas | Todos | Sin capítulo (plataforma) |
+| HU-ADM-051 — Reconocer al operador de plataforma | RN-GEN-018, RN-GEN-021, RN-GEN-042, RN-CTA-008, RN-CTA-021, RN-AUT-009, RN-AUT-011, RN-AUT-017, RN-AUT-034 | Condiciona `/configuracion-pago`, el panel y `/empresas` | Los de la política `PLATAFORMA_ADMIN` y `[HasPermissionOrPlataforma]` | Sin capítulo (sin cuenta de operador en el manual) |
+| HU-ADM-052 — Publicar los datos de pago de la plataforma | RN-EMP-023 a RN-EMP-025, RN-EMP-027, RN-GEN-039, RN-GEN-042 | `/configuracion-pago` — «Configuración de Pago» | `GET /api/v1/plataforma/pago`; `PUT /api/v1/plataforma/pago` | Sin capítulo |
+| HU-ADM-053 — Ver cómo pagar al iniciar sesión con la suscripción vencida | RN-AUT-009, RN-AUT-040, RN-EMP-025, RN-GEN-043 | `/auth/login` — «Iniciar sesión» | `POST /api/v1/auth/login`; `GET /api/v1/plataforma/pago` | Sin capítulo |
+| HU-ADM-054 — Recibir el aviso de vencimiento y ver cómo pagar | RN-EMP-014, RN-EMP-025, RN-EMP-026 | `/dashboard` — aviso y diálogo «Cómo pagar» | `GET /api/v1/Empresas/{id}`; `GET /api/v1/plataforma/pago` | Sin capítulo |
+| HU-ADM-055 — Activar, extender, suspender o cancelar la suscripción de una empresa | RN-EMP-014, RN-EMP-015, RN-EMP-019 a RN-EMP-022, RN-EMP-028, RN-GEN-018, RN-GEN-042 | `/empresas/:id` | `PUT /api/v1/Empresas/{id}/suscripcion/activar`, `…/extender-prueba`, `…/suspender`, `…/cancelar` | Sin capítulo |
+| HU-ADM-056 — Buscar y abrir cualquier empresa como operador de plataforma | RN-EMP-001, RN-EMP-017, RN-EMP-018, RN-EMP-022, RN-GEN-042 | `/empresas` y `/empresas/:id` | `GET /api/v1/Empresas`; `GET /api/v1/Empresas/{id}`; `POST /api/v1/Empresas/exportar` | Sin capítulo |
+| HU-ADM-057 — Ver las cifras de suscripciones en el panel | RN-DAS-025, RN-DAS-026, RN-EMP-014, RN-GEN-042 | `/dashboard` — sección «Suscripciones» | `GET /api/v1/plataforma/dashboard` | Sin capítulo |
 
 ---
 
@@ -3474,13 +3941,13 @@ Cada fila resume la historia con las reglas que cita, la pantalla, los endpoints
 
 ### 13.1 En curso (sin commitear)
 
-Ninguno. Al empezar, `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (`eeffbb6`); ninguna afirmación de este documento se apoya en un archivo con cambios sin commitear.
+Ninguno. Al revisar, `git status --short` estaba vacío en `sofia-apis` (`0678e40`) y en `sofia-web-spa` (`37048ea`); ninguna afirmación de este documento se apoya en un archivo con cambios sin commitear.
 
 ### 13.2 Pendientes de producto que las historias dejan visibles
 
 | # | Pendiente | Dónde se refleja |
 |---|---|---|
-| 1 | Activar, suspender, cancelar y extender la suscripción de una empresa no tiene endpoint ni pantalla ([RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md)) | HU-ADM-016 (Parcial) |
+| 1 | (Resuelto desde `6f6b837`/`558ad35`) Activar, suspender, cancelar y extender la suscripción ya tienen endpoint y pantalla para el operador de plataforma ([RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md)); queda sin hacer cualquier cambio automático de estado al vencer | HU-ADM-016, HU-ADM-055 |
 | 2 | La política «exigir registro de receta» solo se cambia en la base de datos ([RN-EMP-016](../../negocio/reglas/administracion-y-seguridad.md)) | HU-ADM-014 (Parcial) |
 | 3 | No se pueden consultar los eventos de auditoría de seguridad ni hay retención; el endpoint de anonimización responde 501 | HU-ADM-048 (Solo API) |
 | 4 | El administrador no puede escribirle una contraseña nueva a otro usuario ni bloquear una cuenta; solo «Forzar Cambio de Contraseña» y desbloqueo | HU-ADM-036 (Parcial) |
@@ -3516,7 +3983,7 @@ Ninguno. Al empezar, `git status --short` estaba vacío en `sofia-apis` (`43f552
 
 ## 14. Tabla de cobertura
 
-### 14.1 Reglas de negocio del alcance (203)
+### 14.1 Reglas de negocio del alcance (217)
 
 Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`, `RN-SER` e `RN-IMP` del [catálogo parte A](../../negocio/reglas/administracion-y-seguridad.md) con las historias que la cubren y el escenario (entre « ») donde se comprueba. «Sin escenario propio» significa que la historia cita la regla en su fila «Reglas» pero la comprueba un escenario de otra historia de la misma fila.
 
@@ -3563,6 +4030,8 @@ Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`,
 | RN-GEN-039 | HU-ADM-046: «Archivo de más de 5 MB»; HU-ADM-050: «Cuerpo demasiado grande» |
 | RN-GEN-040 | HU-ADM-050: «Error inesperado»; HU-ADM-002: «El servidor no responde» |
 | RN-GEN-041 | HU-ADM-050: «Cuerpo con forma inválida»; HU-ADM-029: «El nivel es requerido en el cuerpo» |
+| RN-GEN-042 | HU-ADM-051: «La marca de operador solo se cambia en la base de datos»; «El token del operador lleva la marca»; «El rol Admin no basta»; «Quitar la marca corta el privilegio sin esperar al vencimiento del token»; «El operador lee las empresas sin tener el permiso en un rol»; «El operador no se bloquea por la vigencia de su propia empresa»; HU-ADM-052: «Solo el operador entra»; HU-ADM-055: «Un administrador de empresa no puede»; HU-ADM-056: «El operador ve las empresas de todos»; HU-ADM-057: «Los demás no ven la sección» |
+| RN-GEN-043 | HU-ADM-053: «La API de datos de pago es pública»; «No se pudieron cargar los datos de pago» |
 | RN-AUT-001 | HU-ADM-002: «Usuario y contraseña obligatorios»; «Usuario de más de 50 caracteres» |
 | RN-AUT-002 | HU-ADM-002: «Usuario y contraseña obligatorios» |
 | RN-AUT-003 | HU-ADM-002: «El sistema no revela por qué falló el ingreso»; «No se pide la empresa» |
@@ -3602,6 +4071,7 @@ Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`,
 | RN-AUT-037 | HU-ADM-009: «Validaciones del formulario»; «Enlace incompleto» |
 | RN-AUT-038 | HU-ADM-009: «El enlace ya se usó, venció o fue reemplazado» |
 | RN-AUT-039 | HU-ADM-009: «Efectos del restablecimiento»; HU-ADM-003: «Formas de desbloquear una cuenta» |
+| RN-AUT-040 | HU-ADM-053: «Mi empresa no está vigente y el operador publicó los datos»; «Si no puedo escanear el código»; «El mensaje de WhatsApp me identifica»; «Todavía no hay datos de pago»; «No se pudieron cargar los datos de pago»; «Con cualquier otro error no se muestra el bloque de pago»; «El bloque desaparece al reintentar» |
 | RN-ROL-001 | HU-ADM-011: «La API rechaza por permiso aunque el SPA no lo impida»; HU-ADM-030: «Sin la acción Gestionar permisos»; HU-ADM-037: «Sin el permiso de asignar roles»; HU-ADM-027: «Buscar roles»; HU-ADM-028, HU-ADM-031 y HU-ADM-033: sin escenario propio |
 | RN-ROL-002 | HU-ADM-028: «Campos obligatorios»; «Nombre de 51 a 100 caracteres» |
 | RN-ROL-003 | HU-ADM-028: «La descripción es opcional»; HU-ADM-029: sin escenario propio |
@@ -3645,6 +4115,7 @@ Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`,
 | RN-CTA-018 | HU-ADM-037: «Efecto sobre la sesión»; HU-ADM-004: «Un cambio de rol invalida el token actual» |
 | RN-CTA-019 | HU-ADM-038: «Agregar una sucursal»; «Quitar una sucursal»; «Repetir la operación no cambia nada»; «Sucursal o cuenta inexistente» |
 | RN-CTA-020 | HU-ADM-034: «Buscar sin filtros»; «Filtros de texto»; «Filtros de estado y bloqueo» |
+| RN-CTA-021 | HU-ADM-051: «La marca de operador solo se cambia en la base de datos» |
 | RN-EMP-001 | HU-ADM-015: «Sin el permiso no hay botón»; HU-ADM-001: «Cualquier otro rechazo del servidor o exceso de envíos»; HU-ADM-011: «Los botones dependen de la acción»; HU-ADM-013: sin escenario propio |
 | RN-EMP-002 | HU-ADM-001: «Validaciones de cada campo»; HU-ADM-015: «Nombre obligatorio»; «Longitud del nombre» |
 | RN-EMP-003 | HU-ADM-001: «Validaciones de cada campo» |
@@ -3659,10 +4130,20 @@ Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`,
 | RN-EMP-012 | HU-ADM-001: «El registro crea todo lo necesario en una sola operación»; HU-ADM-014: «Una empresa nueva nace con 30 días de prueba» |
 | RN-EMP-013 | HU-ADM-001: «Registrar la empresa con datos válidos» |
 | RN-EMP-014 | HU-ADM-016: «Cuándo una empresa está vigente»; «Cuándo no está vigente»; «En estado Activo la fecha de vencimiento no se evalúa»; HU-ADM-014: sin escenario propio |
-| RN-EMP-015 | Pendiente: HU-ADM-016 (Parcial) documenta que ningún endpoint ni pantalla cambia el estado; sin escenario porque no hay comportamiento que verificar |
+| RN-EMP-015 | HU-ADM-055: todos sus escenarios; HU-ADM-016: «En estado Activo la fecha de vencimiento no se evalúa» (el título se conserva; desde `6f6b837` el cuerpo dice que sí se evalúa). Texto anterior, ya superado: «Pendiente: HU-ADM-016 (Parcial) documenta que ningún endpoint ni pantalla cambia el estado; sin escenario porque no hay comportamiento que verificar» |
 | RN-EMP-016 | Pendiente: HU-ADM-014 (Parcial) documenta que la política solo se cambia en la base de datos; sin pantalla ni endpoint, sin escenario |
 | RN-EMP-017 | HU-ADM-014: «Solo veo mi propia empresa»; HU-ADM-015: «Otra empresa no se puede editar»; HU-ADM-013: «Buscar sin filtros»; HU-ADM-045: «Un registro de otra empresa se comporta como inexistente» |
 | RN-EMP-018 | HU-ADM-013: «Buscar sin filtros»; «Filtrar por estado»; «Filtrar por vencimiento»; «Exportar a Excel» |
+| RN-EMP-019 | HU-ADM-055: «Activar la suscripción hasta una fecha»; «La fecha debe ser futura»; «Reactivar una empresa suspendida o cancelada»; «La empresa no existe» |
+| RN-EMP-020 | HU-ADM-055: «Extender la prueba»; «Extender la prueba de una empresa que ya no está en prueba» |
+| RN-EMP-021 | HU-ADM-055: «Suspender con confirmación»; «Cancelar con confirmación»; «No puedo bloquear mi propia empresa»; «El bloqueo llega a las sesiones abiertas en un minuto como máximo»; «Quedan registradas en la auditoría» |
+| RN-EMP-022 | HU-ADM-055: «Los botones según el estado de la empresa»; «Error al cambiar la suscripción»; HU-ADM-056: «El operador ve las empresas de todos»; «Editar solo mi propia empresa» |
+| RN-EMP-023 | HU-ADM-052: «Guardar solo el WhatsApp»; «El WhatsApp es obligatorio y de 8 a 15 dígitos»; «El número de Yape tiene exactamente 9 dígitos»; «Las indicaciones admiten hasta 500 caracteres»; «Hay un único conjunto de datos de pago» |
+| RN-EMP-024 | HU-ADM-052: «Subir el código QR»; «Formato o tamaño de imagen no admitidos»; «Guardar sin elegir imagen conserva el QR publicado»; «El servidor decide el formato por el contenido del archivo» |
+| RN-EMP-025 | HU-ADM-053: «La API de datos de pago es pública»; HU-ADM-054: «Abrir cómo pagar» |
+| RN-EMP-026 | HU-ADM-054: «Mi prueba vence en 7 días o menos»; «Mi suscripción vence en 7 días o menos»; «Falta un día o menos»; «Faltan más de 7 días»; «Sin permiso para leer la empresa no hay aviso»; «Si la carga falla, no aparece el aviso» |
+| RN-EMP-027 | HU-ADM-052: «Abrir la pantalla por primera vez»; «Solo el operador entra»; «Cancelar descarta los cambios» |
+| RN-EMP-028 | HU-ADM-055: «Activar la suscripción hasta una fecha»; «El calendario no admite fechas pasadas»; «Sumar meses a un día 31» |
 | RN-SUC-001 | HU-ADM-011: «Los botones dependen de la acción»; HU-ADM-021: «Sin permiso para crear»; HU-ADM-022: «El administrador accede a todas las sucursales»; HU-ADM-017: «Buscar sin filtros»; HU-ADM-018: «Crear la sucursal» |
 | RN-SUC-002 | HU-ADM-018: «Campos obligatorios»; «Longitudes máximas»; HU-ADM-019: sin escenario propio |
 | RN-SUC-003 | HU-ADM-018: «Campos obligatorios»; «Longitudes máximas»; HU-ADM-019: sin escenario propio |
@@ -3726,17 +4207,17 @@ Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`,
 | RN-IMP-016 | HU-ADM-046: «La plantilla»; HU-ADM-021: «Descargar la plantilla»; HU-ADM-033: «Plantilla de roles» |
 | RN-IMP-017 | HU-ADM-047: «Exportar con los filtros escritos»; HU-ADM-013: «Exportar a Excel»; HU-ADM-017: «Exportar»; HU-ADM-023: «Exportar»; HU-ADM-027: «Exportar»; HU-ADM-040: «Exportar» |
 
-### 14.2 Rutas del SPA del alcance (24)
+### 14.2 Rutas del SPA del alcance (25)
 
 | Ruta | Historia(s) |
 |---|---|
-| `/auth/login` | HU-ADM-002, HU-ADM-003, HU-ADM-016 |
+| `/auth/login` | HU-ADM-002, HU-ADM-003, HU-ADM-016, HU-ADM-053 |
 | `/auth/register` | HU-ADM-001 |
 | `/auth/forgot-password` | HU-ADM-008 |
 | `/auth/reset-password` | HU-ADM-009 |
 | `/cambiar-clave` | HU-ADM-006, HU-ADM-007 |
-| `/empresas` | HU-ADM-013 |
-| `/empresas/:id` | HU-ADM-014, HU-ADM-015 |
+| `/empresas` | HU-ADM-013, HU-ADM-056 |
+| `/empresas/:id` | HU-ADM-014, HU-ADM-015, HU-ADM-055, HU-ADM-056 |
 | `/sucursales` | HU-ADM-017 |
 | `/sucursales/nueva` | HU-ADM-018 |
 | `/sucursales/carga-masiva` | HU-ADM-021, HU-ADM-046 |
@@ -3754,23 +4235,24 @@ Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`,
 | `/series-fiscales` | HU-ADM-040 |
 | `/series-fiscales/nueva` | HU-ADM-041 |
 | `/series-fiscales/:id` | HU-ADM-042, HU-ADM-043 |
+| `/configuracion-pago` | HU-ADM-052 |
 
-Fuera de la lista: `/dashboard` pertenece a la parte C, y las redirecciones de `''` y `**` hacia `dashboard` (`sofia-web-spa/src/app/app.routes.ts:9,177-180`) no tienen escenario propio. El menú, la cabecera y el guard de permisos (sin ruta propia) están en HU-ADM-010, HU-ADM-011 y HU-ADM-012.
+Fuera de la lista: `/dashboard` pertenece a la parte C, y las redirecciones de `''` y `**` hacia `dashboard` (`sofia-web-spa/src/app/app.routes.ts:10,191-194`) no tienen escenario propio. El menú, la cabecera y el guard de permisos (sin ruta propia) están en HU-ADM-010, HU-ADM-011 y HU-ADM-012.
 
-### 14.3 Endpoints del alcance (60)
+### 14.3 Endpoints del alcance (67)
 
-Los 60 endpoints de `Auth`, `Cuentas`, `Empleados`, `Empresas`, `Roles`, `SeriesFiscales` y `Sucursales` de [`endpoints.csv`](../../_inventario/endpoints.csv) aparecen en la fila «Endpoint(s)» de alguna historia (tabla de la sección 12). Los únicos sin pantalla son `POST /api/v1/Roles/assign-to-user` y `POST /api/v1/Roles/remove-from-user` (HU-ADM-037), que duplican a los de `Cuentas` que usa la pantalla.
+Los 67 endpoints de `Auth`, `Cuentas`, `Empleados`, `Empresas` (con los cuatro `PUT …/suscripcion/*` nuevos), `Plataforma` (`GET pago`, `PUT pago` y `GET dashboard`, nuevos), `Roles`, `SeriesFiscales` y `Sucursales` de [`endpoints.csv`](../../_inventario/endpoints.csv) aparecen en la fila «Endpoint(s)» de alguna historia (tabla de la sección 12). Los únicos sin pantalla son `POST /api/v1/Roles/assign-to-user` y `POST /api/v1/Roles/remove-from-user` (HU-ADM-037), que duplican a los de `Cuentas` que usa la pantalla.
 
 ### 14.4 Verificación
 
 Se ejecutó un script de lectura (Node, en el directorio temporal de la sesión, sin modificar ningún repositorio) que:
 
-1. Extrajo los 203 IDs `RN-…` definidos en el catálogo (filas de tabla que empiezan por `| RN-`) y comprobó que todos los IDs citados en este documento existen (ninguno inexistente).
+1. Extrajo los 203 IDs `RN-…` definidos en el catálogo (versión 1.1; la revisión del 2026-11-17 agregó a mano los 14 nuevos: RN-GEN-042 y 043, RN-AUT-040, RN-CTA-021, RN-EMP-019 a 028) (filas de tabla que empiezan por `| RN-`) y comprobó que todos los IDs citados en este documento existen (ninguno inexistente).
 2. Comprobó que 202 de los 203 IDs están en la fila «Reglas» de alguna historia; el que falta es `RN-GEN-028`, que se aplica a recetas y no a esta parte (explicado en la tabla 14.1).
 3. Comprobó que cada escenario nombrado en la tabla 14.1 existe en la historia indicada.
 4. Comprobó que los 60 endpoints y las 24 rutas del alcance aparecen en el documento.
 
-Resultado: 50 historias, 203 reglas (202 cubiertas más 1 que no aplica), 24 rutas y 60 endpoints, sin reglas, rutas ni endpoints sin cubrir. Las reglas `RN-EMP-015` y `RN-EMP-016` quedan cubiertas por la declaración de estado «Parcial» de su historia y no por un escenario, porque el sistema no tiene ese comportamiento.
+Resultado: 57 historias, 217 reglas (216 cubiertas más 1 que no aplica), 25 rutas y 67 endpoints, sin reglas, rutas ni endpoints sin cubrir. Las reglas `RN-EMP-015` y `RN-EMP-016` quedan cubiertas por la declaración de estado «Parcial» de su historia y no por un escenario, porque el sistema no tiene ese comportamiento.
 
 ---
 
