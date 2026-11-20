@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `27597cd`; la pantalla del catálogo DIGEMID está reconciliada con `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `01b8260` |
-| **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear (ver §7). |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40`; la pantalla del catálogo DIGEMID está reconciliada con `9c16f35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Solo citas desplazadas por los commits nuevos (sin cambios de contenido). Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear (ver §7). |
 
 Este documento es la parte C de seis del inventario de pantallas. Cubre cinco catálogos: Unidades de medida, Jerarquías de unidades, Laboratorios, Ingredientes activos y Catálogo DIGEMID (19 rutas). Lo compartido (guards, interceptor, `page-header`, `confirm-dialog`, `range-slider-field`, carga masiva común, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); el patrón de las pantallas de búsqueda y detalle ya validado está en la [parte B, §0](administracion.md). Aquí se enlaza a esas secciones y se repite el texto exacto de cada etiqueta, botón y mensaje que aparece en estas pantallas. Las reglas de negocio de los catálogos están en [`negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md) (UDM, JER, LAB, ING, DIG) y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -33,7 +33,7 @@ Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que em
 
 Lo que no se repite en cada ficha, con su fuente. Lo que sea distinto en una pantalla se dice en su ficha.
 
-- **Cómo se decide el permiso de ruta.** Igual que en [`producto/pantallas/administracion` §0](administracion.md): `canActivateChild: [passwordChangeGuard, permissionGuard]` (`app/app.routes.ts:37`), módulo por el primer segmento de la URL en `ROUTE_PERMISSIONS` (`app/core/auth/route-permissions.ts:2-26`) y siempre `Leer`; si el segundo segmento es `nueva`, `nuevo` o `carga-masiva` se exige además `Crear` (`route-permissions.ts:36,68-71`); `/x/:id` solo exige `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:28-29`). Módulos de esta parte:
+- **Cómo se decide el permiso de ruta.** Igual que en [`producto/pantallas/administracion` §0](administracion.md): `canActivateChild: [passwordChangeGuard, permissionGuard]` (`app/app.routes.ts:38`), módulo por el primer segmento de la URL en `ROUTE_PERMISSIONS` (`app/core/auth/route-permissions.ts:2-27`) y siempre `Leer`; si el segundo segmento es `nueva`, `nuevo` o `carga-masiva` se exige además `Crear` (`route-permissions.ts:44,79-82`); `/x/:id` solo exige `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:28-29`). Módulos de esta parte:
 
   | Primer segmento | Módulo de permisos | Fuente |
   |---|---|---|
@@ -43,7 +43,7 @@ Lo que no se repite en cada ficha, con su fuente. Lo que sea distinto en una pan
   | `ingredientes-activos` | `IngredientesActivos` | `route-permissions.ts:11` |
   | `digemid-catalogo` | `DIGEMID` | `route-permissions.ts:24` |
 
-- **Menú.** Cuatro opciones están en el grupo «Catálogos» (`breadcrumbs.catalogos`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:48-52`): «Unidades de Medida» (`nav.unidadesMedida`, `:53-57`), «Jerarquías de Unidades» (`nav.jerarquiasUom`, `:58-62`), «Laboratorios» (`nav.laboratorios`, `:63-67`) e «Ingredientes Activos» (`nav.ingredientesActivos`, `:68-72`). «Catálogo DIGEMID» (`nav.catalogoDigemid`, `:161-165`) está en el grupo «DIGEMID» (`breadcrumbs.digemid`, `:157-160`), que solo tiene esa opción. Una opción se muestra solo si el usuario tiene `Leer` del módulo de su ruta; un grupo sin opciones visibles se oculta ([`producto/pantallas/acceso-layout-y-compartidos` §4.3](acceso-layout-y-compartidos.md)).
+- **Menú.** Cuatro opciones están en el grupo «Catálogos» (`breadcrumbs.catalogos`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:53-57`): «Unidades de Medida» (`nav.unidadesMedida`, `:53-57`), «Jerarquías de Unidades» (`nav.jerarquiasUom`, `:58-62`), «Laboratorios» (`nav.laboratorios`, `:63-67`) e «Ingredientes Activos» (`nav.ingredientesActivos`, `:68-72`). «Catálogo DIGEMID» (`nav.catalogoDigemid`, `:161-165`) está en el grupo «DIGEMID» (`breadcrumbs.digemid`, `:157-160`), que solo tiene esa opción. Una opción se muestra solo si el usuario tiene `Leer` del módulo de su ruta; un grupo sin opciones visibles se oculta ([`producto/pantallas/acceso-layout-y-compartidos` §4.3](acceso-layout-y-compartidos.md)).
 - **Directiva `*appPermiso`.** Con un solo valor (`'Crear'`, `'Actualizar'`, `'Eliminar'`) toma el módulo de la URL actual y exige esa acción; el rol `Admin` pasa siempre (`app/shared/directives/permiso.directive.ts:20-31`). Ver [`producto/pantallas/acceso-layout-y-compartidos` §7.1](acceso-layout-y-compartidos.md). Los 17 usos de estas carpetas están en la tabla de cobertura (§8).
 - **Aviso al usuario.** Snackbar con el botón «Cerrar» (`actions.close`): error 5 s, éxito 3 s; con `showServerError` y un `traceId` en la respuesta, 10 s y «Referencia: …» ([`producto/pantallas/acceso-layout-y-compartidos` §6.11 y §6.12](acceso-layout-y-compartidos.md)).
 - **Estado de la búsqueda.** Las cinco pantallas de búsqueda guardan filtros, página y tamaño de página en memoria (`SearchStateService`, `app/core/services/shared/search-state.service.ts:10-28`) con la URL sin query como clave; al volver desde el detalle se restauran y se repite la búsqueda (`ngOnInit` de cada componente). «Limpiar» (`actions.clear`) vacía el formulario, oculta la tabla, vuelve a la página 1 y borra ese estado.
@@ -65,7 +65,7 @@ Lo que no se repite en cada ficha, con su fuente. Lo que sea distinto en una pan
 
 ## 1. Unidades de medida
 
-Carpeta `app/pages/unidades-medida`, scope i18n `unidadesMedida` (`provideTranslocoScope('unidadesMedida')` en los cuatro componentes). Componentes enrutados (`app/pages/unidades-medida/unidades-medida.routes.ts`, cargados con `loadChildren` desde `app/app.routes.ts:76`): `UnidadesMedidaSearchComponent` (`''`), `UnidadesMedidaDetailComponent` (rutas `nueva` y `:id`) y `UnidadesMedidaCargaMasivaComponent` (`carga-masiva`). El orden de rutas importa: `nueva` y `carga-masiva` están antes de `:id`.
+Carpeta `app/pages/unidades-medida`, scope i18n `unidadesMedida` (`provideTranslocoScope('unidadesMedida')` en los cuatro componentes). Componentes enrutados (`app/pages/unidades-medida/unidades-medida.routes.ts`, cargados con `loadChildren` desde `app/app.routes.ts:85`): `UnidadesMedidaSearchComponent` (`''`), `UnidadesMedidaDetailComponent` (rutas `nueva` y `:id`) y `UnidadesMedidaCargaMasivaComponent` (`carga-masiva`). El orden de rutas importa: `nueva` y `carga-masiva` están antes de `:id`.
 
 ### 1.1 `/unidades-medida` — Unidades de Medida (búsqueda)
 
@@ -231,7 +231,7 @@ El mapa de eliminar está completo en §6.
 
 ## 2. Jerarquías de unidades
 
-Carpeta `app/pages/jerarquias`, scope i18n `jerarquias` (`provideTranslocoScope('jerarquias')` en los cuatro componentes). Componentes enrutados (`app/pages/jerarquias/jerarquias.routes.ts`, `loadChildren` en `app/app.routes.ts:81`): `JerarquiasSearchComponent` (`''`), `JerarquiasDetailComponent` (rutas `nueva` y `:id`) y `JerarquiasCargaMasivaComponent` (`carga-masiva`).
+Carpeta `app/pages/jerarquias`, scope i18n `jerarquias` (`provideTranslocoScope('jerarquias')` en los cuatro componentes). Componentes enrutados (`app/pages/jerarquias/jerarquias.routes.ts`, `loadChildren` en `app/app.routes.ts:90`): `JerarquiasSearchComponent` (`''`), `JerarquiasDetailComponent` (rutas `nueva` y `:id`) y `JerarquiasCargaMasivaComponent` (`carga-masiva`).
 
 Una jerarquía es **una sola conversión de un producto**: «un producto, una unidad mayor, una unidad menor y un multiplicador» (cuántas unidades menores equivalen a una mayor). Cada registro es un par de unidades; la pantalla **no muestra ninguna cadena de conversión** ni calcula equivalencias. La cadena (por ejemplo Caja → Blíster → Unidad) la resuelve el backend al guardar para rechazar contradicciones (`sofia-apis/src/SOFIA.Application/JerarquiasUoM/Common/JerarquiaConversionResolver.cs`, usado en `CreateJerarquiaUoMCommandHandler.cs:38-59`) y al calcular las unidades vendibles de un producto, que consume la pantalla de Presentaciones de venta con `JerarquiaUoMService.getUnidadesVendibles` (`GET /api/v1/jerarquiasuom/unidades-vendibles?productoId=…`, `JerarquiasUoM:Leer`, `JerarquiasUoMController.cs:30`); ese método no lo llama ninguna pantalla de este módulo.
 
@@ -421,7 +421,7 @@ El cuerpo enviado al guardar es `{ productoId, unidadMayorId, unidadMenorId, mul
 
 ## 3. Laboratorios
 
-Carpeta `app/pages/laboratorios`, scope i18n `laboratorios` (`provideTranslocoScope('laboratorios')` en los cuatro componentes). Componentes enrutados (`app/pages/laboratorios/laboratorios.routes.ts`, `loadChildren` en `app/app.routes.ts:86`): `LaboratoriosSearchComponent` (`''`), `LaboratoriosDetailComponent` (rutas `nueva` y `:id`) y `LaboratoriosCargaMasivaComponent` (`carga-masiva`). Misma estructura que Unidades de medida (§1); aquí solo lo propio.
+Carpeta `app/pages/laboratorios`, scope i18n `laboratorios` (`provideTranslocoScope('laboratorios')` en los cuatro componentes). Componentes enrutados (`app/pages/laboratorios/laboratorios.routes.ts`, `loadChildren` en `app/app.routes.ts:95`): `LaboratoriosSearchComponent` (`''`), `LaboratoriosDetailComponent` (rutas `nueva` y `:id`) y `LaboratoriosCargaMasivaComponent` (`carga-masiva`). Misma estructura que Unidades de medida (§1); aquí solo lo propio.
 
 ### 3.1 `/laboratorios` — Laboratorios (búsqueda)
 
@@ -580,7 +580,7 @@ Sin ayuda ni placeholder (las claves `laboratorios.help.*` no se usan). El cuerp
 
 ## 4. Ingredientes activos
 
-Carpeta `app/pages/ingredientes-activos`, scope i18n `ingredientesActivos` (`provideTranslocoScope('ingredientesActivos')` en los cuatro componentes). Componentes enrutados (`app/pages/ingredientes-activos/ingredientes-activos.routes.ts`, `loadChildren` en `app/app.routes.ts:91`): `IngredientesActivosSearchComponent` (`''`), `IngredientesActivosDetailComponent` (rutas `nueva` y `:id`) y `IngredientesActivosCargaMasivaComponent` (`carga-masiva`). Misma estructura que Unidades de medida (§1). Este es el módulo cuya eliminación recibió la validación de dependencias de los commits `27597cd` (API) y `01b8260` (SPA): ver «Mensajes al usuario» de §4.2 y §6.
+Carpeta `app/pages/ingredientes-activos`, scope i18n `ingredientesActivos` (`provideTranslocoScope('ingredientesActivos')` en los cuatro componentes). Componentes enrutados (`app/pages/ingredientes-activos/ingredientes-activos.routes.ts`, `loadChildren` en `app/app.routes.ts:100`): `IngredientesActivosSearchComponent` (`''`), `IngredientesActivosDetailComponent` (rutas `nueva` y `:id`) y `IngredientesActivosCargaMasivaComponent` (`carga-masiva`). Misma estructura que Unidades de medida (§1). Este es el módulo cuya eliminación recibió la validación de dependencias de los commits `27597cd` (API) y `01b8260` (SPA): ver «Mensajes al usuario» de §4.2 y §6.
 
 ### 4.1 `/ingredientes-activos` — Ingredientes Activos (búsqueda)
 
@@ -738,7 +738,7 @@ Sin ayuda ni placeholder. No se valida la estructura del código ATC (cualquier 
 
 ## 5. Catálogo DIGEMID
 
-Carpeta `app/pages/digemid-catalogo`, scope i18n `digemidCatalogo` (`provideTranslocoScope('digemidCatalogo')` en los tres componentes). Componentes enrutados (`app/pages/digemid-catalogo/digemid-catalogo.routes.ts`, `loadChildren` en `app/app.routes.ts:165`): `DigemidCatalogoSearchComponent` (`''`), `DigemidCatalogoCargaMasivaComponent` (`carga-masiva`) y `DigemidCatalogoDetailComponent` (`:id`). `carga-masiva` está antes de `:id`.
+Carpeta `app/pages/digemid-catalogo`, scope i18n `digemidCatalogo` (`provideTranslocoScope('digemidCatalogo')` en los tres componentes). Componentes enrutados (`app/pages/digemid-catalogo/digemid-catalogo.routes.ts`, `loadChildren` en `app/app.routes.ts:179`): `DigemidCatalogoSearchComponent` (`''`), `DigemidCatalogoCargaMasivaComponent` (`carga-masiva`) y `DigemidCatalogoDetailComponent` (`:id`). `carga-masiva` está antes de `:id`.
 
 **Qué se puede hacer y qué no desde la pantalla** (comprobado en las plantillas y en el servicio):
 
@@ -754,7 +754,7 @@ Carpeta `app/pages/digemid-catalogo`, scope i18n `digemidCatalogo` (`provideTran
 
 La API sí admite estas tres operaciones: `POST /api/v1/DIGEMID/catalogo` (`DIGEMID:Crear`), `PUT /api/v1/DIGEMID/catalogo/{id}` (`DIGEMID:Actualizar`) y `DELETE /api/v1/DIGEMID/catalogo/{id}` (`DIGEMID:Eliminar`) (`DIGEMIDController.cs:71,81,90`), pero **ninguna pantalla del SPA las llama** (el servicio no las define). Quedan en el modelo `CreateDigemidCatalogoRequest` y `UpdateDigemidCatalogoRequest` (`models/digemid-catalogo.model.ts:31-52`) sin ningún uso y en el i18n las claves `detail.title-new`, `detail.title-edit`, `detail.save-success`, `detail.save-error`, `detail.delete-success`, `detail.delete-error`, `detail.delete-confirm-title` y `detail.delete-confirm-message` (ver §9). Por eso este módulo no tiene mapa de errores de guardado ni de eliminación (§6).
 
-Si escribes `/digemid-catalogo/nueva` en la barra de direcciones: el guard exige `DIGEMID:Leer` + `DIGEMID:Crear` (el segundo segmento `nueva` es de creación, `route-permissions.ts:36,68-71`); si pasa, la URL coincide con la ruta `:id` y `DigemidCatalogoDetailComponent` pide `GET /api/v1/digemid/catalogo/nueva`, que no es un identificador válido (la ruta de la API es `catalogo/{id:guid}`, `DIGEMIDController.cs:63`). El componente mostraría «Error al cargar el producto DIGEMID» con el formulario vacío. La respuesta exacta de la API: «No verificado».
+Si escribes `/digemid-catalogo/nueva` en la barra de direcciones: el guard exige `DIGEMID:Leer` + `DIGEMID:Crear` (el segundo segmento `nueva` es de creación, `route-permissions.ts:44,79-82`); si pasa, la URL coincide con la ruta `:id` y `DigemidCatalogoDetailComponent` pide `GET /api/v1/digemid/catalogo/nueva`, que no es un identificador válido (la ruta de la API es `catalogo/{id:guid}`, `DIGEMIDController.cs:63`). El componente mostraría «Error al cargar el producto DIGEMID» con el formulario vacío. La respuesta exacta de la API: «No verificado».
 
 ### 5.1 `/digemid-catalogo` — Catálogo DIGEMID (búsqueda)
 
