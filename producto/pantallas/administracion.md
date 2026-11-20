@@ -3,13 +3,17 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; las fichas de Empleados, Roles y Cuentas están reconciliadas con `37d053d` y `7070e1a` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea`; las fichas de Empleados, Roles y Cuentas están reconciliadas con `37d053d` y `7070e1a` |
 | **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores y validadores necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear. La versión 1.1 reconcilia el documento (escrito sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`) con el código actual. |
 
 ## Historial de cambios
+
+### Versión 1.3 (2026-11-20)
+
+Revisión contra el código (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`): Empresa: columna «Vencimiento», acciones de suscripción del operador, diálogo de fecha; nueva ficha `/configuracion-pago`; hallazgo del catálogo de permisos (`Empresas:Leer`); citas. Incluye lo documentado de `6f6b837`/`558ad35` (suscripciones del operador de plataforma) y `0678e40`/`37048ea` (devoluciones).
 
 ### Versión 1.2 (2026-11-04)
 
@@ -58,9 +62,9 @@ Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que em
 
 ## 0. Comportamientos comunes a las pantallas de este documento
 
-- **Cómo se decide el permiso de ruta.** Todas cuelgan de `canActivateChild: [passwordChangeGuard, permissionGuard]` (`app/app.routes.ts:37`) y de `loadChildren` (`app.routes.ts:50-75`). El `permissionGuard` toma el primer segmento de la URL y busca su módulo en `ROUTE_PERMISSIONS` (`app/core/auth/route-permissions.ts:2-26`): `empresas` → `Empresas`, `sucursales` → `Sucursales`, `empleados` → `Empleados`, `roles` y `cuentas` → `Seguridad`, `series-fiscales` → `SeriesFiscales`. Exige siempre `Leer` y, si el segundo segmento es `nueva`, `nuevo` o `carga-masiva`, además `Crear` (`route-permissions.ts:36,68-72`); `/x/:id` solo exige `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:21-24,28-29`). Detalle en [`producto/pantallas/acceso-layout-y-compartidos` §5.3](acceso-layout-y-compartidos.md).
-- **Menú.** Las cinco primeras opciones (`Empresa`, `Sucursales`, `Empleados`, `Roles & Permisos`, `Cuentas de Usuario`) están en el grupo «Administración» (`app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:16-47`), con título de sección «Administración» (`breadcrumbs.administracion`). `Series Fiscales` está en el grupo «SUNAT» (`sidebar-data.ts:168-179`), con título de sección «SUNAT» (`breadcrumbs.sunat`). Una opción solo se muestra si el usuario tiene `Leer` del módulo de su ruta (`sidebar.component.ts:29-35`, `visible-nav-items.ts`); un grupo sin opciones visibles se oculta.
-- **Directiva `*appPermiso`.** Con un solo valor (`'Crear'`, `'Actualizar'`, `'Eliminar'`) toma el módulo de la URL actual (`ROUTE_PERMISSIONS`) y exige esa acción; el rol `Admin` pasa siempre (`app/shared/directives/permiso.directive.ts:20-25`, `route-permissions.ts:47-55`). Ver [`producto/pantallas/acceso-layout-y-compartidos` §7.1](acceso-layout-y-compartidos.md).
+- **Cómo se decide el permiso de ruta.** Todas cuelgan de `canActivateChild: [passwordChangeGuard, permissionGuard]` (`app/app.routes.ts:38`) y de `loadChildren` (`app.routes.ts:51-84`). El `permissionGuard` toma el primer segmento de la URL y busca su módulo en `ROUTE_PERMISSIONS` (`app/core/auth/route-permissions.ts:2-27`): `empresas` → `Empresas`, `sucursales` → `Sucursales`, `empleados` → `Empleados`, `roles` y `cuentas` → `Seguridad`, `series-fiscales` → `SeriesFiscales`. Exige siempre `Leer` y, si el segundo segmento es `nueva`, `nuevo` o `carga-masiva`, además `Crear` (`route-permissions.ts:44,79-83`); `/x/:id` solo exige `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:21-24,28-29`). Detalle en [`producto/pantallas/acceso-layout-y-compartidos` §5.3](acceso-layout-y-compartidos.md).
+- **Menú.** Las cinco primeras opciones (`Empresa`, `Sucursales`, `Empleados`, `Roles & Permisos`, `Cuentas de Usuario`) están en el grupo «Administración» (`app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:16-52`), con título de sección «Administración» (`breadcrumbs.administracion`). `Series Fiscales` está en el grupo «SUNAT» (`sidebar-data.ts:178-189`), con título de sección «SUNAT» (`breadcrumbs.sunat`). Una opción solo se muestra si el usuario tiene `Leer` del módulo de su ruta (`sidebar.component.ts:29-36`, `visible-nav-items.ts`); un grupo sin opciones visibles se oculta.
+- **Directiva `*appPermiso`.** Con un solo valor (`'Crear'`, `'Actualizar'`, `'Eliminar'`) toma el módulo de la URL actual (`ROUTE_PERMISSIONS`) y exige esa acción; el rol `Admin` pasa siempre (`app/shared/directives/permiso.directive.ts:20-25`, `route-permissions.ts:58-66`). Ver [`producto/pantallas/acceso-layout-y-compartidos` §7.1](acceso-layout-y-compartidos.md).
 - **Aviso al usuario.** Todos los avisos son snackbar con el botón «Cerrar» (`actions.close`): error 5 s, éxito 3 s (`app/core/services/shared/error-notifier.service.ts:26-32`). No hay interceptor global de errores: cada pantalla decide el mensaje. Un `401` lo maneja el `authInterceptor` ([`producto/pantallas/acceso-layout-y-compartidos` §5.4](acceso-layout-y-compartidos.md)).
 - **Estado de la búsqueda.** Las pantallas de búsqueda guardan filtros, página y tamaño de página en un `Map` en memoria (`SearchStateService`, `app/core/services/shared/search-state.service.ts:10-28`) con la URL (sin query) como clave. Al volver a la pantalla desde el detalle se restauran y se repite la búsqueda. No usa `localStorage` ni `sessionStorage`; se pierde al recargar el navegador. «Limpiar» borra ese estado.
 - **Tamaños de página** de todas las tablas de resultados: 10, 25 y 50 (`[pageSizeOptions]="[10, 25, 50]"`, con botones primera/última), pagina por defecto de 10. Textos del paginador en [`producto/pantallas/acceso-layout-y-compartidos` §6.9](acceso-layout-y-compartidos.md).
@@ -75,18 +79,19 @@ Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que em
 Carpeta `app/pages/empresa`, scope i18n `empresa` (`provideTranslocoScope('empresa')`). Componentes enrutados: `EmpresaSearchComponent` y `EmpresaDetailComponent`.
 
 Resumen de lo que el usuario puede hacer en una empresa (comprobado en las fichas siguientes):
-- **Ver:** nombre, RUC, estado de suscripción, número de sucursales, inicio del periodo de prueba y vencimiento. El indicador «Vigente» solo aparece en la tabla de búsqueda (en el detalle se calcula pero no se pinta).
-- **Editar:** solo **Nombre de la Empresa** y **RUC** (`UpdateEmpresaRequest` solo lleva esos dos campos, `app/pages/empresa/models/empresa.model.ts:29-32`). Estado, fechas y sucursales son de solo lectura y no hay pantalla para cambiarlos.
+- **Ver:** nombre, RUC, estado de suscripción, número de sucursales, inicio del periodo de prueba y vencimiento. El indicador «Vigente» y la columna «Vencimiento» solo aparecen en la tabla de búsqueda (en el detalle se calcula «Vigente» pero no se pinta).
+- **Gestionar la suscripción (solo el operador de plataforma, desde `sofia-web-spa` `558ad35`):** en el detalle de una empresa, «Activar suscripción», «Extender prueba», «Suspender» y «Cancelar suscripción» (§1.2). Quien no es operador no ve esos botones, aunque tenga el rol `Admin`.
+- **Editar:** solo **Nombre de la Empresa** y **RUC** (`UpdateEmpresaRequest` solo lleva esos dos campos, `app/pages/empresa/models/empresa.model.ts:29-32`), y solo en la **empresa propia** (el botón «Editar» no se dibuja en la ficha de otra empresa, `empresa-detail.component.html:68-77`). Estado, fechas y sucursales son de solo lectura en el formulario; el estado y el vencimiento solo cambian con las acciones del operador de plataforma.
 - **No existe en pantalla** ninguna opción de configuración de la empresa, en particular la exigencia de registro de receta: no hay ninguna referencia a `exigirRegistroReceta` en `app/pages/empresa` (búsqueda en `src/`: solo aparece en `app/pages/pos/`, que la consume). Coincide con RN-EMP-016 (se cambia solo en base de datos).
 - **No existe** crear ni eliminar empresas desde esta pantalla: el alta es el autorregistro público (parte A, `/auth/register`) y no hay ruta `/empresas/nueva` (`app/pages/empresa/empresa.routes.ts`).
-- **Alcance:** el SPA no filtra por empresa; es la API la que limita cada consulta a la empresa del usuario (RN-EMP-017 en `negocio/reglas/administracion-y-seguridad`). Por eso, en la práctica, la lista muestra la empresa propia. «No verificado» desde el SPA; ver §7.
+- **Alcance:** el SPA no filtra por empresa; es la API la que limita cada consulta a la empresa del usuario (RN-EMP-017 en `negocio/reglas/administracion-y-seguridad`). Por eso, en la práctica, la lista de un usuario de empresa muestra la empresa propia. Al **operador de plataforma** la API le devuelve todas las empresas no eliminadas (`GetEmpresasQueryHandler.cs:16`, `GetEmpresaByIdQueryHandler`, vía `EmpresasVisibles` en `EmpresaPlataformaExtensions.cs`; RN-EMP-022). «No verificado» desde el SPA; ver §7.
 
 ### 1.1 `/empresas` — Empresas (búsqueda)
 
 - **Componente:** `EmpresaSearchComponent` (`app/pages/empresa/empresa-search/empresa-search.component.ts`, `empresa-search.component.html`). Scope `empresa`.
 - **Para qué sirve:** buscar empresas por nombre, estado de suscripción y rango de fecha de vencimiento, ver el resultado en una tabla y exportarlo a Excel.
 - **Cómo se llega:** menú lateral, grupo «Administración» → «Empresa» (`nav.empresa`, `sidebar-data.ts:21-25`); migas de `/empresas/:id` («Empresa») y botón volver del detalle (`backRoute="/empresas"`, `empresa-detail.component.html:7`).
-- **Permiso de ruta:** `Empresas:Leer` (`route-permissions.ts:3`). Sin permiso: aviso y redirección a `/dashboard`.
+- **Permiso de ruta:** `Empresas:Leer` (`route-permissions.ts:3`); el operador de plataforma lo cumple sin necesitar rol (`PLATFORM_OPERATOR_GRANTS`, `route-permissions.ts:50`; `auth.service.ts:148`). Sin permiso: aviso y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Empresas» (`empresa.title`); migas «Inicio» (`breadcrumbs.home`, enlaza a `/dashboard`) / «Administración» (`breadcrumbs.administracion`) / «Empresa» (`breadcrumbs.empresa`, activa). Sin botón volver (`empresa-search.component.html:3-6`, `.ts:59-63`). Tarjeta de filtros con título «Búsqueda de Empresas» (`empresa.search.title`) y el subtítulo común.
 - **Modos:** uno solo (búsqueda). Los resultados no se cargan al entrar: solo se muestran tras pulsar «Buscar» o si hay estado guardado de una visita anterior (`ngOnInit`, `.ts:71-79`).
 
@@ -101,16 +106,17 @@ Resumen de lo que el usuario puede hacer en una empresa (comprobado en las ficha
 
 El campo del nombre y el de los selectores no tienen validaciones. «Limpiar» (`actions.clear`) vacía el formulario, oculta la tabla, pone página 1 y borra el estado guardado (`clear()`, `.ts:117-124`).
 
-**Tabla de resultados** (`.html:83-152`; orden por defecto del servidor; la API ordena por nombre, ver `negocio/reglas/administracion-y-seguridad` RN-EMP-018)
+**Tabla de resultados** (`.html:83-161`; orden por defecto del servidor; la API ordena por nombre, ver `negocio/reglas/administracion-y-seguridad` RN-EMP-018)
 
 | Encabezado (clave) | Dato | Formato | Enlace |
 |---|---|---|---|
 | Empresa (`empresa.table.nombre`) | `nombre` | Texto | Sí: `routerLink [row.id]` → `/empresas/:id` |
 | RUC (`empresa.table.ruc`) | `ruc` | Texto; «—» si es nulo | No |
 | Estado (`empresa.table.estado`) | `estado` | Texto traducido: «Trial Activo», «Activo», «Suspendido» o «Cancelado» (`empresa.estado.<n>`) | No |
+| Vencimiento (`empresa.table.fechaVencimiento`) | `fechaVencimiento` | Fecha `dd/MM/yyyy` (columna agregada en `558ad35`, entre «Estado» y «Vigente»; `empresa-search.component.ts:65`) | No |
 | Vigente (`empresa.table.estaVigente`) | `estaVigente` | Icono `check_circle` (vigente) o `cancel` (no vigente), sin texto | No |
 
-Encabezado de la tabla: «Resultados (N)». Paginación 10/25/50. **Sin resultados** la fila vacía dice «Resultados» (`generic-labels.results`, `.html:132`), no «Sin resultados» (ver Observaciones). Bajo la tabla, a la izquierda, el botón «Exportar» con icono `download` (`actions.export`) y a la derecha el paginador.
+Encabezado de la tabla: «Resultados (N)». Paginación 10/25/50. **Sin resultados** la fila vacía dice «Resultados» (`generic-labels.results`, `.html:141`), no «Sin resultados» (ver Observaciones). Bajo la tabla, a la izquierda, el botón «Exportar» con icono `download` (`actions.export`) y a la derecha el paginador.
 
 **Botones y acciones**
 
@@ -138,8 +144,8 @@ No hay mapa de códigos del backend: cualquier error muestra el mismo texto.
 
 | Cuándo | Método del servicio | Verbo y URL | Permiso del endpoint |
 |---|---|---|---|
-| Buscar o cambiar de página | `EmpresaService.search` (`app/pages/empresa/services/empresa.service.ts:16-26`) | `GET /api/v1/empresas?pageNumber&pageSize[&nombre][&estado][&fechaVencimientoDesde][&fechaVencimientoHasta]` (solo envía los filtros con valor; `estado` 0 sí se envía) | `Empresas:Leer` (`EmpresasController.cs:35`) |
-| Exportar | `EmpresaService.exportar` (`:44-46`) | `POST /api/v1/empresas/exportar` (respuesta blob) | `Empresas:Leer` (`EmpresasController.cs:74`) |
+| Buscar o cambiar de página | `EmpresaService.search` (`app/pages/empresa/services/empresa.service.ts:16-26`) | `GET /api/v1/empresas?pageNumber&pageSize[&nombre][&estado][&fechaVencimientoDesde][&fechaVencimientoHasta]` (solo envía los filtros con valor; `estado` 0 sí se envía) | `Empresas:Leer` o operador de plataforma (`[HasPermissionOrPlataforma]`, `EmpresasController.cs:39-40`) |
+| Exportar | `EmpresaService.exportar` (`:44-46`) | `POST /api/v1/empresas/exportar` (respuesta blob) | `Empresas:Leer` o operador de plataforma (`EmpresasController.cs:110-111`) |
 
 **Exportación**
 - Cuerpo enviado (`EmpresaExportRequest`, `empresa.model.ts:50-58`): `headers` con 7 textos traducidos, en este orden: «Empresa» (`empresa.cols.nombre`), «RUC» (`empresa.cols.ruc`), «Estado» (`empresa.cols.estado`), «Vigente» (`empresa.cols.estaVigente`), «Inicio Trial» (`empresa.fields.fechaInicioTrial`), «Vencimiento» (`empresa.fields.fechaVencimiento`), «Sucursales» (`empresa.fields.sucursalesCount`); `yesLabel` «Sí» (`generic-labels.yes`) y `noLabel` «No» (`generic-labels.no`); y los filtros actuales del formulario (`nombre`, `estado`, `fechaVencimientoDesde`, `fechaVencimientoHasta`). No envía formato de fecha.
@@ -152,17 +158,17 @@ No hay mapa de códigos del backend: cualquier error muestra el mismo texto.
 - Los dos selectores de fecha son de solo lectura: solo se eligen con el calendario.
 
 **Observaciones**
-- La fila de «sin resultados» muestra «Resultados» (`generic-labels.results`) en lugar de «Sin resultados» (`generic-labels.no-results`), que sí existe en la raíz (`empresa-search.component.html:132`; en Sucursales se usa `no-results`, `sucursales-search.component.html:131`).
+- La fila de «sin resultados» muestra «Resultados» (`generic-labels.results`) en lugar de «Sin resultados» (`generic-labels.no-results`), que sí existe en la raíz (`empresa-search.component.html:141`; en Sucursales se usa `no-results`, `sucursales-search.component.html:131`).
 - Las claves `empresa.cols.fechaVencimiento` y `empresa.cols.cantidadSucursales` y varias de `form.*`, `notifications.*` y `help.*` no se usan en estas pantallas; ver §9.
 
 ### 1.2 `/empresas/:id` — Empresas (detalle de la empresa)
 
 - **Componente:** `EmpresaDetailComponent` (`app/pages/empresa/empresa-detail/empresa-detail.component.ts`, `empresa-detail.component.html`). Scope `empresa`.
-- **Para qué sirve:** ver los datos de una empresa y, con permiso, editar su nombre y RUC.
+- **Para qué sirve:** ver los datos de una empresa y, con permiso, editar su nombre y RUC (solo en la empresa propia); el operador de plataforma además activa, extiende, suspende o cancela la suscripción de la empresa que está viendo.
 - **Cómo se llega:** enlace del nombre en la tabla de `/empresas` (§1.1). No hay otra entrada (solo por URL con el id).
-- **Permiso de ruta:** `Empresas:Leer` (el segundo segmento es un id, no `nueva`). Sin permiso: aviso y redirección a `/dashboard`.
-- **Migas y cabecera:** título «Empresas» (`empresa.title`); migas «Inicio» / «Administración» / «Empresa» (`breadcrumbs.empresa`, con enlace a `/empresas`); botón volver a `/empresas` (`.html:3-7`, `.ts:59-63`). Dentro de la tarjeta: encabezado «Empresas» y subtítulo «Datos del registro» (`generic-labels.detail-subtitle`) en modo ver.
-- **Modos:** solo **ver** y **editar** (no hay modo crear: `isNew` está declarado y nunca cambia a verdadero, `.ts:40`). Con el parámetro `id` el formulario arranca deshabilitado y carga los datos (`ngOnInit`, `.ts:65-72`); «Editar» lo habilita.
+- **Permiso de ruta:** `Empresas:Leer` (el segundo segmento es un id, no `nueva`; el operador de plataforma lo cumple sin rol). Sin permiso: aviso y redirección a `/dashboard`.
+- **Migas y cabecera:** título «Empresas» (`empresa.title`); migas «Inicio» / «Administración» / «Empresa» (`breadcrumbs.empresa`, con enlace a `/empresas`); botón volver a `/empresas` (`.html:3-7`, `.ts:88-92`). Dentro de la tarjeta: encabezado «Empresas» y subtítulo «Datos del registro» (`generic-labels.detail-subtitle`) en modo ver.
+- **Modos:** solo **ver** y **editar** (no hay modo crear: `isNew` está declarado y nunca cambia a verdadero, `.ts:62`). Con el parámetro `id` el formulario arranca deshabilitado y carga los datos (`ngOnInit`, `.ts:94-101`); «Editar» lo habilita.
   - **Ver:** campos de solo lectura + botón «Editar» (si tiene `Empresas:Actualizar`).
   - **Editar:** `nombre` y `ruc` habilitados + botones «Cancelar» y «Guardar».
 
@@ -170,37 +176,52 @@ No hay mapa de códigos del backend: cualquier error muestra el mismo texto.
 
 | Etiqueta (clave) | `formControlName` | Control | Obligatorio | Validaciones | Mensaje de error | Editable |
 |---|---|---|---|---|---|---|
-| Estado (`empresa.fields.estado`) | — (no está en el formulario) | `matInput` deshabilitado | — | — | — | Nunca. Texto: «Trial Activo», «Activo», «Suspendido» o «Cancelado» (`empresa.estado.<n>`, `.ts:80`) |
-| Sucursales (`empresa.fields.sucursalesCount`) | — | Texto deshabilitado | — | — | — | Nunca. Número de sucursales no eliminadas (`cantidadSucursales ?? 0`, `.ts:82`) |
-| Inicio Trial (`empresa.fields.fechaInicioTrial`) | — | Texto deshabilitado, formato `dd/MM/yyyy` (`.html:57`) | — | — | — | Nunca |
-| Vencimiento (`empresa.fields.fechaVencimiento`) | — | Texto deshabilitado, formato `dd/MM/yyyy` (`.html:67`) | — | — | — | Nunca |
-| Nombre de la Empresa (`empresa.fields.nombre`) | `nombre` | `matInput`, `maxlength="150"` | Sí | `Validators.required`, `Validators.maxLength(150)` (`.ts:55`) | «Este campo es obligatorio» (`general.errors.required`; es el único mensaje que muestra la plantilla, `.html:80`) | Solo en modo editar |
-| RUC (11 dígitos, opcional) (`empresa.fields.ruc`) | `ruc` | `matInput`, `maxlength="20"` | No | `Validators.maxLength(20)` (`.ts:56`); no valida formato ni dígitos | Sin `mat-error` | Solo en modo editar |
+| Estado (`empresa.fields.estado`) | — (no está en el formulario) | `matInput` deshabilitado | — | — | — | Nunca. Texto: «Trial Activo», «Activo», «Suspendido» o «Cancelado» (`empresa.estado.<n>`; el `.ts` guarda la clave en `estadoDisplay`, `.ts:109`, y la plantilla la traduce, `.html:89`) |
+| Sucursales (`empresa.fields.sucursalesCount`) | — | Texto deshabilitado | — | — | — | Nunca. Número de sucursales no eliminadas (`cantidadSucursales ?? 0`, `.ts:111`) |
+| Inicio Trial (`empresa.fields.fechaInicioTrial`) | — | Texto deshabilitado, formato `dd/MM/yyyy` (`.html:105`) | — | — | — | Nunca |
+| Vencimiento (`empresa.fields.fechaVencimiento`) | — | Texto deshabilitado, formato `dd/MM/yyyy` (`.html:115`) | — | — | — | Nunca |
+| Nombre de la Empresa (`empresa.fields.nombre`) | `nombre` | `matInput`, `maxlength="150"` | Sí | `Validators.required`, `Validators.maxLength(150)` (`.ts:84`) | «Este campo es obligatorio» (`general.errors.required`; es el único mensaje que muestra la plantilla, `.html:128`) | Solo en modo editar |
+| RUC (11 dígitos, opcional) (`empresa.fields.ruc`) | `ruc` | `matInput`, `maxlength="20"` | No | `Validators.maxLength(20)` (`.ts:85`); no valida formato ni dígitos | Sin `mat-error` | Solo en modo editar |
 
-No hay campo para «Vigente» en la plantilla: `estaVigenteDisplay` se asigna (`.ts:81`) pero ninguna parte de `empresa-detail.component.html` lo muestra.
+No hay campo para «Vigente» en la plantilla: `estaVigenteDisplay` se asigna (`.ts:110`) pero ninguna parte de `empresa-detail.component.html` lo muestra.
 
-**Estados de suscripción y periodo de prueba que se muestran:** el SPA solo muestra el nombre del estado (`Trial Activo`, `Activo`, `Suspendido`, `Cancelado`, enum `EstadoEmpresa`, `empresa.model.ts:1-6`) y las fechas «Inicio Trial» y «Vencimiento». No muestra días restantes ni calcula el vencimiento. La regla de que una empresa nueva nace en `Trial Activo` con 30 días y la de vigencia están en el backend (`sofia-apis/src/SOFIA.Domain/Entities/Empresa.cs:32-33,37,62-64`; RN-EMP-012 y RN-EMP-014 en `negocio/reglas/administracion-y-seguridad`).
+**Estados de suscripción y periodo de prueba que se muestran:** el SPA solo muestra el nombre del estado (`Trial Activo`, `Activo`, `Suspendido`, `Cancelado`, enum `EstadoEmpresa`, `empresa.model.ts:1-6`) y las fechas «Inicio Trial» y «Vencimiento». No muestra días restantes en esta pantalla (el aviso de vencimiento del dashboard sí, ver [`acceso-layout-y-compartidos` §3.1](acceso-layout-y-compartidos.md)). La regla de que una empresa nueva nace en `Trial Activo` con 30 días y la de vigencia (estado `Activo` o `TrialActivo` **y** vencimiento posterior a ahora: una empresa `Activo` también vence sola) están en el backend (`sofia-apis/src/SOFIA.Domain/Entities/Empresa.cs:27-33,37,65-67`; RN-EMP-012, RN-EMP-014 y RN-EMP-015 en `negocio/reglas/administracion-y-seguridad`). Activar suscripción pone el estado en `Activo` hasta la fecha elegida (`Empresa.cs:98-108`).
 
 **Botones y acciones**
 
 | Texto (clave) | Dónde | Visible cuando | Deshabilitado cuando | Qué hace |
 |---|---|---|---|---|
-| Editar (`actions.edit`) | Encabezado de la tarjeta, derecha | Modo ver y `*appPermiso="'Actualizar'"` (= `Empresas:Actualizar`, `.html:27`) | Nunca | `enterEditMode()`: habilita el formulario |
-| Cancelar (`actions.cancel`) | Pie de la tarjeta, derecha | Modo editar | Nunca | `cancelEdit()`: restaura `nombre` y `ruc` de la copia leída y deshabilita (`.ts:99-103`) |
-| Guardar (`actions.save`); con spinner mientras guarda | Pie de la tarjeta, derecha | Modo editar | `saving()` | `save()` (`.ts:105-125`): si el formulario es inválido marca todo como tocado y no envía; si no, `PUT /api/v1/empresas/:id` con `{ nombre, ruc }` (`ruc` como nulo solo si es nulo; una cadena vacía se envía vacía). Éxito → aviso, vuelve a modo ver y recarga |
+| Editar (`actions.edit`) | Encabezado de la tarjeta, derecha | Modo ver y `*appPermiso="'Actualizar'"` (= `Empresas:Actualizar`, `.html:68-77`) y solo si la empresa abierta es la propia (`esPropia()`: `empresa.id === auth.empresaId()`, `.ts:77`) | Nunca | `enterEditMode()`: habilita el formulario |
+| Cancelar (`actions.cancel`) | Pie de la tarjeta, derecha | Modo editar | Nunca | `cancelEdit()`: restaura `nombre` y `ruc` de la copia leída y deshabilita (`.ts:128-132`) |
+| Guardar (`actions.save`); con spinner mientras guarda | Pie de la tarjeta, derecha | Modo editar | `saving()` | `save()` (`.ts:134-154`): si el formulario es inválido marca todo como tocado y no envía; si no, `PUT /api/v1/empresas/:id` con `{ nombre, ruc }` (`ruc` como nulo solo si es nulo; una cadena vacía se envía vacía). Éxito → aviso, vuelve a modo ver y recarga |
+| Activar suscripción (`empresa.suscripcion.activar`) | Encabezado de la tarjeta, junto a «Editar» (a su izquierda) | Solo si `esAdminPlataforma()` (`.html:28-37`) | `procesando()` | `activarSuscripcion()` (`.ts:156`): abre el diálogo de fecha (más abajo); al elegir la fecha, `PUT /api/v1/empresas/{id}/suscripcion/activar` con `{ fechaVencimiento }` |
+| Extender prueba (`empresa.suscripcion.extender`) | Ídem | Operador y `enPrueba()` (estado `TrialActivo`, `.ts:79`; `.html:38-47`) | `procesando()` | `extenderPrueba()` (`.ts:162`): diálogo de fecha; `PUT …/suscripcion/extender-prueba` con `{ fechaVencimiento }` |
+| Suspender (`empresa.suscripcion.suspender`) | Ídem | Operador y `puedeSuspender()`: la empresa no es la propia y no está ya `Suspendido` (`.ts:80`; `.html:48-57`) | `procesando()` | `suspender()` (`.ts:168`): diálogo de confirmación; `PUT …/suscripcion/suspender` sin cuerpo |
+| Cancelar suscripción (`empresa.suscripcion.cancelar`), estilo de eliminar (`sofia-btn-delete`) | Ídem | Operador y `puedeCancelar()`: no es la propia y no está ya `Cancelado` (`.ts:81`; `.html:58-67`) | `procesando()` | `cancelar()` (`.ts:174`): diálogo de confirmación; `PUT …/suscripcion/cancelar` sin cuerpo |
 | Botón volver (icono `chevron_left`) | Cabecera de página | Siempre | — | Navega a `/empresas` |
 
-No hay botón «Eliminar».
+No hay botón «Eliminar». Los cuatro botones de suscripción y «Editar» comparten la fila de botones (con salto de línea si no caben); el operador mirando su propia empresa ve «Activar suscripción», «Extender prueba» (si está en prueba) y «Editar», pero no «Suspender» ni «Cancelar suscripción» (RN-EMP-021, RN-EMP-022).
 
-**Diálogos que abre:** ninguno.
+**Diálogos que abre:**
+- `SuscripcionFechaDialogComponent` (`app/pages/empresa/dialogs/suscripcion-fecha-dialog/`, 480 px), para «Activar suscripción» y «Extender prueba»: título «Activar suscripción» (`empresa.suscripcion.activarTitulo`) o «Extender prueba» (`extenderTitulo`); mensaje «Elige hasta qué día queda activa la suscripción de {{empresa}}. Al llegar esa fecha el acceso se bloquea solo.» (`activarMensaje`) o «Elige hasta qué día dura el periodo de prueba de {{empresa}}.» (`extenderMensaje`); un campo «Vigente hasta» (`empresa.suscripcion.vigenteHasta`) con calendario (`mat-datepicker`, solo lectura, obligatorio con «Este campo es obligatorio», sin fechas anteriores a mañana) cuyo valor inicial es un mes después de la fecha base (el vencimiento actual si sigue en el futuro; si ya venció, hoy); atajos «1 mes», «3 meses», «6 meses» y «12 meses» (`atajoUnMes`, `atajoMeses`; suman meses a la fecha base y un día 31 cae en el último día del mes de destino); botones «Cancelar» (`actions.cancel`) y «Confirmar» (`actions.confirm`). La fecha enviada es el final del día elegido (23:59:59 hora local) en ISO (`suscripcion-fecha-dialog.component.ts:16-36,52-61`). RN-EMP-028.
+- `ConfirmDialogComponent` (420 px) para «Suspender» («Suspender empresa» / «{{empresa}} perderá el acceso de inmediato. Puedes devolvérselo activando su suscripción.», `suspenderTitulo`, `suspenderMensaje`) y «Cancelar suscripción» («Cancelar suscripción» / «{{empresa}} perderá el acceso de inmediato y quedará como cancelada. Puedes devolvérselo activando su suscripción.», `cancelarTitulo`, `cancelarMensaje`).
 
 **Mensajes al usuario**
 
 | Situación | Tipo | Texto exacto (clave) | Fuente |
 |---|---|---|---|
-| Guardado correcto | Éxito | «Empresa actualizada correctamente» (`empresa.detail.save-success`) | `empresa-detail.component.ts:115` |
-| Cualquier error al guardar | Error | «Error al actualizar la empresa» (`empresa.detail.save-error`) | `:122` |
-| Cualquier error al cargar | Error | «Error al cargar la empresa» (`empresa.detail.load-error`) | `:89` |
+| Suscripción activada | Éxito | «Suscripción activada.» (`empresa.suscripcion.activarOk`) | `empresa-detail.component.ts:156-160,211-218` |
+| Prueba extendida | Éxito | «Periodo de prueba extendido.» (`extenderOk`) | `:162-166` |
+| Empresa suspendida | Éxito | «Empresa suspendida.» (`suspenderOk`) | `:168-172` |
+| Suscripción cancelada | Éxito | «Suscripción cancelada.» (`cancelarOk`) | `:174-178` |
+| `Empresa.Suscripcion.NoEstaEnPrueba` | Error | «Solo se puede extender la prueba de una empresa que sigue en periodo de prueba.» (`errorNoEstaEnPrueba`) | `:23-30` |
+| `Empresa.Suscripcion.PropiaEmpresa` | Error | «No puedes suspender ni cancelar tu propia empresa.» (`errorPropiaEmpresa`) | `:23-30` |
+| `Empresa.Suscripcion.FechaVencimiento`, `ActivarSuscripcionEmpresaCommand.FechaVencimiento` o `ExtenderPruebaEmpresaCommand.FechaVencimiento` | Error | «La fecha de vencimiento debe ser posterior a hoy.» (`errorFecha`) | `:23-30` |
+| `Auth.PlataformaAdminRequerido` | Error | El texto común de prohibido (`errors.forbidden`) | `:23-30` |
+| Cualquier otro error de estas cuatro acciones | Error | «No se pudo cambiar la suscripción.» (`empresa.suscripcion.error`) | `:219-224` |
+| Guardado correcto | Éxito | «Empresa actualizada correctamente» (`empresa.detail.save-success`) | `empresa-detail.component.ts:144` |
+| Cualquier error al guardar | Error | «Error al actualizar la empresa» (`empresa.detail.save-error`) | `:151` |
+| Cualquier error al cargar | Error | «Error al cargar la empresa» (`empresa.detail.load-error`) | `:118` |
 
 No usa `saveErrorKey`: ningún código del backend se traduce (por ejemplo el RUC duplicado `Empresa.RUC.Duplicado` o el formato inválido muestran el mismo «Error al actualizar la empresa»). Existen las claves `empresa.notifications.rucDuplicado` y `empresa.form.rucFormat`, pero este componente no las usa.
 
@@ -208,8 +229,11 @@ No usa `saveErrorKey`: ningún código del backend se traduce (por ejemplo el RU
 
 | Cuándo | Método del servicio | Verbo y URL | Permiso del endpoint |
 |---|---|---|---|
-| Al abrir y tras guardar | `EmpresaService.getById` (`empresa.service.ts:28-30`) | `GET /api/v1/empresas/{id}` | `Empresas:Leer` (`EmpresasController.cs:57`) |
-| Guardar | `EmpresaService.update` (`:32-34`) | `PUT /api/v1/empresas/{id}` | `Empresas:Actualizar` (`EmpresasController.cs:65`) |
+| Al abrir y tras guardar | `EmpresaService.getById` (`empresa.service.ts:28-30`) | `GET /api/v1/empresas/{id}` | `Empresas:Leer` o operador de plataforma (`EmpresasController.cs:61-62`) |
+| Guardar | `EmpresaService.update` (`:32-34`) | `PUT /api/v1/empresas/{id}` | `Empresas:Actualizar` (`EmpresasController.cs:69-70`) |
+| «Activar suscripción» | `EmpresaService.activarSuscripcion` (`empresa.service.ts:45-47`) | `PUT /api/v1/empresas/{id}/suscripcion/activar` con `{ fechaVencimiento }` | Solo operador de plataforma (política `PLATAFORMA_ADMIN`, `EmpresasController.cs:78-84`); 204; 404 `Empresa.NotFound`; 400 si la fecha no es futura |
+| «Extender prueba» | `extenderPrueba` (`:49-51`) | `PUT …/suscripcion/extender-prueba` con `{ fechaVencimiento }` | Ídem (`:86-92`); 409 `Empresa.Suscripcion.NoEstaEnPrueba` si no está en prueba |
+| «Suspender» / «Cancelar suscripción» | `suspender` (`:53-55`), `cancelar` (`:57-59`) | `PUT …/suscripcion/suspender` y `PUT …/suscripcion/cancelar`, sin cuerpo | Ídem (`:94-108`); 409 `Empresa.Suscripcion.PropiaEmpresa` si es la empresa del operador |
 
 **Exportación y carga masiva:** no hay en esta pantalla.
 
@@ -222,6 +246,58 @@ No usa `saveErrorKey`: ningún código del backend se traduce (por ejemplo el RU
 - El rótulo del campo RUC dice «(11 dígitos, opcional)», pero el control no lo impone.
 - Código muerto: `isNew`, `estaVigenteDisplay` y `EstadoEmpresa` expuesto a la plantilla sin uso en `.html`; clave `empresa.detail.title-edit` sin uso.
 - `app/pages/empresa/empresa-maintenance` (`EmpresaMaintenanceComponent`, selector `app-empresa-maintenance`) **no tiene ruta** (`empresa.routes.ts` solo define `''` y `:id`) y **ninguna referencia** fuera de sus propios archivos (búsqueda de `EmpresaMaintenanceComponent` y `app-empresa-maintenance` en `src/`): es código sin uso. Importa el scope `empresa`, su formulario valida el RUC con `/^\d{11}$/` y el nombre hasta 200 (`empresa-maintenance.component.ts`), pero nunca se muestra. `empresa-register` lo cubre la parte A.
+
+### 1.3 `/configuracion-pago` — Configuración de Pago (solo operador de plataforma)
+
+- **Componente:** `ConfiguracionPagoComponent` (`app/pages/plataforma/configuracion-pago/configuracion-pago.component.ts`, `.html`, `.scss`). Scope `suscripcion` (`provideTranslocoScope('suscripcion')`, `.ts:28`). Pantalla nueva desde `sofia-web-spa` `558ad35`.
+- **Para qué sirve:** que el operador de plataforma publique los datos con los que las empresas bloqueadas o por vencer pagan su suscripción: WhatsApp para recibir capturas, número de Yape, indicaciones y código QR. Es un único registro (RN-EMP-023 a RN-EMP-025, RN-EMP-027).
+- **Cómo se llega:** menú lateral, grupo «Administración» → «Configuración de Pago» (`nav.configuracionPago`, icono `solar:qr-code-line-duotone`), visible solo si `auth.esAdminPlataforma()` (`sidebar.component.ts:31`); ningún rol de empresa la muestra (la vista previa del menú de un rol la omite, `menu-preview.ts:19-23`).
+- **Permiso de ruta:** ninguno de módulo; la ruta `configuracion-pago` lleva `platformAdminGuard` (`app.routes.ts:75-81`; [`acceso-layout-y-compartidos` §5.6](acceso-layout-y-compartidos.md)). Quien no es operador (incluido el rol `Admin`) ve «No tienes permisos para acceder a esta pantalla.» y vuelve a `/dashboard`.
+- **Migas y cabecera:** título «Configuración de Pago» (`suscripcion.config.title`); migas «Inicio» (`/dashboard`) / «Administración» / «Configuración de Pago» (`breadcrumbs.configuracion-pago`, activa); botón volver a `/dashboard`. Dentro de la tarjeta: encabezado «Configuración de Pago» y el subtítulo «Estos datos se muestran a las empresas que deben pagar su suscripción.» (`subtitle`).
+- **Modos:** ver y editar. Abre en modo ver (formulario deshabilitado) y carga los datos (spinner mientras carga); «Editar» lo habilita.
+
+**Campos del formulario** (`.ts:52-56`, `.html:35-97`)
+
+| Etiqueta (clave `suscripcion.config.*`) | `formControlName` | Control | Obligatorio | Validaciones | Mensaje de error | Ayuda |
+|---|---|---|---|---|---|---|
+| WhatsApp para recibir capturas (`whatsappNumero`) | `whatsappNumero` | `matInput`, `inputmode="numeric"`, `maxlength="15"` | Sí | `Validators.required`; `pattern /^[0-9]{8,15}$/` | «Este campo es obligatorio» (`general.errors.required`) o «Ingresa de 8 a 15 dígitos, con código de país y sin espacios ni signos» (`whatsappNumeroInvalido`) | «Con código de país, solo dígitos. Ej. 51987654321» (`whatsappNumeroHint`) |
+| Número de Yape (opcional) (`yapeNumero`) | `yapeNumero` | `matInput`, `inputmode="numeric"`, `maxlength="9"` | No | `pattern /^[0-9]{9}$/` (un valor vacío es válido) | «Ingresa exactamente 9 dígitos» (`yapeNumeroInvalido`) | «9 dígitos; para quien no pueda escanear el código» (`yapeNumeroHint`) |
+| Indicaciones de pago (opcional) (`instrucciones`) | `instrucciones` | `textarea`, 4 filas, `maxlength="500"` | No | `Validators.maxLength(500)` | `general.errors.maxLength` con `max: 500` | «Por ejemplo, el monto y el periodo que cubre» (`instruccionesHint`) |
+| Código QR de Yape (`qr`) | (fuera del formulario) | Selector de archivo oculto (`accept` `image/png,image/jpeg`) con botón | No | PNG o JPEG de hasta 1 MB, comprobado al elegir el archivo (`QR_ACCEPTED_TYPES`, `QR_MAX_BYTES`, `pago-suscripcion.model.ts`) | «La imagen debe ser PNG o JPG.» (`qrFormatoInvalido`) o «La imagen no puede pesar más de 1 MB.» (`qrTamanoInvalido`), en una alerta bajo la imagen | «PNG o JPG de hasta 1 MB.» (`qrAyuda`) |
+
+El QR publicado (o el recién elegido) se muestra a la derecha con el texto alternativo «Código QR de Yape publicado» (`qrAlt`); sin QR: «Aún no has subido un código QR.» (`qrVacio`); con una imagen nueva elegida: «Imagen nueva, se publicará al guardar» (`qrPendiente`). El backend repite los límites: WhatsApp `^[0-9]{8,15}$`, Yape `^[0-9]{9}$`, indicaciones hasta 500 caracteres tras recortar espacios (un texto en blanco se guarda como nulo), QR de 1 byte a 1 MB y formato PNG o JPEG decidido por la firma del archivo (`PlataformaConfiguracionPago.cs:9-10,32-57,60-76`; `GuardarConfiguracionPagoCommandValidator.cs`; columnas `Whatsapp_Numero VARCHAR(15) NOT NULL`, `Yape_Numero VARCHAR(9)`, `Instrucciones NVARCHAR(500)`, `Qr_Imagen VARBINARY(MAX)`, `Qr_Content_Type VARCHAR(20)` en `0029_Plataforma_Suscripciones.sql`).
+
+**Botones y acciones**
+
+| Texto (clave) | Dónde | Visible cuando | Deshabilitado cuando | Qué hace |
+|---|---|---|---|---|
+| Editar (`actions.edit`) | Encabezado de la tarjeta, derecha | Modo ver | Nunca | `enterEditMode()` (`.ts:92`): habilita el formulario |
+| Elegir imagen (`qrElegir`) o Cambiar imagen (`qrCambiar`), icono `upload` | Panel del QR | Modo editar (con imagen publicada o elegida dice «Cambiar imagen») | Nunca | Abre el selector de archivos; `onQrSelected` valida tipo y tamaño (`.ts:104-123`) |
+| Cancelar (`actions.cancel`) | Pie, derecha | Modo editar | Nunca | `cancelEdit()` (`.ts:97`): descarta la imagen elegida, restaura los valores guardados y deshabilita |
+| Guardar (`actions.save`); spinner mientras guarda | Pie, derecha | Modo editar | `saving()` | `save()` (`.ts:125-154`): si el formulario es inválido marca todo como tocado y no envía; si no, `PUT /api/v1/plataforma/pago` como `multipart/form-data` con `whatsappNumero`, `yapeNumero` y `instrucciones` (solo si tienen valor) y `qr` (solo si se eligió una imagen nueva; sin él el servidor conserva el QR guardado) |
+
+**Mensajes al usuario**
+
+| Situación | Tipo | Texto exacto (clave) | Fuente |
+|---|---|---|---|
+| Guardado correcto | Éxito | «Configuración de pago guardada.» (`suscripcion.config.saveSuccess`); vuelve a modo ver y recarga | `.ts:140-147` |
+| Falla la carga | Error | «No se pudo cargar la configuración de pago.» (`loadError`) | `.ts:77-80` |
+| `GuardarConfiguracionPagoCommand.WhatsappNumero` o `ConfiguracionPago.WhatsappNumero` | Error | «Ingresa de 8 a 15 dígitos, con código de país y sin espacios ni signos» | `.ts:12-20` |
+| `GuardarConfiguracionPagoCommand.YapeNumero` o `ConfiguracionPago.YapeNumero` | Error | «Ingresa exactamente 9 dígitos» | `.ts:12-20` |
+| `GuardarConfiguracionPagoCommand.QrImagen` o `ConfiguracionPago.Qr.Tamano` | Error | «La imagen no puede pesar más de 1 MB.» | `.ts:12-20` |
+| `ConfiguracionPago.Qr.Formato` | Error | «La imagen debe ser PNG o JPG.» | `.ts:12-20` |
+| Cualquier otro error al guardar | Error | «No se pudo guardar la configuración de pago.» (`saveError`) | `.ts:148-152` |
+
+`ConfiguracionPago.Instrucciones` no tiene mensaje propio en el SPA: cae en «No se pudo guardar la configuración de pago.» (el formulario ya limita a 500 caracteres).
+
+**Llamadas a la API**
+
+| Cuándo | Método del servicio | Verbo y URL | Permiso del endpoint |
+|---|---|---|---|
+| Al abrir y tras guardar | `PagoSuscripcionService.getConfiguracion` | `GET /api/v1/plataforma/pago` | Anónimo (`PlataformaController.cs:19-21`; límite 30 por minuto por IP) |
+| Guardar | `PagoSuscripcionService.guardarConfiguracion` | `PUT /api/v1/plataforma/pago` (`multipart`) | Solo operador de plataforma (`PlataformaController.cs:36-38`); 204; el controlador responde 400 `ConfiguracionPago.Qr.Tamano` si el QR supera 1 MB y el servidor 413 por encima de 1 MB + 64 KB |
+
+**Exportación y carga masiva:** no hay. No verificado en la aplicación (solo lectura de código y de las pruebas `configuracion-pago.component.spec.ts`).
 
 ---
 
@@ -300,7 +376,7 @@ Encabezado «Resultados (N)». Paginación 10/25/50. Sin resultados: «Sin resul
 - **Componente:** `SucursalesDetailComponent` (`app/pages/sucursales/sucursales-detail/sucursales-detail.component.ts`, `.html`). Scope `sucursales`. Las dos rutas usan el mismo componente.
 - **Para qué sirve:** crear una sucursal, ver sus datos y, con permisos, editarla o eliminarla.
 - **Cómo se llega:** `/sucursales/nueva`: botón «Nuevo» de la búsqueda. `/sucursales/:id`: enlace del nombre en la búsqueda.
-- **Permiso de ruta:** `/sucursales/nueva` → `Sucursales:Leer` + `Sucursales:Crear`; `/sucursales/:id` → `Sucursales:Leer` (`route-permissions.ts:68-72`).
+- **Permiso de ruta:** `/sucursales/nueva` → `Sucursales:Leer` + `Sucursales:Crear`; `/sucursales/:id` → `Sucursales:Leer` (`route-permissions.ts:79-83`).
 - **Migas y cabecera:** título «Sucursales» (`sucursales.title`); migas «Inicio» / «Administración» / «Sucursales» (con enlace a `/sucursales`); botón volver a `/sucursales` (`.html:3-7`, `.ts:66-70`). Misma cabecera en crear y en ver.
 - **Modos** (`ngOnInit`, `.ts:77-87`): sin parámetro `id` → **crear** (`isNew` e `isEditMode` verdaderos, formulario habilitado); con `id` → **ver** (formulario deshabilitado, carga datos) y «Editar» lo habilita.
 
@@ -372,7 +448,7 @@ El buscador del gerente llama a `GET /api/v1/empleados?pageNumber=1&pageSize=20&
 - **Componente:** `SucursalesCargaMasivaComponent` (`app/pages/sucursales/sucursales-carga-masiva/sucursales-carga-masiva.component.ts`, plantilla en línea `<app-carga-masiva-page [config]="config()" />`). Scope `sucursales`; los textos los resuelve el componente común contra la raíz `carga-masiva.*`.
 - **Para qué sirve:** cargar varias sucursales desde un Excel. El flujo común (descargar plantilla, elegir archivo, vista previa, guardar válidos) está en [`producto/pantallas/acceso-layout-y-compartidos` §6.5](acceso-layout-y-compartidos.md); aquí solo la configuración que pasa esta pantalla.
 - **Cómo se llega:** botón «Carga Masiva» de `/sucursales` (§2.1).
-- **Permiso de ruta:** `Sucursales:Leer` + `Sucursales:Crear` (segundo segmento `carga-masiva`, `route-permissions.ts:36,68-72`).
+- **Permiso de ruta:** `Sucursales:Leer` + `Sucursales:Crear` (segundo segmento `carga-masiva`, `route-permissions.ts:44,79-83`).
 - **Migas y cabecera:** título «Carga Masiva» (`carga-masiva.title`); migas «Inicio» / «Administración» / «Sucursales» (enlace a `/sucursales`) / «Carga Masiva» (`breadcrumbs.carga-masiva`, activa); botón volver a `/sucursales` (`.ts:23-27`).
 
 **Configuración que pasa** (`CargaMasivaConfig`, `.ts:18-34`)
@@ -554,7 +630,7 @@ Resumen de lo que se puede hacer sobre un rol (comprobado en las fichas):
 - **Crear:** nombre, descripción y nivel de jerarquía. Los permisos y las sucursales se definen después, al editar el rol (el bloque «Configuración del Rol» no aparece al crear).
 - **Editar:** solo descripción y nivel; el nombre queda bloqueado. Además, con `Seguridad:GestionarPermisos`: permisos (matriz por módulo y acción) y sucursales del rol, que se guardan todos juntos con «Guardar».
 - **Eliminar** y **carga masiva** con sus permisos.
-- **Rol `Admin`:** en las pantallas de roles el SPA **no tiene ninguna regla visible** sobre un rol llamado `Admin` (no oculta, bloquea ni avisa; ver búsqueda `Admin` en `app/pages/roles`: solo aparece en un comentario). Lo que sí existe está en la API: `Rol.AdminReservado` al asignar o quitar el rol Admin a una cuenta (`sofia-apis/src/SOFIA.Application/Security/Commands/Roles/AssignRol/AssignRolToUserCommandHandler.cs:36-38`, ver §5.2) y `Rol.PermisosPropios` al ampliar los permisos de un rol que uno mismo tiene asignado sin ser Admin (`AssignPermissionToRolCommandHandler.cs:26`, RN-ROL-010). En la vista previa del menú de un rol llamado «Admin» todas las pantallas salen activas porque la comprobación trata ese nombre como administrador (`roles-detail.component.ts:73-79`, `route-permissions.ts:53`).
+- **Rol `Admin`:** en las pantallas de roles el SPA **no tiene ninguna regla visible** sobre un rol llamado `Admin` (no oculta, bloquea ni avisa; ver búsqueda `Admin` en `app/pages/roles`: solo aparece en un comentario). Lo que sí existe está en la API: `Rol.AdminReservado` al asignar o quitar el rol Admin a una cuenta (`sofia-apis/src/SOFIA.Application/Security/Commands/Roles/AssignRol/AssignRolToUserCommandHandler.cs:36-38`, ver §5.2) y `Rol.PermisosPropios` al ampliar los permisos de un rol que uno mismo tiene asignado sin ser Admin (`AssignPermissionToRolCommandHandler.cs:26`, RN-ROL-010). En la vista previa del menú de un rol llamado «Admin» todas las pantallas salen activas porque la comprobación trata ese nombre como administrador (`roles-detail.component.ts:73-79`, `route-permissions.ts:64`).
 
 ### 4.1 `/roles` — Roles (búsqueda)
 
@@ -641,9 +717,9 @@ La clave `roles.detail.nombreRolHint` («El nombre del rol es un identificador d
 
 **Tarjeta «Configuración del Rol»** (solo `/roles/:id`, `.html:71-316`): título «Configuración del Rol» (`roles.configuracion.title`), subtítulo «Define el menú, permisos y sucursales para este rol.» (`roles.configuracion.subtitle`) y, a la derecha, un aviso amarillo con icono `info`: «Los cambios se aplican de inmediato. Los usuarios conectados verán su menú actualizado al recargar la página.» (`roles.permisos.cache-warning`). Tres pestañas (`mat-tab-group`):
 
-1. **«Menú»** (`roles.configuracion.tab-menu`): vista previa de solo lectura del menú lateral real. Texto: «Vista previa del menú real: una pantalla aparece cuando el rol tiene el permiso «Leer» de su módulo.» (`roles.configuracion.menu-preview-hint`). Se construye con la misma lista del menú (`navItems`, `sidebar-data.ts`) y una tarjeta por grupo del menú, con el título de la sección (por ejemplo «Administración») y cada pantalla con icono `check_circle` (visible) o `radio_button_unchecked` (oculta) (`menu-preview.ts:15-25`, `.html:104-188`). Una pantalla se marca visible si no tiene módulo asignado (Dashboard) o si los permisos **marcados en ese momento** del rol incluyen `Leer` de su módulo (`.ts:72-79`); por eso la vista previa cambia al marcar casillas en la pestaña Permisos sin guardar. Mientras se cargan los permisos muestra un spinner.
+1. **«Menú»** (`roles.configuracion.tab-menu`): vista previa de solo lectura del menú lateral real. Texto: «Vista previa del menú real: una pantalla aparece cuando el rol tiene el permiso «Leer» de su módulo.» (`roles.configuracion.menu-preview-hint`). Se construye con la misma lista del menú (`navItems`, `sidebar-data.ts`) y una tarjeta por grupo del menú, con el título de la sección (por ejemplo «Administración») y cada pantalla con icono `check_circle` (visible) o `radio_button_unchecked` (oculta) (`menu-preview.ts:16-29`, `.html:104-188`). Una pantalla se marca visible si no tiene módulo asignado (Dashboard) o si los permisos **marcados en ese momento** del rol incluyen `Leer` de su módulo (`.ts:72-79`); por eso la vista previa cambia al marcar casillas en la pestaña Permisos sin guardar. Mientras se cargan los permisos muestra un spinner.
 2. **«Permisos»** (`roles.configuracion.tab-permisos`): matriz en un acordeón de paneles (`mat-accordion multi`, varios abiertos a la vez), uno por módulo.
-   - **Catálogo:** viene de la API (`GET /api/v1/roles/permissions/catalog`, `Seguridad:Leer`), que lo arma con los pares módulo/acción declarados en los controladores (RN-ROL-016). Los permisos que tiene el rol vienen de `GET /api/v1/roles/{id}/permissions`. Se cargan en paralelo (`forkJoin`, `.ts:155-172`).
+   - **Catálogo:** viene de la API (`GET /api/v1/roles/permissions/catalog`, `Seguridad:Leer`), que lo arma con los pares módulo/acción declarados en los controladores con `[HasPermission]` (RN-ROL-016; `RolesController.cs:102-116` solo recorre `HasPermissionAttribute`). **Comportamiento actual desde `sofia-apis` `6f6b837`:** `Empresas:Leer` ya no aparece en este catálogo, porque `EmpresasController` lo declara con `[HasPermissionOrPlataforma]` (`EmpresasController.cs:39,61,110`); en la fila «Empresa» de la matriz solo queda `Actualizar` (`EmpresasController.cs:69`). Un rol que no sea `Admin` ya no puede recibir `Empresas:Leer` desde esta pantalla, aunque sí lo conserva si ya lo tenía asignado; el menú «Empresa» y `/empresas` siguen exigiendo ese permiso a los usuarios de empresa (`route-permissions.ts:3`). Los permisos que tiene el rol vienen de `GET /api/v1/roles/{id}/permissions`. Se cargan en paralelo (`forkJoin`, `.ts:155-172`).
    - **Textos:** el nombre de cada módulo y acción se traduce con `roles.permisos.modulo.<Módulo>` y `roles.permisos.accion.<Acción>` (`.ts:182-186`); si no hay traducción se muestra el nombre técnico. Los 27 módulos y las 20 acciones distintas que usa hoy la API tienen traducción (verificado contra `docs/_inventario/permisos.csv`). Tabla de textos abajo.
    - **Orden:** módulos y acciones se ordenan alfabéticamente por el texto que ve el usuario, no por el nombre técnico (`.ts:82-86`).
    - **Selección:** cada panel tiene una casilla de módulo en el encabezado (marca o desmarca todas las acciones; se ve «indeterminada» si hay algunas) y a la derecha el contador «N/M acciones» (`roles.permisos.acciones` = «acciones»). Dentro, una casilla por acción en 4 columnas (2 en móvil). No hay casilla global «seleccionar todo» para todos los módulos.
@@ -936,7 +1012,7 @@ Carpeta `app/pages/series-fiscales`. Componentes enrutados: `SeriesFiscalesSearc
 
 - **Componente:** `SeriesFiscalesSearchComponent` (`app/pages/series-fiscales/series-fiscales-search/series-fiscales-search.component.ts`, `.html`). Scope `series-fiscales` (alias `seriesFiscales`).
 - **Para qué sirve:** buscar series por sucursal, tipo, estado y prefijo, abrirlas, exportar y entrar a crear.
-- **Cómo se llega:** menú lateral, grupo «SUNAT» → «Series Fiscales» (`nav.seriesFiscales`, `sidebar-data.ts:168-179`); volver desde el detalle.
+- **Cómo se llega:** menú lateral, grupo «SUNAT» → «Series Fiscales» (`nav.seriesFiscales`, `sidebar-data.ts:178-189`); volver desde el detalle.
 - **Permiso de ruta:** `SeriesFiscales:Leer`.
 - **Migas y cabecera:** título «Series Fiscales» (`seriesFiscales.title`); migas «Inicio» / «SUNAT» (`breadcrumbs.sunat`) / «Series Fiscales» (`breadcrumbs.seriesFiscales`, activa); sin botón volver (`.ts:67-71`). Tarjeta «Búsqueda de Series Fiscales» (`seriesFiscales.search.title`) con subtítulo común.
 - **Modos:** uno. Resultados tras «Buscar» o con estado guardado (§0).
@@ -1087,7 +1163,7 @@ Las claves `seriesFiscales.errors.*` se usan solo como mensajes de guardado (y c
 
 | # | Tema | Por qué no se verificó |
 |---|---|---|
-| 1 | Si `/empresas` muestra solo la empresa del usuario o varias | El SPA no filtra; `GetEmpresasQueryHandler` no filtra por empresa de forma explícita y depende del filtro global del contexto. `negocio/reglas/administracion-y-seguridad` (RN-EMP-017) afirma el aislamiento; no se comprobó contra datos reales |
+| 1 | Si `/empresas` muestra solo la empresa del usuario o varias | El SPA no filtra; `GetEmpresasQueryHandler` toma las empresas de `EmpresasVisibles` (`EmpresaPlataformaExtensions.cs`): para el operador de plataforma ignora el filtro de empresa y devuelve todas; para los demás depende del filtro global del contexto. `negocio/reglas/administracion-y-seguridad` (RN-EMP-017) afirma el aislamiento; no se comprobó contra datos reales |
 | 2 | Qué ve el usuario si le falta `Empleados:Leer` o `Sucursales:Leer` en los buscadores que consultan esos módulos (gerente de sucursal, empleado de la cuenta, sucursal base del empleado, filtro de sucursal de series, buscadores de sucursal de la cuenta) | Los endpoints exigen ese permiso y el SPA no lo comprueba; el comportamiento visual (lista vacía, error silencioso) no se probó |
 | 3 | Si la API impide editar o eliminar el rol llamado `Admin` | El SPA no tiene regla; en `Commands/Roles` solo se encontraron `Rol.AdminReservado` (asignar o quitar el rol Admin a una cuenta) y `Rol.PermisosPropios` |
 | 4 | Si existen series de tipo Ticket o Nota de Débito en datos reales (la tabla mostraría la clave cruda) | Depende de los datos |
@@ -1104,7 +1180,7 @@ Las claves `seriesFiscales.errors.*` se usan solo como mensajes de guardado (y c
 
 ## 8. Tabla de cobertura
 
-**Rutas de `docs/_inventario/rutas-spa.csv` de este alcance (19 de 19)**
+**Rutas de `docs/_inventario/rutas-spa.csv` de este alcance (20 de 20)**
 
 | Ruta | Componente | Ficha |
 |---|---|---|
@@ -1127,12 +1203,15 @@ Las claves `seriesFiscales.errors.*` se usan solo como mensajes de guardado (y c
 | `/series-fiscales` | `SeriesFiscalesSearchComponent` | §6.1 |
 | `/series-fiscales/nueva` | `SeriesFiscalesDetailComponent` (crear) | §6.2 |
 | `/series-fiscales/:id` | `SeriesFiscalesDetailComponent` (ver y editar) | §6.2 |
+| `/configuracion-pago` | `ConfiguracionPagoComponent` | §1.3 |
 
-**Componentes de `docs/_inventario/componentes-pages.txt` de este alcance (16 de 16)**
+**Componentes de `docs/_inventario/componentes-pages.txt` de este alcance (17 de 17)**
 
 | Componente (carpeta bajo `app/pages`) | Ficha o motivo |
 |---|---|
 | `empresa/empresa-search`, `empresa/empresa-detail` | §1.1, §1.2 |
+| `empresa/dialogs/suscripcion-fecha-dialog` | Diálogo de fecha de «Activar suscripción» y «Extender prueba», §1.2 |
+| `plataforma/configuracion-pago` | §1.3 |
 | `empresa/empresa-maintenance` | Sin uso (comprobado: sin ruta ni referencias fuera de sus archivos), §1.2 Observaciones |
 | `empresa/empresa-register` | No es de esta parte: lo documenta la parte A (`/auth/register`; desde `2f82346` pide la dirección de la sede principal) |
 | `sucursales/sucursales-search`, `sucursales-detail`, `sucursales-carga-masiva` | §2.1, §2.2, §2.3 |
@@ -1141,13 +1220,13 @@ Las claves `seriesFiscales.errors.*` se usan solo como mensajes de guardado (y c
 | `seguridad/cuentas-search`, `cuentas-detail` | §5.1, §5.2 |
 | `series-fiscales/series-fiscales-search`, `series-fiscales-detail` | §6.1, §6.2 |
 
-**Diálogos de `docs/_inventario/dialogos.txt`:** ninguna carpeta de este alcance contiene un diálogo propio (búsqueda en `dialogos.txt` sin resultados). Los diálogos que abren estas pantallas son `ConfirmDialogComponent` (compartido, [`producto/pantallas/acceso-layout-y-compartidos` §6.1](acceso-layout-y-compartidos.md)) en el detalle de cada módulo salvo Empresa: §2.2, §3.2, §4.2, §5.2, §6.2.
+**Diálogos de `docs/_inventario/dialogos.txt`:** desde `sofia-web-spa` `558ad35` la carpeta `empresa` contiene un diálogo propio, `SuscripcionFechaDialogComponent` (`empresa/dialogs/suscripcion-fecha-dialog/`, §1.2); las demás carpetas de este alcance no tienen ninguno. Los diálogos compartidos que abren estas pantallas son `ConfirmDialogComponent` ([`producto/pantallas/acceso-layout-y-compartidos` §6.1](acceso-layout-y-compartidos.md)) en el detalle de Empresa (suspender y cancelar, §1.2), Sucursales, Empleados, Roles, Cuentas y Series fiscales (§2.2, §3.2, §4.2, §5.2, §6.2).
 
 **Usos de `*appPermiso` de `docs/_inventario/app-permiso-usos.csv` de este alcance (18 de 18)**
 
 | Archivo:línea | Expresión | Módulo resultante | Botón y ficha |
 |---|---|---|---|
-| `empresa-detail.component.html:27` | `'Actualizar'` | `Empresas:Actualizar` | «Editar», §1.2 |
+| `empresa-detail.component.html:70` | `'Actualizar'` | `Empresas:Actualizar` | «Editar», §1.2 (solo en la empresa propia) |
 | `sucursales-search.component.html:19` | `'Crear'` | `Sucursales:Crear` | «Carga Masiva», §2.1 |
 | `sucursales-search.component.html:27` | `'Crear'` | `Sucursales:Crear` | «Nuevo», §2.1 |
 | `sucursales-detail.component.html:27` | `'Actualizar'` | `Sucursales:Actualizar` | «Editar», §2.2 |
@@ -1168,7 +1247,9 @@ Las claves `seriesFiscales.errors.*` se usan solo como mensajes de guardado (y c
 
 Además de `*appPermiso`, `RolesDetailComponent` comprueba en código `Seguridad:GestionarPermisos` (`roles-detail.component.ts:48`) y `CuentasDetailComponent` comprueba `Seguridad:AsignarRoles` (`cuentas-detail.component.ts:59`); ambas están documentadas en §4.2 y §5.2.
 
-**Endpoints de este alcance sin pantalla propia en esta parte** (de `endpoints.csv`, controladores Empresas, Sucursales, Empleados, Roles, Cuentas, SeriesFiscales): `POST /api/v1/Empresas/registrar` (parte A); `GET /api/v1/Sucursales/permitidas` (selector de sucursal de la cabecera, parte A); `POST /api/v1/Roles/assign-to-user` y `POST /api/v1/Roles/remove-from-user` (el SPA usa en su lugar `POST` y `DELETE /api/v1/cuentas/{id}/roles/{rolId}`, por lo que estos dos endpoints no se llaman desde estas pantallas: confirmado en `rol.service.ts` y `cuenta.service.ts`).
+Los cuatro botones de suscripción del detalle de empresa no usan `*appPermiso`: dependen de `auth.esAdminPlataforma()` (`empresa-detail.component.html:28-67`).
+
+**Endpoints de este alcance sin pantalla propia en esta parte** (de `endpoints.csv`, controladores Empresas, Sucursales, Empleados, Roles, Cuentas, SeriesFiscales, más `GET /api/v1/plataforma/pago` y `PUT /api/v1/plataforma/pago`, que sí usa §1.3): `POST /api/v1/Empresas/registrar` (parte A); `GET /api/v1/Sucursales/permitidas` (selector de sucursal de la cabecera, parte A); `POST /api/v1/Roles/assign-to-user` y `POST /api/v1/Roles/remove-from-user` (el SPA usa en su lugar `POST` y `DELETE /api/v1/cuentas/{id}/roles/{rolId}`, por lo que estos dos endpoints no se llaman desde estas pantallas: confirmado en `rol.service.ts` y `cuenta.service.ts`).
 
 ---
 
@@ -1178,7 +1259,7 @@ Método: para cada clave del `es.json` del scope se buscó la forma completa (co
 
 | Scope | Claves sin ninguna referencia |
 |---|---|
-| `empresa` (100 claves) | `searchPlaceholder`, `add`, `cols.fechaVencimiento`, `cols.cantidadSucursales`, `form.titleView`, `form.estado`, `form.fechaVencimiento`, `notifications.loadError`, `help.nombre`, `help.ruc`, `help.estado`, `noData`, `showing`, `detail.title-edit`, `fields.estaVigente` (15). Además, solo las referencia el componente sin ruta `empresa-maintenance`: `form.titleEdit`, `form.nombre`, `form.ruc`, `form.vigente`, `form.noVigente`, `form.back`, `notifications.updated`, `notifications.loadSingleError`, `notifications.updateError` (9). Las claves `empresa.register.*` y varias de `form.*` y `notifications.*` las usa `empresa-register` (parte A) |
+| `empresa` (124 claves) | `searchPlaceholder`, `add`, `cols.fechaVencimiento`, `cols.cantidadSucursales`, `form.titleView`, `form.estado`, `form.fechaVencimiento`, `notifications.loadError`, `help.nombre`, `help.ruc`, `help.estado`, `noData`, `showing`, `detail.title-edit`, `fields.estaVigente` (15). Además, solo las referencia el componente sin ruta `empresa-maintenance`: `form.titleEdit`, `form.nombre`, `form.ruc`, `form.vigente`, `form.noVigente`, `form.back`, `notifications.updated`, `notifications.loadSingleError`, `notifications.updateError` (9). Las claves `empresa.register.*` y varias de `form.*` y `notifications.*` las usa `empresa-register` (parte A) |
 | `sucursales` (21) | Ninguna |
 | `empleados` (31) | Ninguna |
 | `roles` (91) | `detail.title-new`, `detail.title-edit`, `detail.nombreRolHint`, `fields.nivelJerarquiaDesde`, `fields.nivelJerarquiaHasta`, `fields.createdAt`, `configuracion.sucursales-save`, `configuracion.sucursales-save-success`, `configuracion.sucursales-save-error`, `permisos.title`, `permisos.subtitle`, `permisos.save`, `permisos.save-success`, `permisos.save-error`, `permisos.no-changes` (15) |
@@ -1213,3 +1294,5 @@ Método: para cada clave del `es.json` del scope se buscó la forma completa (co
 - [`producto/pantallas/acceso-layout-y-compartidos` — acceso, layout y compartidos](acceso-layout-y-compartidos.md) (§5.3, §5.4, §6.1 a §6.6, §6.12, §7.1, §8).
 - [`negocio/reglas/administracion-y-seguridad` — reglas de administración y seguridad](../../negocio/reglas/administracion-y-seguridad.md) (RN-EMP, RN-SUC, RN-EPL, RN-ROL, RN-CTA, RN-SER).
 - [`tecnico/seguridad/matriz-de-permisos` — matriz de permisos](../../tecnico/seguridad/matriz-de-permisos.md).
+
+- Suscripciones del operador de plataforma (`sofia-web-spa` `558ad35`, `sofia-apis` `6f6b837`): `pages/plataforma/configuracion-pago/*`, `pages/empresa/dialogs/suscripcion-fecha-dialog/*`, `pages/empresa/empresa-detail/*`, `pages/dashboard/suscripcion-aviso/*`, `shared/components/pago-suscripcion/*`, `shared/services/pago-suscripcion.service.ts`, `core/auth/platform-admin.guard.ts`; `PlataformaController.cs`, `EmpresasController.cs`, `PlataformaAdminPolicy.cs`, `HasPermissionOrPlataformaAttribute.cs`, `Empresa.cs`, `PlataformaConfiguracionPago.cs`, `0029_Plataforma_Suscripciones.sql`; `public/i18n/suscripcion/es.json`, `public/i18n/empresa/es.json`, `public/i18n/dashboard/es.json`.
