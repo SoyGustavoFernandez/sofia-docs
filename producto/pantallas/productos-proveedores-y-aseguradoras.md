@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron controladores, validadores, manejadores y entidades necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Al empezar, `git status --short` salió vacío en ambos repos (sin cambios sin commitear); `git diff --stat 01b8260..HEAD -- src/app/pages` en el SPA no muestra cambios en las carpetas de este documento (los commits `8f36125` y `eeffbb6` solo tocan README, `angular.json` e `index.html`). |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Citas desplazadas y cita corregida de `goToNew()` de Aseguradoras. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron controladores, validadores, manejadores y entidades necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Al empezar, `git status --short` salió vacío en ambos repos (sin cambios sin commitear); `git diff --stat 01b8260..HEAD -- src/app/pages` en el SPA no muestra cambios en las carpetas de este documento (los commits `8f36125` y `eeffbb6` solo tocan README, `angular.json` e `index.html`). |
 
 Este documento es la parte D de seis del inventario de pantallas. Cubre cinco catálogos: Medicamentos, Presentaciones de venta, Formulaciones clínicas, Proveedores (con el registro e historial de precios de compra) y Aseguradoras (18 rutas). Lo compartido (guards, interceptor, `page-header`, `confirm-dialog`, `range-slider-field`, carga masiva común, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); los comportamientos comunes de las pantallas de búsqueda y detalle de catálogo están en la [parte C, §0](catalogos-basicos.md) y aquí solo se enlazan. Las reglas de negocio están en [`negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md) (MED, PRE, FOR, PRV, ASE) y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -33,7 +33,7 @@ Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que em
 
 Todo lo descrito en [`producto/pantallas/catalogos-basicos` §0](catalogos-basicos.md) vale aquí salvo lo que se indica. Se repiten solo los puntos que cambian o que conviene tener a mano.
 
-- **Permiso de ruta.** Mismo mecanismo (`canActivateChild: [passwordChangeGuard, permissionGuard]`, `app/app.routes.ts:37`; `app/core/auth/route-permissions.ts`): `Leer` del módulo del primer segmento; `nueva`, `nuevo` y `carga-masiva` exigen además `Crear`; `/x/:id` solo `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard`. Módulos de esta parte (`route-permissions.ts:12-16`):
+- **Permiso de ruta.** Mismo mecanismo (`canActivateChild: [passwordChangeGuard, permissionGuard]`, `app/app.routes.ts:38`; `app/core/auth/route-permissions.ts`): `Leer` del módulo del primer segmento; `nueva`, `nuevo` y `carga-masiva` exigen además `Crear`; `/x/:id` solo `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard`. Módulos de esta parte (`route-permissions.ts:12-16`):
 
   | Primer segmento | Módulo de permisos |
   |---|---|
@@ -43,7 +43,7 @@ Todo lo descrito en [`producto/pantallas/catalogos-basicos` §0](catalogos-basic
   | `proveedores` | `Proveedores` |
   | `aseguradoras` | **`Seguros`** (el controlador y los permisos se llaman «Seguros»; la pantalla «Aseguradoras») |
 
-- **Menú.** Las cinco opciones están en el grupo «Catálogos» (`breadcrumbs.catalogos`): «Medicamentos» (`nav.medicamentos`), «Presentaciones de Venta» (`nav.presentacionesVenta`), «Formulaciones Clínicas» (`nav.formulacionesClinicas`), «Proveedores» (`nav.proveedores`) y «Aseguradoras» (`nav.aseguradoras`); fuente `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:74,79,84,89,94`. Una opción se muestra solo con `Leer` del módulo de su ruta ([`producto/pantallas/acceso-layout-y-compartidos` §4.3](acceso-layout-y-compartidos.md)).
+- **Menú.** Las cinco opciones están en el grupo «Catálogos» (`breadcrumbs.catalogos`): «Medicamentos» (`nav.medicamentos`), «Presentaciones de Venta» (`nav.presentacionesVenta`), «Formulaciones Clínicas» (`nav.formulacionesClinicas`), «Proveedores» (`nav.proveedores`) y «Aseguradoras» (`nav.aseguradoras`); fuente `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:79,84,89,94,99`. Una opción se muestra solo con `Leer` del módulo de su ruta ([`producto/pantallas/acceso-layout-y-compartidos` §4.3](acceso-layout-y-compartidos.md)).
 - **Directiva `*appPermiso`.** Con un solo valor toma el módulo de la URL actual; con `Modulo:Accion` usa ese módulo (`app/shared/directives/permiso.directive.ts:16-23`). Esta parte usa también la forma `Modulo:Accion` (Medicamentos, Presentaciones y Proveedores).
 - **Fila sin resultados.** Medicamentos y Presentaciones de venta muestran «Sin resultados» (`generic-labels.no-results`); Formulaciones clínicas, Proveedores y Aseguradoras muestran «Resultados» (`generic-labels.results`). Detalle en cada ficha.
 - **Errores de exportación.** Medicamentos y Presentaciones usan `showError` (sin referencia de seguimiento); Formulaciones, Proveedores y Aseguradoras usan `showServerError` (con «Referencia: …» si la respuesta trae `traceId`).
@@ -57,7 +57,7 @@ Todo lo descrito en [`producto/pantallas/catalogos-basicos` §0](catalogos-basic
 
 ## 1. Medicamentos
 
-Carpeta `app/pages/medicamentos`, scope i18n `medicamentos` (`provideTranslocoScope('medicamentos')` en los componentes). Componentes enrutados (`app/pages/medicamentos/medicamentos.routes.ts`, `loadChildren` desde `app/app.routes.ts:96-98`): `MedicamentosSearchComponent` (`''`), `MedicamentosDetailComponent` (rutas `nueva` y `:id`) y `MedicamentosCargaMasivaComponent` (`carga-masiva`). El orden importa: `nueva` y `carga-masiva` están antes de `:id`.
+Carpeta `app/pages/medicamentos`, scope i18n `medicamentos` (`provideTranslocoScope('medicamentos')` en los componentes). Componentes enrutados (`app/pages/medicamentos/medicamentos.routes.ts`, `loadChildren` desde `app/app.routes.ts:105-107`): `MedicamentosSearchComponent` (`''`), `MedicamentosDetailComponent` (rutas `nueva` y `:id`) y `MedicamentosCargaMasivaComponent` (`carga-masiva`). El orden importa: `nueva` y `carga-masiva` están antes de `:id`.
 
 Qué **no** tiene este módulo (comprobado en el modelo `app/pages/medicamentos/models/medicamento.model.ts`, la plantilla y el backend `sofia-apis/src/SOFIA.Domain/Entities/Medicamento.cs:10-20`): no hay campo de estado/activo, no hay vínculo con el catálogo DIGEMID, y las búsquedas no tienen filtros numéricos con deslizador ni de fecha. Los campos son los seis que se detallan abajo; el stock se muestra solo en lectura.
 
@@ -252,7 +252,7 @@ El mapa completo de eliminar está en §6.
 
 ## 2. Presentaciones de venta
 
-Carpeta `app/pages/presentaciones-venta`, scope i18n `presentaciones-venta` (clave `presentacionesVenta`, ver convenciones). Componentes enrutados (`presentaciones-venta.routes.ts`, `loadChildren` desde `app/app.routes.ts:101-105`): `PresentacionesVentaSearchComponent` (`''`) y `PresentacionesVentaDetailComponent` (rutas `nueva` y `:id`). **No hay carga masiva ni ruta `carga-masiva`.** Además existe `PresentacionesVentaModalComponent`, un diálogo que no tiene ruta y se abre desde el detalle de Medicamentos (§2.4).
+Carpeta `app/pages/presentaciones-venta`, scope i18n `presentaciones-venta` (clave `presentacionesVenta`, ver convenciones). Componentes enrutados (`presentaciones-venta.routes.ts`, `loadChildren` desde `app/app.routes.ts:110-114`): `PresentacionesVentaSearchComponent` (`''`) y `PresentacionesVentaDetailComponent` (rutas `nueva` y `:id`). **No hay carga masiva ni ruta `carga-masiva`.** Además existe `PresentacionesVentaModalComponent`, un diálogo que no tiene ruta y se abre desde el detalle de Medicamentos (§2.4).
 
 Una presentación de venta liga **un medicamento** con **una unidad de venta** (una unidad de medida distinta de la unidad base del medicamento) y un **precio de venta propio**. La equivalencia en unidades base la calcula el servidor (§2.3).
 
@@ -472,7 +472,7 @@ Cómo se obtienen y calculan (todo en el servidor; el SPA solo los muestra):
 
 ## 3. Formulaciones clínicas
 
-Carpeta `app/pages/formulaciones-clinicas`, scope i18n `formulacionesClinicas` (`provideTranslocoScope('formulacionesClinicas')`). Componentes enrutados (`formulaciones-clinicas.routes.ts`, `loadChildren` desde `app/app.routes.ts:108-112`): `FormulacionesClinicasSearchComponent` (`''`) y `FormulacionesClinicasDetailComponent` (rutas `nueva` y `:id`). No hay carga masiva.
+Carpeta `app/pages/formulaciones-clinicas`, scope i18n `formulacionesClinicas` (`provideTranslocoScope('formulacionesClinicas')`). Componentes enrutados (`formulaciones-clinicas.routes.ts`, `loadChildren` desde `app/app.routes.ts:117-121`): `FormulacionesClinicasSearchComponent` (`''`) y `FormulacionesClinicasDetailComponent` (rutas `nueva` y `:id`). No hay carga masiva.
 
 Una **formulación clínica** liga **un medicamento** con **un ingrediente activo**, una **concentración de dosis** (número) expresada en una **unidad de medida**, y un **código TE Orange** opcional. Un medicamento lista cada ingrediente activo una sola vez; para cambiar la concentración se edita esa fila (RN-FOR-005; `CreateFormulacionClinicaCommandHandler.cs:34-39`, índice único `UX_Formulacion_Clinica_Producto_Ingrediente` filtrado por `IsDeleted = 0`, `sofia-apis/src/SOFIA.DbUp/Scripts/0020_SoftDeleteAware_Uniques_And_Checks.sql:82`). Un medicamento con varios ingredientes tiene varias filas.
 
@@ -625,7 +625,7 @@ La pantalla necesita permisos de lectura de **otros tres módulos** (`Medicament
 
 ## 4. Proveedores
 
-Carpeta `app/pages/proveedores`, scope i18n `proveedores` (`provideTranslocoScope('proveedores')` en los componentes y en el diálogo de precios). Componentes enrutados (`proveedores.routes.ts`, `loadChildren` desde `app/app.routes.ts:115-117`): `ProveedoresSearchComponent` (`''`), `ProveedoresDetailComponent` (rutas `nueva` y `:id`) y `ProveedoresCargaMasivaComponent` (`carga-masiva`). Más el diálogo `PrecioProveedorDialogComponent` (sin ruta; §4.5). El orden de rutas importa: `nueva` y `carga-masiva` antes de `:id`.
+Carpeta `app/pages/proveedores`, scope i18n `proveedores` (`provideTranslocoScope('proveedores')` en los componentes y en el diálogo de precios). Componentes enrutados (`proveedores.routes.ts`, `loadChildren` desde `app/app.routes.ts:124-126`): `ProveedoresSearchComponent` (`''`), `ProveedoresDetailComponent` (rutas `nueva` y `:id`) y `ProveedoresCargaMasivaComponent` (`carga-masiva`). Más el diálogo `PrecioProveedorDialogComponent` (sin ruta; §4.5). El orden de rutas importa: `nueva` y `carga-masiva` antes de `:id`.
 
 Novedades de los commits `9cbbe58` (SPA: registro y listado de precios de compra), `606cb69` (API: el registro de precio se guarda de verdad y se expone el historial) y `27597cd`/`01b8260` (no se puede eliminar un proveedor con precios de compra). La parte de precios está en §4.3 y §4.5.
 
@@ -872,7 +872,7 @@ Los dos botones son `type="button"` y el formulario no tiene botón de envío (e
 
 ## 5. Aseguradoras
 
-Carpeta `app/pages/aseguradoras`, scope i18n `aseguradoras` (`provideTranslocoScope('aseguradoras')`). Componentes enrutados (`aseguradoras.routes.ts`, `loadChildren` desde `app/app.routes.ts:120-122`): `AseguradorasSearchComponent` (`''`), `AseguradorasDetailComponent` (rutas `nueva` y `:id`) y `AseguradorasCargaMasivaComponent` (`carga-masiva`). El orden importa: `nueva` y `carga-masiva` antes de `:id`.
+Carpeta `app/pages/aseguradoras`, scope i18n `aseguradoras` (`provideTranslocoScope('aseguradoras')`). Componentes enrutados (`aseguradoras.routes.ts`, `loadChildren` desde `app/app.routes.ts:129-131`): `AseguradorasSearchComponent` (`''`), `AseguradorasDetailComponent` (rutas `nueva` y `:id`) y `AseguradorasCargaMasivaComponent` (`carga-masiva`). El orden importa: `nueva` y `carga-masiva` antes de `:id`.
 
 Particularidades del módulo: la pantalla se llama «Aseguradoras» pero el módulo de permisos es **`Seguros`** y la API vive bajo `/api/v1/seguros` (`SegurosController`; `aseguradora.service.ts:17`); la entidad del backend es `AseguradoraMedica`. El título que ven los usuarios en la cabecera de las pantallas es «Aseguradoras Médicas» (`aseguradoras.title`), distinto del texto del menú y de las migas, «Aseguradoras».
 
@@ -1088,7 +1088,7 @@ Cualquier 409 distinto de los citados mostraría igualmente el texto «en uso» 
 - Aseguradoras: el formulario no mapea ningún código de error; un código duplicado se ve como «Error al guardar la aseguradora» (§5.2). El listado no tiene orden definido (§5.1).
 - Medicamentos: la carga masiva no trae precio de venta base, pero el formulario lo exige (§1.3); el mensaje de precio aparece también si el campo está vacío (§1.2).
 - Formulaciones clínicas: el endpoint `GET /formulacionesclinicas/medicamento/{productoId}` no tiene pantalla (§3.1); un valor cero en la concentración muestra «Este campo es obligatorio» (§3.2).
-- Código sin uso: el método `goToNew()` de los detalles de Formulaciones clínicas, Proveedores y Aseguradoras no lo llama ninguna plantilla (`formulaciones-clinicas-detail.component.ts:302`, `proveedores-detail.component.ts:246`, `aseguradoras-detail.component.ts:298`). Los detalles de Medicamentos y Presentaciones de venta no lo definen. Además, el campo `PrecioProveedor.vigente` del modelo no lo lee ninguna plantilla (§4.3).
+- Código sin uso: el método `goToNew()` de los detalles de Formulaciones clínicas, Proveedores y Aseguradoras no lo llama ninguna plantilla (`formulaciones-clinicas-detail.component.ts:302`, `proveedores-detail.component.ts:246`, `aseguradoras-detail.component.ts:177`). Los detalles de Medicamentos y Presentaciones de venta no lo definen. Además, el campo `PrecioProveedor.vigente` del modelo no lo lee ninguna plantilla (§4.3).
 
 **Documentos hermanos que el código actual contradice** (para la pasada de reconciliación):
 - `negocio/reglas/catalogos` RN-MED-013: dice que eliminar un medicamento no valida dependencias; con `27597cd` sí lo hace (`DeleteMedicamentoCommandHandler.cs:20-42`).
