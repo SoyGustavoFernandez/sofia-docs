@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-13 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. `git status --short` en ambos repos al empezar: sin cambios sin commitear (ver §7). |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Revisión 2026-11-20 (versión 1.1) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Citas desplazadas y cita corregida de `GetStockPorSucursalByIdQueryHandler`. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. `git status --short` en ambos repos al empezar: sin cambios sin commitear (ver §7). |
 
 Este documento es la parte E del inventario de pantallas. Cubre cinco módulos: Lotes, Stock por sucursal, Pacientes, Profesionales de salud y Recetas médicas (18 rutas). Lo compartido (guards, interceptor, `page-header`, `confirm-dialog`, carga masiva común, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); el formato de las fichas y el patrón de búsqueda y detalle están validados en la [parte C, §0](catalogos-basicos.md). Las reglas de negocio de estos módulos están en [`negocio/reglas/inventario-y-recetas`](../../negocio/reglas/inventario-y-recetas.md) (LOT, STK, REC) y [`negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md) (PAC, PRO), y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -33,22 +33,22 @@ Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que em
 
 Lo que no se repite en cada ficha, con su fuente. Lo que sea distinto en una pantalla se dice en su ficha. El patrón general es el de [`producto/pantallas/catalogos-basicos` §0](catalogos-basicos.md#0-comportamientos-comunes-a-las-pantallas-de-este-documento); aquí se indican las diferencias.
 
-- **Cómo se decide el permiso de ruta.** Igual que en `producto/pantallas/catalogos-basicos` §0: `canActivateChild: [passwordChangeGuard, permissionGuard]` (`app/app.routes.ts:37`), módulo por el primer segmento de la URL en `ROUTE_PERMISSIONS` (`app/core/auth/route-permissions.ts:2-26`) y siempre `Leer`; si el segundo segmento es `nueva`, `nuevo` o `carga-masiva` se exige además `Crear` (`route-permissions.ts:36,68-72`), salvo las excepciones de `ROUTE_ACTIONS` (`:29-33`); `/x/:id` solo exige `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:28-29`). Módulos y excepciones de esta parte:
+- **Cómo se decide el permiso de ruta.** Igual que en `producto/pantallas/catalogos-basicos` §0: `canActivateChild: [passwordChangeGuard, permissionGuard]` (`app/app.routes.ts:38`), módulo por el primer segmento de la URL en `ROUTE_PERMISSIONS` (`app/core/auth/route-permissions.ts:2-27`) y siempre `Leer`; si el segundo segmento es `nueva`, `nuevo` o `carga-masiva` se exige además `Crear` (`route-permissions.ts:44,79-83`), salvo las excepciones de `ROUTE_ACTIONS` (`:29-33`); `/x/:id` solo exige `Leer`. Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:28-29`). Módulos y excepciones de esta parte:
 
   | Ruta | Módulo de permisos | Acción exigida además de `Leer` | Fuente |
   |---|---|---|---|
   | `/lotes` | `Inventarios` | — | `route-permissions.ts:17` |
-  | `/lotes/nueva` | `Inventarios` | `Crear` | `route-permissions.ts:17,36` |
+  | `/lotes/nueva` | `Inventarios` | `Crear` | `route-permissions.ts:17,44` |
   | `/stock-por-sucursal` | `Inventarios` | — | `route-permissions.ts:18` |
-  | `/stock-por-sucursal/nueva` | `Inventarios` | **`Actualizar`** (no `Crear`) | `route-permissions.ts:32` |
+  | `/stock-por-sucursal/nueva` | `Inventarios` | **`Actualizar`** (no `Crear`) | `route-permissions.ts:33` |
   | `/pacientes`, `/profesionales-salud` | `Pacientes`, `ProfesionalesSalud` | — | `route-permissions.ts:21-22` |
-  | `/pacientes/nueva`, `/pacientes/carga-masiva`, `/profesionales-salud/nueva`, `/profesionales-salud/carga-masiva` | `Pacientes`, `ProfesionalesSalud` | `Crear` | `route-permissions.ts:36` |
+  | `/pacientes/nueva`, `/pacientes/carga-masiva`, `/profesionales-salud/nueva`, `/profesionales-salud/carga-masiva` | `Pacientes`, `ProfesionalesSalud` | `Crear` | `route-permissions.ts:44` |
   | `/recetas-medicas` | `Recetas` | — | `route-permissions.ts:23` |
-  | `/recetas-medicas/nueva` | `Recetas` | `Crear` | `route-permissions.ts:36` |
-  | `/recetas-medicas/escanear` | `Recetas` | **`Analizar`** (no `Crear`) | `route-permissions.ts:30` |
+  | `/recetas-medicas/nueva` | `Recetas` | `Crear` | `route-permissions.ts:44` |
+  | `/recetas-medicas/escanear` | `Recetas` | **`Analizar`** (no `Crear`) | `route-permissions.ts:31` |
   | Todas las rutas `/x/:id` | el de su módulo | — | — |
 
-- **Menú.** Dos grupos: «Inventario» (`breadcrumbs.inventario`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:100-116`) con «Lotes» (`nav.lotes`) y «Stock por Sucursal» (`nav.stockPorSucursal`), y «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`, `:134-155`) con «Pacientes» (`nav.pacientes`), «Profesionales de Salud» (`nav.profesionalesSalud`) y «Recetas Médicas» (`nav.recetasMedicas`). Una opción se muestra solo si el usuario tiene `Leer` del módulo de su ruta; un grupo sin opciones visibles se oculta ([`producto/pantallas/acceso-layout-y-compartidos` §4.3](acceso-layout-y-compartidos.md)). La miga del grupo «Inventario» y la de «Pacientes & Atención» no tienen enlace.
+- **Menú.** Dos grupos: «Inventario» (`breadcrumbs.inventario`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:105-121`) con «Lotes» (`nav.lotes`) y «Stock por Sucursal» (`nav.stockPorSucursal`), y «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`, `:134-155`) con «Pacientes» (`nav.pacientes`), «Profesionales de Salud» (`nav.profesionalesSalud`) y «Recetas Médicas» (`nav.recetasMedicas`). Una opción se muestra solo si el usuario tiene `Leer` del módulo de su ruta; un grupo sin opciones visibles se oculta ([`producto/pantallas/acceso-layout-y-compartidos` §4.3](acceso-layout-y-compartidos.md)). La miga del grupo «Inventario» y la de «Pacientes & Atención» no tienen enlace.
 - **Directiva `*appPermiso`.** Con un solo valor (`'Crear'`, `'Actualizar'`, `'Eliminar'`, `'Analizar'`) toma el módulo de la URL actual y exige esa acción; el rol `Admin` pasa siempre (`app/shared/directives/permiso.directive.ts:20-31`). Ver [`producto/pantallas/acceso-layout-y-compartidos` §7.1](acceso-layout-y-compartidos.md). Los 17 usos de estas carpetas están en la tabla de cobertura (§8).
 - **Aviso al usuario.** Snackbar con el botón «Cerrar» (`actions.close`): error 5 s, éxito 3 s; con `showServerError` y un `traceId` en la respuesta, 10 s y «Referencia: …» ([`producto/pantallas/acceso-layout-y-compartidos` §6.11 y §6.12](acceso-layout-y-compartidos.md)). Pacientes y profesionales usan `showServerError` solo al exportar; el resto de avisos de esta parte usan `showError` y `showSuccess`.
 - **Estado de la búsqueda.** Las cinco pantallas de búsqueda guardan filtros, página y tamaño de página en memoria (`SearchStateService`, `app/core/services/shared/search-state.service.ts:10-28`) con la URL sin query como clave; al volver desde el detalle se restauran y se repite la búsqueda (`ngOnInit` de cada componente). «Limpiar» (`actions.clear`) vacía el formulario, oculta la tabla, vuelve a la página 1 y borra ese estado. El dashboard escribe en este mismo estado para abrir Stock por sucursal con los filtros ya puestos (§2.1).
@@ -78,7 +78,7 @@ Carpeta `app/pages/lotes`, scope i18n `lotes` (`provideTranslocoScope('lotes')` 
 
 - **Componente:** `LotesSearchComponent` (`app/pages/lotes/lotes-search/lotes-search.component.ts`, `.html`). Scope `lotes`.
 - **Para qué sirve:** buscar lotes de inventario por producto, número de lote y rangos de fecha de caducidad y de fabricación, abrirlos, exportar la lista y entrar a crear uno.
-- **Cómo se llega:** menú lateral, grupo «Inventario» (`breadcrumbs.inventario`) → «Lotes» (`nav.lotes`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:104-108`, grupo `id: 4`); botón volver y migas del detalle; redirección tras guardar o eliminar un lote.
+- **Cómo se llega:** menú lateral, grupo «Inventario» (`breadcrumbs.inventario`) → «Lotes» (`nav.lotes`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:109-113`, grupo `id: 4`); botón volver y migas del detalle; redirección tras guardar o eliminar un lote.
 - **Permiso de ruta:** `Inventarios:Leer` (`lotes` → `Inventarios`, `app/core/auth/route-permissions.ts:17`). Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Lotes» (`lotes.title`); migas «Inicio» (a `/dashboard`) / «Inventario» (sin enlace) / «Lotes» (activa); sin botón volver (`.html:3-6`, `.ts:62-66`). Tarjeta de filtros con título «Búsqueda de Lotes» (`lotes.search.title`) y subtítulo «Ingresa los criterios de búsqueda» (`generic-labels.search-subtitle`).
 - **Modos:** uno solo (búsqueda).
@@ -149,7 +149,7 @@ Orden por defecto: lo fija el servidor, por fecha de creación descendente (`Get
 - **Componente:** `LotesDetailComponent` (`app/pages/lotes/lotes-detail/lotes-detail.component.ts`, `.html`). Scope `lotes`. Las dos rutas usan el mismo componente.
 - **Para qué sirve:** crear un lote de un producto, ver sus datos y, con permisos, editar su número y sus fechas o eliminarlo.
 - **Cómo se llega:** `/lotes/nueva`: botón «Nuevo» de la búsqueda. `/lotes/:id`: enlace del producto en la tabla de resultados.
-- **Permiso de ruta:** `/lotes/nueva` → `Inventarios:Leer` + `Inventarios:Crear` (segmento `nueva`, `route-permissions.ts:36,68-71`); `/lotes/:id` → `Inventarios:Leer`.
+- **Permiso de ruta:** `/lotes/nueva` → `Inventarios:Leer` + `Inventarios:Crear` (segmento `nueva`, `route-permissions.ts:44,79-82`); `/lotes/:id` → `Inventarios:Leer`.
 - **Migas y cabecera:** título «Lotes» (`lotes.title`); migas «Inicio» / «Inventario» (sin enlace) / «Lotes» (con enlace a `/lotes`); botón volver a `/lotes` (`.html:3-7`, `.ts:73-77`).
 - **Modos** (`ngOnInit`, `.ts:93-104`): sin parámetro `id` → **crear**; con `id` → **ver** (formulario y producto deshabilitados, carga el lote con `GET`) y «Editar» habilita el formulario salvo el producto (`enterEditMode`, `.ts:138-143`: «Product cannot be changed once the batch exists»).
 
@@ -250,7 +250,7 @@ Las dos rutas del detalle son **operaciones distintas** aunque compartan compone
 
 - **Componente:** `StockSearchComponent` (`app/pages/stock-por-sucursal/stock-search/stock-search.component.ts`, `.html`). Scope `stock-por-sucursal`.
 - **Para qué sirve:** consultar el stock físico por sucursal, producto y lote (solo de las sucursales permitidas al usuario), filtrar por caducidad y cantidad, exportar la lista, abrir un registro y entrar al ingreso de stock.
-- **Cómo se llega:** menú lateral, grupo «Inventario» (`breadcrumbs.inventario`) → «Stock por Sucursal» (`nav.stockPorSucursal`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:110-114`); botón volver y migas del detalle; redirección tras ingresar o ajustar stock; y desde el dashboard, los indicadores de lotes vencidos y por vencer abren esta pantalla con la caducidad ya filtrada (`app/pages/dashboard/dashboard-links.ts:43-77`, a través del estado de búsqueda de §0).
+- **Cómo se llega:** menú lateral, grupo «Inventario» (`breadcrumbs.inventario`) → «Stock por Sucursal» (`nav.stockPorSucursal`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:115-119`); botón volver y migas del detalle; redirección tras ingresar o ajustar stock; y desde el dashboard, los indicadores de lotes vencidos y por vencer abren esta pantalla con la caducidad ya filtrada (`app/pages/dashboard/dashboard-links.ts:44-98`, a través del estado de búsqueda de §0).
 - **Permiso de ruta:** `Inventarios:Leer` (`stock-por-sucursal` → `Inventarios`, `route-permissions.ts:18`). Sin permiso: snackbar «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Stock por Sucursal» (`stockPorSucursal.title`); migas «Inicio» / «Inventario» (sin enlace) / «Stock por Sucursal» (`breadcrumbs.stock-por-sucursal`, activa); sin botón volver (`.html:4-7`, `.ts:71-75`). Tarjeta de filtros con título «Consulta de Stock por Sucursal» (`stockPorSucursal.search.title`) y subtítulo «Ingresa los criterios de búsqueda» (`generic-labels.search-subtitle`).
 - **Modos:** uno solo (búsqueda).
@@ -326,7 +326,7 @@ Orden por defecto: lo fija el servidor, por nombre de sucursal, nombre comercial
 - **Componente:** `StockDetailComponent` (`app/pages/stock-por-sucursal/stock-detail/stock-detail.component.ts`, `.html:16-116`). Scope `stock-por-sucursal`.
 - **Para qué sirve:** registrar el ingreso de un lote en una sucursal con una cantidad. Si el lote ya tenía stock en esa sucursal, la cantidad se suma.
 - **Cómo se llega:** botón «Nuevo» de la búsqueda (§2.1).
-- **Permiso de ruta:** `Inventarios:Leer` + `Inventarios:Actualizar` (`ROUTE_ACTIONS['stock-por-sucursal/nueva'] = 'Actualizar'`, `route-permissions.ts:32`). **No** se exige `Inventarios:Crear`: `routeAction` devuelve primero la entrada de `ROUTE_ACTIONS` y solo si no existe aplica la regla de `nueva` → `Crear` (`route-permissions.ts:68-72`; `permission.guard.ts:13,28`). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» y redirección a `/dashboard`.
+- **Permiso de ruta:** `Inventarios:Leer` + `Inventarios:Actualizar` (`ROUTE_ACTIONS['stock-por-sucursal/nueva'] = 'Actualizar'`, `route-permissions.ts:33`). **No** se exige `Inventarios:Crear`: `routeAction` devuelve primero la entrada de `ROUTE_ACTIONS` y solo si no existe aplica la regla de `nueva` → `Crear` (`route-permissions.ts:79-83`; `permission.guard.ts:13,28`). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Stock por Sucursal» (`stockPorSucursal.title`; la clave `stockPorSucursal.create.title` «Nuevo Registro de Stock» existe pero no se usa en ninguna plantilla); migas «Inicio» / «Inventario» (sin enlace) / «Stock por Sucursal» (con enlace a `/stock-por-sucursal`); botón volver a `/stock-por-sucursal`.
 - **Modos:** solo crear. `ngOnInit` detecta `data.isNew === true` y deja el componente en modo crear y edición, sin llamar a la API (`.ts:111-116`).
 
@@ -449,7 +449,7 @@ El texto `stockPorSucursal.detail.adjust` («Ajustar cantidad») existe pero no 
 **Exportación y carga masiva:** no hay botones en esta pantalla.
 
 **Comportamientos particulares**
-- Si falla la carga (por ejemplo el registro pertenece a una sucursal a la que el usuario no tiene acceso: el servidor responde 404 `InventarioSucursal.NotFound`, `GetStockPorSucursalByIdQueryHandler.cs:14-20,42-45`), `snapshot` queda vacío, la tarjeta no se pinta y solo se ve el aviso «Error al cargar el registro de stock».
+- Si falla la carga (por ejemplo el registro pertenece a una sucursal a la que el usuario no tiene acceso: el servidor responde 404 `InventarioSucursal.NotFound`, `GetStockPorSucursalByIdQueryHandler.cs:14-21,35-37`), `snapshot` queda vacío, la tarjeta no se pinta y solo se ve el aviso «Error al cargar el registro de stock».
 - El ajuste exige además acceso a la sucursal del registro (403 si no, `AdjustStockCommandHandler.cs:21-24`) y genera un evento de auditoría (RN-STK-012 de `negocio/reglas/inventario-y-recetas`).
 
 **Observaciones**
@@ -461,7 +461,7 @@ El texto `stockPorSucursal.detail.adjust` («Ajustar cantidad») existe pero no 
 
 ## 3. Pacientes
 
-Carpeta `app/pages/pacientes`, scope i18n `pacientes` (`provideTranslocoScope('pacientes')` en los cuatro componentes). Rutas (`app/pages/pacientes/pacientes.routes.ts`, `loadChildren` en `app/app.routes.ts:149`): `''` → `PacientesSearchComponent`, `nueva` y `:id` → `PacientesDetailComponent`, `carga-masiva` → `PacientesCargaMasivaComponent`. El orden de las rutas pone `nueva` y `carga-masiva` antes de `:id`.
+Carpeta `app/pages/pacientes`, scope i18n `pacientes` (`provideTranslocoScope('pacientes')` en los cuatro componentes). Rutas (`app/pages/pacientes/pacientes.routes.ts`, `loadChildren` en `app/app.routes.ts:163`): `''` → `PacientesSearchComponent`, `nueva` y `:id` → `PacientesDetailComponent`, `carga-masiva` → `PacientesCargaMasivaComponent`. El orden de las rutas pone `nueva` y `carga-masiva` antes de `:id`.
 
 Tipos de documento (`app/shared/utils/tipo-documento.util.ts`): el SPA ofrece cuatro, guardados con el código del catálogo 06 de SUNAT: `1` «DNI», `4` «Carné de extranjería», `6` «RUC» y `7` «Pasaporte» (`tipos-documento.1`, `.4`, `.6`, `.7` en la raíz de `es.json`; existe además `tipos-documento.-` «Sin documento», que reconoce `tipoDocumentoKey` pero ninguna lista ofrece). Formato del número por tipo (`tipo-documento.util.ts:6-11`, el mismo que valida la API en `TipoDocumentoIdentidad.cs`):
 
@@ -476,7 +476,7 @@ Tipos de documento (`app/shared/utils/tipo-documento.util.ts`): el SPA ofrece cu
 
 - **Componente:** `PacientesSearchComponent` (`app/pages/pacientes/pacientes-search/pacientes-search.component.ts`, `.html`). Scope `pacientes`.
 - **Para qué sirve:** buscar pacientes por tipo y número de documento, nombre y rango de fecha de nacimiento, abrirlos, exportar la lista y entrar a crear o a cargar pacientes masivamente.
-- **Cómo se llega:** menú lateral, grupo «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`) → «Pacientes» (`nav.pacientes`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:137-143`); botón volver y migas del detalle y de la carga masiva; redirección tras crear o eliminar un paciente.
+- **Cómo se llega:** menú lateral, grupo «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`) → «Pacientes» (`nav.pacientes`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:147-153`); botón volver y migas del detalle y de la carga masiva; redirección tras crear o eliminar un paciente.
 - **Permiso de ruta:** `Pacientes:Leer` (`route-permissions.ts:21`). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Pacientes» (`pacientes.title`); migas «Inicio» / «Pacientes & Atención» (`breadcrumbs.pacientes-atencion`, sin enlace) / «Pacientes» (activa); sin botón volver (`.html:3-6`, `.ts:58-62`). Tarjeta de filtros con título «Búsqueda de Pacientes» (`pacientes.search.title`) y subtítulo «Ingresa los criterios de búsqueda».
 - **Modos:** uno solo (búsqueda).
@@ -645,7 +645,7 @@ Sin ayuda de campo (las claves `pacientes.help.*` no se usan). Un paciente antig
 
 ## 4. Profesionales de salud
 
-Carpeta `app/pages/profesionales-salud`, scope i18n `profesionalesSalud` (`provideTranslocoScope('profesionalesSalud')` en los cuatro componentes; archivo `public/i18n/profesionalesSalud/es.json`). Rutas (`app/pages/profesionales-salud/profesionales-salud.routes.ts`, `loadChildren` en `app/app.routes.ts:154`): `''` → `ProfesionalesSaludSearchComponent`, `nueva` y `:id` → `ProfesionalesSaludDetailComponent`, `carga-masiva` → `ProfesionalesSaludCargaMasivaComponent`.
+Carpeta `app/pages/profesionales-salud`, scope i18n `profesionalesSalud` (`provideTranslocoScope('profesionalesSalud')` en los cuatro componentes; archivo `public/i18n/profesionalesSalud/es.json`). Rutas (`app/pages/profesionales-salud/profesionales-salud.routes.ts`, `loadChildren` en `app/app.routes.ts:168`): `''` → `ProfesionalesSaludSearchComponent`, `nueva` y `:id` → `ProfesionalesSaludDetailComponent`, `carga-masiva` → `ProfesionalesSaludCargaMasivaComponent`.
 
 **Qué datos tiene un profesional de salud en SOFIA.** Solo tres: número de registro, nombre del prescriptor y dirección de la clínica (`app/pages/profesionales-salud/models/profesional-salud.model.ts:8-13`; entidad `sofia-apis/src/SOFIA.Domain/Entities/ProfesionalSalud.cs`). **No existen** campos de colegiatura aparte del número de registro, especialidad ni tipo de profesional: el «Número de Registro» es el identificador del profesional (colegiatura) y no hay lista de especialidades ni de tipos.
 
@@ -653,7 +653,7 @@ Carpeta `app/pages/profesionales-salud`, scope i18n `profesionalesSalud` (`provi
 
 - **Componente:** `ProfesionalesSaludSearchComponent` (`app/pages/profesionales-salud/profesionales-salud-search/profesionales-salud-search.component.ts`, `.html`). Scope `profesionalesSalud`.
 - **Para qué sirve:** buscar profesionales por número de registro y nombre, abrirlos, exportar la lista y entrar a crear o a cargar profesionales masivamente.
-- **Cómo se llega:** menú lateral, grupo «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`) → «Profesionales de Salud» (`nav.profesionalesSalud`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:144-148`); botón volver y migas del detalle y de la carga masiva; redirección tras crear o eliminar un profesional.
+- **Cómo se llega:** menú lateral, grupo «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`) → «Profesionales de Salud» (`nav.profesionalesSalud`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:154-158`); botón volver y migas del detalle y de la carga masiva; redirección tras crear o eliminar un profesional.
 - **Permiso de ruta:** `ProfesionalesSalud:Leer` (`route-permissions.ts:22`). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Profesionales de Salud» (`profesionalesSalud.title`); migas «Inicio» / «Pacientes & Atención» (sin enlace) / «Profesionales de Salud» (`breadcrumbs.profesionales-salud`, activa); sin botón volver (`.html:4-7`, `.ts:46-50`). Tarjeta de filtros con título «Búsqueda de Profesionales de Salud» (`profesionalesSalud.search.title`) y subtítulo «Ingresa los criterios de búsqueda».
 - **Modos:** uno solo (búsqueda).
@@ -813,7 +813,7 @@ Sin ayuda ni placeholder. Al guardar se envía `{ numeroRegistro, nombrePrescrip
 
 ## 5. Recetas médicas
 
-Carpeta `app/pages/recetas-medicas`, scope i18n `recetas-medicas` (`provideTranslocoScope('recetas-medicas')` en los tres componentes). **Las plantillas leen el scope con el alias en camelCase** (`*transloco="let t; scope: 'recetas-medicas'; read: 'recetasMedicas'"`) y los `.ts` traducen con el prefijo `recetasMedicas.`; el archivo de textos es `public/i18n/recetas-medicas/es.json` y las claves de abajo llevan el prefijo `recetasMedicas.`. Rutas (`app/pages/recetas-medicas/recetas-medicas.routes.ts:6-11`, `loadChildren` en `app/app.routes.ts:159`; los componentes se importan de forma directa, sin carga diferida): `''` → `RecetasSearchComponent`, `escanear` → `RecetasScannerComponent`, `nueva` (con `data: { isNew: true }`) y `:id` → `RecetasDetailComponent`. `escanear` se declara antes de `:id`, así que no se confunde con un identificador (`recetas-medicas.routes.spec.ts`, 5 casos). No hay carga masiva.
+Carpeta `app/pages/recetas-medicas`, scope i18n `recetas-medicas` (`provideTranslocoScope('recetas-medicas')` en los tres componentes). **Las plantillas leen el scope con el alias en camelCase** (`*transloco="let t; scope: 'recetas-medicas'; read: 'recetasMedicas'"`) y los `.ts` traducen con el prefijo `recetasMedicas.`; el archivo de textos es `public/i18n/recetas-medicas/es.json` y las claves de abajo llevan el prefijo `recetasMedicas.`. Rutas (`app/pages/recetas-medicas/recetas-medicas.routes.ts:6-11`, `loadChildren` en `app/app.routes.ts:173`; los componentes se importan de forma directa, sin carga diferida): `''` → `RecetasSearchComponent`, `escanear` → `RecetasScannerComponent`, `nueva` (con `data: { isNew: true }`) y `:id` → `RecetasDetailComponent`. `escanear` se declara antes de `:id`, así que no se confunde con un identificador (`recetas-medicas.routes.spec.ts`, 5 casos). No hay carga masiva.
 
 **Qué es una receta en SOFIA.** Una receta es solo su **cabecera**: paciente, médico, fecha de expedición, repeticiones máximas, número de receta e indicaciones de uso (`app/pages/recetas-medicas/models/receta-medica.model.ts:20-30`; entidad `sofia-apis/src/SOFIA.Domain/Entities/RecetaMedica.cs:12-19`). **No existen líneas de medicamentos** (ni pantalla ni modelo para agregarlas o quitarlas) ni campo de vigencia: el sistema no vence recetas por fecha (RN-REC-007 de `negocio/reglas/inventario-y-recetas`). Las «repeticiones máximas» son las veces adicionales que se puede dispensar; el control de dispensaciones se aplica al vender, no en esta pantalla (RN-REC-031 de `negocio/reglas/inventario-y-recetas`).
 
@@ -821,7 +821,7 @@ Carpeta `app/pages/recetas-medicas`, scope i18n `recetas-medicas` (`provideTrans
 
 - **Componente:** `RecetasSearchComponent` (`app/pages/recetas-medicas/recetas-search/recetas-search.component.ts`, `.html`). Scope `recetas-medicas`.
 - **Para qué sirve:** buscar recetas por paciente, médico y rango de fechas de expedición, abrirlas, exportar la lista y entrar a crear una receta o a escanearla.
-- **Cómo se llega:** menú lateral, grupo «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`) → «Recetas Médicas» (`nav.recetasMedicas`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:149-153`); botón volver y migas del detalle y del escáner; redirección tras crear o eliminar una receta.
+- **Cómo se llega:** menú lateral, grupo «Pacientes & Atención» (`breadcrumbs.pacientesAtencion`) → «Recetas Médicas» (`nav.recetasMedicas`, `app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:159-163`); botón volver y migas del detalle y del escáner; redirección tras crear o eliminar una receta.
 - **Permiso de ruta:** `Recetas:Leer` (`route-permissions.ts:23`). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Recetas Médicas» (`recetasMedicas.title`); migas «Inicio» / «Pacientes & Atención» (sin enlace) / «Recetas Médicas» (`breadcrumbs.recetasMedicas`, sin enlace ni marca de activa); sin botón volver (`.html:4-7`, `.ts:60-64`). Tarjeta de filtros con título «Búsqueda de Recetas Médicas» (`recetasMedicas.search.title`) y subtítulo «Ingresa los criterios de búsqueda».
 - **Modos:** uno solo (búsqueda).
@@ -983,7 +983,7 @@ Al guardar se envía `{ clienteId, medicoId, fechaExpedicion (yyyy-MM-dd), repet
 - **Componente:** `RecetasScannerComponent` (`app/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.ts`, `.html`, `.scss`). Scope `recetas-medicas`.
 - **Para qué sirve:** subir o fotografiar una receta médica manuscrita o impresa y obtener, con inteligencia artificial, la lista de medicamentos detectados con su confianza, su stock en tu sucursal y sus equivalentes. **Solo muestra el resultado: no crea la receta, no guarda nada y no pasa al punto de venta** (la pantalla no tiene botones de acción posteriores; RN-REC-029 de `negocio/reglas/inventario-y-recetas`).
 - **Cómo se llega:** botón «Escanear receta» de `/recetas-medicas` (solo con `Recetas:Analizar`); botón volver y migas.
-- **Permiso de ruta:** `Recetas:Leer` + `Recetas:Analizar` (`ROUTE_ACTIONS['recetas-medicas/escanear'] = 'Analizar'`, `route-permissions.ts:30`; `permission.guard.ts:13,28`). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» y redirección a `/dashboard`. El componente no usa `*appPermiso`.
+- **Permiso de ruta:** `Recetas:Leer` + `Recetas:Analizar` (`ROUTE_ACTIONS['recetas-medicas/escanear'] = 'Analizar'`, `route-permissions.ts:31`; `permission.guard.ts:13,28`). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» y redirección a `/dashboard`. El componente no usa `*appPermiso`.
 - **Migas y cabecera:** título «Lector de Recetas IA» (`recetasMedicas.scanner.title`); migas «Inicio» / «Pacientes & Atención» (sin enlace) / «Recetas Médicas» (con enlace a `/recetas-medicas`); botón volver a `/recetas-medicas` (`.html:19-23`, `.ts:33-37`).
 - **Modos:** uno solo; la pantalla pasa por tres estados: sin imagen, con imagen elegida y analizando, y con resultados.
 
@@ -1043,7 +1043,7 @@ Las secciones solo se pintan si tienen elementos. Los elementos se identifican p
 | Cualquier error del análisis: límite de peticiones (429), archivo demasiado grande (413) o inválido, fallo del servicio de IA o de OCR (500), sin permiso (403), sin conexión | Error | «Error al interpretar la receta. Intenta nuevamente.» (`recetasMedicas.scanner.error`) | `recetas-scanner.component.ts:84` |
 | Respuesta sin medicamentos | Información en pantalla | «No se detectaron medicamentos en la imagen. Intenta con una foto más nítida.» (`recetasMedicas.scanner.no-results`) | `.html:298-303` |
 
-La pantalla **no distingue** el motivo del fallo: no lee el estado HTTP ni `error.code`. Lo que puede devolver el servidor, para el soporte: 429 al pasar de 10 análisis por minuto por empresa con hasta 2 en cola (`RateLimitingExtensions.cs:43-49`, política `ai-endpoints`); 413 `Request.TooLarge` si el cuerpo pasa de 10 MB (`GlobalExceptionHandler.cs:47-52`); 400 con el texto «Image is required.» si falta la imagen (`RecetasController.cs:54-57`); 500 si falla Gemini o la anonimización («Failed to analyze prescription image.», `GeminiRecetaAnalyzer.cs:58-61`); 400 por especialidad no válida (el SPA nunca envía `especialidadContexto`, así que no ocurre).
+La pantalla **no distingue** el motivo del fallo: no lee el estado HTTP ni `error.code`. Lo que puede devolver el servidor, para el soporte: 429 al pasar de 10 análisis por minuto por empresa con hasta 2 en cola (`RateLimitingExtensions.cs:52-58`, política `ai-endpoints`); 413 `Request.TooLarge` si el cuerpo pasa de 10 MB (`GlobalExceptionHandler.cs:47-52`); 400 con el texto «Image is required.» si falta la imagen (`RecetasController.cs:54-57`); 500 si falla Gemini o la anonimización («Failed to analyze prescription image.», `GeminiRecetaAnalyzer.cs:58-61`); 400 por especialidad no válida (el SPA nunca envía `especialidadContexto`, así que no ocurre).
 
 **Llamadas a la API**
 
