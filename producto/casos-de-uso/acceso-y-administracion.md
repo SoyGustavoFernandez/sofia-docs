@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
-| **Método** | Lectura de código (controladores y handlers de `sofia-apis`, verificados línea a línea para códigos de error y estados HTTP) y de los documentos validados: reglas `negocio/reglas/administracion-y-seguridad`, seguridad `tecnico/seguridad/autenticacion-y-controles` y `tecnico/seguridad/matriz-de-permisos`, pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/administracion`, carga masiva `tecnico/carga-masiva-y-exportacion`, procesos `negocio/procesos-de-negocio`, manual de usuario (capítulos 1 a 3) e historias de usuario `producto/historias-de-usuario/acceso-y-administracion`. No se usó el navegador ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
+| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevos CU-ADM-38 a CU-ADM-43 (sección 8A); CU-ADM-02, 09 y 28 corregidos; citas corregidas; trazabilidad y cobertura. Método anterior: Lectura de código (controladores y handlers de `sofia-apis`, verificados línea a línea para códigos de error y estados HTTP) y de los documentos validados: reglas `negocio/reglas/administracion-y-seguridad`, seguridad `tecnico/seguridad/autenticacion-y-controles` y `tecnico/seguridad/matriz-de-permisos`, pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/administracion`, carga masiva `tecnico/carga-masiva-y-exportacion`, procesos `negocio/procesos-de-negocio`, manual de usuario (capítulos 1 a 3) e historias de usuario `producto/historias-de-usuario/acceso-y-administracion`. No se usó el navegador ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
 
 ## 1. Cómo leer este documento
 
@@ -108,7 +108,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 3. El sistema aplica el límite de 10 peticiones por minuto por IP (RN-GEN-026) y valida el request: usuario obligatorio de hasta 50 caracteres y contraseña obligatoria (RN-AUT-001, RN-AUT-002).
 4. El sistema busca la cuenta por nombre de usuario en todas las empresas, sin eliminar (RN-AUT-003), y verifica la contraseña con BCrypt contra el hash real o contra uno ficticio si la cuenta no existe, para que el tiempo de respuesta sea el mismo (RN-AUT-004).
 5. El sistema comprueba que la cuenta exista y esté activa (RN-AUT-003, RN-CTA-012), que no esté bloqueada (`Bloqueado_Hasta` futuro, RN-AUT-005), que la contraseña sea correcta (RN-AUT-006) y que la sucursal base del empleado sea de la misma empresa (RN-AUT-008).
-6. El sistema comprueba que la empresa esté vigente (RN-AUT-009, RN-EMP-014); solo lo hace después de validar la contraseña.
+6. El sistema comprueba que la empresa esté vigente (RN-AUT-009, RN-EMP-014; estado `Activo` o `TrialActivo` y vencimiento posterior a ahora); solo lo hace después de validar la contraseña. La cuenta del operador de plataforma queda exenta (RN-GEN-042).
 7. El sistema pone en 0 los intentos fallidos, quita el bloqueo (las fechas se guardan en UTC, RN-GEN-006), emite el token de acceso (con rol, empresa, sucursal base, sello de seguridad e indicador `pwd_change`, RN-AUT-011) y un token de refresco de 7 días, del que solo guarda el hash SHA-256 (RN-AUT-010, RN-AUT-012).
 8. El sistema responde 200 con `{ accessToken, requiereCambioClave }` y la cookie `refresh_token` (`HttpOnly`, `Secure`, `SameSite=None`).
 9. El SPA guarda el token en `localStorage` (clave `sofia_token`), borra los borradores de venta de otros usuarios y abre `/dashboard`. No hay «recordarme» ni regreso a la pantalla anterior.
@@ -130,7 +130,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | 5 | Cuenta bloqueada (aunque la clave sea correcta) | `Auth.InvalidCredentials` | 401 | El mismo «Credenciales inválidas…»; el SPA no informa del bloqueo | No suma intentos; esperar 15 minutos o desbloqueo |
 | 5 | Contraseña incorrecta | `Auth.InvalidCredentials` | 401 | El mismo «Credenciales inválidas…» | Suma un intento fallido, que se guarda aunque la petición termine en error; al quinto la cuenta se bloquea 15 minutos (RN-AUT-007) |
 | 5 | La sucursal base pertenece a otra empresa | `Auth.InvalidCredentials` | 401 | El mismo «Credenciales inválidas…» | No se emite token |
-| 6 | Suscripción vencida, suspendida o cancelada | `Auth.EmpresaNoVigente` | 403 | «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» (`auth.empresaNoVigente`) | Contactar a soporte; ningún endpoint ni pantalla cambia el estado (RN-EMP-015) |
+| 6 | Suscripción vencida, suspendida o cancelada | `Auth.EmpresaNoVigente` | 403 | «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» (`auth.empresaNoVigente`) | La pantalla muestra cómo pagar (CU-ADM-39); el operador de plataforma reactiva la empresa (CU-ADM-41, RN-EMP-015) |
 | 2 | Sin respuesta, 408 o error 5xx | sin code (en 5xx `traceId`) | 0 / 408 / 5xx | «No pudimos conectar con el servidor. Verifica tu conexión a internet e inténtalo de nuevo en unos minutos.» (`auth.serviceUnavailable`) | Reintentar |
 
 **Postcondiciones**
@@ -417,7 +417,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | **Disparador** | El actor elige Administración › «Empresa» en el menú lateral |
 | **Precondiciones** | Sesión iniciada; permiso `Empresas:Leer` (el menú oculta la opción y el `permissionGuard` bloquea la ruta si falta) |
 | **Pantalla** | `/empresas` — «Empresas» (búsqueda) y `/empresas/:id` — «Empresas» (detalle en modo ver) |
-| **Endpoints** | `GET /api/v1/Empresas`, `GET /api/v1/Empresas/{id}`, `POST /api/v1/Empresas/exportar` (todos `Empresas:Leer`) |
+| **Endpoints** | `GET /api/v1/Empresas`, `GET /api/v1/Empresas/{id}`, `POST /api/v1/Empresas/exportar` (todos `Empresas:Leer` o, desde `6f6b837`, operador de plataforma: `[HasPermissionOrPlataforma]`) |
 | **Reglas** | [RN-EMP-001](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-012](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-014](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-016](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-017](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-018](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-001](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-009](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-008](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-009](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-010](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-017](../../negocio/reglas/administracion-y-seguridad.md) |
 | **Historia** | [HU-ADM-013](../historias-de-usuario/acceso-y-administracion.md), [HU-ADM-014](../historias-de-usuario/acceso-y-administracion.md) |
 
@@ -425,8 +425,8 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 1. El actor abre «Empresa». La pantalla «Búsqueda de Empresas» no muestra resultados hasta pulsar «Buscar» (o hasta restaurar el estado de una visita anterior, que se guarda en memoria).
 2. Opcionalmente completa los filtros: Nombre de la Empresa (contiene, sin distinguir mayúsculas), Estado («Todos», «Trial Activo», «Activo», «Suspendido», «Cancelado») y Vencimiento desde / hasta (solo con el calendario).
 3. Pulsa «Buscar». El SPA vuelve a la página 1 y envía `GET /api/v1/Empresas?pageNumber&pageSize[&nombre][&estado][&fechaVencimientoDesde][&fechaVencimientoHasta]`.
-4. El sistema devuelve solo las empresas de la empresa del token, sin leer filas eliminadas (aislamiento por empresa y filtro de borrado lógico, RN-GEN-001, RN-GEN-002, RN-EMP-017), con los límites de vencimiento inclusivos y normalizados a UTC (RN-GEN-008), ordenadas por nombre y paginadas de 25 en 25 por defecto (el SPA pide 10, 25 o 50; RN-GEN-009, RN-EMP-018). Cada fila trae si la empresa está vigente (RN-EMP-014) y su número de sucursales no eliminadas.
-5. El SPA muestra «Resultados (N)» con las columnas Empresa (enlace), RUC, Estado y Vigente (icono).
+4. El sistema devuelve solo las empresas de la empresa del token (al operador de plataforma le devuelve todas: CU-ADM-43), sin leer filas eliminadas (aislamiento por empresa y filtro de borrado lógico, RN-GEN-001, RN-GEN-002, RN-EMP-017), con los límites de vencimiento inclusivos y normalizados a UTC (RN-GEN-008), ordenadas por nombre y paginadas de 25 en 25 por defecto (el SPA pide 10, 25 o 50; RN-GEN-009, RN-EMP-018). Cada fila trae si la empresa está vigente (RN-EMP-014) y su número de sucursales no eliminadas.
+5. El SPA muestra «Resultados (N)» con las columnas Empresa (enlace), RUC, Estado, Vencimiento (`dd/MM/yyyy`, columna agregada en `558ad35`) y Vigente (icono).
 6. El actor hace clic en el nombre. El SPA pide `GET /api/v1/Empresas/{id}` y muestra, de solo lectura, Estado, Sucursales, Inicio Trial y Vencimiento (`dd/MM/yyyy`), Nombre de la Empresa y RUC. Una empresa nueva nace en `TrialActivo` con 30 días (RN-EMP-012). El detalle no muestra «Vigente» ni los días restantes.
 7. Desde la tabla, el actor pulsa «Exportar». El SPA envía `POST /api/v1/Empresas/exportar` con siete títulos traducidos, las etiquetas «Sí» y «No» y los filtros del formulario en ese momento.
 8. El sistema reutiliza la consulta del listado con `PageSize = 10 000`; si el total no supera 10 000 genera `empresas.xlsx` con una hoja «Data» (cabecera con estilo, filas alternas sombreadas, fechas como texto `dd/MM/yyyy`) (RN-IMP-008 a RN-IMP-010, RN-IMP-017). El SPA descarga el archivo.
@@ -434,7 +434,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 **Flujos alternativos**
 - **A1 — Limpiar** (paso 2): «Limpiar» vacía los filtros, oculta la tabla, vuelve a la página 1 y borra el estado guardado.
 - **A2 — Sin permiso** (paso 1): quien no tiene `Empresas:Leer` (RN-EMP-001, RN-GEN-020) no ve la opción; si escribe la dirección, el SPA muestra «No tienes permisos para acceder a esta pantalla.» y vuelve a `/dashboard`.
-- **A3 — Sin botón «Nuevo»** (paso 1): no existe crear ni eliminar empresas desde la pantalla; el alta es el registro público (CU-ADM-01) y la suscripción no se puede cambiar (RN-EMP-015); `ExigirRegistroReceta` tampoco tiene pantalla (RN-EMP-016).
+- **A3 — Sin botón «Nuevo»** (paso 1): no existe crear ni eliminar empresas desde la pantalla; el alta es el registro público (CU-ADM-01) y la suscripción solo la cambia el operador de plataforma (CU-ADM-41 y CU-ADM-42, RN-EMP-015); `ExigirRegistroReceta` tampoco tiene pantalla (RN-EMP-016).
 
 **Excepciones**
 
@@ -863,7 +863,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 - Éxito: nueva fila en `SUNAT_Series_Fiscales` con el `TenantId` de la empresa; evento `SERIE_CREAR` en `Auditoria_Eventos_Seguridad`.
 - Fallo: no se crea nada.
 
-**Brecha conocida.** El SPA no avisa de la regla de una sola serie activa por sucursal y tipo hasta que la API la rechaza (`producto/pantallas/administracion` §6.2). El formulario no usa `saveErrorKey`, por lo que los códigos `Db.*` caen en el genérico. La numeración se consume después, de forma atómica, al emitir comprobantes de venta o devolución: una sola instrucción suma 1 al correlativo y devuelve el valor nuevo, así que dos emisiones simultáneas nunca reciben el mismo número (RN-SER-013, `ApplicationDbContext.cs:180-188`; lo ejercen los casos de uso de ventas y devoluciones, partes C).
+**Brecha conocida.** El SPA no avisa de la regla de una sola serie activa por sucursal y tipo hasta que la API la rechaza (`producto/pantallas/administracion` §6.2). El formulario no usa `saveErrorKey`, por lo que los códigos `Db.*` caen en el genérico. La numeración se consume después, de forma atómica, al emitir comprobantes de venta o devolución: una sola instrucción suma 1 al correlativo y devuelve el valor nuevo, así que dos emisiones simultáneas nunca reciben el mismo número (RN-SER-013, `ApplicationDbContext.cs:187-195`; lo ejercen los casos de uso de ventas y devoluciones, partes C).
 
 ---
 
@@ -1283,7 +1283,7 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 | **Historia** | [HU-ADM-030](../historias-de-usuario/acceso-y-administracion.md) |
 
 **Flujo principal**
-1. Al abrir el rol, el SPA pide en paralelo el catálogo de permisos y los permisos del rol. El catálogo son exactamente los pares módulo y acción declarados con `[HasPermission]` en los controladores (27 módulos y 105 permisos), agrupados y ordenados (RN-ROL-016).
+1. Al abrir el rol, el SPA pide en paralelo el catálogo de permisos y los permisos del rol. El catálogo son exactamente los pares módulo y acción declarados con `[HasPermission]` en los controladores (27 módulos y 104 permisos; `Empresas:Leer` ya no figura porque desde `6f6b837` se declara con `[HasPermissionOrPlataforma]`, que el catálogo no recorre: `RolesController.cs:102-116`), agrupados y ordenados (RN-ROL-016).
 2. La pestaña «Permisos» muestra un panel por módulo con la casilla del módulo y el contador «N/M acciones». Las casillas solo se pueden marcar en modo editar y con `Seguridad:GestionarPermisos`. La pestaña «Menú» muestra una vista previa de solo lectura del menú lateral según los permisos marcados en ese momento (una pantalla aparece si el rol tiene `Leer` de su módulo).
 3. El actor marca y desmarca casillas. Nada se envía todavía: el cambio queda en pantalla hasta «Guardar».
 4. Al pulsar «Guardar» (tras guardar descripción y nivel, CU-ADM-27), el SPA calcula la diferencia contra lo leído y envía en paralelo un `POST /api/v1/Roles/permissions` con `{ rolId, moduloSistema, accion }` por cada permiso agregado y un `DELETE /api/v1/Roles/permissions/{permisoId}` por cada permiso quitado.
@@ -1717,9 +1717,253 @@ Este documento es la parte A de tres de los casos de uso de SOFIA. Cubre el acce
 **Brecha conocida.** Ninguna regla impide que un usuario elimine su propia cuenta (`negocio/reglas/administracion-y-seguridad` §12.3 hallazgo 7). Eliminar la cuenta no elimina al empleado. Cuando el empleado se eliminó antes que la cuenta, la cuenta queda inaccesible desde la pantalla y su usuario ocupado (CU-ADM-24). Eliminar la cuenta no revoca explícitamente los tokens de refresco: el siguiente refresco o petición falla porque la cuenta ya no se encuentra (RN-AUT-017, RN-GEN-017).
 
 ---
+## 8A. Operador de plataforma y suscripciones
+
+Casos nuevos desde `sofia-apis` `6f6b837` y `sofia-web-spa` `558ad35`. El **operador de plataforma** es una cuenta con `Seguridad_Cuentas.Es_Admin_Plataforma = 1`, marca que solo se pone a mano en la base de datos (RN-CTA-021, RN-GEN-042); su token lleva el claim `plat_admin = "true"` y la política `PLATAFORMA_ADMIN` no la satisface el rol `Admin`. El operador no se bloquea por la vigencia de su propia empresa (RN-GEN-018, RN-AUT-009). Todos los casos de esta sección son «No verificado en la aplicación»: se escribieron leyendo el código y las pruebas, ningún recorrido del manual usó una cuenta de operador.
+
+### CU-ADM-38 — Publicar los datos de pago de la plataforma
+
+| | |
+|---|---|
+| **Actor principal** | Operador de plataforma |
+| **Actores secundarios** | Ninguno |
+| **Disparador** | El operador elige Administración › «Configuración de Pago» en el menú lateral |
+| **Precondiciones** | Sesión iniciada con una cuenta con la marca de operador (el menú oculta la opción y `platformAdminGuard` bloquea la ruta a cualquier otra cuenta, aunque tenga el rol `Admin`) |
+| **Pantalla** | `/configuracion-pago` — «Configuración de Pago» |
+| **Endpoints** | `GET /api/v1/plataforma/pago` (anónimo, política `public-info`); `PUT /api/v1/plataforma/pago` (`multipart/form-data`; política `PLATAFORMA_ADMIN`) |
+| **Reglas** | [RN-EMP-023](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-024](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-025](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-027](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-039](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Historia** | [HU-ADM-052](../historias-de-usuario/acceso-y-administracion.md) |
+
+**Flujo principal**
+1. El operador abre «Configuración de Pago». El SPA pide `GET /api/v1/plataforma/pago` y muestra los datos publicados (o nada, si nunca se guardaron) con el formulario deshabilitado.
+2. Pulsa «Editar». Escribe el WhatsApp con código de país (obligatorio, de 8 a 15 dígitos), opcionalmente el número de Yape (9 dígitos) y las indicaciones (hasta 500 caracteres), y opcionalmente elige una imagen PNG o JPG de hasta 1 MB con «Elegir imagen» / «Cambiar imagen».
+3. Pulsa «Guardar». El SPA valida el formulario y envía `PUT /api/v1/plataforma/pago` como `multipart/form-data` con `whatsappNumero`, `yapeNumero` e `instrucciones` (solo si tienen valor) y `qr` (solo si eligió una imagen).
+4. El controlador rechaza un QR de más de 1 MB con 400 `ConfiguracionPago.Qr.Tamano` antes de enviar el comando; el servidor admite como máximo 1 MB + 64 KB de cuerpo (413 por encima).
+5. El validador y la entidad comprueban el WhatsApp (`^[0-9]{8,15}$`), el Yape (`^[0-9]{9}$` si viene con valor) y las indicaciones (hasta 500 tras recortar; un texto en blanco se guarda como nulo). El sistema vuelve a comprobar que el llamante sea operador (`Auth.PlataformaAdminRequerido` si no).
+6. El sistema toma la fila más antigua de `Plataforma_Configuracion_Pago`; si no hay, crea una. Si viene imagen, decide el formato por la firma del archivo (PNG o JPEG) y reemplaza el QR; si no viene, conserva el anterior.
+7. El sistema guarda y registra el evento `PAGO_CONFIG_GUARDAR` con «QR sin cambio» o «QR reemplazado». Responde 204.
+8. El SPA muestra «Configuración de pago guardada.», vuelve al modo ver y recarga los datos.
+
+**Flujos alternativos**
+- **A1 — Cancelar** (paso 2): «Cancelar» descarta la imagen elegida, restaura los valores guardados y deshabilita el formulario.
+- **A2 — Imagen no admitida** (paso 2): si el archivo no es PNG/JPG o pesa más de 1 MB, el SPA lo rechaza al elegirlo con un mensaje bajo el panel y no cambia la imagen.
+
+**Excepciones**
+
+| Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
+|---|---|---|---|---|---|
+| 1 | Falla la lectura | según el error | 4xx / 5xx | «No se pudo cargar la configuración de pago.» (`suscripcion.config.loadError`) | Se queda en la pantalla |
+| 3 | WhatsApp vacío o fuera de formato | — (formulario) | — | «Este campo es obligatorio» / «Ingresa de 8 a 15 dígitos, con código de país y sin espacios ni signos» | No se envía |
+| 5 | WhatsApp inválido en el servidor | `GuardarConfiguracionPagoCommand.WhatsappNumero` o `ConfiguracionPago.WhatsappNumero` | 400 | «Ingresa de 8 a 15 dígitos, con código de país y sin espacios ni signos» | Corregir |
+| 5 | Yape inválido en el servidor | `GuardarConfiguracionPagoCommand.YapeNumero` o `ConfiguracionPago.YapeNumero` | 400 | «Ingresa exactamente 9 dígitos» | Corregir |
+| 4–6 | QR de más de 1 MB | `ConfiguracionPago.Qr.Tamano` (o `GuardarConfiguracionPagoCommand.QrImagen`) | 400 | «La imagen no puede pesar más de 1 MB.» | Elegir otra imagen |
+| 6 | El archivo no es PNG ni JPEG | `ConfiguracionPago.Qr.Formato` | 400 | «La imagen debe ser PNG o JPG.» | Elegir otra imagen |
+| 5 | Indicaciones de más de 500 caracteres (solo llamando a la API) | `GuardarConfiguracionPagoCommand.Instrucciones` o `ConfiguracionPago.Instrucciones` | 400 | «No se pudo guardar la configuración de pago.» (sin mensaje propio) | Acortar |
+| 5 | El llamante no es operador | `Auth.PlataformaAdminRequerido` | 403 | El snackbar de error genérico de guardado (el guard de la ruta ya lo impide) | — |
+| 3 | Cualquier otro error | según el error | 4xx / 5xx | «No se pudo guardar la configuración de pago.» (`suscripcion.config.saveError`) | Reintentar |
+
+**Postcondiciones**
+- Éxito: una sola fila en `Plataforma_Configuracion_Pago` con los datos nuevos; el QR cambia solo si se envió imagen; evento `PAGO_CONFIG_GUARDAR`.
+- Fallo: nada cambia.
+
+**Brecha conocida.** La lectura es anónima a propósito (RN-EMP-025). El mensaje del servidor para las indicaciones demasiado largas no se traduce, pero el formulario ya limita el campo a 500 caracteres.
+
+### CU-ADM-39 — Mostrar cómo pagar a una empresa sin suscripción vigente
+
+| | |
+|---|---|
+| **Actor principal** | Usuario de una empresa cuya suscripción no está vigente |
+| **Actores secundarios** | Operador de plataforma (recibe la captura por WhatsApp, fuera del sistema) |
+| **Disparador** | El usuario envía el formulario de inicio de sesión con la contraseña correcta y su empresa no está vigente (CU-ADM-02, paso 6) |
+| **Precondiciones** | La empresa está suspendida, cancelada, o con la prueba o la suscripción vencida; el usuario no es operador de plataforma |
+| **Pantalla** | `/auth/login` — bloque «Paga tu suscripción con Yape» |
+| **Endpoints** | `POST /api/v1/Auth/login` (403); `GET /api/v1/plataforma/pago` (anónimo, política `public-info`: 30 peticiones por minuto por IP) |
+| **Reglas** | [RN-AUT-009](../../negocio/reglas/administracion-y-seguridad.md), [RN-AUT-040](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-025](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-043](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Historia** | [HU-ADM-053](../historias-de-usuario/acceso-y-administracion.md) |
+
+**Flujo principal**
+1. El login responde 403 `Auth.EmpresaNoVigente`. El SPA muestra «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» y conserva el usuario escrito.
+2. El SPA pide `GET /api/v1/plataforma/pago` y, mientras tanto, muestra un spinner.
+3. El sistema devuelve `whatsappNumero`, `yapeNumero`, `instrucciones` y `qrDataUrl` de la fila más antigua (los cuatro nulos si el operador nunca guardó nada).
+4. El SPA dibuja «Paga tu suscripción con Yape» con el QR, el número de Yape (con QR: «Si no puedes escanear el código, yapea al número»; sin QR: «Yapea al número»), las indicaciones y, si hay WhatsApp, «Después de pagar, envíanos la captura por WhatsApp y activaremos tu acceso.» con el botón «Enviar captura por WhatsApp».
+5. El usuario paga con Yape y pulsa el botón: se abre `https://wa.me/{whatsappNumero}` en otra pestaña con «Hola, adjunto la captura del pago de mi suscripción de SOFIA. Usuario: {usuario}».
+6. El operador reactiva la empresa (CU-ADM-41); el usuario vuelve a iniciar sesión.
+
+**Flujos alternativos**
+- **A1 — Sin datos publicados** (paso 3): «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.»
+- **A2 — Falla la carga** (paso 2): «No pudimos cargar los datos de pago.» con «Reintentar» (por ejemplo, con 429 si se pasó el límite de 30 por minuto).
+- **A3 — Otro rechazo** (paso 1): con cualquier otra respuesta de error (por ejemplo 401 `Auth.InvalidCredentials`), el bloque no aparece; al enviar de nuevo el formulario, el bloque se oculta.
+
+**Excepciones**
+
+| Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
+|---|---|---|---|---|---|
+| 1 | Empresa no vigente | `Auth.EmpresaNoVigente` | 403 | «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» (`auth.empresaNoVigente`) | Aparece el bloque de pago |
+| 2 | Límite de lecturas | sin code | 429 | «No pudimos cargar los datos de pago.» (`suscripcion.pago.loadError`) | «Reintentar» |
+| 2 | Falla la lectura | según el error | 4xx / 5xx | Ídem | «Reintentar» |
+
+**Postcondiciones**
+- Ninguna fila cambia. El pago y su confirmación ocurren fuera del sistema.
+
+**Brecha conocida.** El sistema no procesa el pago ni lo reconcilia; el operador activa la suscripción a mano tras recibir la captura.
+
+### CU-ADM-40 — Avisar del vencimiento de la suscripción
+
+| | |
+|---|---|
+| **Actor principal** | Administrador, o usuario con `Empresas:Leer` |
+| **Actores secundarios** | Ninguno |
+| **Disparador** | El usuario abre el panel (`/dashboard`) |
+| **Precondiciones** | Sesión iniciada; permiso `Empresas:Leer`; empresa vigente (una vencida no llega aquí: la API rechaza sus peticiones) |
+| **Pantalla** | `/dashboard` — aviso sobre la cabecera y diálogo «Cómo pagar» |
+| **Endpoints** | `GET /api/v1/Empresas/{id}` (`Empresas:Leer`); `GET /api/v1/plataforma/pago` (anónimo) |
+| **Reglas** | [RN-EMP-026](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-014](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-025](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Historia** | [HU-ADM-054](../historias-de-usuario/acceso-y-administracion.md) |
+
+**Flujo principal**
+1. El panel carga los permisos y, si el usuario tiene `Empresas:Leer`, pide `GET /api/v1/Empresas/{empresaId}`.
+2. El SPA calcula los días hasta el vencimiento (entero hacia arriba, nunca menos de 1). Si la empresa está vigente y faltan 7 días o menos, muestra «Tu periodo de prueba vence en N días (dd/MM/aaaa).» (estado `TrialActivo`) o «Tu suscripción vence en N días (dd/MM/aaaa).» (otros estados), con «1 día» en singular.
+3. El usuario pulsa «Cómo pagar». Se abre un diálogo con el bloque de pago (CU-ADM-39, pasos 2 a 5), con «Empresa: {nombre}» en el mensaje de WhatsApp, y el botón «Cerrar».
+
+**Flujos alternativos**
+- **A1 — Más de 7 días** (paso 2): no se muestra nada.
+- **A2 — Sin `Empresas:Leer`** (paso 1): no se pide la empresa ni se muestra el aviso.
+- **A3 — Falla la carga** (paso 1): el aviso simplemente no aparece; el panel no muestra error por ello.
+
+**Excepciones**
+
+| Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
+|---|---|---|---|---|---|
+| 1 | Falla la carga de permisos o de la empresa | según el error | 4xx / 5xx | Ninguno (el aviso no se pinta) | El panel sigue |
+
+**Postcondiciones**
+- Ninguna fila cambia.
+
+### CU-ADM-41 — Activar o extender la suscripción de una empresa
+
+| | |
+|---|---|
+| **Actor principal** | Operador de plataforma |
+| **Actores secundarios** | Ninguno |
+| **Disparador** | El operador abre el detalle de una empresa (`/empresas/:id`) y pulsa «Activar suscripción» o «Extender prueba» |
+| **Precondiciones** | Sesión de operador. «Extender prueba» solo se ofrece si la empresa está en `TrialActivo` |
+| **Pantalla** | `/empresas/:id` y diálogo de fecha («Activar suscripción» / «Extender prueba») |
+| **Endpoints** | `PUT /api/v1/Empresas/{id}/suscripcion/activar` y `PUT /api/v1/Empresas/{id}/suscripcion/extender-prueba`, ambos con `{ fechaVencimiento }` (política `PLATAFORMA_ADMIN`) |
+| **Reglas** | [RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-019](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-020](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-022](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-028](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Historia** | [HU-ADM-055](../historias-de-usuario/acceso-y-administracion.md) |
+
+**Flujo principal**
+1. El operador pulsa «Activar suscripción» (o «Extender prueba»). Se abre el diálogo con el mensaje de la empresa y el campo «Vigente hasta».
+2. La fecha propuesta es un mes después de la base (el vencimiento actual si todavía es futuro; si ya venció, hoy). El calendario no admite fechas anteriores a mañana; los atajos «1 mes», «3 meses», «6 meses» y «12 meses» suman meses a la base (un día 31 cae en el último día del mes de destino).
+3. El operador pulsa «Confirmar». El SPA envía la fecha como el final del día elegido (23:59:59 hora local) en ISO, y deshabilita los cuatro botones de suscripción mientras dura la llamada.
+4. El sistema verifica que el llamante sea operador (403 `Auth.PlataformaAdminRequerido` si no) y valida que la fecha sea posterior a la hora actual.
+5. El sistema busca la empresa sin el filtro de empresa (404 `Empresa.NotFound` si no existe).
+6. Activar: deja el estado en `Activo` con esa fecha de vencimiento (también devuelve el acceso a una empresa suspendida, cancelada o con la prueba vencida). Extender: solo si la empresa está en `TrialActivo`; reemplaza el vencimiento sin cambiar el estado.
+7. El sistema guarda, registra `EMPRESA_ACTIVAR` (con «Vence: aaaa-mm-dd») o `EMPRESA_EXT_PRUEBA` y responde 204.
+8. El SPA muestra «Suscripción activada.» o «Periodo de prueba extendido.» y recarga la ficha.
+
+**Flujos alternativos**
+- **A1 — Cancelar el diálogo** (paso 1): no se envía nada.
+- **A2 — Empresa propia** (paso 1): el operador puede activar y extender la suya; las acciones de bloqueo se tratan en CU-ADM-42.
+
+**Excepciones**
+
+| Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
+|---|---|---|---|---|---|
+| 2 | Fecha vacía | — (formulario) | — | «Este campo es obligatorio» | No se envía |
+| 4 | Fecha no futura | `ActivarSuscripcionEmpresaCommand.FechaVencimiento` / `ExtenderPruebaEmpresaCommand.FechaVencimiento` / `Empresa.Suscripcion.FechaVencimiento` | 400 | «La fecha de vencimiento debe ser posterior a hoy.» (`empresa.suscripcion.errorFecha`) | Elegir otra fecha |
+| 4 | El llamante no es operador | `Auth.PlataformaAdminRequerido` | 403 | El texto común de prohibido (`errors.forbidden`) | — |
+| 5 | La empresa no existe | `Empresa.NotFound` | 404 | «No se pudo cambiar la suscripción.» (`empresa.suscripcion.error`) | — |
+| 6 | Extender una empresa que no está en prueba | `Empresa.Suscripcion.NoEstaEnPrueba` | 409 | «Solo se puede extender la prueba de una empresa que sigue en periodo de prueba.» (`empresa.suscripcion.errorNoEstaEnPrueba`) | — |
+| 3 | Cualquier otro error | según el error | 4xx / 5xx | «No se pudo cambiar la suscripción.» | Reintentar |
+
+**Postcondiciones**
+- Éxito (activar): `Estado = Activo` y `FechaVencimiento` = la elegida; la empresa vuelve a estar vigente hasta esa fecha; evento `EMPRESA_ACTIVAR`. Éxito (extender): solo cambia `FechaVencimiento`; evento `EMPRESA_EXT_PRUEBA`.
+- Fallo: nada cambia.
+
+**Brecha conocida.** No hay historial de pagos ni de cambios de suscripción más allá del evento de auditoría. La suscripción vence sola en su fecha sin cambiar de estado (RN-EMP-014).
+
+### CU-ADM-42 — Suspender o cancelar la suscripción de una empresa
+
+| | |
+|---|---|
+| **Actor principal** | Operador de plataforma |
+| **Actores secundarios** | Ninguno |
+| **Disparador** | El operador abre el detalle de una empresa que **no es la suya** y pulsa «Suspender» o «Cancelar suscripción» |
+| **Precondiciones** | Sesión de operador. «Suspender» no se ofrece si la empresa ya está `Suspendido`; «Cancelar suscripción» no si ya está `Cancelado` |
+| **Pantalla** | `/empresas/:id` y diálogo de confirmación |
+| **Endpoints** | `PUT /api/v1/Empresas/{id}/suscripcion/suspender` y `PUT /api/v1/Empresas/{id}/suscripcion/cancelar` (sin cuerpo; política `PLATAFORMA_ADMIN`) |
+| **Reglas** | [RN-EMP-015](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-021](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-022](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-018](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Historia** | [HU-ADM-055](../historias-de-usuario/acceso-y-administracion.md) |
+
+**Flujo principal**
+1. El operador pulsa «Suspender» (o «Cancelar suscripción»). El SPA abre el diálogo de confirmación: «<empresa> perderá el acceso de inmediato. Puedes devolvérselo activando su suscripción.» (la cancelación añade «y quedará como cancelada»).
+2. El operador confirma. El SPA envía el `PUT` y deshabilita los botones de suscripción.
+3. El sistema verifica que el llamante sea operador y que la empresa no sea la del propio operador (409 `Empresa.Suscripcion.PropiaEmpresa`).
+4. El sistema busca la empresa sin el filtro de empresa y deja el estado en `Suspendido` o `Cancelado`.
+5. El sistema guarda, registra `EMPRESA_SUSPENDER` o `EMPRESA_CANCELAR` y responde 204.
+6. El SPA muestra «Empresa suspendida.» o «Suscripción cancelada.» y recarga la ficha.
+7. Efecto: los usuarios de esa empresa dejan de poder iniciar sesión y renovar la sesión de inmediato, y las peticiones con un token vivo se rechazan con 401 en un minuto como máximo (la vigencia se guarda en caché 1 minuto por empresa, RN-GEN-018).
+
+**Flujos alternativos**
+- **A1 — Cancelar el diálogo** (paso 1): no se envía nada.
+- **A2 — Revertir** (paso 4): se activa la suscripción con una fecha futura (CU-ADM-41).
+
+**Excepciones**
+
+| Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
+|---|---|---|---|---|---|
+| 3 | Es la empresa del operador | `Empresa.Suscripcion.PropiaEmpresa` | 409 | «No puedes suspender ni cancelar tu propia empresa.» (`empresa.suscripcion.errorPropiaEmpresa`) | — (la pantalla ni siquiera ofrece los botones en la empresa propia) |
+| 3 | El llamante no es operador | `Auth.PlataformaAdminRequerido` | 403 | El texto común de prohibido (`errors.forbidden`) | — |
+| 4 | La empresa no existe | `Empresa.NotFound` | 404 | «No se pudo cambiar la suscripción.» | — |
+| 2 | Cualquier otro error | según el error | 4xx / 5xx | «No se pudo cambiar la suscripción.» | Reintentar |
+
+**Postcondiciones**
+- Éxito: `Estado = Suspendido` o `Cancelado`; la empresa deja de estar vigente; evento `EMPRESA_SUSPENDER` o `EMPRESA_CANCELAR`. No se borra ningún dato de la empresa.
+- Fallo: nada cambia.
+
+### CU-ADM-43 — Consultar las empresas y las cifras de suscripciones como operador
+
+| | |
+|---|---|
+| **Actor principal** | Operador de plataforma |
+| **Actores secundarios** | Ninguno |
+| **Disparador** | El operador abre el panel (`/dashboard`) o Administración › «Empresa» |
+| **Precondiciones** | Sesión de operador (para `/empresas`, el operador no necesita un rol con `Empresas:Leer`) |
+| **Pantalla** | `/dashboard` — sección «Suscripciones»; `/empresas` y `/empresas/:id` |
+| **Endpoints** | `GET /api/v1/plataforma/dashboard?inicioMes=` (política `PLATAFORMA_ADMIN`); `GET /api/v1/Empresas`, `GET /api/v1/Empresas/{id}`, `POST /api/v1/Empresas/exportar` (`[HasPermissionOrPlataforma]`) |
+| **Reglas** | [RN-DAS-025 y RN-DAS-026](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-EMP-017](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-018](../../negocio/reglas/administracion-y-seguridad.md), [RN-EMP-022](../../negocio/reglas/administracion-y-seguridad.md), [RN-GEN-042](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Historia** | [HU-ADM-056](../historias-de-usuario/acceso-y-administracion.md), [HU-ADM-057](../historias-de-usuario/acceso-y-administracion.md) |
+
+**Flujo principal**
+1. El panel, con `esOperador()` verdadero, pide `GET /api/v1/plataforma/dashboard?inicioMes=` (inicio del mes del navegador en ISO).
+2. El sistema vuelve a comprobar que sea operador y cuenta las empresas no eliminadas de **todas** las empresas (sin el filtro de empresa): total; vigentes (en prueba más con suscripción, solo con vencimiento posterior a ahora); por vencer (vencimiento en los próximos 7 días); vencidas (`TrialActivo` o `Activo` con vencimiento pasado); suspendidas; canceladas; registradas desde `inicioMes`. Devuelve además las 10 más próximas a vencer, de la más cercana a la más lejana.
+3. El SPA muestra las tarjetas «Empresas vigentes», «Vencen en 7 días o menos», «Vencidas sin renovar», «Suspendidas», «Canceladas» y «Registradas este mes» y la tabla «Próximas a vencer (7 días)» («Empresa», «Tipo», «Vence», «Días restantes»).
+4. El operador pulsa «Ver lista» en «Suspendidas» o «Canceladas», o «Ver todas las empresas»: se abre `/empresas` con el filtro de estado ya aplicado y los resultados cargados.
+5. En `/empresas` el sistema devuelve todas las empresas no eliminadas (`EmpresasVisibles`), ordenadas por nombre, con la columna «Vencimiento»; el nombre abre `/empresas/:id` (CU-ADM-41 y CU-ADM-42). «Exportar» genera `empresas.xlsx` con las empresas que cumplen los filtros.
+
+**Flujos alternativos**
+- **A1 — Sin empresas por vencer** (paso 3): «Ninguna empresa vence en los próximos días.»
+- **A2 — Más de 10 por vencer** (paso 3): «Se muestran las {{mostradas}} más próximas de {{total}}.»
+- **A3 — Falla la sección** (paso 1): «No se pudo cargar esta sección.» con «Reintentar»; el resto del panel sigue.
+
+**Excepciones**
+
+| Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
+|---|---|---|---|---|---|
+| 2 | El llamante no es operador | `Auth.PlataformaAdminRequerido` | 403 | «No se pudo cargar esta sección.» (la sección ni se pide a quien no lo es) | — |
+| 5 | Falla la búsqueda | según el error | 4xx / 5xx | «Error al buscar empresas» | Se queda en la pantalla |
+
+**Postcondiciones**
+- Ninguna fila cambia.
+
+**Brecha conocida.** «Registradas este mes» depende del inicio del mes del navegador del operador. El permiso `Empresas:Leer` ya no aparece en el catálogo de la matriz de permisos de «Roles» (RN-ROL-016): se declara como `[HasPermissionOrPlataforma]` y ese catálogo solo recorre `[HasPermission]`.
+
+---
+
 ## 9. Diagrama de casos de uso
 
-El diagrama agrupa los 37 casos por área. Las flechas continuas unen a cada actor con los casos que dispara; las punteadas son relaciones entre casos («continúa en» o «usa»).
+El diagrama agrupa los 43 casos por área. Las flechas continuas unen a cada actor con los casos que dispara; las punteadas son relaciones entre casos («continúa en» o «usa»).
 
 ```mermaid
 flowchart LR
@@ -1728,6 +1972,7 @@ flowchart LR
     A([Administrador o gestor con permisos])
     S([SPA en segundo plano])
     M([Sistema de correo])
+    O([Operador de plataforma])
 
     subgraph ACC[Acceso y sesion]
         C01[CU-ADM-01 Registrar empresa]
@@ -1787,6 +2032,15 @@ flowchart LR
         C37[CU-ADM-37 Eliminar]
     end
 
+    subgraph PLA[Operador de plataforma y suscripciones]
+        C38[CU-ADM-38 Publicar datos de pago]
+        C39[CU-ADM-39 Como pagar en el login]
+        C40[CU-ADM-40 Aviso de vencimiento]
+        C41[CU-ADM-41 Activar o extender]
+        C42[CU-ADM-42 Suspender o cancelar]
+        C43[CU-ADM-43 Empresas y cifras]
+    end
+
     V --> C01
     V --> C06
     V --> C07
@@ -1805,6 +2059,8 @@ flowchart LR
     A --> EPL
     A --> ROL
     A --> CTA
+    A --> C40
+    O --> PLA
 
     C01 -.->|sesion iniciada| C02
     C02 -.->|cuenta con cambio forzado| C05
@@ -1826,6 +2082,11 @@ flowchart LR
     C33 -.->|se asigna despues| C35
     C33 -.->|se asigna despues| C36
     C22 -.->|da acceso con| C33
+    C02 -.->|empresa no vigente| C39
+    C39 -.->|el operador reactiva| C41
+    C40 -.->|Como pagar| C39
+    C43 -.->|abre la empresa| C41
+    C43 -.->|abre la empresa| C42
 ```
 
 Actores secundarios: el sistema de correo interviene solo en CU-ADM-06. El administrador (rol `Admin`) puede ejecutar todos los casos de las áreas Empresa a Cuentas sin permisos explícitos; un gestor con otro rol necesita los permisos indicados en la cabecera de cada caso.
@@ -1877,6 +2138,12 @@ Se generó leyendo la cabecera de cada caso (filas «Reglas», «Pantalla» y «
 | CU-ADM-35 Asignar o cambiar el rol de una cuenta | RN-CTA-001, RN-CTA-014, RN-CTA-015, RN-CTA-016, RN-CTA-017, RN-CTA-018, RN-ROL-007, RN-ROL-001, RN-GEN-013, RN-GEN-017, RN-GEN-021 | `/cuentas/:id` — tarjeta «Roles Asignados» | `GET /api/v1/Roles?nombreRol=…&pageSize=20` (`Seguridad:Leer`); `POST /api/v1/Cuentas/{id}/roles/{rolId}` y `DELETE /api/v1/Cuentas/{id}/roles/{rolId}` (`Seguridad:AsignarRoles`). Existen equivalentes sin pantalla: `POST /api/v1/Roles/assign-to-user` y `POST /api/v1/Roles/remove-from-user` |
 | CU-ADM-36 Agregar y quitar sucursales de una cuenta | RN-CTA-001, RN-CTA-014, RN-CTA-019, RN-GEN-013, RN-GEN-023 | `/cuentas/:id` — tarjeta «Sucursales Asignadas» | `POST /api/v1/Cuentas/{id}/sucursales/{sucursalId}` y `DELETE /api/v1/Cuentas/{id}/sucursales/{sucursalId}` (`Seguridad:Actualizar`); `GET /api/v1/Sucursales?nombre=…&pageSize=20` (`Sucursales:Leer`) |
 | CU-ADM-37 Eliminar una cuenta | RN-CTA-001, RN-CTA-009, RN-CTA-010, RN-CTA-013, RN-GEN-003, RN-GEN-013 | `/cuentas/:id` — «Cuentas de Usuario» (modo editar) con el diálogo «Eliminar cuenta» | `DELETE /api/v1/Cuentas/{id}` (`Seguridad:Eliminar`) |
+| CU-ADM-38 Publicar los datos de pago de la plataforma | RN-EMP-023, RN-EMP-024, RN-EMP-025, RN-EMP-027, RN-GEN-042, RN-GEN-039 | `/configuracion-pago` — «Configuración de Pago» | `GET /api/v1/plataforma/pago`; `PUT /api/v1/plataforma/pago` |
+| CU-ADM-39 Mostrar cómo pagar a una empresa sin suscripción vigente | RN-AUT-009, RN-AUT-040, RN-EMP-025, RN-GEN-043 | `/auth/login` — bloque «Paga tu suscripción con Yape» | `POST /api/v1/Auth/login`; `GET /api/v1/plataforma/pago` |
+| CU-ADM-40 Avisar del vencimiento de la suscripción | RN-EMP-014, RN-EMP-025, RN-EMP-026 | `/dashboard` — aviso y diálogo «Cómo pagar» | `GET /api/v1/Empresas/{id}`; `GET /api/v1/plataforma/pago` |
+| CU-ADM-41 Activar o extender la suscripción de una empresa | RN-EMP-015, RN-EMP-019, RN-EMP-020, RN-EMP-022, RN-EMP-028, RN-GEN-042 | `/empresas/:id` y diálogo de fecha | `PUT /api/v1/Empresas/{id}/suscripcion/activar`; `PUT …/extender-prueba` |
+| CU-ADM-42 Suspender o cancelar la suscripción de una empresa | RN-EMP-015, RN-EMP-021, RN-EMP-022, RN-GEN-018, RN-GEN-042 | `/empresas/:id` y diálogo de confirmación | `PUT /api/v1/Empresas/{id}/suscripcion/suspender`; `PUT …/cancelar` |
+| CU-ADM-43 Consultar las empresas y las cifras de suscripciones como operador | RN-DAS-025, RN-DAS-026, RN-EMP-017, RN-EMP-018, RN-EMP-022, RN-GEN-042 | `/dashboard` — «Suscripciones»; `/empresas`, `/empresas/:id` | `GET /api/v1/plataforma/dashboard`; `GET /api/v1/Empresas`, `GET /api/v1/Empresas/{id}`, `POST /api/v1/Empresas/exportar` |
 
 ### 10.2 Historia de usuario y caso de uso
 
@@ -1937,7 +2204,7 @@ Cada caso enlaza con su historia en la cabecera. Esta tabla las ordena por histo
 
 ### 11.1 En curso (sin commitear)
 
-Ninguno. `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (`eeffbb6`) al empezar.
+Ninguno. `git status --short` estaba vacío en `sofia-apis` (`0678e40`) y en `sofia-web-spa` (`37048ea`) al revisar.
 
 ### 11.2 No verificado
 
@@ -1958,13 +2225,13 @@ Ninguno. `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `so
 
 ### 11.3 Hallazgos y discrepancias
 
-1. **Registro de empresa: 201, no 200.** `EmpresasController.Registrar` responde `StatusCode(201, new { token })` (`sofia-apis/src/SOFIA.API/Controllers/EmpresasController.cs:31`) y el handler devuelve `Result.Success(..., 201)` (`RegistrarEmpresaCommandHandler.cs:146`). El diagrama de secuencia del documento `negocio/procesos-de-negocio` (§3) escribe «200 con token de acceso y cookie refresh_token»; el código manda.
+1. **Registro de empresa: 201, no 200.** `EmpresasController.Registrar` responde `StatusCode(201, new { token })` (`sofia-apis/src/SOFIA.API/Controllers/EmpresasController.cs:35`) y el handler devuelve `Result.Success(..., 201)` (`RegistrarEmpresaCommandHandler.cs:72`). El diagrama de secuencia del documento `negocio/procesos-de-negocio` (§3) escribe «200 con token de acceso y cookie refresh_token»; el código manda.
 2. **Tipo de error y estado HTTP no coinciden** en `Rol.DuplicateName`, `Rol.InUse` y `Permiso.Duplicate` (tipo `Conflict`, responden 400) y en `Auth.Empresa` (tipo `Unauthorized`, responde 400 al crear sucursales y cargarlas): ya señalado en `negocio/reglas/administracion-y-seguridad` §12.3 hallazgo 1.
 3. **El usuario nunca ve el mensaje de la API.** Códigos de negocio de este alcance sin texto propio en su pantalla (desde `sofia-web-spa` `37d053d` ya lo tienen `Rol.DuplicateName`, `Rol.InUse`, `Permiso.Duplicate`, `Auth.DuplicateAccount`, `Auth.DuplicateUsername` y `Empleado.SucursalBase.AutoAsignacion`): `Rol.NotFound`, `Permiso.NotFound`, `Empleado.NotFound`, `Cuenta.NotFound`, `Empresa.NotFound`, `Empresa.RUC.Duplicado` (en el detalle de empresa), `Sucursal.NotFound` (en Sucursales, Empleados y Roles), `Export.TooManyRows`, `Auth.Empresa`, `Auth.Csrf`, `Auth.InvalidRefreshToken`, `Concurrency.Conflict` y `Db.*` fuera de Empleados y Sucursales.
 4. **Tres pantallas deciden por estado y no por código al eliminar** (empleado, serie fiscal, sucursal): cualquier 409 muestra su texto específico.
 5. **Eliminar un empleado con cuenta** deja la cuenta oculta e inaccesible desde la pantalla, con el usuario ocupado (RN-EPL-015; manual, capítulo 3 §9.1).
 6. **Auditoría incompleta:** no generan evento de seguridad el registro de empresa, el inicio y cierre de sesión, la creación, edición y eliminación de sucursales y empleados, ni las cargas masivas (RN-GEN-013; procesos `negocio/procesos-de-negocio` §12.1 brechas 1 y 2).
-7. **Suscripción sin operaciones expuestas:** activar, suspender, cancelar y extender la prueba existen en la entidad pero ningún endpoint las invoca; una empresa nueva queda bloqueada al vencer su prueba sin intervención en la base de datos (RN-EMP-015, RN-EMP-014; procesos `negocio/procesos-de-negocio` §12.1 brecha 11).
+7. **Suscripción (resuelto en `6f6b837`/`558ad35`):** activar, suspender, cancelar y extender la prueba tienen endpoints y pantalla para el operador de plataforma (CU-ADM-41 y CU-ADM-42); sigue sin haber cambio automático de estado ni pago en línea (RN-EMP-015, RN-EMP-014). El documento `negocio/procesos-de-negocio` §12.1 brecha 11 describía la situación anterior: anotado para el orquestador.
 8. **Formulario y API con límites distintos:** nombre de rol (100 frente a 50), nivel de jerarquía (1 frente a 0), usuario de la cuenta (el mensaje dice 100, el límite es 50), contraseña inicial sin mensaje para menos de 8, nombre de empresa en el detalle (150 frente a 200), RUC en el detalle sin exigir 11 dígitos (`negocio/reglas/administracion-y-seguridad` §12.3 hallazgo 4).
 9. **No existe «restablecer contraseña» de otro usuario** desde las cuentas: solo «Forzar Cambio de Contraseña» (`producto/pantallas/administracion` §7, pendientes de producto).
 10. **Sin carga masiva ni exportación** de empleados (carga), series fiscales (carga) y cuentas (ambas) (`producto/pantallas/administracion` §7).
@@ -1973,9 +2240,9 @@ Ninguno. `git status --short` estaba vacío en `sofia-apis` (`43f5529`) y en `so
 
 ## 12. Tabla de cobertura
 
-### 12.1 Reglas de negocio del alcance (203) y caso de uso donde se ejercen
+### 12.1 Reglas de negocio del alcance (217) y caso de uso donde se ejercen
 
-Las reglas de `negocio/reglas/administracion-y-seguridad` en este alcance son 203 (GEN 41, AUT 39, ROL 23, CTA 20, EMP 18, SUC 13, EPL 18, SER 14, IMP 17). La tabla se generó con un script de lectura que recorre este documento, toma el lugar más específico donde cada regla aparece (paso del flujo principal, flujo alternativo, fila de excepciones, postcondiciones o brecha) y, para las reglas de «permiso exigido», la cabecera del caso. Las 9 reglas que no aparecen aquí tienen su explicación en 12.2. El mismo script comprobó que todos los identificadores `RN-…` citados en este documento existen en el catálogo `negocio/reglas/administracion-y-seguridad` (0 inexistentes).
+Las reglas de `negocio/reglas/administracion-y-seguridad` en este alcance son 217 (GEN 43, AUT 40, ROL 23, CTA 21, EMP 28, SUC 13, EPL 18, SER 14, IMP 17). La tabla se generó con un script de lectura que recorre este documento, toma el lugar más específico donde cada regla aparece (paso del flujo principal, flujo alternativo, fila de excepciones, postcondiciones o brecha) y, para las reglas de «permiso exigido», la cabecera del caso. Las 9 reglas que no aparecen aquí tienen su explicación en 12.2. El mismo script comprobó que todos los identificadores `RN-…` citados en este documento existen en el catálogo `negocio/reglas/administracion-y-seguridad` (0 inexistentes).
 
 | Regla | Caso de uso y paso |
 |---|---|
@@ -2018,6 +2285,7 @@ Las reglas de `negocio/reglas/administracion-y-seguridad` en este alcance son 20
 | RN-AUT-037 | CU-ADM-07 (paso 4) |
 | RN-AUT-038 | CU-ADM-07 (paso 5) |
 | RN-AUT-039 | CU-ADM-07 (paso 6) |
+| RN-AUT-040 | CU-ADM-39 (pasos 1 a 5) |
 | RN-CTA-001 | CU-ADM-32 (cabecera: permiso exigido por el caso); CU-ADM-33 (cabecera: permiso exigido por el caso); CU-ADM-34 (cabecera: permiso exigido por el caso); CU-ADM-35 (cabecera: permiso exigido por el caso) |
 | RN-CTA-002 | CU-ADM-33 (paso 4) |
 | RN-CTA-003 | CU-ADM-33 (paso 4) |
@@ -2038,6 +2306,7 @@ Las reglas de `negocio/reglas/administracion-y-seguridad` en este alcance son 20
 | RN-CTA-018 | CU-ADM-35 (paso 5) |
 | RN-CTA-019 | CU-ADM-36 (paso 3); CU-ADM-16 (brecha conocida) |
 | RN-CTA-020 | CU-ADM-32 (paso 4) |
+| RN-CTA-021 | CU-ADM-38 (precondición), CU-ADM-41 (precondición): la marca solo se pone en la base de datos |
 | RN-EMP-001 | CU-ADM-09 (alternativo A2) |
 | RN-EMP-002 | CU-ADM-10 (paso 5) |
 | RN-EMP-003 | CU-ADM-01 (paso 2) |
@@ -2056,6 +2325,16 @@ Las reglas de `negocio/reglas/administracion-y-seguridad` en este alcance son 20
 | RN-EMP-016 | CU-ADM-09 (alternativo A3) |
 | RN-EMP-017 | CU-ADM-09 (paso 4); CU-ADM-10 (paso 6) |
 | RN-EMP-018 | CU-ADM-09 (paso 4) |
+| RN-EMP-019 | CU-ADM-41 (pasos 4 a 7) |
+| RN-EMP-020 | CU-ADM-41 (paso 6; excepción NoEstaEnPrueba) |
+| RN-EMP-021 | CU-ADM-42 (pasos 3 a 7) |
+| RN-EMP-022 | CU-ADM-41 (paso 1), CU-ADM-42 (paso 1), CU-ADM-43 (paso 5) |
+| RN-EMP-023 | CU-ADM-38 (pasos 2, 3 y 5) |
+| RN-EMP-024 | CU-ADM-38 (pasos 2, 4 y 6) |
+| RN-EMP-025 | CU-ADM-39 (paso 3), CU-ADM-40 (paso 3) |
+| RN-EMP-026 | CU-ADM-40 (pasos 1 a 3) |
+| RN-EMP-027 | CU-ADM-38 (precondición, paso 1) |
+| RN-EMP-028 | CU-ADM-41 (pasos 2 y 3) |
 | RN-EPL-001 | CU-ADM-21 (cabecera: permiso exigido por el caso); CU-ADM-22 (cabecera: permiso exigido por el caso); CU-ADM-23 (cabecera: permiso exigido por el caso); CU-ADM-24 (cabecera: permiso exigido por el caso) |
 | RN-EPL-002 | CU-ADM-22 (paso 4) |
 | RN-EPL-003 | CU-ADM-22 (paso 4); CU-ADM-23 (paso 5) |
@@ -2107,6 +2386,8 @@ Las reglas de `negocio/reglas/administracion-y-seguridad` en este alcance son 20
 | RN-GEN-039 | CU-ADM-15 (excepción (paso 3)) |
 | RN-GEN-040 | CU-ADM-01 (excepción (paso 6)) |
 | RN-GEN-041 | CU-ADM-27 (excepción (paso 5)) |
+| RN-GEN-042 | CU-ADM-38, CU-ADM-41, CU-ADM-42, CU-ADM-43 (precondiciones y verificación del llamante) |
+| RN-GEN-043 | CU-ADM-39 (excepción paso 2) |
 | RN-IMP-001 | CU-ADM-15 (paso 5); CU-ADM-31 (paso 3) |
 | RN-IMP-002 | CU-ADM-15 (paso 5); CU-ADM-31 (paso 3) |
 | RN-IMP-003 | CU-ADM-15 (paso 5); CU-ADM-31 (paso 3) |
@@ -2190,7 +2471,7 @@ Las reglas de `negocio/reglas/administracion-y-seguridad` en este alcance son 20
 
 Las reglas de permiso exigido (RN-ROL-001, RN-CTA-001, RN-SUC-001, RN-EPL-001, RN-SER-001) aparecen en la tabla 12.1 como «cabecera»: son precondición de todos los casos del módulo y su incumplimiento se ve como 403 sin `code`.
 
-### 12.3 Endpoints del alcance (60 de 60) y caso de uso
+### 12.3 Endpoints del alcance (67 de 67) y caso de uso
 
 | Endpoint | Caso de uso |
 |---|---|
@@ -2202,8 +2483,13 @@ Las reglas de permiso exigido (RN-ROL-001, RN-CTA-001, RN-SUC-001, RN-EPL-001, R
 | `POST /api/v1/Auth/forgot-password` | CU-ADM-06 |
 | `POST /api/v1/Auth/reset-password` | CU-ADM-07 |
 | `POST /api/v1/Empresas/registrar` | CU-ADM-01 |
-| `GET /api/v1/Empresas`, `GET /api/v1/Empresas/{id}`, `POST /api/v1/Empresas/exportar` | CU-ADM-09 |
+| `GET /api/v1/Empresas`, `GET /api/v1/Empresas/{id}`, `POST /api/v1/Empresas/exportar` | CU-ADM-09, CU-ADM-43 |
 | `PUT /api/v1/Empresas/{id}` | CU-ADM-10 |
+| `PUT /api/v1/Empresas/{id}/suscripcion/activar`, `PUT …/extender-prueba` | CU-ADM-41 |
+| `PUT /api/v1/Empresas/{id}/suscripcion/suspender`, `PUT …/cancelar` | CU-ADM-42 |
+| `GET /api/v1/plataforma/pago` | CU-ADM-38 (paso 1), CU-ADM-39, CU-ADM-40 |
+| `PUT /api/v1/plataforma/pago` | CU-ADM-38 |
+| `GET /api/v1/plataforma/dashboard` | CU-ADM-43 |
 | `GET /api/v1/Sucursales`, `POST /api/v1/Sucursales/exportar` | CU-ADM-11 |
 | `POST /api/v1/Sucursales` | CU-ADM-12 |
 | `GET /api/v1/Sucursales/{id}`, `PUT /api/v1/Sucursales/{id}` | CU-ADM-13 |
@@ -2242,7 +2528,8 @@ Las reglas de permiso exigido (RN-ROL-001, RN-CTA-001, RN-SUC-001, RN-EPL-001, R
 | `/auth/forgot-password` | CU-ADM-06 |
 | `/auth/reset-password` | CU-ADM-07 |
 | `/cambiar-clave` | CU-ADM-04, CU-ADM-05 |
-| `/empresas`, `/empresas/:id` | CU-ADM-09, CU-ADM-10 |
+| `/empresas`, `/empresas/:id` | CU-ADM-09, CU-ADM-10, CU-ADM-41, CU-ADM-42, CU-ADM-43 |
+| `/configuracion-pago` | CU-ADM-38 |
 | `/sucursales`, `/sucursales/nueva`, `/sucursales/:id`, `/sucursales/carga-masiva` | CU-ADM-11, CU-ADM-12, CU-ADM-13 y CU-ADM-14, CU-ADM-15 |
 | `/series-fiscales`, `/series-fiscales/nueva`, `/series-fiscales/:id` | CU-ADM-17, CU-ADM-18, CU-ADM-19 y CU-ADM-20 |
 | `/empleados`, `/empleados/nueva`, `/empleados/:id` | CU-ADM-21, CU-ADM-22, CU-ADM-23 y CU-ADM-24 |
