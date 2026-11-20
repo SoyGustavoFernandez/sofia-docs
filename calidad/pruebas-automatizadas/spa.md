@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los specs de empleados, roles y cuentas están reconciliados con `37d053d` y `7070e1a` |
-| **Método** | Lectura de código (specs, `karma.conf.js`, `angular.json`, `package.json`, hooks) y de los inventarios `docs/_inventario`. No se ejecutó ninguna prueba ni compilación. `git status --short` sin cambios en ambos repos al 2026-10-15 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Lectura de código (specs, `karma.conf.js`, `angular.json`, `package.json`, hooks) y de los inventarios `docs/_inventario`. No se ejecutó ninguna prueba ni compilación. Ambos repos limpios (`git status --short`) al 2026-11-20; los recuentos se hicieron por script sobre `src/**/*.spec.ts` y el contenido es el del commit `37048ea` |
 
 Este documento describe qué pruebas automatizadas tiene el SPA (`sofia-web-spa`), cómo están hechas y qué queda sin cubrir. Los comandos y las particularidades de Windows para correrlas están en la [guía del desarrollador, sección 4.2](../../desarrollo/guia-del-desarrollador.md#42-spa); aquí solo se resumen (sección 5). Para saber qué hace cada pantalla, consulta los inventarios [`producto/pantallas/acceso-layout-y-compartidos`](../../producto/pantallas/acceso-layout-y-compartidos.md), [`producto/pantallas/administracion`](../../producto/pantallas/administracion.md), [`producto/pantallas/inventario-y-atencion`](../../producto/pantallas/inventario-y-atencion.md) y [`producto/pantallas/punto-de-venta`](../../producto/pantallas/punto-de-venta.md).
 
@@ -30,11 +30,13 @@ Este documento describe qué pruebas automatizadas tiene el SPA (`sofia-web-spa`
 
 | Dato | Valor | Fuente |
 |---|---|---|
-| Archivos `*.spec.ts` en `sofia-web-spa/src` | 75 (coincide con las 75 filas de `docs/_inventario/pruebas-spa.csv`; el README del inventario dice 69, quedó desactualizado) | `pruebas-spa.csv`; recuento en disco |
-| Casos `it(` contados por el inventario | 492 en los 69 specs con casos (503 con los 11 que agregan `sofia-web-spa` `37d053d` y `7070e1a`, contados sobre el diff de esos commits y no con el script del inventario: 1 en Empleados, 3 en Roles y 7 en Cuentas) | suma de la columna `casos_it` de `pruebas-spa.csv` |
-| Specs con 0 `it(` literales | 6, todos `*.delete.spec.ts`: sus casos los registra la función compartida `describeDeleteInUse` (2 casos por spec, 12 en total) | `shared/testing/delete-in-use-testing.ts:34-76` |
+| Archivos `*.spec.ts` en `sofia-web-spa/src` | 83 (el inventario `pruebas-spa.csv` tiene 75 filas, anterior a la gestión de suscripciones de plataforma y a las pantallas de devoluciones: los 8 specs nuevos están en 2.2, 2.3, 2.5 y 2.10; el README del inventario dice 69, quedó desactualizado) | recuento en disco; `pruebas-spa.csv` |
+| Casos `it(` | 584 en los 77 specs con casos (83 menos los 6 `*.delete.spec.ts`). El inventario CSV cuenta 492 en 69 specs; la diferencia son 11 de los commits `37d053d` y `7070e1a` y 81 de suscripciones y devoluciones (63 en los 8 specs nuevos y 18 en 7 specs existentes) | suma de `it(` por script sobre `src/**/*.spec.ts` |
+| Specs con 0 `it(` literales | 6, todos `*.delete.spec.ts`: sus casos los registra la función compartida `describeDeleteInUse` (2 casos por spec, 12 en total) | `shared/testing/delete-in-use-testing.ts:30-76` |
 | Casos desactivados (`xit`, `fit`, `pending`, `xdescribe`) | Ninguno | búsqueda en `src/**/*.spec.ts` |
-| Specs que renderizan el DOM (`nativeElement`, `querySelector`, `debugElement`) | 24 de 75; el resto prueba la clase (señales y métodos), servicios o funciones puras | búsqueda en `src/**/*.spec.ts` |
+| Specs que renderizan el DOM (`nativeElement`, `querySelector`, `debugElement`) | 31 de 83; el resto prueba la clase (señales y métodos), servicios o funciones puras | búsqueda en `src/**/*.spec.ts` |
+
+Versión 1.2 (2026-11-20): recuento sobre `37048ea`: 83 specs y 584 casos. Se agregan los specs de suscripciones de plataforma y de devoluciones (2.2, 2.3, 2.5, 2.10, 3.3), se corrigen las citas de `delete-in-use-testing.ts` y `angular.json`, los recuentos de la sección 1 y la descripción de CI (el SPA sí tiene `.github/workflows/docker-publish.yml`, que no ejecuta pruebas).
 
 Nota sobre el conteo: el número de casos del inventario es el de apariciones de `it(`; los casos generados dentro de un bucle o `forEach` (por ejemplo `blocks ${url} for a user who can read the module but not create in it` en `permission.guard.spec.ts:96`, o los de condición de venta controlada en `nueva-venta.component.spec.ts:400,437`) se ejecutan más de una vez. El total real de casos ejecutados **no se verificó** (no se corrieron las pruebas).
 
@@ -49,7 +51,7 @@ Nota sobre el conteo: el número de casos del inventario es el de apariciones de
 | Informes | `progress` y `kjhtml` (`karma-jasmine-html-reporter`, con `suppressAll`) | `karma.conf.js:19-21,27` |
 | Cobertura | Configurada pero no activada por defecto: `karma-coverage` con informes `html` y `text-summary` en `coverage/sofia-web-spa`; se genera solo si pasas la opción de cobertura del CLI. **No hay umbral mínimo** (no existe `check` en `coverageReporter`). La carpeta `/coverage` está en `.gitignore` | `karma.conf.js:22-26`, `.gitignore` |
 | Compilación de specs | `tsconfig.spec.json` (extiende `tsconfig.json`, tipos `jasmine`, incluye `src/**/*.spec.ts` y `src/**/*.d.ts`) | `tsconfig.spec.json` |
-| Configuración `shared` | `ng test --configuration shared` usa `tsconfig.spec.shared.json` y solo incluye `src/app/core/services/shared/**/*.spec.ts`; hoy esa carpeta contiene un único spec (`error-notifier.service.spec.ts`) | `angular.json:131-136`, `tsconfig.spec.shared.json` |
+| Configuración `shared` | `ng test --configuration shared` usa `tsconfig.spec.shared.json` y solo incluye `src/app/core/services/shared/**/*.spec.ts`; hoy esa carpeta contiene un único spec (`error-notifier.service.spec.ts`) | `angular.json:132-135`, `tsconfig.spec.shared.json` |
 | Recursos servidos en las pruebas | La carpeta `public/` completa (`glob **/*`), de modo que las pruebas pueden hacer `fetch('/i18n/...')` a los JSON reales de traducción | `angular.json:121-126`; usado en `dashboard-i18n.spec.ts:8`, `roles-i18n.spec.ts:8` |
 | Polyfills y estilos | `zone.js` y `zone.js/testing`; `src/styles.scss` | `angular.json:119,127` |
 | Entorno | El target `test` no define `fileReplacements`: se usa `environment.ts` sin sustitución | guía `desarrollo/guia-del-desarrollador` (línea 557), `angular.json:116-137` |
@@ -59,25 +61,25 @@ Nota sobre el conteo: el número de casos del inventario es el de apariciones de
 
 | Archivo | Qué ofrece | Quién lo usa (nº de specs) |
 |---|---|---|
-| `transloco-testing.providers.ts` | `provideTranslocoTesting()`: `TranslocoTestingModule.forRoot` con `langs: {}`, `availableLangs ['es','en']`, `defaultLang 'es'`. No carga JSON: `t()` y el pipe devuelven **la propia clave** | 36 specs lo importan (más 3 que usan `TranslocoTestingModule` directamente) |
+| `transloco-testing.providers.ts` | `provideTranslocoTesting()`: `TranslocoTestingModule.forRoot` con `langs: {}`, `availableLangs ['es','en']`, `defaultLang 'es'`. No carga JSON: `t()` y el pipe devuelven **la propia clave** | 44 specs lo importan (más 3 que usan `TranslocoTestingModule` directamente) |
 | `permissions-testing.providers.ts` | `providePermissions(permisos)`: reemplaza `AuthService` por un stub con `currentUser: () => null` y `hasPermission(modulo, accion='Leer')` que concede exactamente los pares `Modulo:Accion` dados | 11 |
-| `router-url-stub.ts` | `stubRouterUrl(url)`: fija `Router.url` con `spyOnProperty`, para que `*appPermiso` resuelva el módulo de la pantalla | 13 |
-| `activated-route-stub.ts` | `activatedRouteStub(params)`: `ActivatedRoute` mínimo con `snapshot.paramMap` | 9 |
+| `router-url-stub.ts` | `stubRouterUrl(url)`: fija `Router.url` con `spyOnProperty`, para que `*appPermiso` resuelva el módulo de la pantalla | 15 |
+| `activated-route-stub.ts` | `activatedRouteStub(params)`: `ActivatedRoute` mínimo con `snapshot.paramMap` | 11 |
 | `delete-in-use-testing.ts` | `describeDeleteInUse(config)`: registra 2 casos de borrado de un registro en uso (ver 1.5) | 6 (los `*.delete.spec.ts`) |
 
 ### 1.4 Cómo se simulan las dependencias
 
 | Dependencia | Técnica observada | Ejemplo |
 |---|---|---|
-| HTTP | `provideHttpClient()` + `provideHttpClientTesting()` y `HttpTestingController` (`expectOne`, `flush`, `verify`). Lo usan 45 specs. Los servicios se prueban contra la URL real construida con `environment.api.baseurl` | `aseguradora.service.spec.ts`, `venta-detail.component.spec.ts:17,62` |
-| Servicios de la aplicación | `jasmine.createSpyObj<Servicio>` (9 specs); los componentes con mucha lógica sustituyen el servicio completo | `nueva-venta.component.spec.ts:60-77` (`VentaService`, `MedicamentoService`, `ErrorNotifierService`) |
+| HTTP | `provideHttpClient()` + `provideHttpClientTesting()` y `HttpTestingController` (`expectOne`, `flush`, `verify`). Lo usan 51 specs. Los servicios se prueban contra la URL real construida con `environment.api.baseurl` | `aseguradora.service.spec.ts`, `venta-detail.component.spec.ts:17,62` |
+| Servicios de la aplicación | `jasmine.createSpyObj<Servicio>` (16 specs); los componentes con mucha lógica sustituyen el servicio completo | `nueva-venta.component.spec.ts:60-77` (`VentaService`, `MedicamentoService`, `ErrorNotifierService`) |
 | Autenticación y permisos | `providePermissions([...])` o un objeto literal `{ hasPermission, userId, ... }` como `AuthService`. `AuthService` real solo se prueba en su propio spec | `permiso.directive.spec.ts`, `nueva-venta.component.spec.ts:87-96` |
-| Router | `provideRouter([])` (33 specs) con `spyOn(router, 'navigate')`; no se usa `RouterTestingHarness` (0 specs) | `auth.service.spec.ts:31-32` |
-| Diálogos | `spyOn(MatDialog, 'open')` devolviendo `{ afterClosed: () => of(valor) }`; en `nueva-venta` se inyecta un `MatDialog` falso por `TestBed.overrideComponent(..., { add: { providers } })` | `delete-in-use-testing.ts:60`, `nueva-venta.component.spec.ts:72-73,103` |
-| Notificaciones | `ErrorNotifierService` falso con `showError`/`showSuccess` espiados, y se comprueba la **clave i18n** enviada (no el texto) | `delete-in-use-testing.ts:44,66-71` |
+| Router | `provideRouter([])` (36 specs) con `spyOn(router, 'navigate')`; no se usa `RouterTestingHarness` (0 specs) | `auth.service.spec.ts:31-32` |
+| Diálogos | `spyOn(MatDialog, 'open')` devolviendo `{ afterClosed: () => of(valor) }`; en `nueva-venta` se inyecta un `MatDialog` falso por `TestBed.overrideComponent(..., { add: { providers } })` | `delete-in-use-testing.ts:56`, `nueva-venta.component.spec.ts:72-73,103` |
+| Notificaciones | `ErrorNotifierService` falso con `showError`/`showSuccess` espiados, y se comprueba la **clave i18n** enviada (no el texto) | `delete-in-use-testing.ts:44,67,73` |
 | Almacenamiento del navegador | `localStorage` real, limpiado en `afterEach` (`clearUserStorage()`, `localStorage.removeItem`) | `auth.service.spec.ts:35-41`, `nueva-venta.component.spec.ts:108` |
 | Tiempo | `fakeAsync` + `tick` (2 specs: `nueva-venta`, `precio-proveedor-dialog`); `jasmine.clock` no se usa | `nueva-venta.component.spec.ts:111-121` |
-| Animaciones | `provideNoopAnimations()` (35 specs) | — |
+| Animaciones | `provideNoopAnimations()` (42 specs) | — |
 | Impresión | `ReceiptPrintService` se prueba contra un `iframe` real oculto y se verifica que se elimine | `receipt-print.service.spec.ts` |
 | Traducciones reales | `fetch('/i18n/<scope>/<lang>.json')` contra el servidor de Karma, para comparar claves es/en | `dashboard-i18n.spec.ts`, `roles-i18n.spec.ts`, `venta-detail.component.spec.ts:170` |
 | Rutas reales | Se importa `appRoutes` o los `*_ROUTES` y se inspeccionan (sin navegar) | `route-permissions.spec.ts:1`, `menu-preview.spec.ts:5`, `recetas-medicas.routes.spec.ts` |
@@ -86,9 +88,9 @@ Nota sobre el conteo: el número de casos del inventario es el de apariciones de
 
 - **Ubicación:** el spec vive junto al archivo que prueba (`x.component.ts` + `x.component.spec.ts`; `x.service.ts` + `x.service.spec.ts`). Fuente: estructura de `src/app`.
 - **Títulos:** en inglés, en tercera persona y describiendo el comportamiento («hides Devolver without the ProcesarDevolucion permission»). Los `describe` de componentes suelen llevar el tema tras un guion largo: `'<Componente> — /nueva (create mode)'`, `'<Componente> — /:id (view mode)'`, `'<Componente> — action buttons'`, `'<Componente> — delete permission'`. Esto reparte un mismo componente en varios `describe` por modo o por tema.
-- **Specs separados por comportamiento:** `*.delete.spec.ts` para el borrado de un registro en uso (ingredientes activos, medicamentos, pacientes, profesionales de salud, proveedores, sucursales). Cada uno es solo una llamada a `describeDeleteInUse({ component, apiPath, route, scope, record, answerExtraRequests? })`, que verifica: **409** → `showError('<scope>.detail.delete-in-use')`; **otro fallo (500)** → `showError('<scope>.detail.delete-error')`. Lo que prueba cada spec es, por tanto, idéntico; solo cambian el componente y el registro de ejemplo (`delete-in-use-testing.ts:34-76`).
+- **Specs separados por comportamiento:** `*.delete.spec.ts` para el borrado de un registro en uso (ingredientes activos, medicamentos, pacientes, profesionales de salud, proveedores, sucursales). Cada uno es solo una llamada a `describeDeleteInUse({ component, apiPath, route, scope, record, answerExtraRequests? })`, que verifica: **409** → `showError('<scope>.detail.delete-in-use')`; **otro fallo (500)** → `showError('<scope>.detail.delete-error')`. Lo que prueba cada spec es, por tanto, idéntico; solo cambian el componente y el registro de ejemplo (`delete-in-use-testing.ts:30-76`).
 - **Specs de contratos entre archivos:** `*-i18n.spec.ts` (paridad es/en y cobertura de claves), `*-links.spec.ts` (enlaces del dashboard), `recetas-medicas.routes.spec.ts` (rutas), `route-permissions.spec.ts` (tabla de permisos por ruta). Son pruebas «de consistencia» que fallan si alguien añade una pantalla, ruta o módulo sin completar el resto.
-- **Qué se ejercita en componentes:** la mayoría llama a métodos y lee señales de la clase (`component.save()`, `component.puedeDevolver()`); el DOM se consulta solo en 24 specs (sobre todo `nueva-venta`, `dashboard`, `cuentas-detail`, `proveedores-detail`, `roles-detail`, `venta-detail`).
+- **Qué se ejercita en componentes:** la mayoría llama a métodos y lee señales de la clase (`component.save()`, `component.puedeDevolver()`); el DOM se consulta solo en 31 specs (sobre todo `nueva-venta`, `dashboard`, `cuentas-detail`, `proveedores-detail`, `roles-detail`, `venta-detail`).
 - **Qué no existe:** pruebas de extremo a extremo (no hay Cypress, Playwright ni Protractor en `package.json`), pruebas de accesibilidad automatizadas, pruebas visuales (no hay `toMatchSnapshot` ni capturas), arneses de componentes de Material (`HarnessLoader` 0 usos) ni umbrales de cobertura.
 
 ---
@@ -107,11 +109,12 @@ Los casos se agrupan por tema; el número entre paréntesis en cada spec es el d
 
 | Spec | Bajo prueba | Casos | Qué verifica |
 |---|---|---|---|
-| `core/auth/auth.service.spec.ts` | `AuthService` (servicio real con `HttpTestingController`; el `Router.navigate` se espía) | 30 | **Estado del token:** arranca sin sesión; carga un token preexistente de `localStorage`; un `exp` vencido cuenta como no autenticado; sin `exp` cuenta como autenticado; un token mal formado da payload nulo sin lanzar. **Claims:** `empresaId`, `sucursalId`, `userId` (claim `sub`), `requiresPasswordChange()` según el claim `pwd_change`. **Login/logout:** `login()` guarda el token y actualiza la señal; `logout()` limpia la sesión local, llama al servidor «mejor esfuerzo» y navega a login, incluso si el servidor falla; con token vencido envía igualmente la cookie de refresco y navega solo cuando el servidor responde; `clearLocalSession()` quita el token sin llamar al servidor ni navegar. **Renovación:** `refreshAccessToken()` unifica llamadas concurrentes en una sola petición y permite otra cuando la anterior terminó; `refreshAccessToken()` y `logout()` envían la cabecera anti-CSRF. **Permisos:** `loadPermissions()` consulta `/auth/me` una vez y reutiliza el resultado; `hasPermission()` compara módulo y acción sin distinguir mayúsculas y usa `Leer` por defecto; el rol `Admin` pasa por todos los módulos; todo se deniega hasta cargar permisos; `clearLocalSession()` olvida los permisos; `storeToken()` de otro usuario descarta los permisos del anterior; `loadPermissions()` descarta una respuesta que llega tras cerrar sesión. **Datos locales por usuario:** `login()` borra los borradores del POS de otros usuarios y conserva los del propio; `logout()` borra borradores y cachés pero conserva preferencias del dispositivo; `clearLocalSession()` conserva el borrador del POS (el cajero con sesión vencida puede retomar la venta) y vacía los filtros de búsqueda en memoria. **Contraseña:** `changePassword()` envía ambas contraseñas con la cookie de refresco; `forgotPassword()` envía solo el usuario, sin cookies ni cabecera CSRF; `resetPassword()` envía usuario, token y nueva contraseña sin cookies |
+| `core/auth/auth.service.spec.ts` | `AuthService` (servicio real con `HttpTestingController`; el `Router.navigate` se espía) | 32 | **Estado del token:** arranca sin sesión; carga un token preexistente de `localStorage`; un `exp` vencido cuenta como no autenticado; sin `exp` cuenta como autenticado; un token mal formado da payload nulo sin lanzar. **Claims:** `empresaId`, `sucursalId`, `userId` (claim `sub`), `requiresPasswordChange()` según el claim `pwd_change`. **Login/logout:** `login()` guarda el token y actualiza la señal; `logout()` limpia la sesión local, llama al servidor «mejor esfuerzo» y navega a login, incluso si el servidor falla; con token vencido envía igualmente la cookie de refresco y navega solo cuando el servidor responde; `clearLocalSession()` quita el token sin llamar al servidor ni navegar. **Renovación:** `refreshAccessToken()` unifica llamadas concurrentes en una sola petición y permite otra cuando la anterior terminó; `refreshAccessToken()` y `logout()` envían la cabecera anti-CSRF. **Permisos:** `loadPermissions()` consulta `/auth/me` una vez y reutiliza el resultado; `hasPermission()` compara módulo y acción sin distinguir mayúsculas y usa `Leer` por defecto; el rol `Admin` pasa por todos los módulos; todo se deniega hasta cargar permisos; `clearLocalSession()` olvida los permisos; `storeToken()` de otro usuario descarta los permisos del anterior; `loadPermissions()` descarta una respuesta que llega tras cerrar sesión; `hasPermission()` concede al operador de plataforma la lectura de empresas sin ningún rol y nada más, y a un usuario de empresa sin roles no le da acceso a empresas. **Datos locales por usuario:** `login()` borra los borradores del POS de otros usuarios y conserva los del propio; `logout()` borra borradores y cachés pero conserva preferencias del dispositivo; `clearLocalSession()` conserva el borrador del POS (el cajero con sesión vencida puede retomar la venta) y vacía los filtros de búsqueda en memoria. **Contraseña:** `changePassword()` envía ambas contraseñas con la cookie de refresco; `forgotPassword()` envía solo el usuario, sin cookies ni cabecera CSRF; `resetPassword()` envía usuario, token y nueva contraseña sin cookies |
 | `core/auth/auth.guard.spec.ts` | `authGuard` | 3 | Deja pasar de inmediato con token local válido; con token vencido intenta un refresco silencioso y deja pasar si funciona; si el refresco falla, limpia la sesión y redirige a `/auth/login` |
 | `core/auth/password-change.guard.spec.ts` | `passwordChangeGuard` | 3 | Sin cambio pendiente deja pasar cualquier ruta; con cambio pendiente redirige las demás rutas a la pantalla de cambio de contraseña; la deja pasar a ella |
 | `core/auth/permission.guard.spec.ts` | `permissionGuard` | 12 | Rutas sin módulo mapeado (dashboard) pasan sin cargar permisos; una ruta anidada pasa si el usuario puede leer el módulo; sin permiso redirige al dashboard con un aviso; el escáner de recetas exige `Analizar` además de leer (bloquea con solo lectura, abre con lectura y análisis) y las demás rutas de recetas solo exigen lectura; las rutas de creación (`nueva`, `carga-masiva`) exigen `Crear` (caso generado por URL) y se abren con lectura y creación; búsqueda y detalle solo piden lectura; `sesiones-caja/nueva` pide `AperturarCaja`, no `Crear`; `stock-por-sucursal/nueva` pide `Inventarios:Actualizar`, no `Crear`; si no se pueden cargar los permisos, falla cerrado e informa al usuario |
-| `core/auth/route-permissions.spec.ts` | `ROUTE_PERMISSIONS`, `ROUTE_ACTIONS`, `routeModule`, `routeAction`, `grantsPermission` (puras) | 11 | Toda ruta hija del shell salvo `dashboard` y `cambiar-clave` está mapeada (una pantalla nueva sin mapeo hace fallar la prueba); `routeModule()` usa el primer segmento e ignora ids, `?query` y parámetros matriciales (`/roles;x=1`); `routeAction()` pide `Analizar` en el escáner, `Crear` en `nueva`/`nuevo`/`carga-masiva` de toda ruta mapeada (con o sin decoración), la acción real donde no es `Crear` (`AperturarCaja`, `Actualizar`) y nada en el resto; las rutas con acción pertenecen a un módulo mapeado; `grantsPermission()` exige la acción exacta, usa `Leer` por defecto, ignora mayúsculas y espacios, y deja pasar al rol `Admin` |
+| `core/auth/platform-admin.guard.spec.ts` | `platformAdminGuard` | 2 | Deja entrar al operador de plataforma; a cualquier otro usuario lo envía al dashboard con un aviso |
+| `core/auth/route-permissions.spec.ts` | `ROUTE_PERMISSIONS`, `ROUTE_ACTIONS`, `PLATFORM_ROUTES`, `routeModule`, `routeAction`, `isPlatformRoute`, `grantsPermission` (puras) | 13 | Toda ruta hija del shell salvo `dashboard` y `cambiar-clave` está mapeada o es una ruta de plataforma (una pantalla nueva sin mapeo hace fallar la prueba); toda ruta de plataforma lleva `platformAdminGuard` porque no tiene módulo de permiso; `isPlatformRoute()` reconoce `/configuracion-pago` (también con parámetros matriciales y query) y no `/empresas` ni `/dashboard`; `routeModule()` usa el primer segmento e ignora ids, `?query` y parámetros matriciales (`/roles;x=1`); `routeAction()` pide `Analizar` en el escáner, `Crear` en `nueva`/`nuevo`/`carga-masiva` de toda ruta mapeada (con o sin decoración), la acción real donde no es `Crear` (`AperturarCaja`, `Actualizar`) y nada en el resto; las rutas con acción pertenecen a un módulo mapeado; `grantsPermission()` exige la acción exacta, usa `Leer` por defecto, ignora mayúsculas y espacios, y deja pasar al rol `Admin` |
 | `core/auth/user-storage.spec.ts` | `userStorageKey`, `clearUserStorage`, `clearOtherUsersStorage` | 3 | La clave se separa por id de usuario y cae a «anonymous»; `clearUserStorage()` borra claves por usuario, por venta y heredadas sin usuario; `clearOtherUsersStorage()` conserva las del usuario dado y borra las de otros y las heredadas |
 | `core/interceptors/auth.interceptor.spec.ts` | `authInterceptor`, `isApiRequest` | 14 | Añade `Authorization: Bearer` cuando hay token y no la añade sin token; **401** en endpoint normal: refresca y reintenta; si el refresco falla, cierra sesión y propaga el error; errores no 401 se propagan sin tocar la sesión; **403** que exige cambio de contraseña: lleva a la pantalla de cambio y propaga el error, otros 403 no se redirigen; 401 de `/auth/login` se propaga sin limpiar la sesión; 401 de `/auth/refresh` limpia la sesión local en silencio y sin reintentar; nunca envía el token a recursos estáticos (traducciones) ni a otros orígenes; no intenta refrescar ante 401 de peticiones que no son de la API; `isApiRequest` acepta rutas de la API con URL base vacía y solo el origen configurado con URL base absoluta |
 | `core/services/shared/error-notifier.service.spec.ts` | `ErrorNotifierService` | 7 | `showError()` y `showSuccess()` traducen la etiqueta de cierre (no «Cerrar» fijo); `showSmartErrors()` une los mensajes del backend, cae al mensaje traducido de error desconocido, o a un `fallback` explícito si se da; `showServerError()` abre el snackbar enriquecido si hay `traceId` y, si no, un error simple traducido |
@@ -124,6 +127,7 @@ Los casos se agrupan por tema; el número entre paréntesis en cada spec es el d
 |---|---|---|---|
 | `shared/components/carga-masiva-page/carga-masiva-page.component.spec.ts` | `CargaMasivaPageComponent` (usado por todas las cargas masivas) | 6 | `downloadTemplate()` descarga la plantilla por `HttpClient` como blob y nunca abre una ventana; muestra error si la descarga falla; rechaza en el cliente un archivo que no es `.xlsx` y uno que supera el límite de tamaño, sin llamar a la API; traduce el código de rechazo de la vista previa; `cargaMasivaErrorKey()` mapea errores de tamaño, archivo y validador de fila e ignora los desconocidos |
 | `shared/components/datepicker-internationalization/mat-datepicker-intl.component.spec.ts` | `MatDatepickerIntlTransloco` | 2 | Usa las etiquetas del idioma por defecto; cambia de etiquetas y notifica al cambiar de idioma |
+| `shared/components/pago-suscripcion/pago-suscripcion.component.spec.ts` | `PagoSuscripcionComponent`, `formatoNumero`, `whatsappUrl` | 7 | Muestra el QR, el número de la billetera agrupado de tres en tres, las instrucciones y el enlace de WhatsApp; identifica al pagador por usuario cuando no se conoce la empresa (como en el login); muestra solo lo configurado; pide contactar a soporte mientras no haya nada configurado; ofrece reintentar si no se pueden cargar los datos; `formatoNumero` agrupa los dígitos de tres en tres; `whatsappUrl` codifica el mensaje para que sobrevivan tildes y espacios |
 | `shared/date/sofia-date-adapter.spec.ts` | `SofiaDateAdapter` | 11 | Lee `d/M/yyyy` en español y `M/d/yyyy` en inglés; rechaza mes-primero en español y día-primero en inglés; lee ISO `yyyy-MM-dd` como día local en cualquier idioma; es estricto con fechas imposibles o mal formadas; devuelve `null` con entrada vacía; deserializa fecha sin hora como día local; da formato según el idioma activo y es reversible en ambos; sigue el idioma activo de Transloco; asigna idioma de la app a configuración regional de fechas |
 | `shared/directives/permiso.directive.spec.ts` | `PermisoDirective` (`*appPermiso`) | 10 | Una acción sola toma el módulo de la ruta actual; oculta la acción si el usuario la tiene en un módulo distinto al de la ruta; `Modulo:Accion` explícito se comprueba contra ese módulo sin importar la ruta; con solo lectura oculta toda acción; dibuja la plantilla una sola vez dentro de `ng-container` en un `@if`; `Admin` ve todo; falla cerrado en una ruta sin módulo mapeado incluso para `Admin`; permanece oculta hasta que carga el perfil y aparece al cargar; se oculta de nuevo al terminar la sesión; sigue los permisos del nuevo usuario tras un cambio de usuario |
 | `shared/utils/date-only.util.spec.ts` | `toDateOnly`, `fromDateOnly`, `toLocalMidnightIso`, `toLocalDayStartIso`, `toLocalDayEndIso`, `buildLocalDate` | 10 | Serialización de fechas como día local aunque sea tarde en el día; `undefined`/`null` con entradas vacías o inválidas; conserva el día escrito de un valor con hora y desfase; ida y vuelta sin cambio; medianoche local con el desfase explícito de ese día; inicio y fin del día local como instantes; `buildLocalDate` rechaza componentes desbordados |
@@ -145,15 +149,19 @@ Pantallas descritas en [`producto/pantallas/acceso-layout-y-compartidos`](../../
 
 | Spec | Bajo prueba | Casos | Qué verifica |
 |---|---|---|---|
-| `pages/auth/login/login.component.spec.ts` | `LoginComponent`, `loginErrorKey` | 7 | No llama a la API con el formulario incompleto; 401 culpa a las credenciales; si la API no responde o falla con error de servidor, informa servicio no disponible (no culpa a las credenciales); conserva el mensaje específico de un rechazo que la API explica; 429 muestra el mensaje de límite de intentos; `loginErrorKey` trata como servicio no disponible un fallo que no es respuesta HTTP (tiempo agotado, error de script) |
+| `pages/auth/login/login.component.spec.ts` | `LoginComponent`, `loginErrorKey` | 9 | No llama a la API con el formulario incompleto; 401 culpa a las credenciales; si la API no responde o falla con error de servidor, informa servicio no disponible (no culpa a las credenciales); conserva el mensaje específico de un rechazo que la API explica; 429 muestra el mensaje de límite de intentos; `loginErrorKey` trata como servicio no disponible un fallo que no es respuesta HTTP (tiempo agotado, error de script); si la empresa no tiene la suscripción vigente muestra cómo pagar, identificando al pagador por usuario, y oculta los datos de pago ante cualquier otro rechazo y en un nuevo intento |
 | `pages/auth/forgot-password/forgot-password.component.spec.ts` | `ForgotPasswordComponent` | 4 | No llama sin usuario; envía el usuario recortado y muestra la confirmación genérica; 429 muestra el mensaje de límite y conserva el formulario; otro fallo muestra un error genérico |
 | `pages/auth/reset-password/reset-password.component.spec.ts` | `ResetPasswordComponent` | 5 | Lee token y usuario del fragmento de la URL y los quita de la barra de direcciones; un enlace sin token o usuario es inválido y oculta el formulario; aplica las reglas de cambio de contraseña (largo mínimo y confirmación); envía usuario, token y nueva contraseña, descarta cualquier sesión local y va a login; muestra el mensaje de enlace vencido si la API rechaza el token |
 | `pages/cambiar-clave/cambiar-clave.component.spec.ts` | `CambiarClaveComponent` | 5 | No llama con el formulario inválido; rechaza clave nueva más corta que el mínimo; rechaza clave igual a la actual y confirmación distinta; envía el cambio, descarta la sesión local y va a login; si la clave actual es incorrecta deja al usuario en la pantalla |
-| `pages/dashboard/dashboard.component.spec.ts` | `DashboardComponent` | 15 | Pide solo las secciones que el cajero puede leer, enviando el inicio del día local; sin ningún módulo legible no hace peticiones y muestra solo el encabezado; la tarjeta de cuarentena se pide y muestra solo con `DIGEMID:Leer`; en la vista multisucursal muestra la tabla por sucursal con el título de empresa y oculta los enlaces de la propia sucursal; el título cambia cuando el alcance no es toda la empresa; en vista de una sucursal oculta la tabla y ofrece los enlaces de ventas; siete barras relativas al mejor día con hoy resaltado; nunca pinta `NaN` si toda la tendencia es cero; porcentaje contra ayer solo si ayer vendió; una sección que falla no afecta a las otras y se reintenta sola; refrescar recarga todas las legibles; lista sesiones abiertas solo si el alcance incluye más que las propias; ofrece abrir caja solo con `POS:AperturarCaja`; al pulsar un enlace de ventas abre la lista ya filtrada |
-| `pages/dashboard/dashboard-links.spec.ts` | `dashboard-links.ts` | 6 | Enlaces del dashboard a otras búsquedas: ventas de hoy solo cobradas; mis ventas de hoy filtradas por mi empleado; todas las ventas en espera sin importar el día; sesiones de caja abiertas; lotes con stock cuyo vencimiento es anterior a hoy; lotes por vencer en cada tramo disjunto con ambos días incluidos |
+| `pages/dashboard/dashboard.component.spec.ts` | `DashboardComponent` | 21 | Pide solo las secciones que el cajero puede leer, enviando el inicio del día local; sin ningún módulo legible no hace peticiones y muestra solo el encabezado; la tarjeta de cuarentena se pide y muestra solo con `DIGEMID:Leer`; en la vista multisucursal muestra la tabla por sucursal con el título de empresa y oculta los enlaces de la propia sucursal; el título cambia cuando el alcance no es toda la empresa; en vista de una sucursal oculta la tabla y ofrece los enlaces de ventas; siete barras relativas al mejor día con hoy resaltado; nunca pinta `NaN` si toda la tendencia es cero; porcentaje contra ayer solo si ayer vendió; una sección que falla no afecta a las otras y se reintenta sola; refrescar recarga todas las legibles; lista sesiones abiertas solo si el alcance incluye más que las propias; ofrece abrir caja solo con `POS:AperturarCaja`; al pulsar un enlace de ventas abre la lista ya filtrada. **Operador de plataforma (6):** pide las cifras de suscripciones desde el inicio del mes local aunque no tenga permisos de farmacia; lista las empresas por vencer con enlace a cada una y los días restantes; avisa cuando no hay ninguna por vencer y cuando la lista es solo una parte del total; abre la búsqueda de empresas filtrada por estado desde la tarjeta de suspendidas y sin filtro desde el enlace de la lista; ofrece reintentar si las cifras fallan; nunca las pide si el usuario no es operador |
+| `pages/dashboard/dashboard-links.spec.ts` | `dashboard-links.ts` | 10 | Enlaces del dashboard a otras búsquedas: ventas de hoy solo cobradas; mis ventas de hoy filtradas por mi empleado; todas las ventas en espera sin importar el día; sesiones de caja abiertas; lotes con stock cuyo vencimiento es anterior a hoy; lotes por vencer en cada tramo disjunto con ambos días incluidos; abre la búsqueda de empresas filtrada por estado, o sin filtro, sin rango de vencimiento; `inicioDelMes` devuelve la primera medianoche local del mes; `diasHasta` cuenta un día empezado como completo y nunca baja de 1 aunque la fecha ya pasó |
 | `pages/dashboard/dashboard-i18n.spec.ts` | `public/i18n/dashboard/{es,en}.json` | 2 | Mismas claves en español e inglés; todo método de pago de `MetodoPago` tiene etiqueta en ambos idiomas |
 | `pages/dashboard/services/dashboard.service.spec.ts` | `DashboardService` | 4 | `ventas()`, `inventario()` y `devoluciones()` envían `hoy` (inicio del día local); `caja()` y `cuarentena()` no necesitan día |
+| `pages/dashboard/suscripcion-aviso/suscripcion-aviso.component.spec.ts` | `SuscripcionAvisoComponent`, `avisoVencimiento` | 10 | Avisa cuando la suscripción vence dentro de la ventana de aviso; usa el texto de prueba gratuita mientras la empresa está en prueba; queda oculto si el vencimiento está lejos; no pide la empresa si el usuario no puede leerla; queda oculto si fallan los permisos o la carga de la empresa; abre los datos de pago nombrando la empresa; `avisoVencimiento` cuenta los días empezados (pocas horas restantes leen 1 día), incluye el último día de la ventana y excluye el siguiente, no devuelve nada para una empresa que no está activa y distingue prueba de suscripción pagada |
 | `pages/empresa/empresa-register/empresa-register.component.spec.ts` | `EmpresaRegisterComponent` (`/auth/register`) | 8 | Exige RUC, nombres y correo del administrador pero no el apellido materno; rechaza correo inválido y RUC que no tiene 11 dígitos; envía los datos recortados con apellido materno `null` si queda vacío; es inválido sin la dirección de la sede principal y válido al completarla; rechaza dirección mayor a 255 caracteres; mensaje específico si el backend rechaza la dirección; mensaje específico si el RUC ya está registrado; error genérico ante fallos desconocidos |
+| `pages/empresa/empresa-detail/empresa-detail.component.spec.ts` | `EmpresaDetailComponent` | 11 | A un usuario de empresa le muestra solo la acción de editar sobre su propia empresa; el estado se traduce en la plantilla aun con carga directa por URL; al operador de plataforma le muestra todas las acciones de suscripción sobre otra empresa pero no editar; nunca le ofrece bloquear su propia empresa; ofrece extender la prueba solo mientras la empresa está en prueba y oculta el estado que ya tiene; activa hasta la fecha elegida en el diálogo y recarga; extiende la prueba hasta la fecha elegida; no llama a nada si se cancela el diálogo de fecha; suspende y cancela solo tras confirmar; explica un rechazo que la API nombra y recurre a un mensaje genérico en otro caso |
+| `pages/empresa/dialogs/suscripcion-fecha-dialog/suscripcion-fecha-dialog.component.spec.ts` | `SuscripcionFechaDialogComponent`, `fechaBase`, `sumarMeses`, `finDelDiaIso` | 10 | Propone un mes desde hoy si la empresa ya venció; propone un mes después del vencimiento actual si aún está en el futuro, para que una renovación anticipada no pierda días; un atajo parte del mismo día base y cierra con el fin del día elegido; no cierra sin fecha; cierra sin nada al cancelar; `fechaBase` empieza hoy si el vencimiento ya pasó y en el día del vencimiento si está por delante; `sumarMeses` conserva el día del mes y cae en el último día de un mes más corto; `finDelDiaIso` devuelve el último segundo de ese día local |
+| `pages/plataforma/configuracion-pago/configuracion-pago.component.spec.ts` | `ConfiguracionPagoComponent` (`/configuracion-pago`) | 8 | Abre en solo lectura con los valores publicados y el QR; indica que aún no hay QR en una instalación nueva; no guarda mientras falte el número de WhatsApp o esté mal formado; envía los campos y la imagen elegida como multipart y recarga en solo lectura; conserva el QR publicado si no se elige imagen y vacía los campos opcionales dejados en blanco; rechaza archivos que no son PNG o JPG o que pesan más que el límite sin tocar la vista previa; descarta la imagen y las ediciones al cancelar; explica una imagen que la API rechaza y se queda en edición |
 
 ---
 
@@ -168,7 +176,7 @@ Pantallas descritas en [`producto/pantallas/administracion`](../../producto/pant
 | `pages/empleados/services/empleado.service.spec.ts` | `EmpleadoService` | 3 | `search()` envía todos los filtros dados; `getById/create/update/delete` golpean los endpoints esperados; `exportar()` pide un blob con los filtros |
 | `pages/roles/roles-search/roles-search.component.spec.ts` | `RolesSearchComponent` | 2 | Crea con resultados ocultos y sin HTTP hasta `search()`; `search()` envía los límites de `nivelJerarquia` solo si difieren de los valores por defecto del deslizador |
 | `pages/roles/roles-detail/roles-detail.component.spec.ts` | `RolesDetailComponent` | 19 (desde `37d053d`: mensaje propio si el nombre del rol ya existe, mensaje genérico si el código no tiene uno propio y mensaje propio si el rol aún tiene cuentas vinculadas) | **Nueva:** abre en edición sin cargar datos. **Vista:** carga el rol, sus permisos y sus sucursales en paralelo. **Etiquetas de permisos:** traduce módulo y acción y recurre al nombre crudo si la API añade uno nuevo; ordena por la etiqueta que lee el usuario; dibuja etiquetas traducidas (nunca una clave); activa/desactiva por los nombres crudos del backend. **Gestión:** oculta Editar a quien solo lee; ofrece Editar con `Seguridad:Actualizar` y Eliminar solo con `Seguridad:Eliminar`; permisos y sucursales quedan de solo lectura al editar sin `Seguridad:GestionarPermisos` y se habilitan con él; `save()` actualiza solo los datos del rol sin ese permiso y envía además sucursales y cambios de permisos con él. **Vista previa del menú:** marca visible una pantalla solo si el rol puede leer su módulo, como el menú lateral; se actualiza al alternar permisos antes de guardar; el rol `Admin` ve todo; usa los mismos nombres traducidos de grupos y pantallas que el menú |
-| `pages/roles/models/menu-preview.spec.ts` | `buildMenuPreview` + `navItems`, `appRoutes`, `ROUTE_PERMISSIONS` | 5 | Conserva todas las pantallas de todos los grupos y marca las que el rol no puede abrir; sobre el menú real: todas las rutas listadas existen en las rutas del shell; todas (salvo `/dashboard`) tienen módulo de permiso; grupos y pantallas llevan las claves `breadcrumbs.*` y `nav.*` que usa el menú; lo visible en la vista previa coincide exactamente con lo que lista el menú para los mismos permisos |
+| `pages/roles/models/menu-preview.spec.ts` | `buildMenuPreview` + `navItems`, `appRoutes`, `ROUTE_PERMISSIONS` | 6 | Conserva todas las pantallas de todos los grupos y marca las que el rol no puede abrir; sobre el menú real: todas las rutas listadas existen en las rutas del shell; todas (salvo `/dashboard`) tienen módulo de permiso; grupos y pantallas llevan las claves `breadcrumbs.*` y `nav.*` que usa el menú; lo visible en la vista previa coincide exactamente con lo que lista el menú para los mismos permisos; la vista previa deja fuera las pantallas de plataforma (`/configuracion-pago`), que el menú lista pero ningún rol de empresa puede conceder |
 | `pages/roles/roles-i18n.spec.ts` | `public/i18n/roles/{es,en}.json` | 2 | Todo módulo detrás de una pantalla tiene etiqueta en ambos idiomas; módulos y acciones iguales en español e inglés |
 | `pages/roles/services/rol.service.spec.ts` | `RolService` | 6 | Filtros de `nivelJerarquia` solo si no son nulos; `getById/create/update/delete`; `exportar()`; catálogo de permisos; `getPermisos/assignPermiso/revokePermiso`; `getSucursales/setSucursales` |
 | `pages/seguridad/cuentas-detail/cuentas-detail.component.spec.ts` | `CuentasDetailComponent` | 25 (desde `37d053d`: mensaje propio si el empleado ya tiene cuenta, mensaje propio si el usuario ya existe y genérico para otros códigos; desde `7070e1a`: carga encendido y bloqueado si la cuenta ya requiere el cambio de clave, apagado y editable si no, conserva el bloqueo tras cancelar la edición y no envía la marca al guardar) | **Roles:** vista sin error y texto de «sin rol» si la cuenta no tiene; muestra el nombre del rol; el autocompletado de rol recibe texto inicial vacío si no hay rol; `save()` sin rol actual solo asigna el nuevo, con rol distinto quita el actual y asigna el nuevo, con el mismo rol no hace nada. **Botones:** oculta Editar a quien solo lee; Editar con `Seguridad:Actualizar` y Eliminar solo con `Seguridad:Eliminar`; el rol queda de solo lectura al editar sin `Seguridad:AsignarRoles` y se ofrece el selector con él. **Bloqueo:** «No» si no está bloqueada o el bloqueo venció, «Sí» mientras rige. **Sucursales:** lista las asignadas; asigna la elegida y recarga la cuenta; ignora una selección vaciada; quita una sucursal y recarga; excluye del autocompletado las ya asignadas |
@@ -232,10 +240,20 @@ Pantallas descritas en [`producto/pantallas/punto-de-venta`](../../producto/pant
 | `pages/pos/services/receipt-print.service.spec.ts` | `ReceiptPrintService` | 4 | Imprime una copia del comprobante sola en un `iframe` oculto; página de rollo de 80 mm sin márgenes; conserva todas las líneas de un ticket largo y la página crece con él; quita el `iframe` tras imprimir y nunca apila marcos |
 | `pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.spec.ts` | `ComprobanteDialogComponent` | 11 | Imprime razón social y datos legales del emisor y el documento del cliente; muestra el estado por su clave i18n; sin documento para el cliente anónimo; ofrece nueva venta solo con permiso de crear ventas; envía solo el elemento del comprobante a la impresora aislada; vuelto impreso tras los pagos solo si lo hay; líneas impresas: por presentación (cantidad, precio y total), suelta en unidades, dos filas para dos líneas del mismo lote, con descripción de presentación pero sin cantidad de presentación en unidades |
 | `pages/pos/dialogs/devolver-venta-dialog/devolver-venta-dialog.component.spec.ts` | `DevolverVentaDialogComponent` | 6 | Lista solo las líneas con unidades por devolver y limita cada cantidad a lo devolvible; motivo `06` si se devuelve todo lo restante y `07` si no; calcula el reembolso estimado; envía solo líneas con cantidad, con enums numéricos, y cierra al terminar; no envía sin cantidades o sin justificación; mapea el código de cantidad excedida del backend a su mensaje y deja el diálogo abierto |
-| `pages/pos/venta-detail/venta-detail.component.spec.ts` | `VentaDetailComponent` (`/pos/:id`) | 20 | **Devoluciones (6):** ofrece Devolver en venta completada, con comprobante emitido y unidades por devolver y permiso de procesar devoluciones; lo oculta sin `ProcesarDevolucion`, si no está Completada, si no hay comprobante emitido o si todo se devolvió; oculta Anular cuando ya tiene devoluciones y lista sus notas de crédito. **Cobro de venta pendiente (3):** ofrece Cobrar en pendiente con `Ventas:Crear` y `Ventas:Actualizar`; lo oculta sin alguno; nunca en una venta no pendiente. **Verificación de receta (2):** muestra quién verificó y cuándo; nada si no hizo falta. **Errores al anular (3):** explica que anular una venta cobrada exige la propia caja abierta; mensaje genérico ante un código sin mapeo; el mensaje existe en español e inglés (lee los JSON reales). **Comprobante (2):** permite reimprimir el de una venta completada y no el de una anulada. **Vuelto y reimpresión (4):** vuelto bajo los pagos cuando el efectivo excedió el total y ninguno en pago exacto; los datos de reimpresión son idénticos a los de la impresión original; nombra al cliente anónimo como la impresión original aunque el backend envíe «Público General» |
+| `pages/pos/venta-detail/venta-detail.component.spec.ts` | `VentaDetailComponent` (`/pos/:id`) | 21 | **Devoluciones (6):** ofrece Devolver en venta completada, con comprobante emitido y unidades por devolver y permiso de procesar devoluciones; lo oculta sin `ProcesarDevolucion`, si no está Completada, si no hay comprobante emitido o si todo se devolvió; oculta Anular cuando ya tiene devoluciones y lista sus notas de crédito; cada nota de crédito enlaza a la devolución solo si el usuario puede leer devoluciones. **Cobro de venta pendiente (3):** ofrece Cobrar en pendiente con `Ventas:Crear` y `Ventas:Actualizar`; lo oculta sin alguno; nunca en una venta no pendiente. **Verificación de receta (2):** muestra quién verificó y cuándo; nada si no hizo falta. **Errores al anular (3):** explica que anular una venta cobrada exige la propia caja abierta; mensaje genérico ante un código sin mapeo; el mensaje existe en español e inglés (lee los JSON reales). **Comprobante (2):** permite reimprimir el de una venta completada y no el de una anulada. **Vuelto y reimpresión (4):** vuelto bajo los pagos cuando el efectivo excedió el total y ninguno en pago exacto; los datos de reimpresión son idénticos a los de la impresión original; nombra al cliente anónimo como la impresión original aunque el backend envíe «Público General» |
 | `pages/sesiones-caja/services/sesion-caja.service.spec.ts` | `SesionCajaService` | 2 | `search()` se limita a la sesión abierta del propio cajero cuando se da `empleadoId`; lo omite si no se da |
 | `pages/sesiones-caja/sesiones-search/sesiones-search.component.spec.ts` | `SesionesSearchComponent` | 3 | Nuevo se ofrece con `POS:AperturarCaja`; se oculta a quien solo lee; `POS:Crear` o `POS:CerrarCaja` no sirven para abrir caja |
 | `pages/sesiones-caja/sesiones-detail/sesiones-detail.component.spec.ts` | `SesionesDetailComponent` | 3 | Ofrece cerrar una sesión abierta con `POS:CerrarCaja`; lo oculta a quien puede leer y abrir pero no cerrar; nunca lo ofrece en una sesión ya cerrada |
+
+### 2.10 Pages: devoluciones
+
+Pantallas nuevas de búsqueda y detalle de devoluciones (rutas `/devoluciones` y `/devoluciones/:id`, módulo de permiso `Devoluciones`). Su inventario de pantalla está en la carpeta `producto/pantallas`; aquí solo se describe lo que prueban los specs.
+
+| Spec | Bajo prueba | Casos | Qué verifica |
+|---|---|---|---|
+| `pages/devoluciones/devoluciones-search/devoluciones-search.component.spec.ts` | `DevolucionesSearchComponent` | 10 | No pide nada hasta pulsar Buscar; sin filtros envía solo la página y deja fuera los extremos del deslizador; envía todos los filtros, conservando el valor cero del enum y recortando el número de nota de crédito; envía solo el extremo del rango de montos que se movió; muestra las filas con la nota de crédito como enlace a su detalle y la venta como enlace a la venta; muestra el código de venta como texto simple si el usuario no puede abrir ventas y guiones en una devolución sin nota de crédito; informa cuando la búsqueda falla; restaura los filtros de la última búsqueda y la repite al reabrir la pantalla; limpia filtros, deslizador y resultados; exporta con los encabezados traducidos, el formato de fecha del idioma y los mismos filtros |
+| `pages/devoluciones/devoluciones-detail/devoluciones-detail.component.spec.ts` | `DevolucionesDetailComponent` | 5 | Muestra la nota de crédito, los datos de la venta, los montos y la justificación; lista cada línea devuelta con su destino y suma el total devuelto; enlaza a la venta solo si el usuario puede abrir ventas; indica que no hay nota de crédito en una devolución antigua y oculta el enlace si la venta es desconocida; avisa cuando la devolución no se puede cargar |
+
 
 ---
 
@@ -243,9 +261,9 @@ Pantallas descritas en [`producto/pantallas/punto-de-venta`](../../producto/pant
 
 Criterio: un componente cuenta «con pruebas» si existe un spec que lo instancia o lo ejercita (`TestBed.createComponent` o import directo del componente). Una prueba no implica cobertura completa: la columna «Alcance» indica de qué tema trata. «Sin pruebas» significa que ningún spec lo menciona. No se midió cobertura de líneas (no se ejecutaron las pruebas).
 
-Resumen: de los 75 componentes de `componentes-pages.txt`, **36 tienen al menos un spec** y **39 no tienen ninguno** (de estos, 12 son envoltorios de carga masiva sobre `CargaMasivaPageComponent`, que sí está probado, ver 2.3).
+Resumen: de los 80 componentes `*.component.ts` bajo `src/app/pages` (los 75 de `componentes-pages.txt` más 5 nuevos: `devoluciones-detail`, `devoluciones-search`, `plataforma/configuracion-pago`, `dashboard/suscripcion-aviso` y `empresa/dialogs/suscripcion-fecha-dialog`), **45 tienen al menos un spec** y **35 no tienen ninguno** (de estos, 12 son envoltorios de carga masiva sobre `CargaMasivaPageComponent`, que sí está probado, ver 2.3). `AnularVentaDialogComponent` y `RecetasScannerComponent` solo aparecen referenciados como tipo o en una tabla de rutas, y se cuentan sin pruebas.
 
-### 3.1 Componentes de `componentes-pages.txt`
+### 3.1 Componentes de `src/app/pages`
 
 | Componente (bajo `src/app/pages/`) | Specs | Alcance |
 |---|---|---|
@@ -257,16 +275,20 @@ Resumen: de los 75 componentes de `componentes-pages.txt`, **36 tienen al menos 
 | `auth/login` | `login.component.spec.ts` | Errores de credenciales, servicio y límite |
 | `auth/reset-password` | `reset-password.component.spec.ts` | Fragmento, reglas, envío, enlace vencido |
 | `cambiar-clave` | `cambiar-clave.component.spec.ts` | Reglas y envío |
-| `dashboard` | `dashboard.component.spec.ts`, `dashboard-links.spec.ts`, `dashboard-i18n.spec.ts` | Secciones por permiso, tendencia, errores, enlaces |
+| `dashboard` | `dashboard.component.spec.ts`, `dashboard-links.spec.ts`, `dashboard-i18n.spec.ts` | Secciones por permiso, tendencia, errores, enlaces, cifras del operador de plataforma |
+| `dashboard/suscripcion-aviso` | `suscripcion-aviso.component.spec.ts` | Ventana de aviso, texto de prueba, datos de pago |
+| `devoluciones/devoluciones-detail` | `devoluciones-detail.component.spec.ts` | Datos, líneas, enlaces por permiso, error de carga |
+| `devoluciones/devoluciones-search` | `devoluciones-search.component.spec.ts` | Filtros, resultados, enlaces, restauración, limpiar, exportar |
 | `digemid-catalogo/digemid-catalogo-carga-masiva` | Sin pruebas | Envoltorio |
 | `digemid-catalogo/digemid-catalogo-detail` | Sin pruebas | — |
 | `digemid-catalogo/digemid-catalogo-search` | Sin pruebas | — |
 | `empleados/empleados-detail` | `empleados-detail.component.spec.ts` | Solo segundo apellido opcional |
 | `empleados/empleados-search` | `empleados-search.component.spec.ts` | Solo segundo apellido opcional |
-| `empresa/empresa-detail` | Sin pruebas | — |
+| `empresa/dialogs/suscripcion-fecha-dialog` | `suscripcion-fecha-dialog.component.spec.ts` | Fecha propuesta, atajos, cancelar |
+| `empresa/empresa-detail` | `empresa-detail.component.spec.ts` | Acciones de suscripción por rol, diálogo de fecha, confirmaciones, errores |
 | `empresa/empresa-maintenance` | Sin pruebas | — |
 | `empresa/empresa-register` | `empresa-register.component.spec.ts` | Validaciones y errores del registro |
-| `empresa/empresa-search` | Sin pruebas | — |
+| `empresa/empresa-search` | `dashboard-links.spec.ts` | Solo el filtro por estado que siembra el dashboard |
 | `formulaciones-clinicas/formulaciones-clinicas-detail` | Sin pruebas | — |
 | `formulaciones-clinicas/formulaciones-clinicas-search` | Sin pruebas | — |
 | `ingredientes-activos/ingredientes-activos-carga-masiva` | Sin pruebas | Envoltorio |
@@ -286,13 +308,14 @@ Resumen: de los 75 componentes de `componentes-pages.txt`, **36 tienen al menos 
 | `pacientes/pacientes-carga-masiva` | Sin pruebas | Envoltorio |
 | `pacientes/pacientes-detail` | `pacientes-detail.delete.spec.ts` | Solo borrado en uso |
 | `pacientes/pacientes-search` | Sin pruebas | — |
+| `plataforma/configuracion-pago` | `configuracion-pago.component.spec.ts` | Lectura, validación, envío multipart, imagen, errores |
 | `pos/dialogs/anular-venta-dialog` | Sin pruebas | — |
 | `pos/dialogs/aperturar-caja-dialog` | Sin pruebas | — |
 | `pos/dialogs/comprobante-dialog` | `comprobante-dialog.component.spec.ts` | Contenido impreso, vuelto, líneas |
 | `pos/dialogs/confirmar-venta-dialog` | Sin pruebas | (en `nueva-venta` se simula su cierre, no se prueba) |
 | `pos/dialogs/devolver-venta-dialog` | `devolver-venta-dialog.component.spec.ts` | Cantidades, motivo, envío, error |
 | `pos/nueva-venta` | `nueva-venta.component.spec.ts` (+ `pos-draft.spec.ts`, `vuelto.util.spec.ts`) | Ver 3.3 |
-| `pos/search` (`ventas-search`) | Sin pruebas | — |
+| `pos/search` (`ventas-search`) | `dashboard-links.spec.ts` | Solo los filtros que siembra el dashboard |
 | `pos/venta-detail` | `venta-detail.component.spec.ts` | Ver 3.3 |
 | `presentaciones-venta/presentaciones-venta-detail` | Sin pruebas | — |
 | `presentaciones-venta/presentaciones-venta-modal` | `presentaciones-venta-modal.component.spec.ts` | Botones por permiso |
@@ -317,7 +340,7 @@ Resumen: de los 75 componentes de `componentes-pages.txt`, **36 tienen al menos 
 | `sesiones-caja/sesiones-detail` | `sesiones-detail.component.spec.ts` | Solo visibilidad del botón de cierre |
 | `sesiones-caja/sesiones-search` | `sesiones-search.component.spec.ts` | Solo visibilidad del botón Nuevo |
 | `stock-por-sucursal/stock-detail` | Sin pruebas | — |
-| `stock-por-sucursal/stock-search` | Sin pruebas | — |
+| `stock-por-sucursal/stock-search` | `dashboard-links.spec.ts` | Solo los filtros que siembra el dashboard |
 | `sucursales/sucursales-carga-masiva` | Sin pruebas | Envoltorio |
 | `sucursales/sucursales-detail` | `sucursales-detail.delete.spec.ts` | Solo borrado en uso |
 | `sucursales/sucursales-search` | Sin pruebas | — |
@@ -325,11 +348,11 @@ Resumen: de los 75 componentes de `componentes-pages.txt`, **36 tienen al menos 
 | `unidades-medida/unidades-medida-detail` | Sin pruebas | — |
 | `unidades-medida/unidades-medida-search` | Sin pruebas | — |
 
-Nota: «Envoltorio» designa a los 12 componentes `*-carga-masiva` (aseguradoras, DIGEMID, ingredientes activos, jerarquías, laboratorios, medicamentos, pacientes, profesionales de salud, proveedores, roles, sucursales y unidades de medida). Los 12 archivos referencian `CargaMasivaPageComponent` (búsqueda en `src/app/pages/**/*carga-masiva.component.ts`, 3 apariciones en cada uno); ver también [`producto/pantallas/acceso-layout-y-compartidos`, sección 6.6](../../producto/pantallas/acceso-layout-y-compartidos.md).
+Nota: «Envoltorio» designa a los 12 componentes `*-carga-masiva` (aseguradoras, DIGEMID, ingredientes activos, jerarquías, laboratorios, medicamentos, pacientes, profesionales de salud, proveedores, roles, sucursales y unidades de medida). Los 12 archivos referencian `CargaMasivaPageComponent` (búsqueda en `src/app/pages/**/*carga-masiva.component.ts`, 2 apariciones en cada uno: la importación y la lista `imports`); ver también [`producto/pantallas/acceso-layout-y-compartidos`, sección 6.6](../../producto/pantallas/acceso-layout-y-compartidos.md).
 
 ### 3.2 Rutas de `rutas-spa.csv`
 
-Las 86 rutas. «Estado» refiere al componente que la sirve (ver 3.1). Además, **todas las rutas del shell** (las que cuelgan de `FullComponent`, es decir todas menos `/auth/*`) están cubiertas en cuanto a su permiso por `route-permissions.spec.ts` (toda ruta hija está mapeada a un módulo, salvo `dashboard` y `cambiar-clave`) y `permission.guard.spec.ts` (módulo y acción exigidos). Esas pruebas no ejecutan el enrutador real con cada URL: usan `appRoutes` y funciones puras.
+Las 89 rutas (las 86 de `rutas-spa.csv` más `/devoluciones`, `/devoluciones/:id` y `/configuracion-pago`, nuevas en `37048ea` y `558ad35`). «Estado» refiere al componente que la sirve (ver 3.1). Además, **todas las rutas del shell** (las que cuelgan de `FullComponent`, es decir todas menos `/auth/*`) están cubiertas en cuanto a su permiso por `route-permissions.spec.ts` (toda ruta hija está mapeada a un módulo, salvo `dashboard`, `cambiar-clave` y las de plataforma, que llevan `platformAdminGuard`) y `permission.guard.spec.ts` (módulo y acción exigidos). Esas pruebas no ejecutan el enrutador real con cada URL: usan `appRoutes` y funciones puras.
 
 | URL | Componente | Estado del componente |
 |---|---|---|
@@ -349,8 +372,9 @@ Las 86 rutas. «Estado» refiere al componente que la sirve (ver 3.1). Además, 
 | `/empleados` | `EmpleadosSearchComponent` | Parcial (segundo apellido) |
 | `/empleados/nueva` | `EmpleadosDetailComponent` | Parcial (segundo apellido) |
 | `/empleados/:id` | `EmpleadosDetailComponent` | Parcial (segundo apellido) |
-| `/empresas` | `EmpresaSearchComponent` | Sin pruebas |
-| `/empresas/:id` | `EmpresaDetailComponent` | Sin pruebas |
+| `/empresas` | `EmpresaSearchComponent` | Parcial (solo el filtro por estado que siembra el dashboard) |
+| `/empresas/:id` | `EmpresaDetailComponent` | Probado (acciones de suscripción, `empresa-detail.component.spec.ts`) |
+| `/configuracion-pago` | `ConfiguracionPagoComponent` | Probado (`configuracion-pago.component.spec.ts`; la ruta y su guard en `route-permissions.spec.ts`) |
 | `/formulaciones-clinicas` | `FormulacionesClinicasSearchComponent` | Sin pruebas |
 | `/formulaciones-clinicas/nueva` | `FormulacionesClinicasDetailComponent` | Sin pruebas |
 | `/formulaciones-clinicas/:id` | `FormulacionesClinicasDetailComponent` | Sin pruebas |
@@ -377,9 +401,11 @@ Las 86 rutas. «Estado» refiere al componente que la sirve (ver 3.1). Además, 
 | `/pacientes/nueva` | `PacientesDetailComponent` | Parcial (solo borrado en uso) |
 | `/pacientes/carga-masiva` | `PacientesCargaMasivaComponent` | Sin pruebas (envoltorio) |
 | `/pacientes/:id` | `PacientesDetailComponent` | Parcial (solo borrado en uso) |
-| `/pos` | `VentasSearchComponent` | Sin pruebas |
+| `/pos` | `VentasSearchComponent` | Parcial (solo los filtros que siembra el dashboard) |
 | `/pos/nueva` | `NuevaVentaComponent` | Probado (ver 3.3) |
 | `/pos/:id` | `VentaDetailComponent` | Probado (ver 3.3) |
+| `/devoluciones` | `DevolucionesSearchComponent` | Probado (`devoluciones-search.component.spec.ts`) |
+| `/devoluciones/:id` | `DevolucionesDetailComponent` | Probado (`devoluciones-detail.component.spec.ts`) |
 | `/presentaciones-venta` | `PresentacionesVentaSearchComponent` | Sin pruebas |
 | `/presentaciones-venta/nueva` | `PresentacionesVentaDetailComponent` | Sin pruebas |
 | `/presentaciones-venta/:id` | `PresentacionesVentaDetailComponent` | Sin pruebas |
@@ -408,7 +434,7 @@ Las 86 rutas. «Estado» refiere al componente que la sirve (ver 3.1). Además, 
 | `/sesiones-caja` | `SesionesSearchComponent` | Parcial (solo botón Nuevo) |
 | `/sesiones-caja/nueva` | `SesionesDetailComponent` | Sin pruebas del modo nueva (el spec solo cubre el botón de cierre) |
 | `/sesiones-caja/:id` | `SesionesDetailComponent` | Parcial (solo botón de cierre) |
-| `/stock-por-sucursal` | `StockSearchComponent` | Sin pruebas (solo el servicio) |
+| `/stock-por-sucursal` | `StockSearchComponent` | Parcial (solo los filtros que siembra el dashboard, y el servicio) |
 | `/stock-por-sucursal/nueva` | `StockDetailComponent` | Sin pruebas (solo el servicio) |
 | `/stock-por-sucursal/:id` | `StockDetailComponent` | Sin pruebas (solo el servicio) |
 | `/sucursales` | `SucursalesSearchComponent` | Sin pruebas |
@@ -462,7 +488,7 @@ Método: se cruzó la lista de métodos de cada componente con las apariciones d
 
 #### Devoluciones
 
-No existe listado ni detalle de devoluciones como pantalla (la regla del proyecto lo indica y las rutas de `rutas-spa.csv` no incluyen ninguna). El único flujo del SPA es el diálogo desde `/pos/:id`, cubierto arriba. No hay spec de un servicio de devoluciones aparte: la llamada vive en `VentaService.procesarDevolucion` (probada).
+Desde `37048ea` existen la búsqueda (`/devoluciones`) y el detalle (`/devoluciones/:id`), probados en 2.10: filtros, enlaces por permiso, restauración de filtros, exportación y líneas devueltas. Quedan sin spec `DevolucionService` (`pages/devoluciones/services/devolucion.service.ts`, que se ejercita solo a través de los specs de los componentes) y la navegación desde el menú. El diálogo de devolución se abre desde `/pos/:id` (cubierto arriba); la llamada de procesar vive en `VentaService.procesarDevolucion` (probada).
 
 #### Recetas médicas (`/recetas-medicas`, [`producto/pantallas/inventario-y-atencion` §5](../../producto/pantallas/inventario-y-atencion.md))
 
@@ -490,17 +516,28 @@ No existe listado ni detalle de devoluciones como pantalla (la regla del proyect
 | §5.2 detalle | Rol (asignar, cambiar, sin cambios), botones por `Seguridad:Actualizar`/`Eliminar`/`AsignarRoles`, campo Bloqueado, sucursales (asignar, quitar, excluir asignadas) | Creación de la cuenta (`/cuentas/nueva`: `onEmpleadoSelected`), `confirmDelete`, `cancelEdit`, mapeo de errores (`errorMessage`), `isBloqueado` solo se ve por el texto en pantalla |
 | Servicio | — (`CuentaService` sin spec) | `CuentaService` |
 
+#### Suscripciones de plataforma (`/configuracion-pago`, `/empresas/:id`, dashboard y login)
+
+| Apartado | SÍ está probado | NO está probado |
+|---|---|---|
+| Acceso del operador | `platformAdminGuard`, `isPlatformRoute`, que toda ruta de plataforma lleve el guard, `hasPermission()` del operador sin roles, vista previa del menú sin pantallas de plataforma | Que el sidebar oculte `/configuracion-pago` a quien no es operador (solo se prueba el guard y la vista previa de roles) |
+| Configuración de pago | `ConfiguracionPagoComponent` completo en lectura, validación del WhatsApp, multipart, límites de imagen, cancelar y error de la API | El servicio `PagoSuscripcionService` (`shared/services/pago-suscripcion.service.ts`) sin spec propio |
+| Pago visible a la empresa | `PagoSuscripcionComponent` (QR, número, instrucciones, WhatsApp, reintento); el login que muestra cómo pagar; `SuscripcionAvisoComponent` y `avisoVencimiento` | `PagoSuscripcionDialogComponent` (`shared/components/pago-suscripcion/pago-suscripcion-dialog.component.ts`) sin spec |
+| Gestión por el operador | `EmpresaDetailComponent` (activar, extender prueba, suspender, cancelar, errores), `SuscripcionFechaDialogComponent` y las cifras del dashboard del operador | `EmpresaSearchComponent` completo y `EmpresaMaintenanceComponent`; `EmpresaService` sin spec |
+
+
 ---
 
 ## 4. Huecos
 
 ### 4.1 Servicios HTTP de `pages` sin spec
 
-De los 25 archivos `*.service.ts` bajo `src/app/pages` (24 servicios HTTP y `ReceiptPrintService`), tienen spec 12 (completos o parciales) y 13 no tienen ninguno:
+De los 26 archivos `*.service.ts` bajo `src/app/pages` (25 servicios HTTP y `ReceiptPrintService`), tienen spec 12 (completos o parciales) y 14 no tienen ninguno:
 
 | Servicio | Archivo |
 |---|---|
 | `CuentaService` | `pages/seguridad/services/cuenta.service.ts` |
+| `DevolucionService` | `pages/devoluciones/services/devolucion.service.ts` |
 | `RecetaMedicaService` | `pages/recetas-medicas/services/receta-medica.service.ts` |
 | `PacienteService` | `pages/pacientes/services/paciente.service.ts` |
 | `ProfesionalSaludService` | `pages/profesionales-salud/services/profesional-salud.service.ts` |
@@ -514,7 +551,7 @@ De los 25 archivos `*.service.ts` bajo `src/app/pages` (24 servicios HTTP y `Rec
 | `FormulacionClinicaService` | `pages/formulaciones-clinicas/services/formulacion-clinica.service.ts` |
 | `DigemidCatalogoService` | `pages/digemid-catalogo/services/digemid-catalogo.service.ts` |
 
-Con spec parcial: `SesionCajaService` (2 casos, solo `search`; faltan apertura, cierre y demás métodos), `SucursalService` (1 caso, solo `getPermitidas`). Con spec razonablemente completo: `AseguradoraService`, `EmpleadoService`, `LoteService`, `MedicamentoService`, `RolService`, `SerieFiscalService`, `StockService`, `VentaService`, `DashboardService`, `ReceiptPrintService`.
+Fuera de `pages`, `PagoSuscripcionService` (`shared/services/pago-suscripcion.service.ts`) tampoco tiene spec. Con spec parcial: `SesionCajaService` (2 casos, solo `search`; faltan apertura, cierre y demás métodos), `SucursalService` (1 caso, solo `getPermitidas`). Con spec razonablemente completo: `AseguradoraService`, `EmpleadoService`, `LoteService`, `MedicamentoService`, `RolService`, `SerieFiscalService`, `StockService`, `VentaService`, `DashboardService`, `ReceiptPrintService`.
 
 ### 4.2 Core y shared sin spec
 
@@ -524,23 +561,23 @@ Con spec parcial: `SesionCajaService` (2 casos, solo `search`; faltan apertura, 
 | `SearchStateService` | `core/services/shared/search-state.service.ts` | Solo se verifica de forma indirecta que `AuthService` lo vacía (`auth.service.spec.ts`) |
 | `TranslocoHttpLoader` | `core/transloco/transloco-loader.ts` | Sin spec |
 | `LoggerService`, `TimezoneService` | `core/services/logger.service.ts`, `core/services/shared/timezone.service.ts` | Sin spec (`TimezoneService` sin uso según [`producto/pantallas/acceso-layout-y-compartidos` §6.13](../../producto/pantallas/acceso-layout-y-compartidos.md)) |
-| Componentes compartidos en uso | `ConfirmDialogComponent`, `PageHeaderComponent`, `AutocompleteInputComponent`, `RangeSliderFieldComponent`, `CSLoadingBarComponent`, `ServerErrorSnackbarComponent`, `MatPaginatorIntlTransloco` | Sin spec propio ([`producto/pantallas/acceso-layout-y-compartidos` §6.7](../../producto/pantallas/acceso-layout-y-compartidos.md) los marca «en uso»). Solo `CargaMasivaPageComponent` y `MatDatepickerIntlTransloco` tienen spec |
+| Componentes compartidos en uso | `ConfirmDialogComponent`, `PageHeaderComponent`, `AutocompleteInputComponent`, `RangeSliderFieldComponent`, `CSLoadingBarComponent`, `ServerErrorSnackbarComponent`, `MatPaginatorIntlTransloco` | Sin spec propio ([`producto/pantallas/acceso-layout-y-compartidos` §6.7](../../producto/pantallas/acceso-layout-y-compartidos.md) los marca «en uso»). Solo `CargaMasivaPageComponent`, `MatDatepickerIntlTransloco` y `PagoSuscripcionComponent` tienen spec (`PagoSuscripcionDialogComponent` no) |
 | `catalog-item-autocomplete.util.ts` | `shared/utils/` (262 líneas) | Sin spec; su uso real no se verificó |
 | Componentes, directivas y pipes sin uso | `DatetimePickerComponent`, `DecimalInputComponent`, `AutocompleteInputMultipleComponent`, `MultiselectAutocompleteInputComponent`, `CargaMasivaComponent`, diálogos `ErrorDialog`/`SimpleDialog`/`SuccessDialog`/`TextInputDialog`/`ThreeOptionDialog`, `StatusChipsComponent`, directivas `Numeric`, `Alphanumeric`, `PositiveDecimal`, `PositiveInteger`, `DecimalPrecision`, `BlockManualDateInput`, `ValidName`, `ValidDescription`, pipes `datetimeoffset`, `timezone`, `formatThousands`, `lineBreakToBr`, `CustomPaginatorIntl` | Sin spec. Según [`producto/pantallas/acceso-layout-y-compartidos` §6.13 y §7.2](../../producto/pantallas/acceso-layout-y-compartidos.md) no se usan en ninguna plantilla, por lo que su ausencia de pruebas es de bajo riesgo (el riesgo está en conservarlos sin pruebas) |
-| Layout | `FullComponent`, `SidebarComponent`, `BreadcrumbComponent`, `NavItemComponent`, `BlankComponent`, `CustomizerComponent`, `NavService`, `CoreService`, layout horizontal | Sin spec. Solo `HeaderComponent` vertical y `visibleNavItems` tienen spec |
+| Layout | `FullComponent`, `SidebarComponent`, `AppBreadcrumbComponent`, `AppNavItemComponent` (vertical y horizontal), `BlankComponent`, `CustomizerComponent`, `NavService`, `CoreService`, layout horizontal | Sin spec. Solo `HeaderComponent` vertical y `visibleNavItems` tienen spec |
 | Configuración de la aplicación | `app.config.ts`, `app.routes.ts` | Sin spec propio; `app.routes.ts` se usa como dato en `route-permissions.spec.ts` y `menu-preview.spec.ts`. No hay prueba de que `app.config.ts` registre los interceptores en el orden correcto (`authInterceptor`, `CSLoadingInterceptor`, `app.config.ts:47`) |
 | Rutas por módulo | `*.routes.ts` | Solo `recetas-medicas.routes.ts` tiene spec |
 
 ### 4.3 Pantallas sin ningún spec
 
-Ver 3.1 (39 componentes). Resumen por módulo, de más a menos crítico:
+Ver 3.1 (35 componentes). Resumen por módulo, de más a menos crítico:
 
-- **Caja y ventas:** `VentasSearchComponent`, `AnularVentaDialogComponent`, `AperturarCajaDialogComponent`, `ConfirmarVentaDialogComponent`.
+- **Caja y ventas:** `AnularVentaDialogComponent`, `AperturarCajaDialogComponent`, `ConfirmarVentaDialogComponent` (`VentasSearchComponent` solo se abre en `dashboard-links.spec.ts` para comprobar los filtros sembrados).
 - **Seguridad:** `CuentasSearchComponent`.
 - **Recetas:** `RecetasScannerComponent`.
-- **Inventario:** `StockSearchComponent`, `StockDetailComponent` (solo el servicio tiene spec).
+- **Inventario:** `StockDetailComponent` (solo el servicio tiene spec; `StockSearchComponent` solo se abre en `dashboard-links.spec.ts`).
 - **Pacientes, profesionales, sucursales (búsqueda):** `PacientesSearchComponent`, `ProfesionalesSaludSearchComponent`, `SucursalesSearchComponent`.
-- **Empresa:** `EmpresaSearchComponent`, `EmpresaDetailComponent`, `EmpresaMaintenanceComponent`.
+- **Empresa:** `EmpresaMaintenanceComponent` (`EmpresaDetailComponent` tiene spec desde las suscripciones; `EmpresaSearchComponent` solo se abre en `dashboard-links.spec.ts`).
 - **Catálogos:** unidades de medida (búsqueda y detalle), jerarquías (búsqueda y detalle), ingredientes activos (búsqueda), presentaciones de venta (búsqueda y detalle), formulaciones clínicas (búsqueda y detalle), proveedores (búsqueda), DIGEMID (búsqueda, detalle).
 - **Carga masiva:** los 12 envoltorios (el componente compartido sí tiene spec).
 - **Auth:** `AuthBrandPanelComponent` (decorativo).
@@ -556,7 +593,7 @@ Ver 3.1 (39 componentes). Resumen por módulo, de más a menos crítico:
 | 5 | Diálogo de confirmación de venta | [`producto/pantallas/punto-de-venta` §4](../../producto/pantallas/punto-de-venta.md) | En las pruebas del POS se simula que acepta |
 | 6 | Cliente, aseguradora y ajuste de cantidades del carrito en el POS | [`producto/pantallas/punto-de-venta` §3.3, §3.4, §3.8](../../producto/pantallas/punto-de-venta.md) | Sin casos |
 | 7 | Escaneo de receta: interpretar y arrastrar archivo (POS y `/recetas-medicas/escanear`) | [`producto/pantallas/punto-de-venta` §3.6](../../producto/pantallas/punto-de-venta.md), [`producto/pantallas/inventario-y-atencion` §5.3](../../producto/pantallas/inventario-y-atencion.md) | Sin casos sobre la IA ni sobre la pantalla del escáner |
-| 8 | Búsqueda de ventas con sus filtros | `/pos`, [`producto/pantallas/punto-de-venta` §6](../../producto/pantallas/punto-de-venta.md) | Sin spec |
+| 8 | Búsqueda de ventas con sus filtros | `/pos`, [`producto/pantallas/punto-de-venta` §6](../../producto/pantallas/punto-de-venta.md) | Sin spec propio (solo los filtros que siembra el dashboard) |
 | 9 | Creación de cuenta de usuario (selección de empleado) y borrado | `/cuentas/nueva`, [`producto/pantallas/administracion` §5.2](../../producto/pantallas/administracion.md) | Sin casos; `CuentaService` sin spec |
 | 10 | Borrado de un rol, cancelar edición y marcado de un módulo entero de permisos | `/roles/:id`, [`producto/pantallas/administracion` §4.2](../../producto/pantallas/administracion.md) | Sin casos |
 | 11 | Eliminar una receta (confirmación y borrado) | `/recetas-medicas/:id`, [`producto/pantallas/inventario-y-atencion` §5.2](../../producto/pantallas/inventario-y-atencion.md) | Solo se prueba que el botón aparezca según el permiso |
@@ -572,7 +609,7 @@ Ver 3.1 (39 componentes). Resumen por módulo, de más a menos crítico:
 
 - No hay pruebas de extremo a extremo ni de integración contra la API real (ninguna herramienta en `package.json`).
 - No hay umbral de cobertura ni informe de cobertura publicado (ver 1.2); no se puede afirmar un porcentaje.
-- Los componentes grandes se prueban sobre todo por su clase: la plantilla (HTML) se renderiza en pocos casos (24 specs), así que un fallo de enlace de plantilla (botón que no llama al método correcto, por ejemplo) puede pasar sin ser detectado en los componentes que solo se prueban por su clase.
+- Los componentes grandes se prueban sobre todo por su clase: la plantilla (HTML) se renderiza en pocos casos (31 specs), así que un fallo de enlace de plantilla (botón que no llama al método correcto, por ejemplo) puede pasar sin ser detectado en los componentes que solo se prueban por su clase.
 - El `shared` de Karma (`--configuration shared`) solo alcanza un spec.
 - Las pruebas de i18n dependen de que `public/` se sirva en Karma (`angular.json:121-126`); si se cambia la configuración de `assets`, fallarían los `fetch('/i18n/...')`.
 
@@ -593,8 +630,8 @@ Detalle, requisitos (Chrome instalado) y particularidades de Windows en la [guí
 
 ### 5.2 Integración continua
 
-- El repositorio `sofia-web-spa` **no tiene carpeta `.github`** ni otro archivo de pipeline: se comprobó en el sistema de archivos (`ls .github` falla) y con `git ls-files` (sin coincidencias para `.github`, `.yml`, pipelines). Por tanto **ninguna prueba del SPA corre en CI**.
-- El único workflow del conjunto está en el backend: `sofia-apis/.github/workflows/security.yml`; no contiene pasos de `npm` ni de `ng test` (búsqueda de «npm», «ng test», «frontend»: sin coincidencias; la guía lo describe en [la sección 6](../../desarrollo/guia-del-desarrollador.md#6-integración-continua-ci)).
+- El repositorio `sofia-web-spa` tiene un único workflow, `.github/workflows/docker-publish.yml` («Publish Docker Image»), con dos jobs: `publish` (construye y publica la imagen en GHCR en cada `push` a `main` o a mano) y `deploy` (despliega a UAT en Azure Container Apps y comprueba `/healthz`). **No ejecuta pruebas ni lint**: no tiene pasos de `npm test`, `ng test` ni `npm run lint`, y el `Dockerfile` solo ejecuta `npm ci` y `npm run build` (`Dockerfile:6,9`). Por tanto **ninguna prueba del SPA corre en CI**.
+- El backend tiene `sofia-apis/.github/workflows/security.yml` (sin pasos de `npm` ni `ng test`; la guía lo describe en [la sección 6](../../desarrollo/guia-del-desarrollador.md#6-integración-continua-ci)) y, desde `0678e40`, también un workflow `docker-publish.yml`.
 - El script `test:ci` existe y está preparado para CI, pero nadie lo invoca automáticamente.
 
 ### 5.3 Hooks de commit (`sofia-web-spa/.husky`)
@@ -613,19 +650,20 @@ En consecuencia, las pruebas del SPA solo se ejecutan cuando un desarrollador la
 ### 6.1 No verificado
 
 - **Que las pruebas pasen hoy.** No se ejecutó ninguna prueba ni compilación (lo prohíbe el encargo). Todo lo descrito sale de la lectura de los specs, no de una corrida.
-- **Número real de casos ejecutados.** Las cifras (503 `it(`, 492 en la versión 1.0) son apariciones de texto; los casos generados en bucles (p. ej. `permission.guard.spec.ts:96`, `nueva-venta.component.spec.ts:400,437,648,763`) y los 12 de `describeDeleteInUse` hacen que el total ejecutado sea distinto.
+- **Número real de casos ejecutados.** Las cifras (584 `it(`; 503 en la versión 1.1 y 492 en la 1.0) son apariciones de texto; los casos generados en bucles (p. ej. `permission.guard.spec.ts:96`, `nueva-venta.component.spec.ts:400,437,648,763`) y los 12 de `describeDeleteInUse` hacen que el total ejecutado sea distinto.
 - **Cobertura de líneas o ramas.** No se midió; las columnas «Alcance» y «NO está probado» salen de cruzar nombres de métodos con el texto de los specs (un método llamado desde otro método probado queda cubierto aunque no aparezca por nombre, y un nombre que aparece en un spec no implica que se pruebe a fondo).
-- **Contenido de los 39 componentes sin spec y de los inventarios `producto/pantallas/catalogos-basicos` y `producto/pantallas/productos-proveedores-y-aseguradoras`** (catálogos): se usaron solo para saber el nombre de las pantallas; no se contrastaron sus apartados con huecos concretos de esas pantallas.
+- **Contenido de los 35 componentes sin spec y de los inventarios `producto/pantallas/catalogos-basicos` y `producto/pantallas/productos-proveedores-y-aseguradoras`** (catálogos): se usaron solo para saber el nombre de las pantallas; no se contrastaron sus apartados con huecos concretos de esas pantallas.
 - **Uso real de `shared/utils/catalog-item-autocomplete.util.ts`** (si se usa en alguna pantalla).
 - **Los apartados citados de `producto/pantallas/inventario-y-atencion` y `producto/pantallas/punto-de-venta`** (§3.x, §5.x) se tomaron de sus encabezados; no se releyó cada apartado completo para esta parte.
 
 ### 6.2 En curso (sin commitear)
 
-Ninguno: `git status --short` sin cambios en `sofia-web-spa` y `sofia-apis` al 2026-10-15; commits `eeffbb6` y `43f5529`, iguales a la línea base.
+Ninguno: todo lo descrito corresponde al contenido de los commits `37048ea` (`sofia-web-spa`) y `0678e40` (`sofia-apis`).
 
 ### 6.3 Pendientes
 
-- El README de `docs/_inventario` dice 69 specs; en disco hay **75** (6 son `*.delete.spec.ts` con 0 `it(` literales). Conviene actualizarlo.
+- El README de `docs/_inventario` dice 69 specs y `pruebas-spa.csv` tiene 75 filas; en disco hay **83** (6 son `*.delete.spec.ts` con 0 `it(` literales). Conviene regenerar el inventario.
+- Los apartados de producto de las pantallas de devoluciones y de suscripciones de plataforma, que se citan en 2.10 y 3.3, dependen de la revisión de `producto/` y pueden no existir aún con ese nombre: **No verificado**.
 - Añadir cobertura mínima y un pipeline para el SPA queda fuera de este documento (solo se describe el estado actual).
 - La Parte A (backend) de esta estrategia está en el documento hermano `calidad/pruebas-automatizadas/backend`, que no se consultó para este archivo.
 
@@ -633,16 +671,17 @@ Ninguno: `git status --short` sin cambios en `sofia-web-spa` y `sofia-apis` al 2
 
 ## 7. Tabla de cobertura
 
-Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó documentado.
+Cada uno de los 83 specs en disco (los 75 de `docs/_inventario/pruebas-spa.csv` y 8 nuevos) y el apartado donde quedó documentado.
 
 | Spec | Casos `it(` | Apartado |
 |---|---|---|
 | `app.component.spec.ts` | 2 | 2.1 |
 | `core/auth/auth.guard.spec.ts` | 3 | 2.2 |
-| `core/auth/auth.service.spec.ts` | 30 | 2.2 |
+| `core/auth/auth.service.spec.ts` | 32 | 2.2 |
 | `core/auth/password-change.guard.spec.ts` | 3 | 2.2 |
 | `core/auth/permission.guard.spec.ts` | 12 | 2.2 |
-| `core/auth/route-permissions.spec.ts` | 11 | 2.2 |
+| `core/auth/platform-admin.guard.spec.ts` | 2 | 2.2 |
+| `core/auth/route-permissions.spec.ts` | 13 | 2.2 |
 | `core/auth/user-storage.spec.ts` | 3 | 2.2 |
 | `core/interceptors/auth.interceptor.spec.ts` | 14 | 2.2 |
 | `core/services/shared/error-notifier.service.spec.ts` | 7 | 2.2 |
@@ -652,13 +691,18 @@ Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó 
 | `pages/aseguradoras/aseguradoras-search/aseguradoras-search.component.spec.ts` | 3 | 2.7 |
 | `pages/aseguradoras/services/aseguradora.service.spec.ts` | 7 | 2.7 |
 | `pages/auth/forgot-password/forgot-password.component.spec.ts` | 4 | 2.5 |
-| `pages/auth/login/login.component.spec.ts` | 7 | 2.5 |
+| `pages/auth/login/login.component.spec.ts` | 9 | 2.5 |
 | `pages/auth/reset-password/reset-password.component.spec.ts` | 5 | 2.5 |
 | `pages/cambiar-clave/cambiar-clave.component.spec.ts` | 5 | 2.5 |
 | `pages/dashboard/dashboard-i18n.spec.ts` | 2 | 2.5 |
-| `pages/dashboard/dashboard-links.spec.ts` | 6 | 2.5 |
-| `pages/dashboard/dashboard.component.spec.ts` | 15 | 2.5 |
+| `pages/dashboard/dashboard-links.spec.ts` | 10 | 2.5 |
+| `pages/dashboard/dashboard.component.spec.ts` | 21 | 2.5 |
 | `pages/dashboard/services/dashboard.service.spec.ts` | 4 | 2.5 |
+| `pages/dashboard/suscripcion-aviso/suscripcion-aviso.component.spec.ts` | 10 | 2.5 |
+| `pages/devoluciones/devoluciones-detail/devoluciones-detail.component.spec.ts` | 5 | 2.10 |
+| `pages/devoluciones/devoluciones-search/devoluciones-search.component.spec.ts` | 10 | 2.10 |
+| `pages/empresa/dialogs/suscripcion-fecha-dialog/suscripcion-fecha-dialog.component.spec.ts` | 10 | 2.5 |
+| `pages/empresa/empresa-detail/empresa-detail.component.spec.ts` | 11 | 2.5 |
 | `pages/empleados/empleados-detail/empleados-detail.component.spec.ts` | 6 | 2.6 |
 | `pages/empleados/empleados-search/empleados-search.component.spec.ts` | 2 | 2.6 |
 | `pages/empleados/services/empleado.service.spec.ts` | 3 | 2.6 |
@@ -674,6 +718,7 @@ Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó 
 | `pages/medicamentos/medicamentos-search/medicamentos-search.component.spec.ts` | 2 | 2.7 |
 | `pages/medicamentos/services/medicamento.service.spec.ts` | 8 | 2.7 |
 | `pages/pacientes/pacientes-detail/pacientes-detail.delete.spec.ts` | 0 | 2.8 |
+| `pages/plataforma/configuracion-pago/configuracion-pago.component.spec.ts` | 8 | 2.5 |
 | `pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.spec.ts` | 11 | 2.9 |
 | `pages/pos/dialogs/devolver-venta-dialog/devolver-venta-dialog.component.spec.ts` | 6 | 2.9 |
 | `pages/pos/nueva-venta/nueva-venta.component.spec.ts` | 52 | 2.9 |
@@ -681,7 +726,7 @@ Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó 
 | `pages/pos/services/receipt-print.service.spec.ts` | 4 | 2.9 |
 | `pages/pos/services/venta.service.spec.ts` | 12 | 2.9 |
 | `pages/pos/utils/vuelto.util.spec.ts` | 8 | 2.9 |
-| `pages/pos/venta-detail/venta-detail.component.spec.ts` | 20 | 2.9 |
+| `pages/pos/venta-detail/venta-detail.component.spec.ts` | 21 | 2.9 |
 | `pages/presentaciones-venta/presentaciones-venta-modal/presentaciones-venta-modal.component.spec.ts` | 3 | 2.7 |
 | `pages/profesionales-salud/profesionales-salud-detail/profesionales-salud-detail.delete.spec.ts` | 0 | 2.8 |
 | `pages/proveedores/precio-proveedor-dialog/precio-proveedor-dialog.component.spec.ts` | 10 | 2.7 |
@@ -690,7 +735,7 @@ Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó 
 | `pages/recetas-medicas/recetas-detail/recetas-detail.component.spec.ts` | 11 | 2.8 |
 | `pages/recetas-medicas/recetas-medicas.routes.spec.ts` | 5 | 2.8 |
 | `pages/recetas-medicas/recetas-search/recetas-search.component.spec.ts` | 7 | 2.8 |
-| `pages/roles/models/menu-preview.spec.ts` | 5 | 2.6 |
+| `pages/roles/models/menu-preview.spec.ts` | 6 | 2.6 |
 | `pages/roles/roles-detail/roles-detail.component.spec.ts` | 19 | 2.6 |
 | `pages/roles/roles-i18n.spec.ts` | 2 | 2.6 |
 | `pages/roles/roles-search/roles-search.component.spec.ts` | 2 | 2.6 |
@@ -707,25 +752,26 @@ Cada spec de `docs/_inventario/pruebas-spa.csv` (75) y el apartado donde quedó 
 | `pages/sucursales/sucursales-detail/sucursales-detail.delete.spec.ts` | 0 | 2.6 |
 | `shared/components/carga-masiva-page/carga-masiva-page.component.spec.ts` | 6 | 2.3 |
 | `shared/components/datepicker-internationalization/mat-datepicker-intl.component.spec.ts` | 2 | 2.3 |
+| `shared/components/pago-suscripcion/pago-suscripcion.component.spec.ts` | 7 | 2.3 |
 | `shared/date/sofia-date-adapter.spec.ts` | 11 | 2.3 |
 | `shared/directives/permiso.directive.spec.ts` | 10 | 2.3 |
 | `shared/utils/date-only.util.spec.ts` | 10 | 2.3 |
 | `shared/utils/save-error-key.util.spec.ts` | 3 | 2.3 |
 | `shared/utils/tipo-documento.util.spec.ts` | 3 | 2.3 |
 
-Otros elementos del encargo: utilidades de `shared/testing` (5 archivos) → 1.3; rutas de `rutas-spa.csv` (86) → 3.2; componentes de `componentes-pages.txt` (75) → 3.1; pantallas críticas → 3.3; huecos → 4; ejecución, CI y hooks → 5.
+Otros elementos del encargo: utilidades de `shared/testing` (5 archivos) → 1.3; rutas de `rutas-spa.csv` (86) y las 3 nuevas → 3.2; componentes de `componentes-pages.txt` (75) y los 5 nuevos → 3.1; pantallas críticas → 3.3; huecos → 4; ejecución, CI y hooks → 5.
 
 ---
 
 ## 8. Fuentes
 
-- `sofia-web-spa/karma.conf.js`, `angular.json` (líneas 105-137), `package.json`, `tsconfig.spec.json`, `tsconfig.spec.shared.json`, `.gitignore`
+- `sofia-web-spa/karma.conf.js`, `angular.json` (líneas 105-137), `Dockerfile`, `.github/workflows/docker-publish.yml`, `package.json`, `tsconfig.spec.json`, `tsconfig.spec.shared.json`, `.gitignore`
 - `sofia-web-spa/.husky/pre-commit`, `.husky/commit-msg`, `commitlint.config.js`
 - `sofia-web-spa/src/app/shared/testing/*.ts` (5 archivos)
-- Los 75 archivos `sofia-web-spa/src/**/*.spec.ts` (títulos de `describe` e `it`; leídos con detalle `nueva-venta.component.spec.ts` (inicio), `venta-detail.component.spec.ts`, `auth.service.spec.ts` (inicio), `route-permissions.spec.ts`, `menu-preview.spec.ts`, `dashboard-i18n.spec.ts`, `roles-i18n.spec.ts`, `app.component.spec.ts`, los 6 `*.delete.spec.ts`)
+- Los 83 archivos `sofia-web-spa/src/**/*.spec.ts` (títulos de `describe` e `it`; leídos con detalle `nueva-venta.component.spec.ts` (inicio), `venta-detail.component.spec.ts`, `auth.service.spec.ts` (inicio), `route-permissions.spec.ts`, `menu-preview.spec.ts`, `dashboard-i18n.spec.ts`, `roles-i18n.spec.ts`, `app.component.spec.ts`, los 6 `*.delete.spec.ts`)
 - `sofia-web-spa/src/app/app.routes.ts`, `app.config.ts`, `core/auth/route-permissions.ts`
 - Componentes y servicios de `sofia-web-spa/src/app/pages` y `shared` (lista de archivos y cruce de nombres de método), `sesiones-caja/models/sesion-caja.model.ts`, `sesiones-detail.component.html`, `sesion-caja.service.ts`
-- `sofia-apis/.github/workflows/security.yml` (solo para confirmar que no ejecuta pruebas del SPA)
+- `sofia-apis/.github/workflows/security.yml` y `docker-publish.yml` (solo para confirmar que no ejecutan pruebas del SPA)
 - `docs/_inventario/pruebas-spa.csv`, `rutas-spa.csv`, `componentes-pages.txt`, `dialogos.txt`, `README.md`, `REGLAS-AGENTES.md`
 - `docs/desarrollo/guia-del-desarrollador.md` (secciones 4.2, 5.2, 6)
 - `docs/producto/pantallas/acceso-layout-y-compartidos`, `producto/pantallas/administracion`, `producto/pantallas/inventario-y-atencion`, `producto/pantallas/punto-de-venta` (encabezados y `producto/pantallas/acceso-layout-y-compartidos` §6.7, §6.13, §7.2)
