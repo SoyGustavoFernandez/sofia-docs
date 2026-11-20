@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos, utilidades e i18n de `pages/pos` y `pages/sesiones-caja`). Del backend solo se abrieron controladores, algunos handlers y los DTO necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. `git status --short` no mostró cambios sin commitear en ninguno de los dos repos al empezar, así que no hay marcas «En curso (sin commitear)» en este documento. |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevo §9A `/devoluciones` y `/devoluciones/:id`; enlace de la nota de crédito en el detalle de venta; menú; cobertura. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos, utilidades e i18n de `pages/pos` y `pages/sesiones-caja`). Del backend solo se abrieron controladores, algunos handlers y los DTO necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. `git status --short` no mostró cambios sin commitear en ninguno de los dos repos al empezar, así que no hay marcas «En curso (sin commitear)» en este documento. |
 
-Este documento es la parte F del inventario de pantallas. Cubre el punto de venta completo: las **6 rutas** `/sesiones-caja`, `/sesiones-caja/nueva`, `/sesiones-caja/:id`, `/pos`, `/pos/nueva` (incluido el modo `?continuar=<id>`) y `/pos/:id`, y los **5 diálogos** de `pages/pos/dialogs`. Es la base de los capítulos del manual sobre caja y ventas, así que cada elemento que el cajero ve o toca se describe con su texto exacto. Lo compartido (guards, `page-header`, `ErrorNotifierService`, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); las reglas de negocio están en [`negocio/reglas/ventas-y-comprobantes`](../../negocio/reglas/ventas-y-comprobantes.md) (reglas `VEN` y `CMP`) y [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (reglas `CAJ` y `DEV`), y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
+Este documento es la parte F del inventario de pantallas. Cubre el punto de venta completo: las **8 rutas** `/sesiones-caja`, `/sesiones-caja/nueva`, `/sesiones-caja/:id`, `/pos`, `/pos/nueva` (incluido el modo `?continuar=<id>`), `/pos/:id`, `/devoluciones` y `/devoluciones/:id` (estas dos, apartado 9A, nuevas desde `37048ea`), y los **5 diálogos** de `pages/pos/dialogs`. Es la base de los capítulos del manual sobre caja y ventas, así que cada elemento que el cajero ve o toca se describe con su texto exacto. Lo compartido (guards, `page-header`, `ErrorNotifierService`, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); las reglas de negocio están en [`negocio/reglas/ventas-y-comprobantes`](../../negocio/reglas/ventas-y-comprobantes.md) (reglas `VEN` y `CMP`) y [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (reglas `CAJ` y `DEV`), y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
 Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que empiecen por `sofia-apis/`; `app/` abrevia `src/app/`. Entre paréntesis va la clave i18n con su prefijo real: `pos.*` está en `public/i18n/pos/es.json`, `sesionesCaja.*` en `public/i18n/sesiones-caja/es.json` (scope `sesiones-caja`, leído con `read: 'sesionesCaja'`), `recetasMedicas.*` en `public/i18n/recetas-medicas/es.json` y el resto en la raíz `public/i18n/es.json`. Las plantillas del punto de venta abren con `*transloco="let t; scope: 'pos'; read: 'pos'"`, así que `t('x')` equivale a `pos.x`. Para no repetir rutas largas, los archivos se citan con estas abreviaturas (todas bajo `app/pages/`):
 
@@ -45,6 +45,7 @@ Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que em
 7. Detalle de venta: `/pos/:id`
 8. Diálogo de anulación (`AnularVentaDialogComponent`)
 9. Diálogo de devolución (`DevolverVentaDialogComponent`)
+9A. Devoluciones: `/devoluciones` y `/devoluciones/:id`
 10. Pendientes y «No verificado»
 11. Tabla de cobertura
 12. Claves i18n sin uso
@@ -93,7 +94,7 @@ No hay más componentes ni diálogos que los 8 + 2 componentes y 5 diálogos de 
 | `/pos/nueva` | `NuevaVentaComponent` | `Ventas:Leer` + `Ventas:Crear` | Apertura de caja, Confirmación de venta, Comprobante |
 | `/pos/:id` | `VentaDetailComponent` | `Ventas:Leer` | Comprobante (reimpresión), Anulación, Devolución |
 
-El `permissionGuard` toma el primer segmento de la URL: `sesiones-caja` → módulo `POS` y `pos` → módulo `Ventas` (`app/core/auth/route-permissions.ts:19-20`); exige siempre `Leer` y, si el segundo segmento es `nueva`, además la acción de `ROUTE_ACTIONS` (`sesiones-caja/nueva` → `AperturarCaja`, `route-permissions.ts:31`) o, para cualquier otra ruta `nueva`, `Crear` (`route-permissions.ts:36,68-72`). `/pos/nueva?continuar=<id>` se resuelve igual que `/pos/nueva` porque el guard descarta la query (`route-permissions.ts:75-81`): **no exige `Ventas:Actualizar`**, aunque cobrar o actualizar una venta en espera sí lo exige la API (hallazgo a1 de [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md)). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:28-29`). Detalle del guard en [`producto/pantallas/acceso-layout-y-compartidos` §5.3](acceso-layout-y-compartidos.md).
+El `permissionGuard` toma el primer segmento de la URL: `sesiones-caja` → módulo `POS` y `pos` → módulo `Ventas` (`app/core/auth/route-permissions.ts:19-20`); exige siempre `Leer` y, si el segundo segmento es `nueva`, además la acción de `ROUTE_ACTIONS` (`sesiones-caja/nueva` → `AperturarCaja`, `route-permissions.ts:32`) o, para cualquier otra ruta `nueva`, `Crear` (`route-permissions.ts:44,79-83`). `/pos/nueva?continuar=<id>` se resuelve igual que `/pos/nueva` porque el guard descarta la query (`route-permissions.ts:86-92`): **no exige `Ventas:Actualizar`**, aunque cobrar o actualizar una venta en espera sí lo exige la API (hallazgo a1 de [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md)). Sin permiso: aviso «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`) y redirección a `/dashboard` (`app/core/auth/permission.guard.ts:28-29`). Detalle del guard en [`producto/pantallas/acceso-layout-y-compartidos` §5.3](acceso-layout-y-compartidos.md).
 
 ### 0.3 Mapa del flujo de caja y venta
 
@@ -135,15 +136,15 @@ Un rol que solo tenga permisos de `Ventas` y `POS` no puede vender: el terminal 
 | `/pos/nueva` | `Seguros:Leer` | `GET /api/v1/seguros` | Solo el bloque de aseguradora, que está oculto (apartado 3.8) | `NV.ts:332`; `SegurosController.cs:26` |
 | `/pos` | `Empleados:Leer` | `GET /api/v1/empleados` | Autocompletar del filtro «Empleado» | `VS.ts:87`; `EmpleadosController.cs:15` |
 | `/pos` | `Pacientes:Leer` | `GET /api/v1/pacientes` | Autocompletar del filtro «Cliente» | `VS.ts:102-103` |
-| `/pos/:id` | `Devoluciones:ProcesarDevolucion` | `POST /api/v1/devoluciones` | Botón «Devolver» (control en el SPA) | `VD.ts:165`; `DevolucionesController.cs:11` |
-| `/pos/:id` | `Ventas:Anular`, `Ventas:Crear`, `Ventas:Actualizar` | `PUT ventas/{id}/anular`, `PUT ventas/{id}/completar`, `PUT ventas/{id}/detalles` | Botones «Anular Venta» y «Cobrar Venta» (controles en el SPA) | `VD.ts:95,101` |
+| `/pos/:id` | `Devoluciones:ProcesarDevolucion` | `POST /api/v1/devoluciones` | Botón «Devolver» (control en el SPA) | `VD.ts:170`; `DevolucionesController.cs:15` |
+| `/pos/:id` | `Ventas:Anular`, `Ventas:Crear`, `Ventas:Actualizar` | `PUT ventas/{id}/anular`, `PUT ventas/{id}/completar`, `PUT ventas/{id}/detalles` | Botones «Anular Venta» y «Cobrar Venta» (controles en el SPA) | `VD.ts:100,106` |
 
 ### 0.5 Avisos al usuario, i18n y estado de las búsquedas
 
 - **Avisos.** Todos los avisos son snackbar con el botón «Cerrar» (`actions.close`): error 5 s, éxito 3 s (`app/core/services/shared/error-notifier.service.ts:26,30`; [`producto/pantallas/acceso-layout-y-compartidos` §6.12](acceso-layout-y-compartidos.md)). No hay interceptor global de errores: cada pantalla decide el texto. El texto viaja desde el código de error de la respuesta (`err.error?.code`) a un mapa propio de cada pantalla; si el código no está mapeado se muestra el mensaje genérico de la acción. Los mapas completos están en los apartados 2, 3.12, 7, 8 y 9.
 - **Textos de la raíz que se usan aquí.** «Cancelar» (`actions.cancel`), «Limpiar» (`actions.clear`), «Buscar» (`actions.search`), «Exportar» (`actions.export`), «Nuevo» (`actions.new`), «Todos» (`generic-labels.all`), «Resultados» (`generic-labels.results`), «Sin resultados» (`generic-labels.no-results`), «Ingresa los criterios de búsqueda» (`generic-labels.search-subtitle`), «Datos del registro» (`generic-labels.detail-subtitle`), migas «Inicio» (`breadcrumbs.home`), «Punto de Venta» (`breadcrumbs.puntoVenta`), «Ventas» (`breadcrumbs.ventas`), «Sesiones de Caja» (`breadcrumbs.sesionesCaja`) y «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» (`errors.concurrencyConflict`).
-- **Estado de las búsquedas.** `/pos` y `/sesiones-caja` guardan filtros, página y tamaño de página en `SearchStateService` (memoria; se pierde al recargar el navegador) con la URL sin query como clave, y los restauran al volver; «Limpiar» lo borra ([`producto/pantallas/administracion` §0](administracion.md)). El tablero (`/dashboard`) abre estas pantallas con filtros ya puestos mediante ese mismo estado: «Ver mi caja» abre `/sesiones-caja/:id` (`dashboard.component.html:273`), «Abrir caja» abre `/sesiones-caja/nueva` con `POS:AperturarCaja` (`dashboard.component.html:282-287`), y los enlaces de `app/pages/dashboard/dashboard-links.ts` abren `/pos` con «Completada» + empleado + día de hoy (`misVentasDeHoyLink`, `:27-30`), con «Pendiente» (`ventasEnEsperaLink`, `:32-34`) o `/sesiones-caja` con «Abierta» (`sesionesAbiertasLink`, `:36-41`). Los textos del tablero están en [`producto/pantallas/acceso-layout-y-compartidos` §3](acceso-layout-y-compartidos.md).
-- **Menú.** Grupo «Punto de Venta» (título de sección `breadcrumbs.puntoVenta`) con dos opciones: «Sesiones de Caja» (`nav.sesionesCaja`, `/sesiones-caja`) y «Ventas» (`nav.ventas`, `/pos`) (`app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:118-133`). **No hay opción de menú para el terminal** `/pos/nueva`, ni para Devoluciones (el módulo no tiene pantalla de listado): al terminal se llega desde el botón «Nueva Venta POS» de `/pos`, desde «Cobrar Venta» del detalle (con `?continuar=`), desde «Nueva Venta POS» del diálogo del comprobante o escribiendo la URL. El layout horizontal tiene una opción «POS / Ventas» que apunta a `/pos` (`app/matdash/layouts/full/horizontal/sidebar/sidebar-data.ts:16-18`); el layout horizontal se documenta en [`producto/pantallas/acceso-layout-y-compartidos` §4.7](acceso-layout-y-compartidos.md).
+- **Estado de las búsquedas.** `/pos` y `/sesiones-caja` guardan filtros, página y tamaño de página en `SearchStateService` (memoria; se pierde al recargar el navegador) con la URL sin query como clave, y los restauran al volver; «Limpiar» lo borra ([`producto/pantallas/administracion` §0](administracion.md)). El tablero (`/dashboard`) abre estas pantallas con filtros ya puestos mediante ese mismo estado: «Ver mi caja» abre `/sesiones-caja/:id` (`dashboard.component.html:447`), «Abrir caja» abre `/sesiones-caja/nueva` con `POS:AperturarCaja` (`dashboard.component.html:456-461`), y los enlaces de `app/pages/dashboard/dashboard-links.ts` abren `/pos` con «Completada» + empleado + día de hoy (`misVentasDeHoyLink`, `:27-30`), con «Pendiente» (`ventasEnEsperaLink`, `:32-34`) o `/sesiones-caja` con «Abierta» (`sesionesAbiertasLink`, `:36-41`). Los textos del tablero están en [`producto/pantallas/acceso-layout-y-compartidos` §3](acceso-layout-y-compartidos.md).
+- **Menú.** Grupo «Punto de Venta» (título de sección `breadcrumbs.puntoVenta`) con tres opciones: «Sesiones de Caja» (`nav.sesionesCaja`, `/sesiones-caja`), «Ventas» (`nav.ventas`, `/pos`) y «Devoluciones» (`nav.devoluciones`, `/devoluciones`, apartado 9A) (`app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:123-144`). **No hay opción de menú para el terminal** `/pos/nueva`: al terminal se llega desde el botón «Nueva Venta POS» de `/pos`, desde «Cobrar Venta» del detalle (con `?continuar=`), desde «Nueva Venta POS» del diálogo del comprobante o escribiendo la URL. El layout horizontal tiene una opción «POS / Ventas» que apunta a `/pos` (`app/matdash/layouts/full/horizontal/sidebar/sidebar-data.ts:16-18`); el layout horizontal se documenta en [`producto/pantallas/acceso-layout-y-compartidos` §4.7](acceso-layout-y-compartidos.md).
 
 ---
 
@@ -219,8 +220,8 @@ Encabezado de la tabla «Resultados (N)» (`generic-labels.results` y el total).
 
 - **Componente:** `SesionesDetailComponent` (`SD.ts`, `SD.html`), modo **crear** (`data: { isNew: true }` de la ruta, que el componente lee en `ngOnInit`, `SD.ts:76-79`). Scope `sesiones-caja`.
 - **Para qué sirve:** abrir la caja del turno a nombre del usuario conectado. La sucursal, el cajero y la hora los pone el servidor (RN-CAJ-002).
-- **Cómo se llega:** botón «Nuevo» de `/sesiones-caja`; botón «Abrir caja» del tablero (`dashboard.component.html:282-287`); la URL. Desde el terminal de venta se abre el [diálogo del apartado 2](#2-diálogo-de-apertura-de-caja-aperturarcajadialogcomponent), no esta pantalla.
-- **Permiso de ruta:** `POS:Leer` + `POS:AperturarCaja` (`ROUTE_ACTIONS['sesiones-caja/nueva']`, `route-permissions.ts:31`). Sin permiso: aviso y redirección a `/dashboard`.
+- **Cómo se llega:** botón «Nuevo» de `/sesiones-caja`; botón «Abrir caja» del tablero (`dashboard.component.html:456-461`); la URL. Desde el terminal de venta se abre el [diálogo del apartado 2](#2-diálogo-de-apertura-de-caja-aperturarcajadialogcomponent), no esta pantalla.
+- **Permiso de ruta:** `POS:Leer` + `POS:AperturarCaja` (`ROUTE_ACTIONS['sesiones-caja/nueva']`, `route-permissions.ts:32`). Sin permiso: aviso y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Sesiones de Caja»; migas «Inicio» / «Punto de Venta» / «Sesiones de Caja» (con enlace a `/sesiones-caja`); botón volver a `/sesiones-caja` (`SD.html:3-7`, `SD.ts:69-73`). La clave «Nueva Sesión de Caja» (`sesionesCaja.create.title`) no se usa.
 - **Modos:** solo crear en esta ruta. Al cargar no se consulta nada.
 
@@ -267,7 +268,7 @@ El campo no valida un máximo ni el número de decimales (coincide con la API, R
 
 - **Componente:** `SesionesDetailComponent` (`SD.ts`, `SD.html`), modo **ver**. Scope `sesiones-caja`.
 - **Para qué sirve:** ver los datos de una sesión de caja y, si está abierta, cerrarla declarando el efectivo contado (cierre y arqueo).
-- **Cómo se llega:** enlace de la primera columna de `/sesiones-caja`; enlace «Ver mi caja» del tablero (`dashboard.component.html:273-274`).
+- **Cómo se llega:** enlace de la primera columna de `/sesiones-caja`; enlace «Ver mi caja» del tablero (`dashboard.component.html:447-448`).
 - **Permiso de ruta:** `POS:Leer`. Sin permiso: aviso y redirección a `/dashboard`.
 - **Migas y cabecera:** igual que el apartado 1.2.
 - **Modos:** ver; el id sale de la URL (`SD.ts:80-86`); sin id, navega a `/sesiones-caja`. No hay modo editar: los datos de la sesión no se modifican. El único cambio posible es el cierre, mediante el panel que se abre bajo los datos.
@@ -391,7 +392,7 @@ La pantalla se describe por zonas, en el orden en que el cajero las usa. Antes d
 
 ### 3.1 Zona: estado de caja
 
-La tarjeta que aparece sin caja abierta es un `div.sofia-filter-card` con el texto y el botón, **sin ningún título**; no existe una tarjeta llamada «Estado de caja» (`nueva-venta.component.html:13-23`). La tarjeta «Caja» con ese título está en el Inicio (`dashboard.caja.title`, `public/i18n/dashboard/es.json:47`), no en el terminal.
+La tarjeta que aparece sin caja abierta es un `div.sofia-filter-card` con el texto y el botón, **sin ningún título**; no existe una tarjeta llamada «Estado de caja» (`nueva-venta.component.html:13-23`). La tarjeta «Caja» con ese título está en el Inicio (`dashboard.caja.title`, `public/i18n/dashboard/es.json:69`), no en el terminal.
 
 Se decide con `checkSesionCaja()` (`NV.ts:376-391`): toma `sucursalId` y `empleadoId` del token (`authService.sucursalId()` y `empleadoId()`) y llama `GET /api/v1/POS/sesiones` con `sucursalId`, `empleadoId`, `estadoSesion=0` (Abierta), `pageNumber=1`, `pageSize=1`. Si vuelve una sesión, guarda su `id` en `sesionId` y el terminal queda habilitado. Se necesita la **caja propia, de la sucursal del token**: una caja abierta por otro cajero no sirve.
 
@@ -642,14 +643,14 @@ El terminal guarda sola la venta en curso en `localStorage` del navegador y la r
 | Caducidad | 12 horas contadas desde el último guardado (`POS_DRAFT_TTL_MS`). Se comprueba **al leer**: un borrador caducado, corrupto o antiguo (sin `savedAt`, de cuando se guardaban datos del cliente) se descarta y se borra | `DRAFT.ts:2,36-56`; `NV.ts:519-523` |
 | Cómo se restaura | Solo en **venta nueva** (sin `?continuar=`), al abrir la pantalla: recupera carrito, pagos (pasa al modo dividido si hay más de uno), cliente (con `GET pacientes/{id}`; si falla, descarta el cliente), receta elegida, aseguradora y monto cubierto. No vuelve a validar la existencia de los lotes: las líneas conservan la existencia con que se guardaron | `NV.ts:359-364,498-516,526-547` |
 | Con `?continuar=<id>` | Solo se recuperan los pagos «recuperables» del borrador de esa venta: filas que no son efectivo, con monto mayor que 0 y número de operación. El efectivo escrito nunca se conserva para una venta en espera | `NV.ts:549-569` |
-| Cuándo se borra | (1) Al cobrar con éxito (`removeItem` de la clave vigente, `NV.ts:1105`). (2) Al quedar vacío el carrito sin cliente ni aseguradora. (3) Al leerlo caducado o inválido. (4) Al **cerrar sesión**: `clearUserStorage` borra todas las claves con el prefijo (`auth.service.ts:121`). (5) Al **iniciar sesión otro usuario** en el mismo navegador: `clearOtherUsersStorage` borra los de los demás y conserva los propios (`auth.service.ts:78`). Un borrador de venta en espera retomada que se actualiza (`Actualizar Venta en Espera`) no se borra: queda hasta caducar | `user-storage.ts:13-28` |
+| Cuándo se borra | (1) Al cobrar con éxito (`removeItem` de la clave vigente, `NV.ts:1105`). (2) Al quedar vacío el carrito sin cliente ni aseguradora. (3) Al leerlo caducado o inválido. (4) Al **cerrar sesión**: `clearUserStorage` borra todas las claves con el prefijo (`auth.service.ts:125`). (5) Al **iniciar sesión otro usuario** en el mismo navegador: `clearOtherUsersStorage` borra los de los demás y conserva los propios (`auth.service.ts:82`). Un borrador de venta en espera retomada que se actualiza (`Actualizar Venta en Espera`) no se borra: queda hasta caducar | `user-storage.ts:13-28` |
 | Dónde queda | En el navegador y equipo del cajero; las pestañas del mismo usuario comparten la clave | derivado |
 
 `saveDraft` y `restoreDraft` leen y escriben `localStorage` sin `try/catch` (`NV.ts:492,495,520-521`); si el navegador bloquea el almacenamiento, esas llamadas fallarían (`user-storage.ts` sí protege sus accesos). **No verificado** en ejecución.
 
 ### 3.10 Retomar una venta en espera: `/pos/nueva?continuar=<id>`
 
-**Cómo se llega:** botón «Cobrar Venta» del detalle de una venta en estado «Pendiente» (apartado 7), que navega a `/pos/nueva` con `queryParams: { continuar: <id> }` (`VD.ts:104-106`). **Permisos:** el guard de ruta exige `Ventas:Leer` + `Ventas:Crear`; el botón del detalle exige además `Ventas:Actualizar` (`VD.ts:99-102`); escribir la URL a mano con solo `Ventas:Crear` abre la pantalla y el servidor responde 403 al cobrar o actualizar (hallazgo a1 de [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md)). Cualquier usuario de la misma sucursal con esos permisos puede retomarla, no solo quien la guardó (RN-VEN-053).
+**Cómo se llega:** botón «Cobrar Venta» del detalle de una venta en estado «Pendiente» (apartado 7), que navega a `/pos/nueva` con `queryParams: { continuar: <id> }` (`VD.ts:109-111`). **Permisos:** el guard de ruta exige `Ventas:Leer` + `Ventas:Crear`; el botón del detalle exige además `Ventas:Actualizar` (`VD.ts:104-107`); escribir la URL a mano con solo `Ventas:Crear` abre la pantalla y el servidor responde 403 al cobrar o actualizar (hallazgo a1 de [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md)). Cualquier usuario de la misma sucursal con esos permisos puede retomarla, no solo quien la guardó (RN-VEN-053).
 
 **Qué carga** (`cargarVentaPendiente`, `NV.ts:402-470`), mostrando el indicador de carga mientras tanto:
 1. `GET /api/v1/ventas/{id}` (permiso `Ventas:Leer`). Si falla: «Error al cargar la venta» (`pos.ventasDetail.loadError`); el terminal queda en modo venta nueva, vacío, y la URL conserva el `?continuar=`.
@@ -868,7 +869,7 @@ El diálogo contiene además un bloque `.pos-print-receipt` que **no se ve en pa
 | Documento | «Documento:» (`pos.comprobante.documentoLabel`) y «{tipo} {número}», por ejemplo «DNI 45781236» | No se imprime para el cliente eventual (número `00000000`); un tipo sin etiqueta imprime solo el número (`clienteDocumento()`, `CMP.ts:65-70`) |
 | Importes | «Subtotal (Op. Gravada):», «IGV (18%):» y, en negrita con línea superior, «TOTAL A PAGAR:» | «S/ x.xx»; el navegador los calcula (subtotal = total ÷ 1.18); no se leen de la boleta guardada (RN-CMP-014) |
 | Pagos | Una fila por pago: «{método}» y «S/ {monto}» | Al cobrar, el efectivo sale con el monto **recibido**; al reimprimir, con lo guardado en la venta |
-| Vuelto | «Vuelto:» (`pos.checkout.vueltoCortoLabel`) y «S/ {vuelto}» | Solo si el vuelto es mayor que 0. Al reimprimir se recalcula como pagos menos el total de la venta, sin considerar cobertura de seguro (`VD.ts:119-122`) |
+| Vuelto | «Vuelto:» (`pos.checkout.vueltoCortoLabel`) y «S/ {vuelto}» | Solo si el vuelto es mayor que 0. Al reimprimir se recalcula como pagos menos el total de la venta, sin considerar cobertura de seguro (`VD.ts:124-127`) |
 | Estado | «Estado SUNAT:» y el texto del estado (por ejemplo «Pendiente de envío a SUNAT») | Si hay comprobante |
 | Cajero | «Cajero:» (`pos.reportDialog.cajeroLabel`) y el nombre | Al cobrar: nombre completo del usuario conectado. Al reimprimir: `empleadoNombre` de la venta (el cajero que la hizo). Solo si hay nombre |
 
@@ -991,8 +992,8 @@ Encabezado «Resultados (N)». Paginación 10, 25 y 50 (primera/última; 10 por 
 | Comprobante | Título «Comprobante» (`ventasDetail.comprobanteTitle`) | «Nº Comprobante:» `{tipo} {número}` y «Estado SUNAT:» con el texto del estado (por ejemplo «Pendiente de envío a SUNAT»); no muestra emisor ni cliente | Si hay comprobante |
 
 **Líneas** (título «Productos Vendidos», `ventasDetail.detallesTitle`): «Producto», «Lote», «Cantidad» (si la línea se vendió por presentación: «{n} × {presentación} ({unidades base})»; si no, el número), «Devuelto» (`devolucion.colDevuelto`), «P. Unitario (S/)» y «Subtotal (S/)», con 2 decimales en importes.
-**Pagos** (título «Pagos Registrados»): «Método de Pago» (Efectivo, Yape / Plin, Tarjeta Débito/Crédito, Transferencia), «Monto (S/)», «Referencia de Operación» («—» si no hay) y «Fecha de Pago» (`dd/MM/yyyy HH:mm`). Debajo, «Vuelto:» y «S/ x.xx» si es mayor que 0, calculado como pagos menos el total de la venta, sin considerar cobertura de seguro (`vueltoVenta`, `VD.ts:119-122`).
-**Devoluciones** (título «Devoluciones / Notas de crédito», `devolucion.sectionTitle`; solo si hay): «Nota de crédito» («—» si no), «Fecha», «Reembolsado (S/)» y «Método de reembolso».
+**Pagos** (título «Pagos Registrados»): «Método de Pago» (Efectivo, Yape / Plin, Tarjeta Débito/Crédito, Transferencia), «Monto (S/)», «Referencia de Operación» («—» si no hay) y «Fecha de Pago» (`dd/MM/yyyy HH:mm`). Debajo, «Vuelto:» y «S/ x.xx» si es mayor que 0, calculado como pagos menos el total de la venta, sin considerar cobertura de seguro (`vueltoVenta`, `VD.ts:124-127`).
+**Devoluciones** (título «Devoluciones / Notas de crédito», `devolucion.sectionTitle`; solo si hay): «Nota de crédito» («—» si no), «Fecha», «Reembolsado (S/)» y «Método de reembolso». Desde `37048ea` el número de la nota de crédito es un enlace a `/devoluciones/:id` (`data-testid="ver-devolucion"`) cuando el usuario tiene `Devoluciones:Leer` (`puedeVerDevoluciones()`, `VD.ts:90-93`; `VD.html:230-239`); sin ese permiso sigue siendo texto.
 
 **Botones y acciones** (encabezado de la tarjeta, a la derecha, en este orden; `VD.html:26-58`)
 
@@ -1010,8 +1011,8 @@ Ninguno comprueba la sucursal de la venta: la API ya niega ver ventas de otra su
 | Situación | Tipo | Texto exacto (clave) | Fuente |
 |---|---|---|---|
 | Falla la carga | Error | «Error al cargar la venta» (`pos.ventasDetail.loadError`) | `VD.ts:69` |
-| Venta anulada | Éxito | «Venta anulada correctamente.» (`pos.ventasDetail.anularSuccess`); recarga la venta | `VD.ts:188` |
-| Error al anular | Error | Mapa del apartado 8 | `VD.ts:195` |
+| Venta anulada | Éxito | «Venta anulada correctamente.» (`pos.ventasDetail.anularSuccess`); recarga la venta | `VD.ts:193` |
+| Error al anular | Error | Mapa del apartado 8 | `VD.ts:200` |
 | Devolución procesada | Éxito | «Devolución procesada y nota de crédito emitida.» (lo muestra el diálogo, apartado 9) | `DEV.ts:158` |
 
 **Llamadas a la API**
@@ -1020,13 +1021,13 @@ Ninguno comprueba la sucursal de la venta: la API ya niega ver ventas de otra su
 |---|---|---|---|
 | Abrir y tras anular o devolver | `VentaService.getById` | `GET /api/v1/ventas/{id}` | `Ventas:Leer` (`VentasController.cs:29`) |
 | Confirmar anulación | `VentaService.anular` (`VSV.ts:73-76`) | `PUT /api/v1/ventas/{id}/anular`, cuerpo = el motivo como texto JSON | `Ventas:Anular` (`VentasController.cs:75`) |
-| Confirmar devolución | `VentaService.procesarDevolucion` | `POST /api/v1/devoluciones` | `Devoluciones:ProcesarDevolucion` (`DevolucionesController.cs:11`) |
+| Confirmar devolución | `VentaService.procesarDevolucion` | `POST /api/v1/devoluciones` | `Devoluciones:ProcesarDevolucion` (`DevolucionesController.cs:15`) |
 
 **Observaciones**
 - El estado no es un chip sino texto junto a la fecha.
 - «Cobrar Venta» no exige caja abierta: si no la hay, el terminal mostrará el aviso de abrirla (apartado 3.1).
 - El permiso `Devoluciones:ProcesarDevolucion` no lo siembra ningún rol (RN-DEV-001); el botón «Devolver» solo lo ven Admin y roles a los que se les haya dado.
-- Las devoluciones solo se ven aquí: no existe pantalla de listado ni de detalle de devoluciones (RN-DEV-032).
+- Desde `37048ea` las devoluciones también se consultan en `/devoluciones` y `/devoluciones/:id` (apartado 9A). Con `sofia-apis` anterior a `0678e40` y `sofia-web-spa` anterior a `37048ea` no había pantalla de listado ni de detalle (RN-DEV-032 lo recoge así y está desactualizada: ver apartado 10).
 
 ---
 
@@ -1034,7 +1035,7 @@ Ninguno comprueba la sucursal de la venta: la API ya niega ver ventas de otra su
 
 - **Componente:** `AnularVentaDialogComponent` (`ANU.ts`, `ANU.html`). Scope `pos`.
 - **Para qué sirve:** pedir el motivo antes de anular una venta. La anulación revierte el stock, anula el comprobante y, si la venta estaba cobrada, se registra desde la caja propia (RN-VEN-065 a RN-VEN-069, RN-CMP-012).
-- **Cómo se abre:** botón «Anular Venta» de `/pos/:id` (`anular()`, `VD.ts:178-199`), ancho 450 px, sin `disableClose` (Esc o clic fuera equivalen a cancelar). Permiso: `Ventas:Anular` (control en el botón y en el endpoint).
+- **Cómo se abre:** botón «Anular Venta» de `/pos/:id` (`anular()`, `VD.ts:183-204`), ancho 450 px, sin `disableClose` (Esc o clic fuera equivalen a cancelar). Permiso: `Ventas:Anular` (control en el botón y en el endpoint).
 - **Título y subtítulo:** «Anular Venta» (`pos.ventasDetail.anularDialogTitle`) y «Esta acción revierte el stock descontado. Ingresa el motivo de la anulación.» (`pos.ventasDetail.anularDialogSubtitle`).
 
 **Campos del formulario** (`ANU.ts:17-19`, `ANU.html`)
@@ -1052,7 +1053,7 @@ Un motivo de solo espacios pasa la validación del formulario (`required` solo r
 | Cancelar (`actions.cancel`) | Pie, a la derecha | Siempre | Nunca | `onCancel()` → cierra con `null`; no se anula |
 | Anular Venta (`pos.ventasDetail.btnAnular`), estilo de borrado | Pie, a la derecha | Siempre | Nunca | `onConfirm()`: marca todo como tocado; si es inválido no cierra; si es válido cierra con el texto del motivo (sin recortar) |
 
-**Qué pasa al cerrar** (`VD.ts:178-199`): si el resultado es nulo o vacío no hace nada; si trae motivo, pone «anulando» (el botón del detalle muestra el indicador y se deshabilita) y llama a `PUT /api/v1/ventas/{id}/anular` (`Ventas:Anular`) con el motivo como texto JSON.
+**Qué pasa al cerrar** (`VD.ts:183-204`): si el resultado es nulo o vacío no hace nada; si trae motivo, pone «anulando» (el botón del detalle muestra el indicador y se deshabilita) y llama a `PUT /api/v1/ventas/{id}/anular` (`Ventas:Anular`) con el motivo como texto JSON.
 
 **Mensajes al usuario y mapeo de errores** (`ANULAR_ERROR_KEYS`, `VD.ts:19-23`)
 
@@ -1064,7 +1065,7 @@ Un motivo de solo espacios pasa la validación del formulario (`required` solo r
 | `Concurrency.Conflict` | Error | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» (`errors.concurrencyConflict`) |
 | Cualquier otro código (incluye `Venta.Anular` por estado no anulable o de otra sucursal, motivo en blanco) | Error | «Error al anular la venta.» (`pos.ventasDetail.anularError`) |
 
-**Observaciones:** el texto de `anularConDevoluciones` remite a «Devoluciones», que no es una opción de menú ni una pantalla (las devoluciones se procesan desde este mismo detalle). En una venta «Pendiente» (en espera) la anulación no exige caja abierta; sí en una «Completada».
+**Observaciones:** el texto de `anularConDevoluciones` remite a «Devoluciones»: desde `37048ea` es una opción de menú y una pantalla de consulta (`/devoluciones`, apartado 9A); las devoluciones se siguen procesando desde este mismo detalle. En una venta «Pendiente» (en espera) la anulación no exige caja abierta; sí en una «Completada».
 
 ---
 
@@ -1125,9 +1126,116 @@ Cuerpo enviado (`buildRequest`, `DEV.ts:125-141`): `comprobanteOrigenId` = **id 
 | `Concurrency.Conflict` | Error | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» (`errors.concurrencyConflict`) |
 | Cualquier otro código | Error | «Error al procesar la devolución.» (`pos.devolucion.error`) |
 
-**Llamadas a la API:** `POST /api/v1/devoluciones` (`VentaService.procesarDevolucion`, `VSV.ts:79-81`), permiso `Devoluciones:ProcesarDevolucion` (`DevolucionesController.cs:11`).
+**Llamadas a la API:** `POST /api/v1/devoluciones` (`VentaService.procesarDevolucion`, `VSV.ts:79-81`), permiso `Devoluciones:ProcesarDevolucion` (`DevolucionesController.cs:15`).
 
 **Observaciones:** «Cuarentena DIGEMID» solo deja anotado el destino: la API no repone stock ni crea un registro de cuarentena (RN-DEV-024), mientras que «Reingreso a venta» suma las unidades al mismo lote de la sucursal (RN-DEV-023). El reembolso en efectivo afecta el arqueo de la caja (RN-CAJ-014). No hay plazo máximo para devolver (RN-DEV-008). Las cantidades se expresan en unidades base aunque la línea se haya vendido por presentación.
+
+---
+
+## 9A. Devoluciones: `/devoluciones` y `/devoluciones/:id`
+
+Carpeta `app/pages/devoluciones`, scope i18n `devoluciones` (`public/i18n/devoluciones/es.json`, 46 claves; `provideTranslocoScope('devoluciones')`). Pantallas nuevas desde `sofia-web-spa` `37048ea` («add returns search and detail screens») y `sofia-apis` `0678e40` («add returns list filters, detail lines and export»). Rutas en `devoluciones.routes.ts:3-14` (`''` → `DevolucionesSearchComponent`, `:id` → `DevolucionesDetailComponent`), cargadas con `loadChildren` desde `app.routes.ts` (`path: 'devoluciones'`). No hay ruta `nueva`: las devoluciones se crean desde el detalle de una venta (apartado 9). Reglas de negocio: [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (RN-DEV); **las reglas de devoluciones todavía no recogen estas dos pantallas** (ver apartado 10).
+
+- **Menú:** grupo «Punto de Venta» → «Devoluciones» (`nav.devoluciones`, icono `solar:undo-left-round-line-duotone`, `/devoluciones`, `sidebar-data.ts:138-142`), visible con `Devoluciones:Leer` (`route-permissions.ts:26`).
+- **Permiso de ruta:** `Devoluciones:Leer` (primer segmento `devoluciones` → módulo `Devoluciones`; el segundo segmento es un id, no `nueva`). Sin permiso: aviso y redirección a `/dashboard`.
+
+### 9A.1 `/devoluciones` — Devoluciones (búsqueda)
+
+- **Componente:** `DevolucionesSearchComponent` (`app/pages/devoluciones/devoluciones-search/devoluciones-search.component.ts`, `.html`). Scope `devoluciones`.
+- **Para qué sirve:** consultar las devoluciones de las ventas y sus notas de crédito: «Consulta las devoluciones de tus ventas y sus notas de crédito.» (`search.subtitle`). Abrir el detalle, ir a la venta de origen y exportar el resultado a Excel.
+- **Cómo se llega:** menú lateral; migas del detalle; enlace del número de nota de crédito en el detalle de una venta (apartado 7).
+- **Migas y cabecera:** título «Devoluciones» (`search.title`); migas «Inicio» (`breadcrumbs.home`, `/dashboard`) / «Punto de Venta» (`breadcrumbs.puntoVenta`, sin enlace) / «Devoluciones» (`breadcrumbs.devoluciones`, activa); sin botón volver (`.ts:84-88`, `.html:3-6`). Tarjeta de filtros con el mismo título y subtítulo.
+- **Modos:** uno solo (búsqueda). Los resultados aparecen tras «Buscar» o si hay estado guardado de una visita anterior (`SearchStateService`, clave `/devoluciones`; guarda también el empleado elegido y los límites del monto; `.ts:121-132,174-183`).
+
+**Filtros de búsqueda** (`.ts:74-82`, `.html:14-134`)
+
+| Etiqueta (clave `devoluciones.fields.*`) | Control | Tipo | Opciones o formato | Valor inicial |
+|---|---|---|---|---|
+| Nota de crédito (`numeroNotaCredito`) | `numeroNotaCredito` | Texto con lupa (`matSuffix`), `maxlength="20"`; Enter busca | El número impreso («BC01-00000007»), solo el prefijo de la serie o solo el correlativo (`GetDevolucionesQuery.cs`: «Credit note number as printed…»; `DevolucionFilters.ParseNumeroNotaCredito`) | Vacío |
+| Autorizó (`empleadoAutoriza`) | `empleadoNombre` | Autocompletado con lupa; escribe y, tras 300 ms, busca empleados por nombres (`GET /api/v1/empleados`, 20 resultados); Enter busca | Elige un empleado de la lista; sin coincidencias: «Sin resultados» (`search.autocompleteNoResults`). Si escribes después de elegir, se pierde la elección (`.ts:102-115`) | Vacío |
+| Motivo (`motivo`) | `motivo` | Select | «— Todos —» (`generic-labels.all`, valor nulo), «Devolución total» (`motivo.06`) y «Devolución por ítem» (`motivo.07`) (`MOTIVOS_DEVOLUCION`, `devolucion.model.ts:4`) | Nulo |
+| Fecha desde (`fechaInicio`) | `fechaInicio` | Selector de fecha (`mat-datepicker`) | Se envía como el inicio del día local en ISO (`toLocalDayStartIso`) | Nulo |
+| Fecha hasta (`fechaFin`) | `fechaFin` | Selector de fecha | Se envía como el fin del día local en ISO (`toLocalDayEndIso`) | Nulo |
+| Método de reembolso (`metodoReembolso`) | `metodoReembolso` | Select | «— Todos —», «Efectivo», «Yape / Plin», «Tarjeta», «Transferencia» (`metodo.*`; valores numéricos del enum `MetodoPago` 0 a 3) | Nulo |
+| Destino (`destino`) | `destino` | Select | «— Todos —», «Reingreso a venta» (`destino.Reingreso_Venta`) y «Cuarentena DIGEMID» (`destino.Cuarentena_DIGEMID`) | Nulo |
+| Monto reembolsado (S/) (`montoReembolsado`) | Deslizador de rango (`app-range-slider-field`) | Numérico | 0 a 1000, paso 10; el extremo mínimo (0) y el máximo (1000) significan «sin límite» y no se envían (`.ts:49-52,155-156`) | 0 a 1000 |
+
+«Limpiar» (`actions.clear`) vacía el formulario, el empleado elegido y el deslizador, oculta la tabla, vuelve a la página 1 y borra el estado guardado (`clear()`, `.ts:192-203`). El backend valida: `empleadoAutorizaId` distinto de vacío, `motivoSunatCatalogo` de exactamente 2 caracteres, `numeroNotaCredito` hasta 20, `montoMin` ≥ 0 y `montoMax` ≥ `montoMin` (`GetDevolucionesQueryValidator.cs`).
+
+**Tabla de resultados** (`.html:155-283`; el servidor ordena por fecha de devolución descendente y luego por id, `GetDevolucionesQueryHandler.cs`)
+
+| Encabezado (clave `devoluciones.table.*`) | Dato | Formato | Enlace |
+|---|---|---|---|
+| Nota de crédito (`colNotaCredito`) | `numeroNotaCredito` | Texto; «—» si la devolución no tiene nota | Sí → `/devoluciones/:id` |
+| Venta (`colVenta`) | `codigoVenta` | Texto; «—» si es nulo | A `/pos/:ventaId` solo si hay `ventaId` y el usuario tiene `Ventas:Leer` (`puedeVerVentas`, `.ts:72`); si no, texto |
+| Fecha (`colFecha`) | `fechaDevolucion` | `dd/MM/yyyy HH:mm` | No |
+| Cliente (`colCliente`) | `clienteNombre` | Texto («Público General» cuando la venta no tiene cliente, `DevolucionResumenExtensions.cs`) | No |
+| Autorizó (`colAutoriza`) | `empleadoAutorizaNombre` | Nombres y apellido paterno; «N/A» si el empleado no existe | No |
+| Sucursal (`colSucursal`) | `sucursalNombre` | Texto; «—» si es nulo | No |
+| Motivo (`colMotivo`) | `motivoSunatCatalogo` | «Devolución total» / «Devolución por ítem» | No |
+| Reembolsado (S/) (`colMontoReembolsado`) | `montoReembolsado` | `number: '1.2-2'`; 0.00 si es nulo | No |
+| Método de reembolso (`colMetodo`) | `metodoReembolso` | «Efectivo», «Yape / Plin», «Tarjeta», «Transferencia» o «—» | No |
+
+Encabezado «Resultados (N)». Paginación 10/25/50 con botones primera/última. Sin resultados: «Sin resultados» (`generic-labels.no-results`). La tabla no muestra el monto de la nota de crédito (sí lo envía la API y lo exporta el Excel).
+
+**Botones y acciones**
+
+| Texto (clave) | Dónde | Visible cuando | Deshabilitado cuando | Qué hace |
+|---|---|---|---|---|
+| Limpiar (`actions.clear`) | Pie de la tarjeta de filtros | Siempre | Nunca | `clear()` |
+| Buscar (`actions.search`); spinner mientras carga | Pie de la tarjeta de filtros | Siempre | `loading()` | `search()` (`.ts:160-190`) → `GET /api/v1/devoluciones`; la página que se pide es la actual (`pageIndex + 1`) |
+| Exportar (`actions.export`), icono `download` | Bajo la tabla, a la izquierda | Solo tras buscar | Nunca | `exportar()` (`.ts:211-237`) → `POST /api/v1/devoluciones/exportar`, descarga «devoluciones.xlsx» (`search.exportFilename`) |
+| Enlaces de nota de crédito y de venta | Columnas 1 y 2 | Con resultados (el de venta, con `Ventas:Leer`) | — | Navegan al detalle de la devolución o de la venta |
+
+**Mensajes al usuario**
+
+| Situación | Tipo | Texto exacto (clave) | Fuente |
+|---|---|---|---|
+| Falla la búsqueda (cualquier error) | Error | «No se pudieron cargar las devoluciones.» (`search.searchError`) | `.ts:185-188` |
+| Falla la exportación (cualquier error) | Error | «No se pudo exportar las devoluciones.» (`search.exportError`) | `.ts:235` |
+
+No hay mapa de códigos del backend. Si el usuario no tiene `Empleados:Leer`, el autocompletado de «Autorizó» falla en la API (403): el SPA no lo captura y la lista simplemente no se llena (no verificado en la aplicación).
+
+**Llamadas a la API**
+
+| Cuándo | Método del servicio | Verbo y URL | Permiso del endpoint |
+|---|---|---|---|
+| Buscar o cambiar de página | `DevolucionService.search` (`app/pages/devoluciones/services/devolucion.service.ts:18-31`) | `GET /api/v1/devoluciones?pageNumber&pageSize[&fechaInicio][&fechaFin][&metodoReembolso][&destino][&motivoSunatCatalogo][&numeroNotaCredito][&empleadoAutorizaId][&montoMin][&montoMax]` (solo envía los filtros con valor; los enumerados viajan como número y el 0 sí se envía) | `Devoluciones:Leer` (`DevolucionesController.cs:23-24`) |
+| Exportar | `DevolucionService.exportar` (`:37-39`) | `POST /api/v1/devoluciones/exportar` (respuesta blob) | `Devoluciones:Leer` (`DevolucionesController.cs:39-40`) |
+| Autocompletar «Autorizó» | `EmpleadoService.search` | `GET /api/v1/empleados?nombres=…&pageNumber=1&pageSize=20` | `Empleados:Leer` |
+
+**Alcance y comportamiento del servidor** (`GetDevolucionesQueryHandler.cs`)
+- Una devolución pertenece a la sucursal de la venta cuyo comprobante acredita; un usuario con acceso restringido a sucursales solo ve las de sus sucursales permitidas (`WhereSucursalIn`), y el rol `Admin` ve todas las de la empresa.
+- «Destino» coincide si **alguna** línea de la devolución fue a ese destino. «Monto reembolsado» filtra por `MontoReembolsado` (≥ mínimo, ≤ máximo). El número de nota busca por prefijo de serie (contiene el texto) y/o por correlativo; las devoluciones sin nota de crédito nunca coinciden cuando se escribe un número.
+- Las fechas se aplican como rango inclusivo sobre `FechaDevolucion` (`WhereDateRange`).
+
+**Exportación**
+- Cuerpo enviado (`DevolucionExportRequest`, `DevolucionesController.cs:85-96`): `headers` con 10 textos traducidos en este orden: «Nota de crédito» (`table.colNotaCredito`), «Venta», «Fecha», «Cliente», «Autorizó», «Sucursal», «Motivo», «Monto de la nota (S/)» (`colMontoNotaCredito`), «Reembolsado (S/)» y «Método de reembolso»; `dateFormat` `dd/MM/yyyy` en español y `MM/dd/yyyy` en otro idioma (`.ts:225`); y los filtros actuales del formulario (no necesariamente los de la última búsqueda). Las filas son las del filtro completo hasta el máximo de página (`PaginationLimits.MaxPageSize`); si superan el límite de exportación responde con el error de «demasiadas filas» (`ExportExtensions.TooManyRowsResult`). La columna «Motivo» exporta el código SUNAT (`06` o `07`) y «Método de reembolso» el nombre del enumerado (`Efectivo`, `YapePlin`, …), no los textos traducidos de la tabla (`DevolucionesController.cs:66-78`).
+- Carga masiva: no existe para devoluciones (ni botón «Nuevo»).
+
+### 9A.2 `/devoluciones/:id` — Detalle de devolución
+
+- **Componente:** `DevolucionesDetailComponent` (`app/pages/devoluciones/devoluciones-detail/devoluciones-detail.component.ts`, `.html`). Scope `devoluciones`.
+- **Para qué sirve:** ver una devolución con su nota de crédito, la venta de origen y las líneas devueltas. Solo lectura: no hay modo editar.
+- **Cómo se llega:** enlace del número de nota en `/devoluciones` y en el detalle de una venta (apartado 7); URL con el id.
+- **Permiso de ruta:** `Devoluciones:Leer`.
+- **Migas y cabecera:** título «Detalle de devolución» (`detail.title`); migas «Inicio» / «Punto de Venta» / «Devoluciones» (con enlace a `/devoluciones`); botón volver a `/devoluciones` (`.ts:34-38`, `.html:3-7`).
+- **Qué muestra** (`.html:13-150`): mientras carga, un spinner. Encabezado de la tarjeta: el número de la nota de crédito (o «Sin nota de crédito», `detail.sinNotaCredito`) y la fecha `dd/MM/yyyy HH:mm`; a la derecha el botón «Ver venta» (`detail.verVenta`), solo si hay `ventaId` y el usuario tiene `Ventas:Leer`, que abre `/pos/:ventaId`. Rejilla de datos: Venta (código o «—»), Cliente, Autorizó, Sucursal («—» si es nulo), Motivo, Método de reembolso, Monto de la nota (S/) (`2` decimales; 0.00 si es nulo), Reembolsado (S/) y «Sustento» (`detail.sustento`, texto con saltos de línea). Tabla «Productos devueltos» (`detail.lineasTitle`) con las columnas del cuadro siguiente y, debajo, «Total devuelto:» (`detail.totalDevuelto`) con «S/» y la suma de los subtotales (`totalDevuelto`, `.ts:32`).
+
+| Encabezado (clave `devoluciones.lineas.*`) | Dato | Formato |
+|---|---|---|
+| Producto (`colProducto`) | `productoNombre` | Texto; «Producto desconocido» si el producto ya no existe |
+| Lote (`colLote`) | `numeroLote` | Texto; «N/A» si no se halla el lote |
+| Presentación (`colPresentacion`) | `presentacion` | Texto; «—» si la línea se vendió por unidad |
+| Cantidad devuelta (`colCantidad`) | `cantidadDevuelta` | `number: '1.0-4'` |
+| Precio unitario (S/) (`colPrecio`) | `precioUnitario` | `number: '1.2-2'` (el precio fijado en la línea de venta) |
+| Subtotal (S/) (`colSubtotal`) | `subtotal` | `number: '1.2-2'` (`cantidadDevuelta × precioUnitario`) |
+| Destino (`colDestino`) | `destino` | «Reingreso a venta» o «Cuarentena DIGEMID» |
+
+- **Botones:** solo «Ver venta» (condicional, arriba) y el botón volver. No hay «Editar», «Eliminar» ni «Anular devolución».
+- **Mensajes:** falla la carga (cualquier error, incluido 404 `Devolucion.NotFound`): «No se pudo cargar la devolución.» (`detail.loadError`, `.ts:53-56`).
+- **Llamadas a la API:** `DevolucionService.getById` (`devolucion.service.ts:33-35`) → `GET /api/v1/devoluciones/{id}`, `Devoluciones:Leer` (`DevolucionesController.cs:31-32`). El servidor responde 404 `Devolucion.NotFound` si no existe, está eliminada o es de una sucursal no permitida al usuario (`GetDevolucionByIdQueryHandler.cs:11-24`). Las líneas se leen sin cruzar navegaciones obligatorias: un lote o producto eliminado después de la venta no hace desaparecer la línea devuelta (`GetLineasAsync`).
+- No verificado en la aplicación (solo lectura de código y de las pruebas `devoluciones-*.component.spec.ts`).
 
 ---
 
@@ -1141,7 +1249,9 @@ Cuerpo enviado (`buildRequest`, `DEV.ts:125-141`): `comprobanteOrigenId` = **id 
 | 4 | Formato de números | El pipe `number: '1.2-2'` formatea según el idioma activo; no se verificó el separador decimal efectivo |
 | 5 | Código de venta y tipo del comprobante en pantalla | Se describe la forma derivada del backend (`{prefijo}-{correlativo:D8}`); no se vio un ejemplo real |
 | 6 | Rutas y estados de texto | El layout horizontal (opción «POS / Ventas») no se documenta aquí (`producto/pantallas/acceso-layout-y-compartidos` §4.7) |
-| 7 | Cambios sin commitear | Ninguno: `sofia-apis` `43f5529` y `sofia-web-spa` `eeffbb6` sin cambios locales; no hay marcas «En curso (sin commitear)» |
+| 7 | Cambios sin commitear | Ninguno: los repositorios estaban limpios al revisar (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`); no hay marcas «En curso (sin commitear)» |
+| 8 | Reglas de devoluciones | Las reglas RN-DEV de `negocio/reglas/caja-devoluciones-y-dashboard` todavía no describen la búsqueda, el detalle ni la exportación de devoluciones (RN-DEV-032 dice que no hay pantalla de listado ni de detalle); no hay un RN-DEV que citar para el apartado 9A y no se inventó ninguno |
+| 9 | Apartado 9A | No verificado en la aplicación: aspecto, enlaces entre pantallas, comportamiento del autocompletado de «Autorizó» sin `Empleados:Leer` y descarga del Excel (solo lectura de código y pruebas) |
 
 ---
 
@@ -1157,6 +1267,8 @@ Cuerpo enviado (`buildRequest`, `DEV.ts:125-141`): `comprobanteOrigenId` = **id 
 | `/pos` | 6 |
 | `/pos/nueva` (y `?continuar=`) | 3 (3.10 para `?continuar=`) |
 | `/pos/:id` | 7 |
+| `/devoluciones` | 9A.1 |
+| `/devoluciones/:id` | 9A.2 |
 
 ### Componentes (`componentes-pages.txt`) y diálogos (`dialogos.txt`)
 
@@ -1172,8 +1284,10 @@ Cuerpo enviado (`buildRequest`, `DEV.ts:125-141`): `comprobanteOrigenId` = **id 
 | `ComprobanteDialogComponent` | 5 |
 | `AnularVentaDialogComponent` | 8 |
 | `DevolverVentaDialogComponent` | 9 |
+| `DevolucionesSearchComponent` (`pages/devoluciones`) | 9A.1 |
+| `DevolucionesDetailComponent` (`pages/devoluciones`) | 9A.2 |
 
-No hay más componentes ni diálogos en las dos carpetas (apartado 0.1).
+No hay más componentes ni diálogos en las dos carpetas de `pos` y `sesiones-caja` (apartado 0.1); la carpeta `devoluciones` no tiene diálogos.
 
 ### Usos de `*appPermiso` (`app-permiso-usos.csv`)
 
@@ -1228,6 +1342,10 @@ Comprobado buscando cada clave en `src/` (archivos `.ts` y `.html`, sin pruebas)
 
 Las demás claves de `sesiones-caja` se usan en `SS.*` y `SD.*`.
 
+### Scope `devoluciones` (`public/i18n/devoluciones/es.json`)
+
+46 claves; ninguna sin uso (búsqueda de la clave completa o relativa en los `.ts` y `.html` de `pages/devoluciones`; `metodo.*`, `destino.*` y `motivo.*` se usan de forma dinámica).
+
 ### Otros hallazgos de texto
 
 - Claves inexistentes: no se detectó ninguna clave usada por `pos` o `sesionesCaja` que falte en su `es.json` (comprobado para las claves de scope; las de la raíz y de `recetasMedicas` se tomaron del `es.json` correspondiente).
@@ -1242,5 +1360,6 @@ Las demás claves de `sesiones-caja` se usan en `SS.*` y `SD.*`.
 - Servicios de otros módulos consultados: `medicamentos`, `pacientes`, `recetas-medicas`, `empleados` (`*.service.ts` y modelos).
 - Textos: `public/i18n/pos/es.json`, `public/i18n/sesiones-caja/es.json`, `public/i18n/recetas-medicas/es.json`, `public/i18n/dashboard/es.json`, `public/i18n/es.json`.
 - Backend (solo lectura): `SOFIA.API/Controllers/{POS,Ventas,Devoluciones,Medicamentos,Pacientes,Recetas,Seguros,Empleados}Controller.cs`; `SOFIA.Application/Ventas/Queries/GetVentas/GetVentasQueryHandler.cs`, `GetVentaById/GetVentaByIdQueryHandler.cs`; `Ventas/Common/VentaComprobanteGenerator.cs`, `VentaDetalleFactory.cs`; `Ventas/Commands/{CreateVenta,CompletarVenta,ActualizarVentaPendiente}`; `SOFIA.Domain/Entities/{Venta,Medicamento}.cs`; `SOFIA.Domain/Enums/CondicionVenta.cs`.
+- Apartado 9A (`sofia-web-spa/src/app/pages/devoluciones/**`: componentes, plantillas, servicio, modelo y rutas; `public/i18n/devoluciones/es.json`) y, en el backend, `DevolucionesController.cs`, `Devoluciones/Queries/GetDevoluciones/*`, `Devoluciones/Queries/GetDevolucionById/*`, `Devoluciones/Common/DevolucionFilters.cs` y `DevolucionResumenExtensions.cs`.
 - Inventarios: `docs/_inventario/{rutas-spa.csv, componentes-pages.txt, dialogos.txt, app-permiso-usos.csv, endpoints.csv, codigos-error.csv, codigos-error-ocurrencias.csv}`.
 - Documentos validados enlazados: [`negocio/reglas/ventas-y-comprobantes`](../../negocio/reglas/ventas-y-comprobantes.md), [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md), [`producto/pantallas/acceso-layout-y-compartidos`](acceso-layout-y-compartidos.md), [`producto/pantallas/administracion`](administracion.md).
