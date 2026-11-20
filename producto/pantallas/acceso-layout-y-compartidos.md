@@ -3,13 +3,17 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código del árbol de trabajo (SPA y, solo para describir qué calcula cada indicador del dashboard y el registro de empresa, los handlers de `SOFIA.Application/Dashboard` y `SOFIA.Application/Empresas`). No se usó el navegador ni la API local. La versión 1.1 reconcilia el documento (escrito sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`) con el código actual; no hay cambios sin commitear en ninguno de los dos repos. |
 
 ## Historial de cambios
+
+### Versión 1.3 (2026-11-20)
+
+Revisión contra el código (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`): Login: pago de la suscripción y mensaje nuevo; dashboard: aviso y sección «Suscripciones»; menú, `platformAdminGuard`, `PagoSuscripcionComponent`; citas desplazadas y corregidas. Incluye lo documentado de `6f6b837`/`558ad35` (suscripciones del operador de plataforma) y `0678e40`/`37048ea` (devoluciones).
 
 ### Versión 1.2 (2026-11-04)
 
@@ -55,31 +59,31 @@ Convenciones: las rutas de archivo son relativas a `sofia-web-spa/` salvo que em
 
 ## 1. Pantallas públicas
 
-Las cuatro rutas `/auth/*` están fuera del layout: se cargan directamente con `loadComponent`, sin `authGuard` ni guard de permiso (`src/app/app.routes.ts:10-31`). No muestran cabecera ni menú. El componente raíz solo contiene `<router-outlet>` (`src/app/app.component.html:1`). Ninguna de las cuatro redirige al dashboard si ya hay sesión iniciada: el código de los componentes no lo comprueba.
+Las cuatro rutas `/auth/*` están fuera del layout: se cargan directamente con `loadComponent`, sin `authGuard` ni guard de permiso (`src/app/app.routes.ts:11-32`). No muestran cabecera ni menú. El componente raíz solo contiene `<router-outlet>` (`src/app/app.component.html:1`). Ninguna de las cuatro redirige al dashboard si ya hay sesión iniciada: el código de los componentes no lo comprueba.
 
 ### 1.1 `/auth/login` — Iniciar sesión
 
 - **Componente:** `LoginComponent` (`src/app/pages/auth/login/login.component.ts`, `login.component.html`, `login.component.scss`). Scope i18n `auth` con `read: 'auth'` (`login.component.html:1`).
 - **Para qué sirve:** autenticar con usuario y contraseña; si el servidor responde bien guarda el token de acceso y entra al sistema.
 - **Cómo se llega:** URL directa; redirección del `authGuard` cuando no hay sesión (§5.1); redirección tras cerrar sesión (§4.4), tras cambiar contraseña (§2) y tras restablecerla (§1.4); enlace «Iniciar sesión» del registro (§1.2) y «Volver a iniciar sesión» de recuperación (§1.3, §1.4).
-- **Permiso de ruta:** ninguno (pública, `src/app/app.routes.ts:10-14`).
+- **Permiso de ruta:** ninguno (pública, `src/app/app.routes.ts:11-15`).
 - **Migas y cabecera:** no tiene migas. Título de la tarjeta «Iniciar sesión» (`auth.title`), subtítulo «Ingresa tus credenciales para acceder al sistema» (`auth.subtitle`).
-- **Diseño:** panel izquierdo de marca (logo `⚕ SOFIA`, «Gestión completa de tu farmacia» (`auth.panelTitle`), «Sistema Optimizado Farmacéutico con Inteligencia Artificial» (`auth.system`), cuatro viñetas: «Control de medicamentos y lotes» (`auth.features.inventory`), «Gestión de recetas y pacientes» (`auth.features.patients`), «Reportes DIGEMID automatizados» (`auth.features.digemid`), «Seguridad y auditoría completa» (`auth.features.security`) y pie «© {año} SOFIA · v{versión}») y panel derecho con la tarjeta (`login.component.html:3-37`). El panel de marca de esta página está escrito en línea (no usa `app-auth-brand-panel`, ver §1.5). El panel izquierdo se oculta con ancho de pantalla ≤ 768 px (`login.component.scss:263-266`). La versión sale de `environment.appVersion` (`login.component.ts:55`; valor compilado `1.0.0` en `src/environments/environment.ts:5` y en `environment.prod.ts:5`; `environment.model.ts:9-31` usa `window.__env` si trae `production` booleano y `api.baseurl` no vacío, y si no los valores compilados). Desde `8f36125`, `src/index.html:18` carga `environment.js` antes de la aplicación; el `public/environment.js` del repositorio solo define `window.__env = {}`, que no cumple esa condición, así que rige el valor compilado salvo que el despliegue sustituya ese archivo. `ng build` usa ahora la configuración `production` por defecto (`angular.json:95`), que reemplaza `environment.ts` por `environment.prod.ts` (`angular.json:63-68`); `ng serve` conserva `development` por defecto (`angular.json:107`).
+- **Diseño:** panel izquierdo de marca (logo `⚕ SOFIA`, «Gestión completa de tu farmacia» (`auth.panelTitle`), «Sistema Optimizado Farmacéutico con Inteligencia Artificial» (`auth.system`), cuatro viñetas: «Control de medicamentos y lotes» (`auth.features.inventory`), «Gestión de recetas y pacientes» (`auth.features.patients`), «Reportes DIGEMID automatizados» (`auth.features.digemid`), «Seguridad y auditoría completa» (`auth.features.security`) y pie «© {año} SOFIA · v{versión}») y panel derecho con la tarjeta (`login.component.html:3-37`). El panel de marca de esta página está escrito en línea (no usa `app-auth-brand-panel`, ver §1.5). El panel izquierdo se oculta con ancho de pantalla ≤ 768 px (`login.component.scss:263-266`). La versión sale de `environment.appVersion` (`login.component.ts:60`; valor compilado `1.0.0` en `src/environments/environment.ts:5` y en `environment.prod.ts:5`; `environment.model.ts:9-31` usa `window.__env` si trae `production` booleano y `api.baseurl` no vacío, y si no los valores compilados). Desde `8f36125`, `src/index.html:18` carga `environment.js` antes de la aplicación; el `public/environment.js` del repositorio solo define `window.__env = {}`, que no cumple esa condición, así que rige el valor compilado salvo que el despliegue sustituya ese archivo. `ng build` usa ahora la configuración `production` por defecto (`angular.json:95`), que reemplaza `environment.ts` por `environment.prod.ts` (`angular.json:63-68`); `ng serve` conserva `development` por defecto (`angular.json:107`).
 - **Modos:** uno solo.
 
 **Campos del formulario**
 
 | Etiqueta (clave) | `formControlName` | Control | Obligatorio | Validaciones | Mensaje de error | Ayuda / placeholder |
 |---|---|---|---|---|---|---|
-| Usuario (`auth.usuario`) | `usuario` | `matInput` texto, icono `person_outline`, `autocomplete="username"` | Sí (`Validators.required`, `login.component.ts:59`) | Solo obligatorio; sin longitud máxima | «El usuario es obligatorio» (`auth.errors.usuarioRequired`), se muestra si está tocado (`login.component.html:65-70`) | «Ej. jperez» (`auth.usuarioPlaceholder`) |
-| Contraseña (`auth.password`) | `password` | `matInput` tipo `password`/`text`, icono `lock_outline`, `autocomplete="current-password"` | Sí (`login.component.ts:60`) | Solo obligatorio | «La contraseña es obligatoria» (`auth.errors.passwordRequired`), si está tocado (`login.component.html:93-98`) | «••••••••» (`auth.passwordPlaceholder`) |
+| Usuario (`auth.usuario`) | `usuario` | `matInput` texto, icono `person_outline`, `autocomplete="username"` | Sí (`Validators.required`, `login.component.ts:64`) | Solo obligatorio; sin longitud máxima | «El usuario es obligatorio» (`auth.errors.usuarioRequired`), se muestra si está tocado (`login.component.html:71-76`) | «Ej. jperez» (`auth.usuarioPlaceholder`) |
+| Contraseña (`auth.password`) | `password` | `matInput` tipo `password`/`text`, icono `lock_outline`, `autocomplete="current-password"` | Sí (`login.component.ts:65`) | Solo obligatorio | «La contraseña es obligatoria» (`auth.errors.passwordRequired`), si está tocado (`login.component.html:99-104`) | «••••••••» (`auth.passwordPlaceholder`) |
 
 **Botones y acciones**
 
 | Texto (clave) | Dónde está | Visible cuando | Deshabilitado cuando | Qué hace |
 |---|---|---|---|---|
-| Icono ojo (`visibility`/`visibility_off`), `aria-label` «Contraseña» (`auth.password`) | Sufijo del campo contraseña | Siempre | Nunca | `togglePassword()` alterna mostrar/ocultar (`login.component.ts:84-86`) |
-| Ingresar (`auth.submit`); durante el envío muestra un spinner en lugar del texto | Botón principal del formulario (`type="submit"`) | Siempre | `submitting()` verdadero (`login.component.html:107`) | `submit()` (`login.component.ts:63-82`): limpia el error; si el formulario es inválido marca todo como tocado y no envía; si es válido llama `AuthService.login`. Al responder bien navega a `/cambiar-clave` si el token trae `pwd_change = "true"` (`auth.requiresPasswordChange()`), si no a `/dashboard` (`:75`) |
+| Icono ojo (`visibility`/`visibility_off`), `aria-label` «Contraseña» (`auth.password`) | Sufijo del campo contraseña | Siempre | Nunca | `togglePassword()` alterna mostrar/ocultar (`login.component.ts:93-95`) |
+| Ingresar (`auth.submit`); durante el envío muestra un spinner en lugar del texto | Botón principal del formulario (`type="submit"`) | Siempre | `submitting()` verdadero (`login.component.html:113`) | `submit()` (`login.component.ts:68-91`): limpia el error; si el formulario es inválido marca todo como tocado y no envía; si es válido llama `AuthService.login`. Al responder bien navega a `/cambiar-clave` si el token trae `pwd_change = "true"` (`auth.requiresPasswordChange()`), si no a `/dashboard` (`:75`) |
 | ¿Olvidaste tu contraseña? (`auth.forgot`) | Enlace bajo el botón | Siempre | — | Navega a `/auth/forgot-password` |
 | Registrar empresa nueva (`auth.register`), precedido de «¿Primera vez?» (`auth.registerPrompt`) y del separador «o» (`auth.or`) | Pie de la tarjeta | Siempre | — | Navega a `/auth/register` |
 
@@ -87,20 +91,27 @@ Las cuatro rutas `/auth/*` están fuera del layout: se cargan directamente con `
 
 | Situación | Tipo | Texto exacto (clave) | Fuente |
 |---|---|---|---|
-| La API no responde (estado 0), tiempo agotado (408), error de servidor (≥ 500) o el error no es una respuesta HTTP | Error | «No pudimos conectar con el servidor. Verifica tu conexión a internet e inténtalo de nuevo en unos minutos.» (`auth.serviceUnavailable`) | `login.component.ts:20-23` |
-| Código de respuesta `Auth.EmpresaNoVigente` | Error | «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» (`auth.empresaNoVigente`) | `login.component.ts:15-17,25` |
-| Estado 429 (límite de peticiones) | Error | «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» (`auth.recovery.tooManyRequests`) | `login.component.ts:26` |
-| Cualquier otra respuesta de error (por ejemplo 400/401) | Error | «Credenciales inválidas. Verifica tu usuario y contraseña.» (`auth.invalidCredentials`) | `login.component.ts:26` |
+| La API no responde (estado 0), tiempo agotado (408), error de servidor (≥ 500) o el error no es una respuesta HTTP | Error | «No pudimos conectar con el servidor. Verifica tu conexión a internet e inténtalo de nuevo en unos minutos.» (`auth.serviceUnavailable`) | `login.component.ts:23-26` |
+| Código de respuesta `Auth.EmpresaNoVigente` | Error | «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» (`auth.empresaNoVigente`; hasta `sofia-web-spa` `7070e1a` decía «Comunícate con soporte para reactivarla.»). Debajo del mensaje aparece el bloque «Paga tu suscripción con Yape» (ver «Cómo pagar» más abajo) | `login.component.ts:15,19,85-88` |
+| Estado 429 (límite de peticiones) | Error | «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» (`auth.recovery.tooManyRequests`) | `login.component.ts:29` |
+| Cualquier otra respuesta de error (por ejemplo 400/401) | Error | «Credenciales inválidas. Verifica tu usuario y contraseña.» (`auth.invalidCredentials`) | `login.component.ts:29` |
+
+**Cómo pagar (cuando la empresa no está vigente)** (`login.component.html:55-60`, `login.component.ts:59,70,85-88`; componente compartido `PagoSuscripcionComponent`, §6.14)
+- Solo cuando el inicio de sesión falla con `Auth.EmpresaNoVigente` (la clave era correcta): debajo de la alerta roja aparece una caja con borde (`pago-box`) con el bloque de pago, y el nombre de usuario escrito se conserva para identificar a quien paga. Con cualquier otro error, o al enviar de nuevo el formulario, la caja desaparece (`usuarioSinSuscripcion` vuelve a nulo en `submit()`).
+- El bloque se llena con `GET /api/v1/plataforma/pago` (anónimo, `PlataformaController.cs:19-26`; límite de 30 peticiones por minuto por IP, RN-GEN-043). Muestra, según lo que el operador de plataforma haya publicado (RN-EMP-023 a RN-EMP-025, RN-AUT-040): título «Paga tu suscripción con Yape» (`suscripcion.pago.titulo`), el código QR, el número de Yape («Yapea al número» sin QR, `suscripcion.pago.yapeNumero`; «Si no puedes escanear el código, yapea al número» con QR, `suscripcion.pago.yapeNumeroAlternativa`), las indicaciones del operador, «Después de pagar, envíanos la captura por WhatsApp y activaremos tu acceso.» (`suscripcion.pago.enviarCapturaAyuda`) y el botón «Enviar captura por WhatsApp» (`suscripcion.pago.enviarCaptura`), que abre `https://wa.me/{número}` en otra pestaña con el texto «Hola, adjunto la captura del pago de mi suscripción de SOFIA. Usuario: {{usuario}}» (`suscripcion.pago.mensajeUsuario`).
+- Mientras carga muestra un spinner; si no hay ningún dato publicado: «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.» (`suscripcion.pago.sinConfigurar`); si la carga falla: «No pudimos cargar los datos de pago.» (`suscripcion.pago.loadError`) con el botón «Reintentar» (`suscripcion.pago.retry`).
+- No verificado en la aplicación: el aspecto de la caja y el comportamiento del enlace de WhatsApp (solo lectura de código y de la prueba `login.component.spec.ts`).
 
 **Llamadas a la API**
 
 | Cuándo | Método del servicio | Verbo y URL | Permiso del endpoint |
 |---|---|---|---|
-| Enviar el formulario | `AuthService.login` (`src/app/core/auth/auth.service.ts:73-81`), con `withCredentials` (cookie de refresco) | `POST /api/v1/auth/login` con `{ nombreUsuario, password }` | Anónimo, política de límite `AuthPolicy` (`docs/_inventario/endpoints.csv`; `AuthController.cs:18`) |
+| Tras `Auth.EmpresaNoVigente` | `PagoSuscripcionService.getConfiguracion` (`src/app/shared/services/pago-suscripcion.service.ts`) | `GET /api/v1/plataforma/pago` | Anónimo, política `public-info` (`PlataformaController.cs:19-21`) |
+| Enviar el formulario | `AuthService.login` (`src/app/core/auth/auth.service.ts:77-85`), con `withCredentials` (cookie de refresco) | `POST /api/v1/auth/login` con `{ nombreUsuario, password }` | Anónimo, política de límite `AuthPolicy` (`docs/_inventario/endpoints.csv`; `AuthController.cs:18`) |
 
 **Comportamientos particulares**
-- Al iniciar sesión bien: guarda el token en `localStorage` bajo la clave `sofia_token` (`auth.service.ts:33,147-152`) y borra los borradores de POS de otros usuarios (`clearOtherUsersStorage`, `auth.service.ts:78`; prefijos en `user-storage.ts:2-5`).
-- Si ya tenías sesión de otro usuario, `storeToken` reinicia los permisos en memoria cuando cambia el usuario (`auth.service.ts:151`).
+- Al iniciar sesión bien: guarda el token en `localStorage` bajo la clave `sofia_token` (`auth.service.ts:35,153-158`) y borra los borradores de POS de otros usuarios (`clearOtherUsersStorage`, `auth.service.ts:82`; prefijos en `user-storage.ts:2-5`).
+- Si ya tenías sesión de otro usuario, `storeToken` reinicia los permisos en memoria cuando cambia el usuario (`auth.service.ts:157`).
 - No hay «recordarme» ni parámetro de retorno (`returnUrl`): siempre se entra a `/dashboard` o `/cambiar-clave`.
 
 **Observaciones**
@@ -111,7 +122,7 @@ Las cuatro rutas `/auth/*` están fuera del layout: se cargan directamente con `
 - **Componente:** `EmpresaRegisterComponent` (`src/app/pages/empresa/empresa-register/empresa-register.component.ts`, `.html`, `.scss`). Scope `empresa` con `read: 'empresa'` (`.html:1`).
 - **Para qué sirve:** registro público de una empresa nueva y de su administrador. «Crea tu empresa y obtén 1 mes de prueba gratis» (`empresa.register.subtitle`).
 - **Cómo se llega:** enlace «Registrar empresa nueva» del login; URL directa.
-- **Permiso de ruta:** ninguno (pública, `app.routes.ts:15-21`).
+- **Permiso de ruta:** ninguno (pública, `app.routes.ts:16-22`).
 - **Migas y cabecera:** sin migas. Título «Registrar Empresa» (`empresa.register.title`).
 - **Diseño:** panel de marca propio (distinto del de login): «Gestión farmacéutica completa» (`empresa.register.brand.headline`), «Una plataforma inteligente para administrar tu farmacia con precisión y eficiencia.» (`...brand.sub`), cuatro viñetas «✓»: «1 mes de prueba gratuita, sin tarjeta» (`...brand.features.trial`), «Multi-sucursal desde el primer día» (`...multiBranch`), «Control de inventario y ventas en tiempo real» (`...realTime`), «Soporte dedicado durante la incorporación» (`...support`); pie «© {año} SOFIA · Todos los derechos reservados» (`...brand.rights`). Se pasa a una columna con ≤ 900 px (`.scss:10-12`).
 - **Modos:** uno solo.
@@ -159,7 +170,7 @@ El código de validación lo arma `ValidationBehavior` con la **primera** falla 
 
 | Cuándo | Método | Verbo y URL | Permiso |
 |---|---|---|---|
-| Enviar | `EmpresaService.register` (`src/app/pages/empresa/services/empresa.service.ts:39-42`, `withCredentials`) | `POST /api/v1/empresas/registrar` con `RegistrarEmpresaRequest` (`empresa.model.ts:34-44`: `nombreEmpresa`, `ruc`, `adminNombres`, `adminApellidoPaterno`, `adminApellidoMaterno`, `adminEmail`, `direccionSede`, `usuario`, `password`); respuesta `{ token }` | Anónimo, política `SignUpPolicy` (`EmpresasController.cs:21`) |
+| Enviar | `EmpresaService.register` (`src/app/pages/empresa/services/empresa.service.ts:39-42`, `withCredentials`) | `POST /api/v1/empresas/registrar` con `RegistrarEmpresaRequest` (`empresa.model.ts:34-44`: `nombreEmpresa`, `ruc`, `adminNombres`, `adminApellidoPaterno`, `adminApellidoMaterno`, `adminEmail`, `direccionSede`, `usuario`, `password`); respuesta `{ token }` | Anónimo, política `SignUpPolicy` (`EmpresasController.cs:26`) |
 
 **Comportamientos particulares:** al registrar se guarda el token (`AuthService.storeToken`) y se entra directo a `/dashboard`; no hay pantalla de confirmación ni verificación de correo en el SPA.
 
@@ -172,7 +183,7 @@ El código de validación lo arma `ValidationBehavior` con la **primera** falla 
 - **Componente:** `ForgotPasswordComponent` (`src/app/pages/auth/forgot-password/forgot-password.component.ts`, `.html`; estilos `login.component.scss` y `auth-recovery.scss`). Scope `auth`, `read: 'auth'`.
 - **Para qué sirve:** pedir el enlace de restablecimiento al correo del empleado asociado al usuario.
 - **Cómo se llega:** enlace «¿Olvidaste tu contraseña?» del login; enlace «Solicitar un nuevo enlace» de §1.4.
-- **Permiso de ruta:** ninguno (`app.routes.ts:23-26`).
+- **Permiso de ruta:** ninguno (`app.routes.ts:24-27`).
 - **Migas y cabecera:** sin migas. Título «Recupera tu contraseña» (`auth.forgotPage.title`); subtítulo «Ingresa tu usuario y te enviaremos un enlace al correo registrado de tu empleado para crear una nueva contraseña.» (`auth.forgotPage.subtitle`). Usa el panel de marca compartido (§1.5).
 
 **Campos**
@@ -196,7 +207,7 @@ El código de validación lo arma `ValidationBehavior` con la **primera** falla 
 | Estado 429 | Error (alerta roja) | «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» (`auth.recovery.tooManyRequests`) | `.ts:61-62` |
 | Cualquier otro error | Error | «No se pudo procesar la solicitud. Inténtalo de nuevo.» (`auth.forgotPage.error`) | `.ts:62` |
 
-**Llamadas a la API:** `AuthService.forgotPassword` (`auth.service.ts:105-107`, sin cookies) → `POST /api/v1/auth/forgot-password` con `{ nombreUsuario }`; anónimo, política `AuthPolicy` (`AuthController.cs:104`).
+**Llamadas a la API:** `AuthService.forgotPassword` (`auth.service.ts:109-111`, sin cookies) → `POST /api/v1/auth/forgot-password` con `{ nombreUsuario }`; anónimo, política `AuthPolicy` (`AuthController.cs:104`).
 
 **Observaciones:** el texto «válido por 1 hora» está dentro de la traducción; su correspondencia con la vigencia real del token no se verificó en el backend (ver §9).
 
@@ -205,7 +216,7 @@ El código de validación lo arma `ValidationBehavior` con la **primera** falla 
 - **Componente:** `ResetPasswordComponent` (`src/app/pages/auth/reset-password/reset-password.component.ts`, `.html`). Scope `auth`.
 - **Para qué sirve:** fijar la contraseña nueva usando el enlace recibido por correo.
 - **Cómo se llega:** solo por el enlace del correo. El token y el usuario viajan en el **fragmento** de la URL (`#token=...&usuario=...`); al abrir la pantalla se leen y se reemplaza la URL por `/auth/reset-password` sin fragmento (`.ts:73-80`). Si abres la ruta sin fragmento válido, ves el aviso de enlace inválido.
-- **Permiso de ruta:** ninguno (`app.routes.ts:28-31`).
+- **Permiso de ruta:** ninguno (`app.routes.ts:29-32`).
 - **Migas y cabecera:** sin migas. Título «Crea una nueva contraseña» (`auth.resetPage.title`); subtítulo «Elige una contraseña que no hayas usado antes. Al guardarla se cerrarán todas tus sesiones abiertas.» (`auth.resetPage.subtitle`). Usa el panel de marca compartido.
 - **Modos:** dos estados según `linkValid()` (token y usuario presentes, `.ts:79`): enlace inválido (solo aviso) o formulario.
 
@@ -234,7 +245,7 @@ El código de validación lo arma `ValidationBehavior` con la **primera** falla 
 | Estado 429 | Error | «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» (`auth.recovery.tooManyRequests`) | `.ts:104,106` |
 | Otro error | Error | «No se pudo restablecer la contraseña. Inténtalo de nuevo.» (`auth.resetPage.error`) | `.ts:106` |
 
-**Llamadas a la API:** `AuthService.resetPassword` (`auth.service.ts:109-111`) → `POST /api/v1/auth/reset-password`; anónimo, `AuthPolicy` (`AuthController.cs:113`).
+**Llamadas a la API:** `AuthService.resetPassword` (`auth.service.ts:113-115`) → `POST /api/v1/auth/reset-password`; anónimo, `AuthPolicy` (`AuthController.cs:113`).
 
 **Observaciones:** el nombre de usuario no se muestra en pantalla; viaja oculto desde el fragmento.
 
@@ -250,8 +261,8 @@ El código de validación lo arma `ValidationBehavior` con la **primera** falla 
 
 - **Componente:** `CambiarClaveComponent` (`src/app/pages/cambiar-clave/cambiar-clave.component.ts`, `.html`). Scope `cambiar-clave` con `read: 'cambiarClave'` (`.html:1`).
 - **Para qué sirve:** cambiar la contraseña propia. Al guardar el servidor cierra todas las sesiones del usuario y debes volver a ingresar.
-- **Cómo se llega:** dentro del layout (`app.routes.ts:44-47`). Redirección forzada del `passwordChangeGuard` y del login cuando el token indica cambio obligatorio (§5.2); redirección del interceptor ante `403` con código `Auth.CambioClaveRequerido` (§5.4). Para el acceso voluntario desde el menú de usuario, ver §4.2.
-- **Permiso de ruta:** ninguno. `cambiar-clave` no figura en `ROUTE_PERMISSIONS` (`src/app/core/auth/route-permissions.ts:2-25`), por lo que el `permissionGuard` la deja pasar; sí exige sesión (`authGuard`) y pasa por `passwordChangeGuard`.
+- **Cómo se llega:** dentro del layout (`app.routes.ts:45-48`). Redirección forzada del `passwordChangeGuard` y del login cuando el token indica cambio obligatorio (§5.2); redirección del interceptor ante `403` con código `Auth.CambioClaveRequerido` (§5.4). Para el acceso voluntario desde el menú de usuario, ver §4.2.
+- **Permiso de ruta:** ninguno. `cambiar-clave` no figura en `ROUTE_PERMISSIONS` (`src/app/core/auth/route-permissions.ts:2-26`), por lo que el `permissionGuard` la deja pasar; sí exige sesión (`authGuard`) y pasa por `passwordChangeGuard`.
 - **Migas y cabecera:** `csw-page-header` con título «Cambiar contraseña» (`cambiarClave.title`) y migas «Inicio» (`breadcrumbs.home`, enlaza a `/dashboard`) › «Cambiar contraseña» (`breadcrumbs.cambiarClave`). El botón «volver» del encabezado (a `/dashboard`) solo se muestra si **no** es cambio obligatorio (`[showBackButton]="!forced()"`, `.html:6`).
 - **Modos:** voluntario o forzado (`forced = auth.requiresPasswordChange`, `.ts:49`). En modo forzado: aparece el aviso «Tu contraseña fue asignada por un administrador. Debes cambiarla antes de continuar.» (`cambiarClave.forced`, caja con icono `lock_reset`, `.html:15-22`), se oculta el botón Cancelar y el de volver.
 
@@ -281,9 +292,9 @@ El código de validación lo arma `ValidationBehavior` con la **primera** falla 
 
 Los errores se muestran con `showServerError`: si la respuesta trae `traceId` aparece el snackbar con código de seguimiento (§6.11); si no, un snackbar de error simple.
 
-**Llamadas a la API:** `AuthService.changePassword` (`auth.service.ts:99-102`) → `POST /api/v1/auth/change-password` con `{ currentPassword, newPassword }`; solo autenticado, política `AuthPolicy` (`AuthController.cs:84`).
+**Llamadas a la API:** `AuthService.changePassword` (`auth.service.ts:103-106`) → `POST /api/v1/auth/change-password` con `{ currentPassword, newPassword }`; solo autenticado, política `AuthPolicy` (`AuthController.cs:84`).
 
-**Comportamientos particulares:** mientras el cambio sea obligatorio el `passwordChangeGuard` redirige cualquier otra URL del layout a `/cambiar-clave`; el menú lateral sigue visible pero cualquier opción rebota aquí (§5.2). Tras guardar, el servidor revoca todas las sesiones (comentario en `auth.service.ts:99`).
+**Comportamientos particulares:** mientras el cambio sea obligatorio el `passwordChangeGuard` redirige cualquier otra URL del layout a `/cambiar-clave`; el menú lateral sigue visible pero cualquier opción rebota aquí (§5.2). Tras guardar, el servidor revoca todas las sesiones (comentario en `auth.service.ts:103`).
 
 **Observaciones:** la caja de aviso forzado usa colores fijos en el CSS del componente (`.ts:35`); el texto «Debe tener al menos…» existe duplicado en `auth.resetPage.minLength` y `cambiarClave.errors.minLength`.
 
@@ -291,33 +302,35 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 
 ## 3. `/dashboard` — Inicio (resumen de hoy)
 
-- **Componente:** `DashboardComponent` (`src/app/pages/dashboard/dashboard.component.ts`, `.html`, `.scss`); servicio `services/dashboard.service.ts`; modelos `models/dashboard.model.ts`; enlaces `dashboard-links.ts`. Scope `dashboard` con `read: 'dashboard'` (`.html:1`). Es la única pantalla cargada de forma directa (no perezosa) en `app.routes.ts:39-42`.
-- **Para qué sirve:** resumen operativo del día: ventas, caja, inventario, cuarentena y devoluciones, con tarjetas que abren la lista correspondiente ya filtrada.
-- **Cómo se llega:** ruta por defecto (`''` redirige a `dashboard`, `app.routes.ts:9`); cualquier ruta desconocida redirige aquí (`**`, `app.routes.ts:178-179`); destino de los rechazos de permiso (§5.3); inicio tras login/registro; migas «Inicio» de otras pantallas. Opción de menú: ver §4.3.
-- **Permiso de ruta:** ninguno de ruta (`dashboard` no está en `ROUTE_PERMISSIONS`). Cada bloque se controla por separado con el permiso de lectura del módulo del que sale (`dashboard.component.ts:112-117`).
+- **Componente:** `DashboardComponent` (`src/app/pages/dashboard/dashboard.component.ts`, `.html`, `.scss`); servicio `services/dashboard.service.ts`; modelos `models/dashboard.model.ts`; enlaces `dashboard-links.ts`. Scope `dashboard` con `read: 'dashboard'` (`.html:1`). Es la única pantalla cargada de forma directa (no perezosa) en `app.routes.ts:40-43`.
+- **Para qué sirve:** resumen operativo del día: ventas, caja, inventario, cuarentena y devoluciones, con tarjetas que abren la lista correspondiente ya filtrada; para el operador de plataforma, además, la sección «Suscripciones» con las cifras de todas las empresas, y para quien puede leer su empresa, el aviso de vencimiento de la suscripción.
+- **Cómo se llega:** ruta por defecto (`''` redirige a `dashboard`, `app.routes.ts:10`); cualquier ruta desconocida redirige aquí (`**`, `app.routes.ts:192-193`); destino de los rechazos de permiso (§5.3); inicio tras login/registro; migas «Inicio» de otras pantallas. Opción de menú: ver §4.3.
+- **Permiso de ruta:** ninguno de ruta (`dashboard` no está en `ROUTE_PERMISSIONS`). Cada bloque se controla por separado con el permiso de lectura del módulo del que sale (`dashboard.component.ts:122-127`).
 - **Migas y cabecera:** sin migas ni `csw-page-header`; tiene su propia tarjeta de cabecera (abajo).
-- **Selectores y filtros:** **no tiene** selector de sucursal, de día ni de rango de fechas. «Hoy» es el día local del navegador (`inicioDelDia(new Date())`, `dashboard-links.ts:13-15`), que se envía al servidor como instante de inicio del día (`toLocalDayStartIso`). El alcance (una sucursal, varias o toda la empresa) lo decide el servidor según el usuario (§3.2).
+- **Selectores y filtros:** **no tiene** selector de sucursal, de día ni de rango de fechas. «Hoy» es el día local del navegador (`inicioDelDia(new Date())`, `dashboard-links.ts:14-16`), que se envía al servidor como instante de inicio del día (`toLocalDayStartIso`). El alcance (una sucursal, varias o toda la empresa) lo decide el servidor según el usuario (§3.2).
 - **Refresco:** solo manual con el botón «Actualizar»; el código no tiene temporizador ni sondeo.
 
 ### 3.1 Qué muestra cada bloque
 
-**Cabecera** (`dashboard.component.html:4-43`)
+**Aviso de vencimiento de la suscripción** (`<app-suscripcion-aviso />`, `dashboard.component.html:3`; `suscripcion-aviso.component.ts`, `.html`) — encima de la cabecera. Se dibuja solo si el usuario tiene `Empresas:Leer` (`hasPermission('Empresas')`, `suscripcion-aviso.component.ts:59`) y su empresa (`GET /api/v1/empresas/{empresaId}`) sigue vigente y vence en 7 días o menos (`DIAS_AVISO_VENCIMIENTO = 7`, `:16`; días = el entero hacia arriba y nunca menos de 1, `:27-32`). Texto con icono `schedule`: «Tu periodo de prueba vence en {{dias}} días ({{fecha}}).» o «Tu suscripción vence en {{dias}} días ({{fecha}}).» (`suscripcion.aviso.pruebaVariosDias`, `suscripcion.aviso.suscripcionVariosDias`; con 1 día: «Tu periodo de prueba vence en 1 día ({{fecha}}).» y «Tu suscripción vence en 1 día ({{fecha}}).», `pruebaUnDia`, `suscripcionUnDia`), con la fecha `dd/MM/yyyy`; «prueba» si el estado es `TrialActivo`, «suscripción» en los demás. Botón «Cómo pagar» (`suscripcion.aviso.comoPagar`) que abre un diálogo de 420 px con el bloque de pago (§6.14) —con el mensaje de WhatsApp «… Empresa: {{empresa}}» (`suscripcion.pago.mensajeEmpresa`)— y el botón «Cerrar» (`actions.close`). Si la carga de permisos o de la empresa falla, el aviso simplemente no aparece (`:51-55,64`). RN-EMP-026. No verificado en la aplicación.
+
+**Cabecera** (`dashboard.component.html:6-45`)
 
 | Elemento | Texto (clave `dashboard.*`) | Regla |
 |---|---|---|
-| Saludo | «Hola, {nombre}» (`header.greeting`) con el `fullName` del token; si no hay nombre, «Bienvenido a SOFIA» (`header.welcome`) | `.html:7-11`, `.ts:110` |
+| Saludo | «Hola, {nombre}» (`header.greeting`) con el `fullName` del token; si no hay nombre, «Bienvenido a SOFIA» (`header.welcome`) | `.html:9-13`, `.ts:120` |
 | Subtítulo | «Este es el resumen de hoy.» (`header.subtitle`) | Siempre |
 | Hora de actualización | «Actualizado a las {hora}» (`header.updatedAt`, formato `HH:mm`) | Solo tras la primera carga (`actualizado()` no nulo) |
 | Botón | «Actualizar» (`header.refresh`), icono `refresh` | Deshabilitado mientras `cargando()` (permisos o cualquier sección cargando). Llama `actualizar()`: recalcula «hoy», fija la hora y recarga las secciones permitidas |
 | Error de permisos | «No se pudieron cargar tus permisos.» (`header.permissionsError`) + botón «Reintentar» (`error.retry`) | Si `loadPermissions()` falla; el botón llama `cargarPermisos()` |
-| Sin indicadores | «Tu usuario no tiene indicadores disponibles aquí. Usa el menú lateral para ir a tus módulos.» (`header.noSections`) | Cuando los permisos cargaron sin error y el usuario no tiene ninguno de los cinco permisos (`sinSecciones`, `.ts:118-127`) |
+| Sin indicadores | «Tu usuario no tiene indicadores disponibles aquí. Usa el menú lateral para ir a tus módulos.» (`header.noSections`) | Cuando los permisos cargaron sin error y el usuario no tiene ninguno de los cinco permisos ni es operador de plataforma (`sinSecciones`, `.ts:130-140`) |
 
 **Bloque «Ventas de hoy» (`ventas.title`)** — visible con permiso `Ventas:Leer` (`puedeVentas`). Endpoint `GET /api/v1/dashboard/ventas?hoy=<instante>` (permiso `Ventas:Leer`, `DashboardController.cs:16`). Mientras no hay datos: spinner (`aria-label` «Cargando», `dashboard.loading`).
 
 | Tarjeta / elemento | Texto (clave) | Dato | Visible cuando |
 |---|---|---|---|
-| Vendido hoy | «Vendido hoy» (`ventas.soldToday`) | `S/ {hoy.monto}` con 2 decimales. Debajo: variación contra ayer con flecha `trending_up`/`trending_down`/`trending_flat`, `±x.x% vs. ayer · Ayer: S/ {ayer.monto}`; si ayer no vendió nada solo muestra «Ayer: S/ 0.00» (`variacionAyer` nulo, `.ts:144-148`) | Siempre en el bloque |
-| Botón de la tarjeta | «Ver ventas de hoy» (`ventas.linkToday`) | Abre `/pos` con fecha inicio = fecha fin = hoy y estado Completada | Solo vista de **una** sucursal (`enlacesDeVentas`: `multiSucursal === false`, `.ts:140`) |
+| Vendido hoy | «Vendido hoy» (`ventas.soldToday`) | `S/ {hoy.monto}` con 2 decimales. Debajo: variación contra ayer con flecha `trending_up`/`trending_down`/`trending_flat`, `±x.x% vs. ayer · Ayer: S/ {ayer.monto}`; si ayer no vendió nada solo muestra «Ayer: S/ 0.00» (`variacionAyer` nulo, `.ts:158-162`) | Siempre en el bloque |
+| Botón de la tarjeta | «Ver ventas de hoy» (`ventas.linkToday`) | Abre `/pos` con fecha inicio = fecha fin = hoy y estado Completada | Solo vista de **una** sucursal (`enlacesDeVentas`: `multiSucursal === false`, `.ts:154`) |
 | Comprobantes | «Comprobantes» (`ventas.receipts`) | `hoy.comprobantes`; detalle «Ticket promedio: S/ {ticketPromedio}» (`ventas.avgTicket`) | Siempre |
 | Mis ventas de hoy | «Mis ventas de hoy» (`ventas.mine`) | `S/ {mias.monto}` y «{count} comprobantes» (`ventas.receiptsCount`) | Solo si el servidor devuelve `mias` (token con empleado) |
 | Botón | «Ver mis ventas» (`ventas.linkMine`) | Abre `/pos` con estado Completada, hoy y el empleado propio | `enlacesDeVentas` y existe `empleadoId` del token |
@@ -333,9 +346,9 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 |---|---|---|
 | Mi caja abierta | «Tienes una caja abierta» (`caja.open`), icono `lock_open` | Si hay `miSesion`: «Sucursal» (`caja.branch`), «Abierta desde» (`caja.since`, `dd/MM/yyyy HH:mm`), «Monto de apertura» (`caja.opening`), «Efectivo esperado» (`caja.expected`) y botón «Ver mi caja» (`caja.linkMine`) que navega a `/sesiones-caja/{id}` |
 | Sin caja | «No tienes una caja abierta» (`caja.none`), icono `lock` | Si no hay `miSesion`. Botón «Abrir caja» (`caja.linkOpen`) a `/sesiones-caja/nueva`, visible con `*appPermiso="'POS:AperturarCaja'"` |
-| Cajas abiertas | «Cajas abiertas ({n})» (`caja.openSessions`) | Solo si existe alguna sesión abierta distinta de la propia (`otrasSesiones`, `.ts:173-178`); lista **todas** las abiertas del alcance, incluida la propia (el servidor entrega como máximo 50, `GetDashboardCajaQueryHandler.cs:15`). Columnas «Cajero» (`caja.colCashier`), «Sucursal» (`caja.colBranch`), «Abierta desde» (`caja.colSince`). Botón «Ver cajas abiertas» (`caja.linkOpenSessions`): abre `/sesiones-caja` con estado Abierta |
+| Cajas abiertas | «Cajas abiertas ({n})» (`caja.openSessions`) | Solo si existe alguna sesión abierta distinta de la propia (`otrasSesiones`, `.ts:187-192`); lista **todas** las abiertas del alcance, incluida la propia (el servidor entrega como máximo 50, `GetDashboardCajaQueryHandler.cs:15`). Columnas «Cajero» (`caja.colCashier`), «Sucursal» (`caja.colBranch`), «Abierta desde» (`caja.colSince`). Botón «Ver cajas abiertas» (`caja.linkOpenSessions`): abre `/sesiones-caja` con estado Abierta |
 
-**Bloque «Inventario» (`inventario.title`)** — se muestra si hay `Inventarios:Leer` **o** `DIGEMID:Leer` (`.html:348`). Endpoints `GET /api/v1/dashboard/inventario?hoy=` (`Inventarios:Leer`, `DashboardController.cs:34`) y `GET /api/v1/dashboard/cuarentena` (`DIGEMID:Leer`, `:43`). Cada uno falla y se reintenta por separado.
+**Bloque «Inventario» (`inventario.title`)** — se muestra si hay `Inventarios:Leer` **o** `DIGEMID:Leer` (`.html:522`). Endpoints `GET /api/v1/dashboard/inventario?hoy=` (`Inventarios:Leer`, `DashboardController.cs:34`) y `GET /api/v1/dashboard/cuarentena` (`DIGEMID:Leer`, `:43`). Cada uno falla y se reintenta por separado.
 
 | Tarjeta | Texto (clave `dashboard.inventario.*`) | Dato / botón |
 |---|---|---|
@@ -347,7 +360,7 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 | Stock bajo | «Productos con stock bajo» (`lowStock`) | `productosStockBajo`; detalle «{umbral} unidades o menos, por sucursal» (`lowStockHint`) con el umbral que envía el servidor (hoy 10, constante `UmbralStockBajo = 10m` en `GetDashboardInventarioQueryHandler.cs:14`); sin botón |
 | Cuarentena | «Lotes en cuarentena» (`quarantine`) | `lotesRetenidos`; detalle «Retenidos: no se pueden vender» (`quarantineHint`); requiere `DIGEMID:Leer`; sin botón |
 
-**Bloque de tendencia y más vendidos** — visible con `Ventas:Leer` y datos cargados (`.html:476-541`); no tiene encabezado de sección, comparte los datos de «Ventas de hoy».
+**Bloque de tendencia y más vendidos** — visible con `Ventas:Leer` y datos cargados (`.html:650-715`); no tiene encabezado de sección, comparte los datos de «Ventas de hoy».
 
 | Elemento | Texto (clave) | Dato |
 |---|---|---|
@@ -356,10 +369,28 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 
 **Bloque «Devoluciones de hoy» (`devoluciones.title`)** — permiso `Devoluciones:Leer`. Endpoint `GET /api/v1/dashboard/devoluciones?hoy=` (`Devoluciones:Leer`, `DashboardController.cs:52`). Una tarjeta: «Devoluciones» (`devoluciones.count`) con `cantidad` y «Monto reembolsado: S/ {montoReembolsado}» (`devoluciones.refunded`).
 
+**Sección «Suscripciones» (`plataforma.title`), solo para el operador de plataforma** (`dashboard.component.html:48-216`, debajo de la cabecera y encima de «Ventas de hoy»). Se dibuja si `esOperador()` (`auth.esAdminPlataforma()`, es decir, el claim `plat_admin = "true"` del token, no un permiso; `dashboard.component.ts:129`); a un usuario de empresa no se le pide ni se le muestra. Endpoint `GET /api/v1/plataforma/dashboard?inicioMes=` (política `PLATAFORMA_ADMIN`, `PlataformaController.cs:28-29`; `inicioMes` = inicio del mes local del navegador en ISO, `dashboard.service.ts`). RN-DAS-025 y RN-DAS-026.
+
+| Elemento | Texto (clave `dashboard.plataforma.*`) | Dato |
+|---|---|---|
+| Tarjeta | «Empresas vigentes» (`active`) con el detalle «{{prueba}} en prueba · {{suscripcion}} con suscripción» (`activeDetail`) | `vigentes`; `enPrueba` y `conSuscripcion` |
+| Tarjeta | «Vencen en {{dias}} días o menos» (`expiring`) | `porVencer`; `{{dias}}` = `diasPorVencer` (7 en el servidor, `GetDashboardPlataformaQueryHandler.cs:15`) |
+| Tarjeta | «Vencidas sin renovar» (`expired`) | `vencidas` |
+| Tarjeta con botón «Ver lista» (`linkList`) | «Suspendidas» (`suspended`) | `suspendidas`; el botón abre `/empresas` con el filtro Estado = «Suspendido» |
+| Tarjeta con botón «Ver lista» | «Canceladas» (`cancelled`) | `canceladas`; abre `/empresas` con el filtro Estado = «Cancelado» |
+| Tarjeta | «Registradas este mes» (`registeredThisMonth`) con «{{total}} empresas en total» (`total`) | `registradasEsteMes` y `total` |
+| Tabla | «Próximas a vencer ({{dias}} días)» (`expiringListTitle`) | Columnas «Empresa» (`colCompany`, enlace a `/empresas/:id`), «Tipo» (`colState`: «Prueba» o «Suscripción», `stateTrial`/`statePaid`), «Vence» (`colExpiry`, `dd/MM/yyyy`) y «Días restantes» (`colDaysLeft`, contado desde la hora de «Actualizado a las»; el día empezado cuenta como uno y nunca menos de 1, `dashboard-links.ts` `diasHasta`) |
+| Texto bajo la tabla | «Se muestran las {{mostradas}} más próximas de {{total}}.» (`expiringListMore`) | Solo si `porVencer` supera las filas recibidas (`proximas-mas`); el servidor devuelve como máximo 10 (`MaxProximasAVencer`, `GetDashboardPlataformaQueryHandler.cs:17`) |
+| Tabla vacía | «Ninguna empresa vence en los próximos días.» (`expiringListEmpty`) | Sin filas |
+| Botón | «Ver todas las empresas» (`linkAll`) | Abre `/empresas` sin filtro de estado |
+
+Error de la sección: tarjeta con «No se pudo cargar esta sección.» (`error.section`) y «Reintentar» (`error.retry`), que llama `cargarPlataforma()` (`dashboard.component.ts:245`); mientras carga, spinner. Los botones «Ver lista» y «Ver todas las empresas» guardan los filtros en `SearchStateService` y navegan (`empresasLink`, `dashboard-links.ts`). Un operador sin ningún permiso de lectura ya no ve el texto «Tu usuario no tiene indicadores disponibles aquí…», porque `sinSecciones` también exige `!esOperador()`. No verificado en la aplicación.
+
 ### 3.2 Diferencias por permiso, rol y alcance
 
-- **Permisos:** cada bloque exige su permiso de lectura: Ventas → `Ventas:Leer`; Caja → `POS:Leer`; Inventario → `Inventarios:Leer`; Cuarentena → `DIGEMID:Leer`; Devoluciones → `Devoluciones:Leer`. Un bloque sin permiso no se pide ni se dibuja (`cargar()` retorna si no está permitido, `.ts:264-266`). El permiso lo resuelve `AuthService.hasPermission` (el rol `Admin` lo concede todo, `route-permissions.ts:45-48`).
-- **Alcance de los datos (lo decide el servidor, `sofia-apis/src/SOFIA.Application/Dashboard/Common/DashboardScopeResolver.cs:19-31`):** si el usuario no tiene restricción de sucursal (rol Admin) el alcance es **toda la empresa** (`empresaCompleta = true`); si no, las sucursales a las que tiene acceso. Con más de una sucursal (`multiSucursal`) aparece la tabla «Ventas por sucursal» y se **ocultan** los botones «Ver ventas de hoy», «Ver mis ventas» y «Ver ventas en espera» (la lista de ventas solo cubre la sucursal propia, comentario en `.ts:139`). Con una sola sucursal, la vista es de esa sucursal y los botones aparecen.
+- **Permisos:** cada bloque exige su permiso de lectura: Ventas → `Ventas:Leer`; Caja → `POS:Leer`; Inventario → `Inventarios:Leer`; Cuarentena → `DIGEMID:Leer`; Devoluciones → `Devoluciones:Leer`. Un bloque sin permiso no se pide ni se dibuja (`cargar()` retorna si no está permitido, `.ts:292-294`). El permiso lo resuelve `AuthService.hasPermission` (el rol `Admin` lo concede todo, `route-permissions.ts:53-59`).
+- **Operador de plataforma:** la sección «Suscripciones» no depende de un permiso sino de la marca de la cuenta (`auth.esAdminPlataforma()`, claim `plat_admin`); a un administrador de empresa con el rol `Admin` no se le muestra. El aviso de vencimiento sí depende de `Empresas:Leer` (que el rol `Admin` y el operador de plataforma tienen; para el operador, `AuthService.hasPermission` concede solo `Empresas:Leer`, `auth.service.ts`, `route-permissions.ts` `PLATFORM_OPERATOR_GRANTS`).
+- **Alcance de los datos (lo decide el servidor, `sofia-apis/src/SOFIA.Application/Dashboard/Common/DashboardScopeResolver.cs:10-22`):** si el usuario no tiene restricción de sucursal (rol Admin) el alcance es **toda la empresa** (`empresaCompleta = true`); si no, las sucursales a las que tiene acceso. Con más de una sucursal (`multiSucursal`) aparece la tabla «Ventas por sucursal» y se **ocultan** los botones «Ver ventas de hoy», «Ver mis ventas» y «Ver ventas en espera» (la lista de ventas solo cubre la sucursal propia, comentario en `.ts:153`). Con una sola sucursal, la vista es de esa sucursal y los botones aparecen.
 - **Mis ventas / Mi caja:** dependen de que el token traiga el id de empleado; si no, `mias` y `miSesion` llegan nulos y no se muestran (`GetDashboardVentasQueryHandler.cs:87-92`, `GetDashboardCajaQueryHandler.cs:42-49`).
 - **Qué cuenta como «vendido»** (servidor): ventas de las sucursales del alcance que no estén anuladas ni pendientes, monto bruto (`GetDashboardVentasQueryHandler.cs:25-28`); las pendientes se cuentan aparte, de cualquier día (`:41-44`); el desglose por método descuenta vuelto y cobertura de seguro (`:101-130`).
 - **Efectivo esperado:** lo calcula `ArqueoCajaCalculator.CalcularEfectivoEsperadoAsync` (`GetDashboardCajaQueryHandler.cs:69`) como apertura + efectivo neto de las ventas cobradas en la sesión − efectivo neto de las ventas de otras cajas que se anularon desde esta sesión − reembolsos en efectivo de devoluciones de la sesión (`sofia-apis/src/SOFIA.Application/POS/Common/ArqueoCajaCalculator.cs:10-53`). «Efectivo neto» es el efectivo pagado menos el vuelto. Una venta de esta sesión anulada desde esta misma sesión no cuenta; una venta de esta sesión anulada desde otra caja sigue contando (`ArqueoCajaCalculator.cs:17-21,50`). Comportamiento commiteado en `358935e` (antes del commit, el cálculo ignoraba las ventas anuladas de cualquier caja).
@@ -369,14 +400,14 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 | Situación | Qué ve el usuario | Texto (clave) | Fuente |
 |---|---|---|---|
 | Cargando permisos o una sección sin datos aún | Spinner centrado en la tarjeta | `aria-label` «Cargando» (`dashboard.loading`) | `.html` (rama `else` de cada sección) |
-| Recarga con datos previos | Se conservan los datos anteriores mientras recarga; el botón «Actualizar» queda deshabilitado | — | `.ts:35,266` |
-| Error en una sección | Tarjeta con icono `error_outline`, texto y botón de reintento solo de esa sección; el resto del dashboard sigue | «No se pudo cargar esta sección.» (`error.section`) + «Reintentar» (`error.retry`) | `.html:49-56` y equivalentes |
-| Error de permisos | Aviso en la cabecera con «Reintentar» | «No se pudieron cargar tus permisos.» (`header.permissionsError`) | `.html:31-39` |
-| Sin ningún indicador permitido | Línea de ayuda en la cabecera | `header.noSections` | `.html:40-42` |
-| Sin productos vendidos | Texto en la tarjeta de más vendidos | `top.empty` | `.html:533-535` |
+| Recarga con datos previos | Se conservan los datos anteriores mientras recarga; el botón «Actualizar» queda deshabilitado | — | `.ts:41,294` |
+| Error en una sección | Tarjeta con icono `error_outline`, texto y botón de reintento solo de esa sección; el resto del dashboard sigue | «No se pudo cargar esta sección.» (`error.section`) + «Reintentar» (`error.retry`) | `.html:223-230` y equivalentes |
+| Error de permisos | Aviso en la cabecera con «Reintentar» | «No se pudieron cargar tus permisos.» (`header.permissionsError`) | `.html:33-41` |
+| Sin ningún indicador permitido | Línea de ayuda en la cabecera | `header.noSections` | `.html:42-44` |
+| Sin productos vendidos | Texto en la tarjeta de más vendidos | `top.empty` | `.html:707-709` |
 | Cifras en cero | Se muestran como `0` / `S/ 0.00`; no hay texto de «sin datos» | — | — |
 
-**Llamadas a la API** (todas en `DashboardService`, `dashboard.service.ts:19-37`)
+**Llamadas a la API** (todas en `DashboardService`, `dashboard.service.ts:20-45`)
 
 | Cuándo | Método | Verbo y URL | Permiso |
 |---|---|---|---|
@@ -385,21 +416,23 @@ Los errores se muestran con `showServerError`: si la respuesta trae `traceId` ap
 | Idem | `inventario(hoy)` | `GET /api/v1/dashboard/inventario?hoy=` | `Inventarios:Leer` |
 | Idem | `cuarentena()` | `GET /api/v1/dashboard/cuarentena` | `DIGEMID:Leer` |
 | Idem | `devoluciones(hoy)` | `GET /api/v1/dashboard/devoluciones?hoy=` | `Devoluciones:Leer` |
+| Idem, solo si el usuario es operador de plataforma | `plataforma(inicioMes)` | `GET /api/v1/plataforma/dashboard?inicioMes=` | Política `PLATAFORMA_ADMIN` (claim `plat_admin`; el rol `Admin` no basta) |
+| Con el aviso de vencimiento (usuario con `Empresas:Leer`) | `EmpresaService.getById` | `GET /api/v1/empresas/{empresaId}` | `Empresas:Leer` o operador de plataforma |
 | Al abrir (si no estaban cargados) | `AuthService.loadPermissions` | `GET /api/v1/auth/me` | Solo autenticado |
 
 **Comportamientos particulares**
-- Las tarjetas con botón guardan los filtros en `SearchStateService.save(path, state)` y navegan; la pantalla destino restaura y ejecuta esos filtros al abrirse (`dashboard.component.ts:231-234`, `dashboard-links.ts`). Destinos: `/pos` (ventas), `/sesiones-caja`, `/stock-por-sucursal` (siempre con «solo con stock» activado y página 0 de tamaño 10).
+- Las tarjetas con botón guardan los filtros en `SearchStateService.save(path, state)` y navegan; la pantalla destino restaura y ejecuta esos filtros al abrirse (`dashboard.component.ts:250-253`, `dashboard-links.ts`). Destinos: `/pos` (ventas), `/sesiones-caja`, `/stock-por-sucursal` (siempre con «solo con stock» activado y página 0 de tamaño 10).
 - El servidor rechaza un «hoy» a más de 36 horas de la hora actual (`DashboardDias.ToleranciaHoyHoras = 36`, `sofia-apis/src/SOFIA.Application/Dashboard/Common/DashboardDias.cs:10`).
 - Formato de cifras: el pipe `number: '1.2-2'` (el más usado, 42 veces en las plantillas) usa el `LOCALE_ID` por defecto de Angular (`en-US`): no hay proveedor de `LOCALE_ID` en `src/` (solo `registerLocaleData(es-PE)` en `provide-sofia-dates.ts:19`), así que los montos de mil o más salen como `1,234.50`. Los pipes `date` de las plantillas llevan un patrón explícito (`'dd/MM/yyyy'`, `'dd/MM/yyyy HH:mm'`, `'HH:mm'`), por lo que no dependen del idioma. **No verificado en la aplicación** para cifras de mil o más: el manual de usuario solo vio cifras menores de mil, escritas con punto decimal (capítulo 10, tabla de no verificados).
 
 **Observaciones**
-- El permiso `Devoluciones:Leer` se usa en el dashboard aunque el módulo de devoluciones no tiene pantalla de listado; el bloque depende solo del endpoint del dashboard.
+- El permiso `Devoluciones:Leer` del bloque «Devoluciones de hoy» es el mismo que abre la pantalla de búsqueda `/devoluciones` (parte F, `punto-de-venta.md`); el bloque sigue dependiendo solo del endpoint del dashboard (desde `sofia-web-spa` `37048ea` el módulo sí tiene pantalla de listado y detalle).
 
 ---
 
 ## 4. Layout de la aplicación
 
-Todas las pantallas que no son `/auth/*` se renderizan dentro de `FullComponent` (`src/app/matdash/layouts/full/full.component.ts`, `.html`), ruta padre `''` con `canActivate: [authGuard]` y `canActivateChild: [passwordChangeGuard, permissionGuard]` (`src/app/app.routes.ts:33-38`). Estructura (`full.component.html:1-47`): barra de progreso superior (§6.8), menú lateral a la izquierda y, a la derecha, cabecera + migas del layout + `<router-outlet>`. No hay pie de página en el layout (el HTML termina en el contenedor principal): la versión solo se ve en el menú de usuario (§4.2) y en los paneles de marca de las pantallas públicas.
+Todas las pantallas que no son `/auth/*` se renderizan dentro de `FullComponent` (`src/app/matdash/layouts/full/full.component.ts`, `.html`), ruta padre `''` con `canActivate: [authGuard]` y `canActivateChild: [passwordChangeGuard, permissionGuard]` (`src/app/app.routes.ts:34-39`). Estructura (`full.component.html:1-47`): barra de progreso superior (§6.8), menú lateral a la izquierda y, a la derecha, cabecera + migas del layout + `<router-outlet>`. No hay pie de página en el layout (el HTML termina en el contenedor principal): la versión solo se ve en el menú de usuario (§4.2) y en los paneles de marca de las pantallas públicas.
 
 Comportamiento responsive (`full.component.ts:23,67-80`): con ancho ≤ 1023 px (`MOBILE_VIEW`) el menú lateral queda cerrado y se abre como superposición con el botón de hamburguesa; se cierra solo al terminar cada navegación. Con ancho mayor está siempre abierto y el botón de hamburguesa de escritorio lo colapsa a modo «mini» (`sidenavCollapsed`, `toggleCollapsed()`, `full.component.ts:94-98`). El estado de colapso vive solo en memoria (`CoreService`, `src/app/matdash/services/core.service.ts:9`, valores por defecto en `src/app/matdash/config.ts:14-25`): al recargar vuelve a abierto.
 
@@ -440,11 +473,12 @@ Archivos: `vertical/sidebar/sidebar.component.ts`, `.html`, `sidebar-data.ts`, `
 - Arriba: marca «⚕ SOFIA», enlace a `/` (que redirige a `/dashboard`) (`branding.component.ts:9-12`). En móvil, además, un botón «×» para cerrar el menú (`sidebar.component.html:3-12`).
 - Cada grupo muestra un **título de sección** (texto de `breadcrumbs.*`) y debajo sus opciones (texto de `nav.*`, icono Solar). No hay subgrupos ni opciones desplegables en los datos actuales. Los nombres internos de los grupos (`Principal`, `Administración`…) no se muestran.
 - La opción activa (ruta actual o hija, comparación por prefijo, `nav-item.component.html:15-18`) se resalta. Clic izquierdo navega; Ctrl/Cmd+clic o clic central abre la ruta en una pestaña nueva (`nav-item.component.ts:162-170`). En móvil, al elegir una opción el menú se cierra.
-- **Regla de visibilidad** (`sidebar.component.ts:28-34`, `visible-nav-items.ts:4-13`):
-  1. Una opción con ruta se muestra si la ruta no tiene módulo asociado en `ROUTE_PERMISSIONS` (solo `/dashboard`) **o** si el usuario tiene el permiso `<Módulo>:Leer` (`AuthService.hasPermission(modulo)`, que concede todo al rol `Admin`).
+- **Regla de visibilidad** (`sidebar.component.ts:29-35`, `visible-nav-items.ts:4-13`):
+  0. Una ruta de plataforma (`isPlatformRoute`, hoy solo `/configuracion-pago`, `route-permissions.ts:36-41`) se muestra únicamente si `auth.esAdminPlataforma()` (claim `plat_admin`); ningún permiso de rol la hace visible, ni siquiera el rol `Admin` (`sidebar.component.ts:31`).
+  1. Una opción con ruta se muestra si la ruta no tiene módulo asociado en `ROUTE_PERMISSIONS` (solo `/dashboard`) **o** si el usuario tiene el permiso `<Módulo>:Leer` (`AuthService.hasPermission(modulo)`, que concede todo al rol `Admin`; al operador de plataforma le concede además `Empresas:Leer` sin necesitar rol, `auth.service.ts:148`, `route-permissions.ts:50`).
   2. Un título de sección se conserva solo si justo después queda al menos una opción visible.
   3. Un grupo sin ninguna opción visible desaparece entero.
-  4. Mientras los permisos no han llegado (`GET /api/v1/auth/me` en curso) todo lo que exige permiso está oculto: al principio solo se ve «Dashboard». Si la carga falla aparece el snackbar «No se pudieron cargar tus permisos. Recarga la página o vuelve a iniciar sesión.» (`errors.permissionsLoad`, `sidebar.component.ts:36-43`) y el menú queda con «Dashboard».
+  4. Mientras los permisos no han llegado (`GET /api/v1/auth/me` en curso) todo lo que exige permiso está oculto: al principio solo se ve «Dashboard». Si la carga falla aparece el snackbar «No se pudieron cargar tus permisos. Recarga la página o vuelve a iniciar sesión.» (`errors.permissionsLoad`, `sidebar.component.ts:37-44`) y el menú queda con «Dashboard».
   5. Ocultar una opción no bloquea la URL: el `permissionGuard` (§5.3) y la API siguen comprobando.
 
 | Título de sección (clave) | Opción (clave `nav.*`) | Icono | Ruta | Módulo:Acción de visibilidad |
@@ -455,6 +489,7 @@ Archivos: `vertical/sidebar/sidebar.component.ts`, `.html`, `sidebar-data.ts`, `
 | | Empleados (`empleados`) | `solar:users-group-rounded-line-duotone` | `/empleados` | `Empleados:Leer` |
 | | Roles & Permisos (`rolesPermisos`) | `solar:lock-keyhole-line-duotone` | `/roles` | `Seguridad:Leer` |
 | | Cuentas de Usuario (`cuentasUsuario`) | `solar:user-id-line-duotone` | `/cuentas` | `Seguridad:Leer` |
+| | Configuración de Pago (`configuracionPago`) | `solar:qr-code-line-duotone` | `/configuracion-pago` | Ninguno: solo el operador de plataforma (`esAdminPlataforma()`) |
 | Catálogos (`breadcrumbs.catalogos`) | Unidades de Medida (`unidadesMedida`) | `solar:ruler-line-duotone` | `/unidades-medida` | `UnidadesMedida:Leer` |
 | | Jerarquías de Unidades (`jerarquiasUom`) | `solar:sort-vertical-line-duotone` | `/jerarquias` | `JerarquiasUoM:Leer` |
 | | Laboratorios (`laboratorios`) | `solar:test-tube-line-duotone` | `/laboratorios` | `Laboratorios:Leer` |
@@ -468,23 +503,24 @@ Archivos: `vertical/sidebar/sidebar.component.ts`, `.html`, `sidebar-data.ts`, `
 | | Stock por Sucursal (`stockPorSucursal`) | `solar:checklist-minimalistic-line-duotone` | `/stock-por-sucursal` | `Inventarios:Leer` |
 | Punto de Venta (`breadcrumbs.puntoVenta`) | Sesiones de Caja (`sesionesCaja`) | `solar:cash-out-line-duotone` | `/sesiones-caja` | `POS:Leer` |
 | | Ventas (`ventas`) | `solar:bill-list-line-duotone` | `/pos` | `Ventas:Leer` |
+| | Devoluciones (`devoluciones`) | `solar:undo-left-round-line-duotone` | `/devoluciones` | `Devoluciones:Leer` |
 | Pacientes & Atención (`breadcrumbs.pacientesAtencion`) | Pacientes (`pacientes`) | `solar:user-line-duotone` | `/pacientes` | `Pacientes:Leer` |
 | | Profesionales de Salud (`profesionalesSalud`) | `solar:stethoscope-line-duotone` | `/profesionales-salud` | `ProfesionalesSalud:Leer` |
 | | Recetas Médicas (`recetasMedicas`) | `solar:document-text-line-duotone` | `/recetas-medicas` | `Recetas:Leer` |
 | DIGEMID (`breadcrumbs.digemid`) | Catálogo DIGEMID (`catalogoDigemid`) | `solar:shield-check-line-duotone` | `/digemid-catalogo` | `DIGEMID:Leer` |
 | SUNAT (`breadcrumbs.sunat`) | Series Fiscales (`seriesFiscales`) | `solar:bill-check-line-duotone` | `/series-fiscales` | `SeriesFiscales:Leer` |
 
-Fuente de la tabla: `sidebar-data.ts:3-180` (textos, iconos y rutas) y `route-permissions.ts:2-25` (módulo de cada ruta). Total: 8 grupos, 24 opciones (incluido Dashboard). Las pantallas de Transferencias, Delivery, Magistrales, Servicios, Cuarentena/Actas y Auditoría no tienen opción de menú ni ruta.
+Fuente de la tabla: `sidebar-data.ts:3-190` (textos, iconos y rutas) y `route-permissions.ts:2-26` (módulo de cada ruta). Total: 8 grupos, 26 opciones (incluido Dashboard; «Configuración de Pago» solo la ve el operador de plataforma). Las pantallas de Transferencias, Delivery, Magistrales, Servicios, Cuarentena/Actas y Auditoría no tienen opción de menú ni ruta.
 
 Observaciones del menú: `nav.inventario` existe en `es.json` pero ninguna opción lo usa (el título «Inventario» sale de `breadcrumbs.inventario`). Los comentarios de `nav-item.component.ts` hacen referencia a ejemplos de otro producto («Importación», «Documentación»): es código heredado de la plantilla.
 
 ### 4.4 Cierre de sesión (paso a paso)
 
-Disparo: «Cerrar sesión» del menú de usuario, o automático cuando el interceptor no logra renovar la sesión (§5.4). `AuthService.logout()` (`src/app/core/auth/auth.service.ts:113-123`):
+Disparo: «Cerrar sesión» del menú de usuario, o automático cuando el interceptor no logra renovar la sesión (§5.4). `AuthService.logout()` (`src/app/core/auth/auth.service.ts:117-127`):
 
 1. Envía `POST /api/v1/auth/logout` con la cookie de refresco y la cabecera `X-SOFIA-CSRF: 1` (endpoint anónimo, `AuthController.cs:70`). El servidor revoca la sesión desde la cookie aunque el token de acceso haya vencido.
 2. Sin esperar la respuesta, borra del navegador los datos por usuario: claves de `localStorage` que empiezan por `pos-nueva-venta-draft` y `sofia_menu_cache` (`clearUserStorage`, `user-storage.ts:2-5,13-15`).
-3. Ejecuta `clearLocalSession()`: elimina `sofia_token` de `localStorage`, deja el token en nulo, vacía los filtros de búsqueda guardados en memoria (`SearchStateService.clearAll`) y descarta roles y permisos en memoria (`auth.service.ts:155-165`).
+3. Ejecuta `clearLocalSession()`: elimina `sofia_token` de `localStorage`, deja el token en nulo, vacía los filtros de búsqueda guardados en memoria (`SearchStateService.clearAll`) y descarta roles y permisos en memoria (`auth.service.ts:161-171`).
 4. Cuando el servidor responde (bien o con error; el error se ignora) navega a `/auth/login`.
 
 No hay diálogo de confirmación ni mensaje. Un cierre por sesión vencida (§5.4) tampoco muestra aviso.
@@ -509,7 +545,7 @@ Existe el código `layouts/full/horizontal/` (cabecera, menú, `sidebar-data.ts`
 
 ## 5. Guards e interceptores vistos desde el usuario
 
-Registro: guards en `src/app/app.routes.ts:33-38`; interceptores en `src/app/app.config.ts:45-48` (`withInterceptors([authInterceptor, CSLoadingInterceptor])`).
+Registro: guards en `src/app/app.routes.ts:34-39`; interceptores en `src/app/app.config.ts:45-48` (`withInterceptors([authInterceptor, CSLoadingInterceptor])`).
 
 ### 5.1 `authGuard` — sesión iniciada
 
@@ -517,19 +553,19 @@ Registro: guards en `src/app/app.routes.ts:33-38`; interceptores en `src/app/app
 - Si el token guardado es válido (existe y su `exp` no venció) deja pasar.
 - Si no (sin token o vencido) intenta una **renovación silenciosa** `POST /api/v1/auth/refresh` con la cookie de refresco y la cabecera `X-SOFIA-CSRF`. Si responde, guarda el token nuevo y deja pasar sin que el usuario note nada.
 - Si la renovación falla, hace `clearLocalSession()` y redirige a `/auth/login`. **No muestra mensaje alguno.**
-- Las renovaciones simultáneas (guard + interceptor) se unifican en una sola petición (`auth.service.ts:83-97`).
+- Las renovaciones simultáneas (guard + interceptor) se unifican en una sola petición (`auth.service.ts:87-101`).
 
 ### 5.2 `passwordChangeGuard` — cambio de contraseña obligatorio
 
-`src/app/core/auth/password-change.guard.ts:7-12`. Si el token trae `pwd_change = "true"` (`auth.requiresPasswordChange()`, `auth.service.ts:68`) y la URL no empieza por `/cambiar-clave`, redirige a `/cambiar-clave` (sin mensaje en la redirección; en esa pantalla ves el aviso `cambiarClave.forced`, §2). El usuario puede ver el menú, pero cualquier opción que elija vuelve a `/cambiar-clave`. El mismo caso se cubre al iniciar sesión (el login navega directo a `/cambiar-clave`, §1.1) y en medio de una sesión viva (§5.4). Al cambiar la contraseña todas las sesiones se revocan y se vuelve a `/auth/login`.
+`src/app/core/auth/password-change.guard.ts:7-12`. Si el token trae `pwd_change = "true"` (`auth.requiresPasswordChange()`, `auth.service.ts:70`) y la URL no empieza por `/cambiar-clave`, redirige a `/cambiar-clave` (sin mensaje en la redirección; en esa pantalla ves el aviso `cambiarClave.forced`, §2). El usuario puede ver el menú, pero cualquier opción que elija vuelve a `/cambiar-clave`. El mismo caso se cubre al iniciar sesión (el login navega directo a `/cambiar-clave`, §1.1) y en medio de una sesión viva (§5.4). Al cambiar la contraseña todas las sesiones se revocan y se vuelve a `/auth/login`.
 
 ### 5.3 `permissionGuard` — permiso de la pantalla
 
 `src/app/core/auth/permission.guard.ts:9-33`, reglas en `route-permissions.ts`.
-- Toma el **primer segmento** de la URL (`/sucursales/…` → `sucursales`) y busca su módulo en `ROUTE_PERMISSIONS` (`route-permissions.ts:2-25`). Sin módulo (`dashboard`, `cambiar-clave`) deja pasar.
-- Acción exigida: `Leer` siempre; más `Crear` si el segundo segmento es `nueva`, `nuevo` o `carga-masiva`; excepciones de `ROUTE_ACTIONS`: `recetas-medicas/escanear` → `Analizar`, `sesiones-caja/nueva` → `AperturarCaja`, `stock-por-sucursal/nueva` → `Actualizar` (`route-permissions.ts:28-33`). Las demás subrutas (`/roles/:id`, edición, etc.) solo exigen `Leer`; los botones de cada acción los controla `*appPermiso` y la API.
-- Antes de decidir carga los permisos (`GET /api/v1/auth/me`, una vez por usuario). El rol `Admin` pasa siempre; los nombres de módulo y acción se comparan sin distinguir mayúsculas y recortando espacios (`route-permissions.ts:42-53`).
-- Módulo de cada primer segmento: ver la columna «Módulo:Acción» de §4.3 (misma fuente, `route-permissions.ts:2-25`).
+- Toma el **primer segmento** de la URL (`/sucursales/…` → `sucursales`) y busca su módulo en `ROUTE_PERMISSIONS` (`route-permissions.ts:2-26`). Sin módulo (`dashboard`, `cambiar-clave`) deja pasar.
+- Acción exigida: `Leer` siempre; más `Crear` si el segundo segmento es `nueva`, `nuevo` o `carga-masiva`; excepciones de `ROUTE_ACTIONS`: `recetas-medicas/escanear` → `Analizar`, `sesiones-caja/nueva` → `AperturarCaja`, `stock-por-sucursal/nueva` → `Actualizar` (`route-permissions.ts:29-34`). Las demás subrutas (`/roles/:id`, edición, etc.) solo exigen `Leer`; los botones de cada acción los controla `*appPermiso` y la API.
+- Antes de decidir carga los permisos (`GET /api/v1/auth/me`, una vez por usuario). El rol `Admin` pasa siempre; los nombres de módulo y acción se comparan sin distinguir mayúsculas y recortando espacios (`route-permissions.ts:50-64`).
+- Módulo de cada primer segmento: ver la columna «Módulo:Acción» de §4.3 (misma fuente, `route-permissions.ts:2-26`).
 - **Si falta el permiso:** snackbar de error «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`, 5 s) y redirección a `/dashboard`.
 - **Si no se pudo cargar el perfil:** snackbar «No se pudieron cargar tus permisos. Recarga la página o vuelve a iniciar sesión.» (`errors.permissionsLoad`) y redirección a `/dashboard`.
 
@@ -548,6 +584,10 @@ Registro: guards en `src/app/app.routes.ts:33-38`; interceptores en `src/app/app
 ### 5.5 `CSLoadingInterceptor` — barra de carga
 
 `src/app/shared/services/loading/loading.interceptor.ts:6-31`. Mientras haya al menos una petición HTTP en curso (cualquier URL, incluidas las de `/i18n`) se muestra la barra de progreso superior del layout (§6.8). Se apaga al terminar, con éxito o con error.
+
+### 5.6 `platformAdminGuard` — pantallas del operador de plataforma
+
+`src/app/core/auth/platform-admin.guard.ts:9-16`, registrado solo en la ruta `configuracion-pago` (`app.routes.ts`, dentro del layout). Si `auth.esAdminPlataforma()` (claim `plat_admin = "true"` del token) deja pasar. Si no, muestra el snackbar de error «No tienes permisos para acceder a esta pantalla.» (`errors.forbiddenPage`, traducido con `selectTranslate` porque en una carga directa el guard corre antes que el bundle raíz) y redirige a `/dashboard`. Esa ruta no tiene módulo en `ROUTE_PERMISSIONS`, por lo que el `permissionGuard` la deja pasar; el rol `Admin` no la abre. La API repite la regla con la política `PLATAFORMA_ADMIN` (RN-GEN-042, RN-EMP-027).
 
 ---
 
@@ -726,6 +766,15 @@ Comprobado buscando la clase y el selector en todo `src/app` fuera de la carpeta
 | Pipe `lineBreakToBr` | `shared/pipes/line-break-to-br.pipe.ts` | Solo se menciona en un comentario de `shared/constants/line-break-placeholder.ts:3` |
 | `TimezoneService` | `core/services/shared/timezone.service.ts` | Solo lo usan los pipes y `DatetimePickerComponent`, que no se usan; nadie llama `setTimezone` |
 
+### 6.14 `PagoSuscripcionComponent` (`app-pago-suscripcion`) y `PagoSuscripcionDialogComponent` — cómo pagar la suscripción
+
+Archivos: `shared/components/pago-suscripcion/pago-suscripcion.component.ts`, `.html`, `.scss`, `pago-suscripcion-dialog.component.ts`; `shared/services/pago-suscripcion.service.ts`; `shared/models/pago-suscripcion.model.ts`. Scope i18n `suscripcion` (`provideTranslocoScope('suscripcion')`).
+
+- **Qué hace:** al iniciarse pide `GET /api/v1/plataforma/pago` (anónimo) y dibuja el bloque de pago: título «Paga tu suscripción con Yape» (`suscripcion.pago.titulo`), el QR (`qrDataUrl`, texto alternativo «Código QR de Yape para pagar la suscripción», `qrAlt`), el número de Yape agrupado de tres en tres (`formatoNumero`; con QR el texto es «Si no puedes escanear el código, yapea al número», sin QR «Yapea al número»), las indicaciones del operador y, si hay número de WhatsApp, «Después de pagar, envíanos la captura por WhatsApp y activaremos tu acceso.» con el botón «Enviar captura por WhatsApp» (icono `chat`), que abre `https://wa.me/{whatsappNumero}?text=…` en otra pestaña. El texto de WhatsApp es «Hola, adjunto la captura del pago de mi suscripción de SOFIA. Empresa: {{empresa}}» si recibe `empresa`; «… Usuario: {{usuario}}» si recibe `usuario`; y «Hola, adjunto la captura del pago de mi suscripción de SOFIA.» si no recibe ninguno (`pago-suscripcion.component.html:46-67`).
+- **Estados:** cargando (spinner); error («No pudimos cargar los datos de pago.» + «Reintentar», `loadError`, `retry`); sin datos publicados (sin WhatsApp, sin Yape y sin QR): «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.» (`sinConfigurar`).
+- **Dónde se usa:** en el login tras `Auth.EmpresaNoVigente` (§1.1, con `usuario`) y dentro de `PagoSuscripcionDialogComponent` (ancho 420 px, botón «Cerrar» `actions.close`, con `empresa`), que abre el botón «Cómo pagar» del aviso de vencimiento del dashboard (§3.1).
+- No verificado en la aplicación.
+
 ---
 
 ## 7. Directivas compartidas
@@ -739,9 +788,9 @@ Carpeta `src/app/shared/directives`.
 - **Sintaxis de la expresión** (cadena obligatoria, `appPermiso.input.required<string>()`):
   - `'Modulo:Accion'` — por ejemplo `'POS:AperturarCaja'` (usado en el dashboard, §3.1): comprueba ese módulo y esa acción.
   - `'Accion'` — por ejemplo `'Eliminar'`, `'Actualizar'`: el módulo se toma de la URL actual (primer segmento resuelto con `routeModule`, §5.3). Si la URL no tiene módulo mapeado, no se concede.
-  - Los espacios alrededor de cada parte se recortan; módulo y acción se comparan sin distinguir mayúsculas; el rol `Admin` lo cumple siempre (`grantsPermission`, `route-permissions.ts:42-48`).
+  - Los espacios alrededor de cada parte se recortan; módulo y acción se comparan sin distinguir mayúsculas; el rol `Admin` lo cumple siempre (`grantsPermission`, `route-permissions.ts:50-59`).
 - **Reactiva:** se reevalúa cuando cambia el perfil de permisos (usa `computed` y `effect`).
-- **Uso en esta parte:** un solo uso en mi alcance, el botón «Abrir caja» del dashboard (`dashboard.component.html:282`, expresión `'POS:AperturarCaja'`).
+- **Uso en esta parte:** un solo uso en mi alcance, el botón «Abrir caja» del dashboard (`dashboard.component.html:456`, expresión `'POS:AperturarCaja'`).
 
 ### 7.2 Directivas de restricción de escritura — sin uso
 
@@ -783,6 +832,7 @@ Archivo `public/i18n/es.json` (277 líneas; 241 claves hoja). Las demás partes 
 | `nav.profesionalesSalud` | Profesionales de Salud | Menú |
 | `nav.catalogoDigemid` | Catálogo DIGEMID | Menú |
 | `nav.cuentasUsuario` | Cuentas de Usuario | Menú |
+| `nav.configuracionPago` | Configuración de Pago | Menú (solo operador de plataforma) |
 | `nav.medicamentos` | Medicamentos | Menú |
 | `nav.presentacionesVenta` | Presentaciones de Venta | Menú |
 | `nav.formulacionesClinicas` | Formulaciones Clínicas | Menú |
@@ -791,6 +841,7 @@ Archivo `public/i18n/es.json` (277 líneas; 241 claves hoja). Las demás partes 
 | `nav.stockPorSucursal` | Stock por Sucursal | Menú |
 | `nav.sesionesCaja` | Sesiones de Caja | Menú |
 | `nav.ventas` | Ventas | Menú |
+| `nav.devoluciones` | Devoluciones | Menú |
 | `nav.recetasMedicas` | Recetas Médicas | Menú |
 | `nav.seriesFiscales` | Series Fiscales | Menú |
 
@@ -818,6 +869,7 @@ Archivo `public/i18n/es.json` (277 líneas; 241 claves hoja). Las demás partes 
 | `breadcrumbs.digemid-catalogo` | Catálogo DIGEMID | |
 | `breadcrumbs.carga-masiva` | Carga Masiva | Última miga de las 12 cargas masivas |
 | `breadcrumbs.cuentas` | Cuentas de Usuario | |
+| `breadcrumbs.configuracion-pago` | Configuración de Pago | Miga de `/configuracion-pago` |
 | `breadcrumbs.medicamentos` | Medicamentos | |
 | `breadcrumbs.presentacionesVenta` | Presentaciones de Venta | |
 | `breadcrumbs.formulaciones-clinicas` | Formulaciones Clínicas | |
@@ -827,6 +879,7 @@ Archivo `public/i18n/es.json` (277 líneas; 241 claves hoja). Las demás partes 
 | `breadcrumbs.puntoVenta` | Punto de Venta | Título de sección del menú |
 | `breadcrumbs.sesionesCaja` | Sesiones de Caja | |
 | `breadcrumbs.ventas` | Ventas | |
+| `breadcrumbs.devoluciones` | Devoluciones | |
 | `breadcrumbs.pacientesAtencion` | Pacientes & Atención | Título de sección del menú |
 | `breadcrumbs.recetasMedicas` | Recetas Médicas | |
 | `breadcrumbs.sunat` | SUNAT | Título de sección del menú |
@@ -886,7 +939,7 @@ Cuáles de estas claves usa cada pantalla lo indica su ficha; todas tienen al me
 
 ### 8.5 `header.*` — cabecera (claves planas con punto en el nombre)
 
-En el archivo estas claves están escritas planas (`"header.logout": …`), no anidadas (`es.json:111-120`).
+En el archivo estas claves están escritas planas (`"header.logout": …`), no anidadas (`es.json:115-124`).
 
 | Clave | Texto | Uso |
 |---|---|---|
@@ -1096,7 +1149,7 @@ Ninguna. Al 2026-10-14 no hay cambios sin commitear en `sofia-apis` (`43f5529`) 
 | `pages/auth/auth-brand-panel` | §1.5 |
 | `pages/empresa/empresa-register` | §1.2 |
 | `pages/cambiar-clave` | §2 |
-| `pages/dashboard` | §3 |
+| `pages/dashboard` (incluido `suscripcion-aviso`) | §3 |
 
 **Diálogos de `dialogos.txt` de mi alcance**
 
@@ -1114,14 +1167,15 @@ Ninguna. Al 2026-10-14 no hay cambios sin commitear en `sofia-apis` (`43f5529`) 
 
 | Archivo:línea | Expresión | Elemento | Documentado en |
 |---|---|---|---|
-| `pages/dashboard/dashboard.component.html:282` | `'POS:AperturarCaja'` | Botón «Abrir caja» | §3.1 (bloque Caja), §7.1 |
+| `pages/dashboard/dashboard.component.html:456` | `'POS:AperturarCaja'` | Botón «Abrir caja» | §3.1 (bloque Caja), §7.1 |
 
 **Otros elementos del alcance**
 
 | Elemento | Documentado en |
 |---|---|
 | Cabecera (idioma, menú de usuario, campana, fecha; sin buscador ni tema) | §4.1, §4.2, §4.5 |
-| Menú lateral completo (8 grupos, 24 opciones) y `visible-nav-items.ts` | §4.3 |
+| Menú lateral completo (8 grupos, 26 opciones) y `visible-nav-items.ts` | §4.3 |
+| Aviso de vencimiento, sección «Suscripciones» del dashboard, bloque de pago del login, `PagoSuscripcionComponent` y `platformAdminGuard` (nuevos desde `558ad35`) | §3.1, §1.1, §6.14, §5.6 |
 | Cierre de sesión | §4.4 |
 | Personalizador de tema (inactivo) y layout horizontal (sin uso) | §4.6, §4.7 |
 | Pie de página | §4 (no existe) |
@@ -1133,7 +1187,7 @@ Ninguna. Al 2026-10-14 no hay cambios sin commitear en `sofia-apis` (`43f5529`) 
 | Componentes compartidos sin uso (11 componentes, `CustomPaginatorIntl`, pipes, `TimezoneService`) | §6.13 |
 | Directivas (`*appPermiso` y 8 de restricción) | §7 |
 | Textos de la raíz de `es.json` (`nav`, `breadcrumbs`, `actions`, `general`, `generic-labels`, `messages`, `header.*`, `datepicker`, `pagination`, `CONFIRMATION`, `errors`, `fields`, `carga-masiva`, `tipos-documento`) | §8.1-§8.10 |
-| Scopes `auth` (42 claves), `cambiar-clave` (12), `dashboard` (71), `empresa` (parte de registro) | §1, §2, §3 |
+| Scopes `auth` (42 claves), `cambiar-clave` (12), `dashboard` (91), `suscripcion` (39: bloque de pago del login y del aviso, §1.1, §3.1, §6.14), `empresa` (parte de registro) | §1, §2, §3 |
 
 **Claves i18n sin uso**
 
@@ -1141,7 +1195,7 @@ Ninguna. Al 2026-10-14 no hay cambios sin commitear en `sofia-apis` (`43f5529`) 
 |---|---|---|
 | `auth` | Ninguna | Las 42 claves se usan |
 | `cambiar-clave` | Ninguna | |
-| `dashboard` | Ninguna | `metodo.Efectivo`, `metodo.YapePlin`, `metodo.Tarjeta` y `metodo.Transferencia` se resuelven con `'metodo.' + MetodoPago[...]` (`dashboard.component.html:147`) |
+| `dashboard` | Ninguna | `metodo.Efectivo`, `metodo.YapePlin`, `metodo.Tarjeta` y `metodo.Transferencia` se resuelven con `'metodo.' + MetodoPago[...]` (`dashboard.component.html:321`) |
 | `empresa` (parte de registro: `register.*` incluidas `register.direccionSede`, `register.direccionSedePlaceholder` y `register.direccionSedeHint`; validaciones de `form.*` incluida `form.maxLength255`; `notifications.register*`, `rucDuplicado`, `usuarioDuplicado`, `direccionSedeInvalida`) | Ninguna (las 5 claves nuevas de la versión 1.1 están en uso: `empresa-register.component.html:80,85,87,95` y `.ts:25`) | Para las pantallas de búsqueda y detalle de empresa, las claves sin referencia literal (candidatas para la parte que las cubre) son: `searchPlaceholder`, `estado.0` a `estado.3`, `cols.fechaVencimiento`, `cols.cantidadSucursales`, `form.titleView`, `form.estado`, `form.fechaVencimiento`, `notifications.loadError`, `help.nombre`, `help.ruc`, `help.estado`, `noData`, `showing`, `detail.title-edit`, `fields.estaVigente`; algunas pueden resolverse de forma dinámica |
 | `login` | Las 8 claves (`title`, `subtitle`, `username`, `password`, `usernameRequired`, `passwordRequired`, `submit`, `error`) | Scope completo sin uso (§1.1) |
 | Raíz | Ver §8: `nav.inventario`; `actions.view/update/create/clean/return/add/ok/reject/continue/upload-files/download/select/back`; `general.errors.minValue`; `header.reloadPermissions/roles/notifications`; `CONFIRMATION.RELOAD_PERMISSIONS_*`; `errors.forbidden/unauthorized/notFound/serverError/networkError/alert.*`; `carga-masiva.row-number/status-valid/status-error/saving` (y `upload-file/upload-success/upload-error` solo en un componente sin uso) | `errors.unknownError` solo la usa `showSmartErrors` |
@@ -1161,3 +1215,5 @@ Backend (`sofia-apis/src/`, solo para describir los indicadores y los permisos d
 Solo pruebas (sin pantalla): `src/app/shared/testing/delete-in-use-testing.ts` (ayuda para las pruebas de eliminación en uso, agregada en `01b8260`); no forma parte de la interfaz.
 
 Inventarios base: `docs/_inventario/{rutas-spa.csv,componentes-pages.txt,dialogos.txt,app-permiso-usos.csv,endpoints.csv,i18n-scopes.csv}`.
+
+- Suscripciones del operador de plataforma (`sofia-web-spa` `558ad35`, `sofia-apis` `6f6b837`): `pages/plataforma/configuracion-pago/*`, `pages/empresa/dialogs/suscripcion-fecha-dialog/*`, `pages/empresa/empresa-detail/*`, `pages/dashboard/suscripcion-aviso/*`, `shared/components/pago-suscripcion/*`, `shared/services/pago-suscripcion.service.ts`, `core/auth/platform-admin.guard.ts`; `PlataformaController.cs`, `EmpresasController.cs`, `PlataformaAdminPolicy.cs`, `HasPermissionOrPlataformaAttribute.cs`, `Empresa.cs`, `PlataformaConfiguracionPago.cs`, `0029_Plataforma_Suscripciones.sql`; `public/i18n/suscripcion/es.json`, `public/i18n/empresa/es.json`, `public/i18n/dashboard/es.json`.
