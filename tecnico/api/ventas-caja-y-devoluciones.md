@@ -3,15 +3,15 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (revisión: solo se corrigieron tres citas de `VentasController.cs`; las fichas no cambiaron) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (fichas de `Devoluciones` reescritas desde el código; el resto de las fichas se verificó por última vez en `6f6b837`) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y llamadas reales a la API local (`https://localhost:7300`, empresa de la referencia «Farmacia API Referencia S.A.C.») |
 
 ## 0. Alcance, convenciones y datos de este documento
 
-Este documento describe los 18 endpoints de tres controladores, en el orden de `_inventario/endpoints.csv`: `POS` (5, caja), `Ventas` (10) y `Devoluciones` (3). Las convenciones comunes de la API (prefijo `/api/v1/`, autenticación con `Authorization: Bearer <token>`, respuestas 401 y 403 por falta de permiso, paginación, límite global de 200 peticiones por minuto por IP y formato general de errores) están en [tecnico/api/convenciones-y-administracion.md, apartado 0](convenciones-y-administracion.md#0-convenciones-comunes) y no se repiten aquí. Aquí solo se dice lo que es distinto en estos controladores.
+Este documento describe los 19 endpoints de tres controladores, en el orden de `_inventario/endpoints.csv`: `POS` (5, caja), `Ventas` (10) y `Devoluciones` (4: crear, listar, detalle y exportar; los tres últimos son de `0678e40` y no están aún en `endpoints.csv`). Las convenciones comunes de la API (prefijo `/api/v1/`, autenticación con `Authorization: Bearer <token>`, respuestas 401 y 403 por falta de permiso, paginación, límite global de 200 peticiones por minuto por IP y formato general de errores) están en [tecnico/api/convenciones-y-administracion.md, apartado 0](convenciones-y-administracion.md#0-convenciones-comunes) y no se repiten aquí. Aquí solo se dice lo que es distinto en estos controladores.
 
 Las reglas de negocio se remiten por ID a [negocio/reglas/ventas-y-comprobantes.md](../../negocio/reglas/ventas-y-comprobantes.md) (`RN-VEN`, `RN-CMP`) y [negocio/reglas/caja-devoluciones-y-dashboard.md](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (`RN-CAJ`, `RN-DEV`); los permisos, a [tecnico/seguridad/matriz-de-permisos.md](../seguridad/matriz-de-permisos.md) (apartados 3.4, 3.14 y el de `Ventas`); las pantallas, a [producto/pantallas/punto-de-venta.md](../../producto/pantallas/punto-de-venta.md); y los procesos completos, a [negocio/procesos-de-negocio.md](../../negocio/procesos-de-negocio.md) (procesos 4 a 6).
 
@@ -1390,7 +1390,7 @@ HTTP/1.1 400 Bad Request   (cuerpo con "estado": "Completada")
 
 Controlador `DevolucionesController` (`SOFIA.API/Controllers/DevolucionesController.cs`), ruta base `/api/v1/Devoluciones`. Una devolución acredita parte o todo lo vendido en una venta **cobrada** (`Completada`): valida cuánto se puede devolver por línea, emite una **nota de crédito** (serie de nota de crédito de la sucursal), registra el **reembolso** (monto y método, que sale de la caja abierta de quien procesa), repone la mercadería al stock o la anota con destino a cuarentena, y deja constancia de quién autorizó. Reglas: [`negocio/reglas/caja-devoluciones-y-dashboard` apartado 4](../../negocio/reglas/caja-devoluciones-y-dashboard.md#4-devoluciones-dev). Permisos: [`tecnico/seguridad/matriz-de-permisos` apartado 3.4](../seguridad/matriz-de-permisos.md#34-devoluciones-devoluciones). Proceso: [`negocio/procesos-de-negocio` apartado 7](../../negocio/procesos-de-negocio.md#7-proceso-5--devolución-y-anulación).
 
-**Solo `POST /Devoluciones` tiene pantalla** (el diálogo «Procesar devolución», que se abre con el botón «Devolver» del detalle de una venta en `/pos/:id`). El listado y el detalle de devoluciones son **Solo API (sin pantalla)**: el SPA muestra las devoluciones dentro del detalle de la venta (`GET /Ventas/{id}`, campo `devoluciones`), no con estos dos endpoints ([RN-DEV-032]).
+**Pantallas.** `POST /Devoluciones` se usa desde el diálogo «Procesar devolución» (botón «Devolver» del detalle de una venta en `/pos/:id`). Desde `37048ea` el listado, el detalle y la exportación tienen pantalla propia: `/devoluciones` (búsqueda con filtros y botón «Exportar») y `/devoluciones/:id` (detalle de solo lectura con los productos devueltos); el detalle de la venta (`GET /Ventas/{id}`, campo `devoluciones`) sigue mostrando su propia sección ([RN-DEV-032], [RN-DEV-042], [RN-DEV-043]). Las fichas de `GET /Devoluciones`, `GET /Devoluciones/{id}` y `POST /Devoluciones/exportar` se reescribieron desde el código de `0678e40`: **sus ejemplos no se capturaron de la API** (van marcados «Ejemplo no verificado: escrito desde el código»); el ejemplo real anterior tenía seis campos por fila y el objeto `Result` completo en el detalle.
 
 #### `POST /api/v1/Devoluciones`
 
@@ -1525,36 +1525,47 @@ HTTP/1.1 400 Bad Request   (la sesión 1 ya estaba cerrada)
 
 #### `GET /api/v1/Devoluciones`
 
-Lista paginada de devoluciones, de la más reciente a la más antigua, de las sucursales accesibles del usuario (la sucursal se toma de la venta del comprobante acreditado). **Solo API (sin pantalla).** Cada fila trae solo seis campos: no incluye el monto, el método de reembolso, la nota de crédito, las líneas ni el destino ([RN-DEV-030]); esos datos están en `GET /Ventas/{id}`. No existe exportación.
+Lista paginada de devoluciones, de la más reciente a la más antigua (a igualdad de fecha, por identificador), de las sucursales accesibles del usuario (la sucursal se toma de la venta del comprobante acreditado). Acepta filtros por empleado, fechas, método de reembolso, destino, motivo SUNAT, número de la nota de crédito y rango de monto reembolsado ([RN-DEV-030], [RN-DEV-038], [RN-DEV-039]).
 
 | | |
 |---|---|
 | **Permiso** | `Devoluciones:Leer` |
 | **Límite de peticiones** | solo el global |
-| **Código** | `SOFIA.API/Controllers/DevolucionesController.cs:20` → `GetDevolucionesQuery` (`SOFIA.Application/Devoluciones/Queries/GetDevoluciones/`) |
-| **Pantalla del SPA** | Solo API (sin pantalla) |
+| **Código** | `SOFIA.API/Controllers/DevolucionesController.cs:25` → `GetDevolucionesQuery` (`SOFIA.Application/Devoluciones/Queries/GetDevoluciones/`); el filtro del número en `Common/DevolucionFilters.cs` |
+| **Pantalla del SPA** | `/devoluciones` («Devoluciones»), botón «Buscar» |
 
-**Parámetros (consulta):**
+**Parámetros (consulta), todos opcionales:**
 
-| Nombre | Tipo | Obligatorio | Descripción |
-|---|---|---|---|
-| `empleadoAutorizaId` | GUID | No | Empleado que autorizó (el que procesó); no puede ser el GUID vacío. |
-| `fechaInicio`, `fechaFin` | fecha-hora | No | Sobre la fecha de la devolución, `>=` y `<=` en UTC; ver 0.1, punto 6. |
-| `pageNumber` | entero | No | Por defecto 1. |
-| `pageSize` | entero | No | Por defecto 10; máximo 10 000. |
+| Nombre | Tipo | Descripción |
+|---|---|---|
+| `empleadoAutorizaId` | GUID | Empleado que autorizó (el que procesó); no puede ser el GUID vacío. |
+| `fechaInicio`, `fechaFin` | fecha-hora | Sobre la fecha de la devolución, `>=` y `<=` en UTC; ver 0.1, punto 6. |
+| `metodoReembolso` | enumerado `MetodoPago` | `Efectivo` (0), `YapePlin` (1), `Tarjeta` (2), `Transferencia` (3); en la consulta acepta nombre o número (el SPA envía el número). |
+| `destino` | enumerado `DestinoDevolucion` | `Reingreso_Venta` (0) o `Cuarentena_DIGEMID` (1). Coincide si **alguna** línea de la devolución fue a ese destino. |
+| `motivoSunatCatalogo` | texto | Exactamente 2 caracteres (se recorta); igualdad exacta (`06`, `07`). |
+| `numeroNotaCredito` | texto, hasta 20 | Número impreso («BC01-00000007»), solo el prefijo de la serie («BC01», se busca contenido) o solo el correlativo («7»); las devoluciones sin nota de crédito no coinciden ([RN-DEV-039]). |
+| `montoMin`, `montoMax` | decimal | Sobre el **monto reembolsado**; `montoMin` ≥ 0 y `montoMax` ≥ `montoMin`. |
+| `pageNumber` | entero | Por defecto 1. |
+| `pageSize` | entero | Por defecto 10; máximo 10 000. |
 
-**Respuesta correcta:** `200 OK`, `{ items, pageNumber, totalPages, totalCount, hasPreviousPage, hasNextPage }`; cada elemento: `id`, `comprobanteOrigenId` (**el identificador del comprobante** —boleta o factura— de la venta, no el de la venta), `empleadoAutorizaId`, `fechaDevolucion`, `motivoSunatCatalogo`, `sustentoDescriptivo`.
+**Respuesta correcta:** `200 OK`, `{ items, pageNumber, totalPages, totalCount, hasPreviousPage, hasNextPage }`; cada elemento tiene quince campos: `id`, `comprobanteOrigenId` (**el identificador del comprobante** —boleta o factura— de la venta, no el de la venta), `empleadoAutorizaId`, `fechaDevolucion`, `motivoSunatCatalogo`, `sustentoDescriptivo`, `ventaId`, `codigoVenta` (el número impreso del comprobante de origen, `{prefijo}-{correlativo de 8 dígitos}`), `numeroNotaCredito` (nulo si no hay), `clienteNombre` («Público General» si la venta no tiene cliente), `empleadoAutorizaNombre` («N/A» si no se encuentra), `sucursalNombre`, `montoNotaCredito`, `montoReembolsado` y `metodoReembolso` (nombre del enumerado).
 
 **Errores posibles:**
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `GetDevolucionesQuery.EmpleadoAutorizaId` | Se envía el GUID vacío (solo desde el código; no se provocó) | [RN-DEV-030] |
+| 400 | `GetDevolucionesQuery.EmpleadoAutorizaId` | GUID vacío | [RN-DEV-038] |
+| 400 | `GetDevolucionesQuery.MotivoSunatCatalogo` | Distinto de 2 caracteres; mensaje «The SUNAT reason must be exactly 2 characters.» | [RN-DEV-038] |
+| 400 | `GetDevolucionesQuery.NumeroNotaCredito` | Más de 20 caracteres | [RN-DEV-038] |
+| 400 | `GetDevolucionesQuery.MontoMin` | Menor que 0 | [RN-DEV-038] |
+| 400 | `GetDevolucionesQuery.MontoMax` | Menor que `montoMin` (o que 0) | [RN-DEV-038] |
 
-**Ejemplo real:**
+Los mensajes de los demás códigos son los predeterminados de FluentValidation (no se capturaron).
+
+**Ejemplo (Ejemplo no verificado: escrito desde el código):**
 
 ```http
-GET /api/v1/Devoluciones?pageNumber=1&pageSize=10
+GET /api/v1/Devoluciones?numeroNotaCredito=BC01&metodoReembolso=0&montoMin=10&pageNumber=1&pageSize=10
 Authorization: Bearer <token>
 ```
 
@@ -1563,34 +1574,34 @@ HTTP/1.1 200 OK
 
 {
   "items": [
-    { "id": "0d7729b1-da10-4515-b312-b64843969e58", "comprobanteOrigenId": "d5b6d229-47b1-476d-af9a-9c6c41994e53",
-      "empleadoAutorizaId": "90516255-a1ff-476b-b857-4561740dee8d", "fechaDevolucion": "2026-10-30T22:25:30.24Z",
-      "motivoSunatCatalogo": "07", "sustentoDescriptivo": "4E-Envase danado, se aisla el producto" },
-    { "id": "83d06851-e479-4ef8-a77d-12861467d935", "comprobanteOrigenId": "a27522eb-5279-4e58-907f-f31175cf300d",
-      "empleadoAutorizaId": "90516255-a1ff-476b-b857-4561740dee8d", "fechaDevolucion": "2026-10-30T22:25:27.06Z",
-      "motivoSunatCatalogo": "07", "sustentoDescriptivo": "4E-Cliente compro de mas" }
+    { "id": "<guid>", "comprobanteOrigenId": "<guid>", "empleadoAutorizaId": "<guid>",
+      "fechaDevolucion": "2026-11-14T22:25:30.24Z", "motivoSunatCatalogo": "07",
+      "sustentoDescriptivo": "Envase danado", "ventaId": "<guid>", "codigoVenta": "B001-00000012",
+      "numeroNotaCredito": "BC01-00000007", "clienteNombre": "Público General",
+      "empleadoAutorizaNombre": "Rita Referencia", "sucursalNombre": "Sede Principal",
+      "montoNotaCredito": 12.00, "montoReembolsado": 12.00, "metodoReembolso": "Efectivo" }
   ],
-  "pageNumber": 1, "totalPages": 1, "totalCount": 2,
+  "pageNumber": 1, "totalPages": 1, "totalCount": 1,
   "hasPreviousPage": false, "hasNextPage": false
 }
 ```
 
-Observa que `comprobanteOrigenId` de la respuesta (`a27522eb-…`, la boleta `B4E1-00000001`) no es el valor que se envió al crear la devolución (`3d6cfb7f-…`, la venta): el campo del `POST` lleva el id de la venta y el de las consultas el id del comprobante.
+Observa que `comprobanteOrigenId` de la respuesta es el id del comprobante y no el valor que se envía al crear la devolución (el id de la venta, `POST /Devoluciones`); el id de la venta va en `ventaId`.
 
 #### `GET /api/v1/Devoluciones/{id}`
 
-Devuelve una devolución por su identificador. **Solo API (sin pantalla).** La respuesta es el objeto `Result` completo, con los mismos seis campos del listado dentro de `value`.
+Devuelve una devolución por su identificador, con sus líneas. **Cambio de `0678e40`:** la respuesta es ahora el objeto plano (antes era el objeto `Result` completo con la devolución en `value`) y la ruta lleva la restricción `{id:guid}`.
 
 | | |
 |---|---|
 | **Permiso** | `Devoluciones:Leer` |
 | **Límite de peticiones** | solo el global |
-| **Código** | `SOFIA.API/Controllers/DevolucionesController.cs:28` (atributo `[HttpGet("{id}")]`) → `GetDevolucionByIdQuery` (`SOFIA.Application/Devoluciones/Queries/GetDevolucionById/`) |
-| **Pantalla del SPA** | Solo API (sin pantalla) |
+| **Código** | `SOFIA.API/Controllers/DevolucionesController.cs:33` (atributo `[HttpGet("{id:guid}")]` en la línea 31) → `GetDevolucionByIdQuery` (`SOFIA.Application/Devoluciones/Queries/GetDevolucionById/`) |
+| **Pantalla del SPA** | `/devoluciones/:id` («Detalle de devolución») |
 
-**Parámetros (ruta):** `id` (GUID, obligatorio; un valor que no es GUID responde 400 con el `ProblemDetails` estándar, ver 0.5).
+**Parámetros (ruta):** `id` (GUID, obligatorio). **No verificado:** qué responde la API con un valor que no es GUID; la restricción `:guid` hace que la ruta no coincida (en `GET /Ventas/{id}`, con la misma restricción, se registró 404 sin cuerpo).
 
-**Respuesta correcta:** `200 OK`, `{ isSuccess, value, isFailure, error: { code, message, type }, statusCode }`. La devolución debe existir y la venta de su comprobante estar en una sucursal accesible ([RN-DEV-031]).
+**Respuesta correcta:** `200 OK` con los quince campos de la fila del listado más `lineas`: arreglo de `{ id, detalleVentaId, productoNombre, numeroLote, presentacion, cantidadDevuelta, precioUnitario, subtotal, destino }`, donde `subtotal` es `cantidadDevuelta` × `precioUnitario` sin redondear, `presentacion` es nulo si la venta no usó una y `destino` es `Reingreso_Venta` o `Cuarentena_DIGEMID`. La devolución debe existir y la venta de su comprobante estar en una sucursal accesible ([RN-DEV-031], [RN-DEV-040]).
 
 **Errores posibles:**
 
@@ -1598,10 +1609,10 @@ Devuelve una devolución por su identificador. **Solo API (sin pantalla).** La r
 |---|---|---|---|
 | 404 | `Devolucion.NotFound` | No existe, está eliminada o es de una sucursal no accesible | [RN-DEV-031] |
 
-**Ejemplo real:**
+**Ejemplo (Ejemplo no verificado: escrito desde el código):**
 
 ```http
-GET /api/v1/Devoluciones/83d06851-e479-4ef8-a77d-12861467d935
+GET /api/v1/Devoluciones/<guid>
 Authorization: Bearer <token>
 ```
 
@@ -1609,18 +1620,17 @@ Authorization: Bearer <token>
 HTTP/1.1 200 OK
 
 {
-  "isSuccess": true,
-  "value": {
-    "id": "83d06851-e479-4ef8-a77d-12861467d935",
-    "comprobanteOrigenId": "a27522eb-5279-4e58-907f-f31175cf300d",
-    "empleadoAutorizaId": "90516255-a1ff-476b-b857-4561740dee8d",
-    "fechaDevolucion": "2026-10-30T22:25:27.06Z",
-    "motivoSunatCatalogo": "07",
-    "sustentoDescriptivo": "4E-Cliente compro de mas"
-  },
-  "isFailure": false,
-  "error": { "code": "", "message": "", "type": 0 },
-  "statusCode": 200
+  "id": "<guid>", "comprobanteOrigenId": "<guid>", "empleadoAutorizaId": "<guid>",
+  "fechaDevolucion": "2026-11-14T22:25:30.24Z", "motivoSunatCatalogo": "07",
+  "sustentoDescriptivo": "Envase danado", "ventaId": "<guid>", "codigoVenta": "B001-00000012",
+  "numeroNotaCredito": "BC01-00000007", "clienteNombre": "Público General",
+  "empleadoAutorizaNombre": "Rita Referencia", "sucursalNombre": "Sede Principal",
+  "montoNotaCredito": 12.00, "montoReembolsado": 12.00, "metodoReembolso": "Efectivo",
+  "lineas": [
+    { "id": "<guid>", "detalleVentaId": "<guid>", "productoNombre": "Paracetamol 500 mg", "numeroLote": "L-001",
+      "presentacion": "Caja x 100", "cantidadDevuelta": 4, "precioUnitario": 3.00, "subtotal": 12.00,
+      "destino": "Reingreso_Venta" }
+  ]
 }
 ```
 
@@ -1634,6 +1644,61 @@ HTTP/1.1 404 Not Found
 Content-Type: application/problem+json
 
 { "status": 404, "detail": "Devolucion not found.", "code": "Devolucion.NotFound" }
+```
+
+(El 404 de este segundo ejemplo se capturó con el código anterior a `0678e40`; el cuerpo de error no cambió en el código.)
+
+#### `POST /api/v1/Devoluciones/exportar`
+
+Genera un Excel con las devoluciones que cumplen los filtros (sin paginar). Si hay más de 10 000, no genera el archivo. **Ficha nueva** (`0678e40`).
+
+| | |
+|---|---|
+| **Permiso** | `Devoluciones:Leer` |
+| **Límite de peticiones** | solo el global |
+| **Código** | `SOFIA.API/Controllers/DevolucionesController.cs:41` → `GetDevolucionesQuery` (reutilizado, con `PageSize` = 10 000); el cuerpo es `DevolucionExportRequest` (`DevolucionesController.cs:85-96`) |
+| **Pantalla del SPA** | `/devoluciones`: botón «Exportar» (`actions.export`) |
+
+**Parámetros:** ninguno.
+
+**Cuerpo:**
+
+| Campo | Tipo | Obligatorio | Reglas |
+|---|---|---|---|
+| `headers` | arreglo de texto | Sí | Títulos ya traducidos por el cliente; máximo 50 títulos de hasta 100 caracteres ([RN-IMP-009]). El archivo tiene 10 columnas, en este orden: nota de crédito, venta, fecha, cliente, autorizó, sucursal, motivo, monto de la nota, monto reembolsado, método de reembolso ([RN-DEV-041]). |
+| `dateFormat` | texto | Sí | Uno de `dd/MM/yyyy`, `MM/dd/yyyy`, `dd/MM/yyyy HH:mm`, `MM/dd/yyyy HH:mm` ([RN-IMP-011]); se aplica sobre la fecha UTC, sin convertir. |
+| `empleadoAutorizaId`, `fechaInicio`, `fechaFin`, `metodoReembolso`, `destino`, `motivoSunatCatalogo`, `numeroNotaCredito`, `montoMin`, `montoMax` | como en `GET /Devoluciones` | No | Mismos filtros y mismas validaciones; los enumerados (`metodoReembolso`, `destino`) van **como número** en el cuerpo ([RN-DEV-038]). |
+
+**Respuesta correcta:** `200 OK` con el archivo. `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`; nombre de archivo `devoluciones.xlsx`. La columna «motivo» lleva el código (`06`, `07`) y la de método el nombre del enumerado (`Efectivo`, `YapePlin`…), sin traducir; no se exportan las líneas ni el destino.
+
+**Errores posibles:**
+
+| HTTP | `code` | Cuándo | Regla |
+|---|---|---|---|
+| 400 | `Export.TooManyRows` | Más de 10 000 devoluciones | [RN-IMP-008] |
+| 400 | `GetDevolucionesQuery.*` | Filtro inválido (los de la ficha de `GET /Devoluciones`) | [RN-DEV-038] |
+| 400 | (`errors.DateFormat`: `Export.DateFormat.Invalid`) | `dateFormat` fuera de la lista; `ProblemDetails` estándar con `errors` (ver 0.5) | [RN-IMP-011] |
+
+**Ejemplo (Ejemplo no verificado: escrito desde el código):**
+
+```http
+POST /api/v1/Devoluciones/exportar
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "headers": ["Nota de crédito","Venta","Fecha","Cliente","Autorizó","Sucursal","Motivo","Monto de la nota (S/)","Reembolsado (S/)","Método de reembolso"],
+  "dateFormat": "dd/MM/yyyy",
+  "metodoReembolso": 0,
+  "fechaInicio": "2026-11-01T05:00:00.000Z"
+}
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+[binario: archivo devoluciones.xlsx]
 ```
 
 ---
@@ -1681,10 +1746,10 @@ La serie `B4E1` emitió `B4E1-00000001` a `B4E1-00000006` (boletas de V1, V2, V3
 
 | # | Hallazgo | Dónde |
 |---|---|---|
-| 1 | **El mismo nombre de campo lleva ids distintos.** `POST /Devoluciones` recibe `comprobanteOrigenId` = id de la **venta**; `GET /Devoluciones` y `GET /Devoluciones/{id}` devuelven `comprobanteOrigenId` = id del **comprobante** (verificado con V1: `3d6cfb7f-…` al crear, `a27522eb-…` al leer). | `POST /Devoluciones`, `GET /Devoluciones` |
+| 1 | **El mismo nombre de campo lleva ids distintos.** `POST /Devoluciones` recibe `comprobanteOrigenId` = id de la **venta**; `GET /Devoluciones` y `GET /Devoluciones/{id}` devuelven `comprobanteOrigenId` = id del **comprobante** (desde `0678e40` también traen `ventaId` con el id de la venta) (verificado con V1: `3d6cfb7f-…` al crear, `a27522eb-…` al leer). | `POST /Devoluciones`, `GET /Devoluciones` |
 | 2 | **Los enumerados van como número en el cuerpo.** Enviar `"estado": "Completada"` responde 400 con un `ProblemDetails` de ASP.NET sin `code`. En la cadena de consulta sí se aceptan nombres. | `POST /Ventas/exportar`, 0.1 |
 | 3 | **`fechaFin` sin hora excluye el propio día** (se compara `<=` contra las 00:00 UTC). Con `fechaFin=2026-10-30` no apareció ninguna venta del 30; con `fechaFin=2026-10-31`, sí. | `GET /Ventas`, `GET /Pos/sesiones`, `GET /Devoluciones` |
-| 4 | **`GET /Pos/{id}` y `GET /Devoluciones/{id}` devuelven el objeto `Result` completo**; las demás consultas, el valor plano. Un `id` que no es GUID en `GET /Pos/{id}` responde 400 (ProblemDetails de ASP.NET), mientras `GET /Ventas/{id}` responde 404 sin cuerpo (restricción `:guid` en la ruta). | `Pos`, `Devoluciones`, `Ventas` |
+| 4 | **`GET /Pos/{id}` devuelve el objeto `Result` completo**; las demás consultas, incluida `GET /Devoluciones/{id}` desde `0678e40`, el valor plano. Un `id` que no es GUID en `GET /Pos/{id}` responde 400 (ProblemDetails de ASP.NET), mientras `GET /Ventas/{id}` responde 404 sin cuerpo (restricción `:guid` en la ruta). | `Pos`, `Devoluciones`, `Ventas` |
 | 5 | **Crear y cobrar responden 200, no 201**; apertura, cierre y devolución también 200 con un GUID entre comillas. | 0.1 |
 | 6 | **El cierre de caja no devuelve el resultado del arqueo**, solo el id de la sesión; esperado, declarado y diferencia se leen con `GET /Pos/{id}`. | `POST /Pos/cierre` |
 | 7 | **El `detail` de los errores mezcla español e inglés** (`Venta.Stock` y `PosSesionCaja.YaAbierta` en español; `Venta.Pagos`, `Venta.Caja` y casi todos los demás en inglés), y el de un validador junta varios mensajes con `; ` bajo el `code` del primero. El cliente debe basarse en `code`. | transversal |
@@ -1696,7 +1761,7 @@ La serie `B4E1` emitió `B4E1-00000001` a `B4E1-00000006` (boletas de V1, V2, V3
 
 | # | Qué | Por qué |
 |---|---|---|
-| 1 | Respuesta exacta de falta de permiso (401/403) en estos 18 endpoints | La cuenta de la referencia es `Admin`, que pasa todas las comprobaciones; el formato general está en la parte 4A. |
+| 1 | Respuesta exacta de falta de permiso (401/403) en estos 19 endpoints | La cuenta de la referencia es `Admin`, que pasa todas las comprobaciones; el formato general está en la parte 4A. |
 | 2 | Errores `Venta.Caja.NoPropia` (403), `PosSesionCaja.NoPropia` (403), `Devolucion.Venta.OtraSucursal` (403), `Venta.Forbidden`, `Auth.Sucursal` y `Auth.Empleado` | Exigen un segundo usuario o un token sin claims; no se crearon. |
 | 3 | Errores `Venta.Cuarentena`, `Venta.Lote`, `Venta.Lote.Vencido`, `Venta.Presentacion`, `Venta.SinPrecio`, `Venta.Receta.NoEncontrada`, `Venta.Receta.OtroPaciente`, `Venta.Receta.NumeroRequerido`, `Venta.Receta.Agotada`, `Venta.Pagos.VueltoExcedeEfectivo`, `Venta.Empresa.SinRuc`, `Venta.SerieBoleta.NoConfigurada`, `Venta.Seguro.MontoInvalido`, `Paciente.NotFound`, `Aseguradora.NotFound` | Se documentan desde el código y las reglas ([`negocio/reglas/ventas-y-comprobantes`](../../negocio/reglas/ventas-y-comprobantes.md)); no se provocaron para no alterar datos ni series. Un lote vencido no se puede crear (el validador de lotes lo rechaza). |
 | 4 | Cobertura de seguro (`aseguradoraId`, `montoCubiertoSeguro`) en `POST /Ventas` y `PUT …/completar` | Se necesitaría una aseguradora; la API está implementada pero el SPA oculta la sección ([RN-VEN-047]). No se llamó. |
@@ -1704,7 +1769,7 @@ La serie `B4E1` emitió `B4E1-00000001` a `B4E1-00000006` (boletas de V1, V2, V3
 | 6 | Cierre con efectivo esperado negativo (`PosSesionCaja.MontoCierreCalculado`), `Concurrency.Conflict` en cualquier endpoint y `Export.TooManyRows` (más de 10 000 filas) | Exigen condiciones que no se pueden provocar sin dañar datos (o 10 000 registros). |
 | 7 | Los importes de la nota de crédito (base gravada e IGV) | Ningún endpoint de este alcance los devuelve; se documentan desde [RN-DEV-021]. |
 | 8 | `Devolucion.Venta.EstadoInvalido` y `Devolucion.SerieNotaCredito.NoConfigurada` | Exigen una venta ya `Devuelta` o una sucursal sin serie de nota de crédito; no se provocaron. |
-| 9 | `GET /Devoluciones` con `empleadoAutorizaId` vacío y con filtros de fecha | Se documentan desde el validador; la lista se llamó sin filtros. |
+| 9 | `GET /Devoluciones` (filtros nuevos y 15 campos), `GET /Devoluciones/{id}` (líneas, objeto plano, `id` que no es GUID) y `POST /Devoluciones/exportar` | Fichas escritas desde el código de `0678e40`; no se llamó a la API. Los ejemplos van marcados «Ejemplo no verificado: escrito desde el código». |
 | 10 | Que el SPA muestre los textos citados | No se abrió la aplicación (el navegador lo usa otro agente). |
 
 ### En curso (sin commitear)
@@ -1739,14 +1804,15 @@ Todos los endpoints de `_inventario/endpoints.csv` de los controladores `POS`, `
 | 14 | `PUT /api/v1/Ventas/{id:guid}/detalles` | `Ventas:Actualizar` | Sección 2, `PUT /api/v1/Ventas/{id}/detalles` | Real (éxito y 400) |
 | 15 | `POST /api/v1/Ventas/exportar` | `Ventas:Leer` | Sección 2, `POST /api/v1/Ventas/exportar` | Real (cabeceras y dos errores 400) |
 | 16 | `POST /api/v1/Devoluciones` | `Devoluciones:ProcesarDevolucion` | Sección 3, `POST /api/v1/Devoluciones` | Real (2 variantes de éxito y 4 rechazos) |
-| 17 | `GET /api/v1/Devoluciones` | `Devoluciones:Leer` | Sección 3, `GET /api/v1/Devoluciones` | Real |
-| 18 | `GET /api/v1/Devoluciones/{id}` | `Devoluciones:Leer` | Sección 3, `GET /api/v1/Devoluciones/{id}` | Real (éxito y 404) |
+| 17 | `GET /api/v1/Devoluciones` | `Devoluciones:Leer` | Sección 3, `GET /api/v1/Devoluciones` | No verificado: escrito desde el código (`0678e40`) |
+| 18 | `GET /api/v1/Devoluciones/{id}` | `Devoluciones:Leer` | Sección 3, `GET /api/v1/Devoluciones/{id}` | No verificado: escrito desde el código (`0678e40`) |
+| 19 | `POST /api/v1/Devoluciones/exportar` | `Devoluciones:Leer` | Sección 3, `POST /api/v1/Devoluciones/exportar` | No verificado: escrito desde el código (`0678e40`) |
 
-Cobertura: 18 de 18 endpoints con ficha y ejemplo real. Los elementos del encargo (apertura de caja; configuración, lotes y presentaciones; venta sin cliente en efectivo con vuelto; pago dividido con número de operación; venta con receta; rechazos por stock y por pagos; venta en espera —crear, actualizar, completar—; anulación de una venta en espera y de una cobrada con caja abierta; devolución parcial con nota de crédito y reembolso; búsqueda y detalle; exportación; sesiones; cierre con arqueo calculado a mano) están en los apartados 1 a 4.
+Cobertura: 19 de 19 endpoints con ficha; 16 con ejemplo real y 3 (los de `Devoluciones` de consulta y exportación) con ejemplo escrito desde el código. Los elementos del encargo (apertura de caja; configuración, lotes y presentaciones; venta sin cliente en efectivo con vuelto; pago dividido con número de operación; venta con receta; rechazos por stock y por pagos; venta en espera —crear, actualizar, completar—; anulación de una venta en espera y de una cobrada con caja abierta; devolución parcial con nota de crédito y reembolso; búsqueda y detalle; exportación; sesiones; cierre con arqueo calculado a mano) están en los apartados 1 a 4.
 
 ## Fuentes
 
-Código del backend (`sofia-apis`, commit `34089ec`):
+Código del backend (`sofia-apis`, commit `34089ec`; `DevolucionesController.cs` y `Application/Devoluciones/` desde `0678e40`):
 
 - `src/SOFIA.API/Controllers/POSController.cs`, `VentasController.cs`, `DevolucionesController.cs`; `src/SOFIA.API/Extensions/ResultExtensions.cs`; `src/SOFIA.API/Extensions/ExportExtensions.cs` (límite de filas); `src/SOFIA.API/Extensions/RateLimitingExtensions.cs` (límite global); `src/SOFIA.API/Infrastructure/ExportHeadersAttribute.cs` y `ExportDateFormatAttribute.cs`.
 - `src/SOFIA.Application/POS/` (comandos `AperturarCaja` y `CerrarCaja`, consultas `GetSesiones` y `GetSesionById`, `Common/ArqueoCajaCalculator.cs`).
@@ -1755,7 +1821,7 @@ Código del backend (`sofia-apis`, commit `34089ec`):
 - `src/SOFIA.Application/Common/Extensions/QueryableExtensions.cs` (filtro de fechas), `src/SOFIA.Application/Common/Models/PaginatedList.cs`; `src/SOFIA.Domain/Common/Result.cs`; enumerados en `src/SOFIA.Domain/Enums/` (`EstadoVenta`, `MetodoPago`, `EstadoSesion`, `DestinoDevolucion`, `CondicionVenta`, `TipoComprobante`).
 - Para preparar los datos: comandos y validadores de `UnidadesMedida`, `Laboratorios`, `Medicamentos`, `Inventarios` (lote y stock), `PresentacionesVenta`, `JerarquiasUoM`, `SeriesFiscales`, `Pacientes`, `Profesionales` y `Recetas` en `src/SOFIA.Application/`.
 
-Frontend (`sofia-web-spa`, commit `9ad15f0`): `src/app/pages/pos/services/venta.service.ts` (llamadas y cuerpo de anular), `public/i18n/pos/es.json` y `public/i18n/es.json` (textos de pantalla).
+Frontend (`sofia-web-spa`, commit `9ad15f0`; las fichas de `Devoluciones` de consulta y exportación se escribieron desde `37048ea`: `src/app/pages/devoluciones/services/devolucion.service.ts`, `public/i18n/devoluciones/es.json`): `src/app/pages/pos/services/venta.service.ts` (llamadas y cuerpo de anular), `public/i18n/pos/es.json` y `public/i18n/es.json` (textos de pantalla).
 
 Documentos: [negocio/reglas/ventas-y-comprobantes.md](../../negocio/reglas/ventas-y-comprobantes.md) (v1.1), [negocio/reglas/caja-devoluciones-y-dashboard.md](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [producto/pantallas/punto-de-venta.md](../../producto/pantallas/punto-de-venta.md), [tecnico/seguridad/matriz-de-permisos.md](../seguridad/matriz-de-permisos.md), [negocio/procesos-de-negocio.md](../../negocio/procesos-de-negocio.md), `_inventario/endpoints.csv`, `_inventario/API-AGENTES.md` y `_inventario/REGLAS-AGENTES.md`.
 
