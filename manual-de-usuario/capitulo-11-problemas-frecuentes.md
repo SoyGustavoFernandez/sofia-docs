@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de roles, cuentas y empleados están reconciliados con `37d053d` y `7070e1a` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
 | **Método** | Lectura de documentos validados (catálogo de códigos de error, inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` a `producto/pantallas/punto-de-venta`, reglas de negocio, matriz de permisos y capítulos 1 a 9 del manual). Este capítulo no se recorrió en la aplicación; los mensajes que sí se vieron en pantalla en los capítulos 1 a 9 se marcan «(Verificado en el capítulo N)» y los demás «(No verificado en la aplicación)» |
 
 ## 1. Cómo usar este capítulo
@@ -86,7 +86,7 @@ Qué hacer: escribe de nuevo tu usuario y contraseña. Lo que no habías guardad
 | Olvidaste tu contraseña | — | Haz clic en **¿Olvidaste tu contraseña?**, escribe tu usuario y abre el enlace del correo (vale 1 hora y solo el último sirve). Requiere que tu ficha de empleado tenga correo. (Verificado en el capítulo 1) |
 | Pediste el enlace pero no llega el correo | El aviso verde dice siempre lo mismo, exista o no el usuario | Revisa que escribiste bien el **usuario** (no el correo) y la carpeta de correo no deseado. El correo solo sale si la cuenta está activa, tu empleado tiene correo y la empresa está vigente. Si tu empleado no tiene correo, el administrador puede usar **Forzar Cambio de Contraseña** solo mientras recuerdes la actual. (Verificado en los capítulos 1 y 3) |
 | Tu cuenta fue desactivada | «Credenciales inválidas. Verifica tu usuario y contraseña.» | Pide al administrador que active la cuenta (**Cuenta Activa**). (No verificado en la aplicación) |
-| La suscripción de tu empresa venció o fue suspendida | «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» | Solo soporte puede reactivarla. (No verificado en la aplicación) |
+| La suscripción de tu empresa venció o fue suspendida | «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» | Debajo del aviso sale el recuadro de pago con el QR, el número de Yape y el botón **Enviar captura por WhatsApp** (capítulo 1, sección 6.5.1). Paga y envía la captura: solo el operador de SOFIA puede reactivar la empresa. (No verificado en la aplicación) |
 | Escribes bien todo y no entra | «Credenciales inválidas…» | Revisa mayúsculas y minúsculas, y que escribes el nombre de usuario (por ejemplo `carlos.cajero`), no tu nombre. |
 
 ### 2.4 Cambié el idioma y volvió a español
@@ -163,7 +163,9 @@ Dos avisos que aplican a todas las pantallas de guardado:
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
 | «Credenciales inválidas. Verifica tu usuario y contraseña.» | Alerta roja en «Iniciar sesión» | El usuario o la contraseña no coinciden, o la cuenta está desactivada o bloqueada. SOFIA no dice cuál para proteger tu cuenta | Revisa mayúsculas y minúsculas. Si olvidaste la contraseña, usa **¿Olvidaste tu contraseña?**. Si te equivocaste 5 veces, la cuenta se bloqueó 15 minutos (sección 2.3). Si nada funciona, pide al administrador que revise tu cuenta. (Verificado en el capítulo 1) |
-| «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» | Alerta roja en «Iniciar sesión» | La contraseña era correcta, pero la empresa tiene la suscripción vencida, suspendida o cancelada | Comunícate con soporte (sección 4). No lo puedes resolver tú. (No verificado en la aplicación) |
+| «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» | Alerta roja en «Iniciar sesión» | La contraseña era correcta, pero la empresa tiene la suscripción vencida, suspendida o cancelada | Paga con los datos del recuadro que sale debajo del aviso y envía la captura por WhatsApp (capítulo 1, sección 6.5.1); tú no puedes reactivar la empresa. Si el recuadro dice que no hay datos de pago publicados, comunícate con soporte (sección 4). (No verificado en la aplicación) |
+| «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.» | Recuadro de pago debajo del aviso anterior | El operador de SOFIA todavía no cargó los datos de pago | Comunícate con soporte. (No verificado en la aplicación) |
+| «No pudimos cargar los datos de pago.» | Recuadro de pago debajo del aviso anterior, con el botón **Reintentar** | Falló la lectura de los datos de pago | Pulsa **Reintentar**; si sigue, comunícate con soporte. (No verificado en la aplicación) |
 | «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» | «Iniciar sesión», «Recupera tu contraseña» y «Crea una nueva contraseña» | Se hicieron demasiados intentos desde tu equipo en poco tiempo (el inicio de sesión admite 10 por minuto) | Espera un minuto sin pulsar nada y vuelve a intentar. (No verificado en la aplicación) |
 | «No pudimos conectar con el servidor. Verifica tu conexión a internet e inténtalo de nuevo en unos minutos.» | «Iniciar sesión» | El servidor no responde, tardó demasiado o falló, o tu internet se cayó | Revisa tu conexión y prueba de nuevo en unos minutos. Si persiste, avisa a soporte. (No verificado en la aplicación) |
 | «Ya existe una empresa registrada con este RUC» | Aviso inferior en «Registrar Empresa» | Otra empresa ya usa ese RUC; el RUC es único en todo SOFIA | Revisa que lo escribiste bien. Si es el RUC de tu empresa y nunca la registraste, comunícate con soporte. (Verificado en el capítulo 1) |
@@ -460,7 +462,7 @@ El botón **Anular Venta** del detalle de la venta aparece cuando la venta está
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
 |---|---|---|---|
 | «El motivo es obligatorio.» | Bajo «Motivo de Anulación» | Dejaste el motivo vacío | Escribe el motivo. Si escribes más de 255 caracteres, **no aparece ningún mensaje** y el botón no hace nada: acórtalo. (Verificado en el capítulo 9) |
-| «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» | Aviso inferior | La venta ya tuvo una devolución (parcial o total). No existe una pantalla «Devoluciones» en el menú: las devoluciones se hacen desde el detalle de la venta | No se puede anular. Si queda algo por devolver, usa **Devolver**. (No verificado en la aplicación) |
+| «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» | Aviso inferior | La venta ya tuvo una devolución (parcial o total). Con `sofia-web-spa` `eeffbb6` no existía una pantalla «Devoluciones»; desde `37048ea` existe, pero solo para consultar (capítulo 9, sección 7.1): las devoluciones se hacen desde el detalle de la venta | No se puede anular. Si queda algo por devolver, usa **Devolver**. (No verificado en la aplicación) |
 | «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» | Aviso inferior | Para anular una venta ya cobrada, el dinero se registra en tu caja | Abre tu caja en **Sesiones de Caja** y vuelve a anular. Una venta «Pendiente» (en espera) se anula sin caja. (Verificado en el capítulo 9) |
 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Aviso inferior | Alguien cambió la venta al mismo tiempo | Recarga y revisa el estado de la venta. (No verificado en la aplicación) |
 | «Error al anular la venta.» | Aviso inferior | Genérico. Causas: la venta ya está anulada, es de otra sucursal, el motivo era solo espacios, o no tienes el permiso `Ventas › Anular` | Recarga el detalle y mira el estado; revisa tus permisos. (No verificado en la aplicación) |
@@ -484,6 +486,14 @@ El botón **Devolver** aparece si la venta está «Completada», tiene comproban
 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Aviso inferior | Alguien cambió la venta o la caja al mismo tiempo | Recarga y repite. (No verificado en la aplicación) |
 | «Error al procesar la devolución.» | Aviso inferior | Genérico: motivo SUNAT o sustento inválidos (el sustento admite hasta 255 caracteres), cantidad cero, falta el permiso `Devoluciones › Procesar devolución` o falló el servidor | Revisa los datos y los permisos. (No verificado en la aplicación) |
 
+Pantalla **Devoluciones** (consulta, desde `sofia-web-spa` `37048ea`; No verificado en la aplicación, capítulo 9, sección 7.1):
+
+| Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
+|---|---|---|---|
+| «No se pudieron cargar las devoluciones.» | Aviso inferior al pulsar **Buscar** | Falló la búsqueda | Vuelve a pulsar **Buscar**; si sigue, revisa tu conexión o avisa a soporte |
+| «No se pudo exportar las devoluciones.» | Aviso inferior al pulsar **Exportar** | Falló la exportación; también ocurre si hay más de 10 000 filas | Aplica filtros y repite |
+| «No se pudo cargar la devolución.» | Aviso inferior en el detalle | La devolución no existe o es de una sucursal que no puedes ver | Vuelve a la lista y ábrela de nuevo |
+
 ### 3.15 Dashboard (Inicio)
 
 | Mensaje exacto | Dónde aparece | Qué significa | Cómo resolverlo |
@@ -504,7 +514,7 @@ El botón **Devolver** aparece si la venta está «Completada», tiene comproban
 
 **Pide ayuda a soporte** (el contacto que te dio tu proveedor de SOFIA) cuando el administrador no puede resolverlo desde la aplicación:
 
-- «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.»
+- «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» solo si el recuadro de pago dice «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.»; si hay datos de pago, paga y envía la captura (capítulo 1, sección 6.5.1)
 - «Ya existe una empresa registrada con este RUC» y es el RUC de tu empresa.
 - No puedes cerrar una caja y el estado sigue «Abierta» (sección 2.5).
 - Un empleado se eliminó con su cuenta y el nombre de usuario quedó ocupado (sección 3.4).
@@ -708,6 +718,7 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «Necesitas una caja abierta para procesar la devolución.» — [3.14]
 - «No hay filas válidas para guardar» — [3.8]
 - «No pudimos conectar con el servidor…» — [3.1]
+- «No pudimos cargar los datos de pago.» — [3.1] (capítulo 1, sección 6.5.1)
 - «No puedes cambiar tu propia sucursal base.» — [3.4]
 - «No puedes eliminar esta receta porque ya se usó en ventas.» — [3.10]
 - «No puedes eliminar esta sucursal porque tiene empleados, usuarios, roles, stock, ventas u otros registros asociados.» — [3.2]
@@ -718,6 +729,7 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «No puedes eliminar este proveedor porque tiene precios de compra registrados.» — [3.7]
 - «No se detectaron medicamentos en la imagen…» — [3.10]
 - «No se pudieron cargar las presentaciones del producto…» — [3.12]
+- «No se pudieron cargar las devoluciones.» — [3.14]
 - «No se pudieron cargar las sucursales» — [3.3]
 - «No se pudieron cargar los lotes disponibles…» — [3.12]
 - «No se pudieron cargar tus permisos.» — [3.15]
@@ -727,6 +739,8 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «No se pudo cambiar la contraseña. Inténtalo de nuevo.» — [3.1]
 - «No se pudo cargar el catálogo de medicamentos…» — [3.12]
 - «No se pudo cargar esta sección.» — [3.15]
+- «No se pudo cargar la devolución.» — [3.14]
+- «No se pudo exportar las devoluciones.» — [3.14]
 - «No se pudo determinar el contexto de sucursal asignada del usuario.» — [3.12]
 - «No se pudo procesar la solicitud. Inténtalo de nuevo.» — [3.1]
 - «No se pudo restablecer la contraseña. Inténtalo de nuevo.» — [3.1]
@@ -754,6 +768,7 @@ Cada línea lleva el apartado de la sección 3 donde está la fila del mensaje (
 - «Solo un administrador puede modificar o eliminar la cuenta de un administrador» — [3.6]
 - «Stock máximo disponible alcanzado ({{stock}} un.).» — [3.12]
 - «Tu empresa no tiene RUC registrado…» — [3.12]
+- «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.» — [3.1] (capítulo 1, sección 6.5.1)
 - «Tu usuario no tiene indicadores disponibles aquí…» — [3.15]
 - «Una cuenta no puede modificar sus propios roles» — [3.6]
 - «Una de las líneas ya no pertenece a la venta.» — [3.14]
@@ -825,7 +840,7 @@ Hallazgos que conviene conocer:
 
 - Muchos mensajes de **eliminar** se deciden por el estado HTTP 409, no por el código: cualquier 409 al eliminar muestra el mismo texto de «en uso», aunque la causa sea otra (catálogo `tecnico/catalogo-de-codigos-de-error`, sección 1.3).
 - Los textos de carga masiva y los de «Error al…» no dicen la causa; este capítulo la reconstruye desde el catálogo.
-- Algunos mensajes remiten a pantallas que no existen: «Gestiona los cambios desde Devoluciones.» (no hay pantalla de Devoluciones; se devuelve desde el detalle de la venta) y «Configúrala en SUNAT > Series Fiscales» (en el menú es el grupo **SUNAT** › **Series Fiscales**, esa sí existe).
+- Algunos mensajes remiten a pantallas que no existen: «Gestiona los cambios desde Devoluciones.» (con `eeffbb6` no había pantalla de Devoluciones; desde `37048ea` hay una pantalla de consulta, pero se devuelve desde el detalle de la venta) y «Configúrala en SUNAT > Series Fiscales» (en el menú es el grupo **SUNAT** › **Series Fiscales**, esa sí existe).
 - La clave sin traducir `cuentas.detail.load-error` y `digemidCatalogo.detail.load-error` puede verse en lugar del texto en algunas cargas directas (capítulos 3 y 4).
 - La pantalla de nueva cuenta no avisa si la contraseña tiene menos de 8 caracteres.
 
