@@ -3,13 +3,17 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y de los documentos validados; cada hallazgo de deuda se volvió a abrir en el código actual. No se usó el navegador, no se llamó a la API, no se compiló ni se ejecutó ninguna prueba. |
 
 ## Historial de cambios
+
+### Versión 1.3 (2026-11-21)
+
+Pendientes para otros documentos: reconciliación de `_inventario`, matriz de permisos, producto y negocio ya hecha.
 
 ### Versión 1.2 (2026-11-20)
 
@@ -327,8 +331,7 @@ Ninguno. `git status --short` en `sofia-apis` (`0678e40`) y `sofia-web-spa` (`37
 ### Pendientes para otros documentos
 
 - La reconciliación de los documentos `negocio/reglas/administracion-y-seguridad`, `negocio/reglas/catalogos`, `tecnico/modelo-de-datos/maestros-y-seguridad` y `tecnico/modelo-de-datos/transaccionales-e-historial` con el código posterior a `27597cd` y `606cb69` (R-01 a R-03): varios apartados de esos documentos ya no coinciden (lo anotan [`negocio/glosario`](../negocio/glosario.md) §10.4, [`producto/pantallas/catalogos-basicos`](../producto/pantallas/catalogos-basicos.md), [`producto/pantallas/productos-proveedores-y-aseguradoras`](../producto/pantallas/productos-proveedores-y-aseguradoras.md) y [`producto/pantallas/inventario-y-atencion`](../producto/pantallas/inventario-y-atencion.md)).
-- `_inventario/README.md` dice «186 archivos» de prueba del backend y «69 specs» del SPA; hoy son 204 y 83.
-- `tecnico/seguridad/matriz-de-permisos` y `_inventario/permisos.csv`/`endpoints.csv` están sobre 241 endpoints y no incluyen los 8 nuevos (devoluciones exportar, 4 de suscripción, 3 de plataforma) ni la marca `HasPermissionOrPlataforma` (`Empresas:Leer` figura aún como permiso asignable, DT-097); `producto`/`negocio` que mencionan «Devoluciones sin pantalla» o «suscripción sin endpoints» (FP-06, FP-12) deben reconciliarse.
+- Reconciliados el 2026-11-20 sobre `0678e40` y `37048ea`: `_inventario` (249 endpoints, 204 archivos de prueba del backend y 83 specs del SPA) y `tecnico/seguridad/matriz-de-permisos`; `producto` y `negocio` ya no dicen «Devoluciones sin pantalla» ni «suscripción sin endpoints» (FP-06, FP-12). Sigue abierto que `Empresas:Leer` no figura como permiso asignable (DT-097).
 - Las contradicciones entre las expectativas de prioridad de negocio (por ejemplo cuándo se atacan DT-001 y DT-002) las decide el dueño del producto; este documento no las ordena.
 
 ## Tabla de cobertura
