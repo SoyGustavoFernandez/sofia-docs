@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (versión 1.3: se agrega la exportación de devoluciones, 4.23; el resto se verificó por última vez en `6f6b837`) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Lectura de código de ambos repositorios (sin navegador y sin llamar a la API). Versión 1.2: los dos repos tenían cambios locales de otra tarea, que no se usaron (todo se leyó de `6f6b837` y `558ad35`), por lo que no hay afirmaciones marcadas «En curso (sin commitear)»; se corrigieron 4 citas fuera de rango (`SanitizationBehavior.cs`, `ExportHeadersAttribute.cs`, `ExportLabelAttribute.cs`, `CargaMasivaMedicamentosCommandHandler.cs`) y las de `ApplicationDbContext.cs` desplazadas. |
+| **Método** | Lectura de código de ambos repositorios (sin navegador y sin llamar a la API). Versión 1.2: todo se leyó de `6f6b837` y `558ad35`, por lo que no hay afirmaciones marcadas «En curso (sin commitear)»; se corrigieron 4 citas fuera de rango (`SanitizationBehavior.cs`, `ExportHeadersAttribute.cs`, `ExportLabelAttribute.cs`, `CargaMasivaMedicamentosCommandHandler.cs`) y las de `ApplicationDbContext.cs` desplazadas. |
 
 **Versión 1.3 (2026-11-20).** Se agrega la exportación de devoluciones (4.23) y los conteos pasan de 22 a 23 exportaciones y de 58 a 59 endpoints (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`).
 
@@ -36,7 +36,7 @@ Este documento lo usan quienes escriben el manual de usuario (para explicar cada
 
 ## 1. Inventario y conteos
 
-Se filtró `docs/_inventario/endpoints.csv` (241 endpoints) por las rutas que terminan en `plantilla`, `previsualizar`, `carga-masiva` o `exportar` (incluye `DIGEMID/catalogo/...` y `POS/sesiones/exportar`). Resultado, verificado además con `grep` sobre los controladores:
+Se filtró `docs/_inventario/endpoints.csv` (249 endpoints) por las rutas que terminan en `plantilla`, `previsualizar`, `carga-masiva` o `exportar` (incluye `DIGEMID/catalogo/...` y `POS/sesiones/exportar`). Resultado, verificado además con `grep` sobre los controladores:
 
 | Concepto | Cantidad | Detalle |
 |---|---|---|
