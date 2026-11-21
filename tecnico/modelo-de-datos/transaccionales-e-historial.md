@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (versión 1.2: revisión contra el código y alta del script `0029` en el historial; las 23 tablas de esta Parte B no cambiaron respecto de `43f5529`) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` (v1.3: solo la mención de las pantallas de devoluciones) |
 | **Método** | Lectura de código: scripts DbUp `0001`–`0029` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio; historial de commits con `git log` de solo lectura. No se consultó la base de datos ni la API. |
@@ -13,7 +13,7 @@
 
 Este documento es la Parte B del diccionario de datos. Cubre las **23 tablas transaccionales** (inventario y transferencias, cuarentena y actas DIGEMID, recetas, caja, ventas, SUNAT, devoluciones, delivery, magistrales y servicios) y el **historial de los 29 scripts DbUp**. Las otras 28 tablas (maestros y seguridad) están en [tecnico/modelo-de-datos/maestros-y-seguridad.md](maestros-y-seguridad.md).
 
-El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0029`**. El `0029` (`Es_Admin_Plataforma` y `Plataforma_Configuracion_Pago`) solo toca tablas de la Parte A. Commits verificados con `git log -1 --format=%h`: `sofia-apis` `6f6b837` y `sofia-web-spa` `558ad35`; los dos repositorios tenían cambios locales de otra tarea sin commitear (devoluciones, textos y rutas del SPA), que **no se usaron**: todo se leyó del commit con `git archive`/`git show`, así que nada de este documento depende de archivos sin commitear.
+El esquema descrito es el **estado final tras aplicar los scripts `0001` a `0029`**. El `0029` (`Es_Admin_Plataforma` y `Plataforma_Configuracion_Pago`) solo toca tablas de la Parte A. Commits verificados con `git log -1 --format=%h`: `sofia-apis` `6f6b837` y `sofia-web-spa` `558ad35`; todo se leyó del commit con `git archive`/`git show`, así que nada de este documento depende de archivos sin commitear.
 
 ### 1.1 Abreviaturas de las fuentes
 
