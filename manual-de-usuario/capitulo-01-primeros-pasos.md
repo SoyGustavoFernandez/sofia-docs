@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-10-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -111,7 +111,7 @@ Cuando entras al sistema ves siempre la misma estructura: el **menú lateral** a
 
 **Cómo llegar:** está siempre a la izquierda mientras tengas la sesión iniciada. Arriba muestra la marca «⚕ SOFIA»; al hacer clic en ella vas al Inicio.
 
-Cada grupo tiene un título en mayúsculas y debajo sus opciones. Estas son las que ve el **administrador** (el rol «Admin» lo ve todo): 8 grupos y 24 opciones.
+Cada grupo tiene un título en mayúsculas y debajo sus opciones. Estas son las que ve el **administrador** (el rol «Admin» lo ve todo): 8 grupos y 25 opciones.
 
 | Grupo (título) | Opciones | Ruta |
 |---|---|---|
@@ -134,6 +134,7 @@ Cada grupo tiene un título en mayúsculas y debajo sus opciones. Estas son las 
 | | Stock por Sucursal | `/stock-por-sucursal` |
 | PUNTO DE VENTA | Sesiones de Caja | `/sesiones-caja` |
 | | Ventas | `/pos` |
+| | Devoluciones | `/devoluciones` |
 | PACIENTES & ATENCIÓN | Pacientes | `/pacientes` |
 | | Profesionales de Salud | `/profesionales-salud` |
 | | Recetas Médicas | `/recetas-medicas` |
@@ -251,11 +252,27 @@ El mensaje aparece en una alerta roja con un icono de error, entre el subtítulo
 | Mensaje | Qué significa | Qué hacer |
 |---|---|---|
 | «Credenciales inválidas. Verifica tu usuario y contraseña.» | El usuario o la contraseña no coinciden, o la cuenta está desactivada o bloqueada. El sistema no dice cuál de las dos cosas falló, a propósito, para proteger tu cuenta | Revisa mayúsculas y minúsculas. Si no recuerdas la contraseña, usa **¿Olvidaste tu contraseña?** (sección 8) |
-| «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» | La contraseña era correcta, pero la empresa tiene la suscripción vencida, suspendida o cancelada | Comunícate con soporte. (No verificado en la aplicación: la empresa de prueba está vigente; viene de `producto/pantallas/acceso-layout-y-compartidos` §1.1) |
+| «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» | La contraseña era correcta, pero la empresa tiene la suscripción vencida, suspendida o cancelada | Debajo del aviso aparece el recuadro «Paga tu suscripción con Yape» con el código QR, el número de Yape, las indicaciones de pago y el botón **Enviar captura por WhatsApp** (sección 6.5.1). Paga y envía la captura; el operador de SOFIA activa tu acceso. (No verificado en la aplicación: la empresa de prueba está vigente; sale del código de `sofia-web-spa` `558ad35`) |
 | «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» | Se hicieron demasiados intentos de inicio de sesión desde tu equipo en poco tiempo (el límite es de 10 por minuto) | Espera un minuto. (No verificado en la aplicación: no se provocó para no bloquear la cuenta de prueba) |
 | «No pudimos conectar con el servidor. Verifica tu conexión a internet e inténtalo de nuevo en unos minutos.» | El servidor no responde o tu conexión falló | Revisa tu internet y vuelve a intentar. (No verificado en la aplicación) |
 
 **Bloqueo de la cuenta.** Si te equivocas de contraseña **5 veces seguidas**, la cuenta se bloquea durante **15 minutos**. Mientras está bloqueada, ni siquiera la contraseña correcta funciona, y la pantalla muestra el mismo mensaje «Credenciales inválidas. Verifica tu usuario y contraseña.»: no te avisa del bloqueo. Espera 15 minutos o recupera tu contraseña por correo (sección 8), que además quita el bloqueo. Un inicio de sesión correcto pone el contador de errores en cero. (No verificado en la aplicación: no se provocó el bloqueo; viene de la regla RN-AUT-007 en `negocio/reglas/administracion-y-seguridad.md`.)
+
+#### 6.5.1 El recuadro de pago cuando tu empresa no está vigente
+
+Si el aviso es «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.», justo debajo de él aparece un recuadro para pagar. Solo sale con ese aviso, y no con los demás errores de inicio de sesión. Fuente: `sofia-web-spa/src/app/pages/auth/login/login.component.html`, `sofia-web-spa/src/app/shared/components/pago-suscripcion/pago-suscripcion.component.html` y `sofia-web-spa/public/i18n/suscripcion/es.json`, en `558ad35`. **No verificado en la aplicación**: la empresa de prueba está vigente y no se recorrió esta pantalla.
+
+El recuadro se llena con los datos que guarda el operador de plataforma (capítulo 12, sección 4) y muestra, en este orden y solo lo que el operador haya cargado:
+
+| Elemento | Qué es |
+|---|---|
+| «Paga tu suscripción con Yape» | El título del recuadro |
+| Código QR | La imagen de Yape que subió el operador |
+| «Yapea al número» (con el código QR: «Si no puedes escanear el código, yapea al número») | El número de Yape, agrupado de tres en tres dígitos |
+| Indicaciones de pago | El texto libre del operador, por ejemplo el monto y el periodo que cubre |
+| «Después de pagar, envíanos la captura por WhatsApp y activaremos tu acceso.» y el botón **Enviar captura por WhatsApp** | Abre WhatsApp, en otra pestaña, con el mensaje «Hola, adjunto la captura del pago de mi suscripción de SOFIA. Usuario: » y tu usuario ya escrito, para que el operador sepa quién pagó |
+
+Si el operador todavía no cargó ningún dato, el recuadro dice «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.». Si no se pueden traer los datos, dice «No pudimos cargar los datos de pago.» con el botón **Reintentar**. Quien reactiva el acceso es el operador de SOFIA: eso se hace con la pantalla de la empresa, no desde tu cuenta (capítulo 12, sección 5). El acceso se bloquea solo cuando llega la fecha de vencimiento que se le puso a tu empresa, aunque el estado sea «Activo».
 
 ### 6.6 Otros enlaces de la pantalla
 
@@ -461,7 +478,7 @@ No verificado en la aplicación (cada caso, con su motivo):
 | # | Qué | Motivo |
 |---|---|---|
 | 1 | Avisos «El usuario ya está en uso. Elige otro.», «Ingresa la dirección de la sede principal (máximo 255 caracteres)» y «Error al registrar la empresa» | El registro tiene un límite de 5 envíos por hora desde el mismo equipo; ya se usaron los necesarios. Vienen de `producto/pantallas/acceso-layout-y-compartidos` §1.2 |
-| 2 | Mensaje de login «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» | La empresa de prueba está vigente; no se puede cambiar su estado desde la pantalla |
+| 2 | Mensaje de login «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» | La empresa de prueba está vigente; no se puede cambiar su estado desde la pantalla |
 | 3 | Mensajes «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» y «No pudimos conectar con el servidor. Verifica tu conexión a internet e inténtalo de nuevo en unos minutos.» (login, recuperación, restablecimiento) | No se provocaron para no bloquear el servidor ni la cuenta de prueba |
 | 4 | Bloqueo de la cuenta tras 5 intentos fallidos (15 minutos) | No se provocó, según el encargo; viene de RN-AUT-007 |
 | 5 | «No se pudo cambiar la contraseña. Inténtalo de nuevo.», «No se pudo procesar la solicitud. Inténtalo de nuevo.» y «No se pudo restablecer la contraseña. Inténtalo de nuevo.» | Son errores genéricos del servidor; no se pueden provocar desde la pantalla |
@@ -472,6 +489,7 @@ No verificado en la aplicación (cada caso, con su motivo):
 | 10 | Mensaje «No tienes permisos para acceder a esta pantalla.» y el menú reducido de un cajero | El administrador tiene todos los permisos; se verá en los capítulos 3 y 10 |
 | 11 | Contador de intentos en cero y desbloqueo tras restablecer la contraseña | Efecto interno; viene de RN-AUT-039 |
 | 12 | Que el idioma elegido no se conserva al recargar la página, cerrar sesión o volver a entrar | Se volvió a español a mano al terminar la prueba, sin recargar; viene de `producto/pantallas/acceso-layout-y-compartidos` §4.5 |
+| 13 | El recuadro de pago del inicio de sesión (6.5.1) y el nuevo texto del aviso «Realiza el pago para reactivarla.» | La empresa de prueba está vigente; no se pudo cambiar su estado. Sale del código de `sofia-web-spa` `558ad35` y `sofia-apis` `6f6b837` |
 
 En curso (sin commitear): ninguno. Los dos repositorios estaban sin cambios locales al empezar (`sofia-apis` `43f5529`, `sofia-web-spa` `eeffbb6`).
 
@@ -492,9 +510,10 @@ Cada elemento de las fichas de `producto/pantallas/acceso-layout-y-compartidos.m
 | Enlace **¿Olvidaste tu contraseña?** | 6.6, 8.1 |
 | «¿Primera vez?» y enlace **Registrar empresa nueva** | 6.1, 6.6, 3 |
 | Mensaje «Credenciales inválidas. Verifica tu usuario y contraseña.» | 6.5 (verificado) |
-| Mensaje «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» | 6.5 (No verificado en la aplicación: la empresa está vigente) |
+| Mensaje «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» | 6.5 (No verificado en la aplicación: la empresa está vigente) |
 | Mensaje «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» | 6.5 (No verificado en la aplicación: no se provocó) |
 | Mensaje «No pudimos conectar con el servidor. Verifica tu conexión a internet e inténtalo de nuevo en unos minutos.» | 6.5 (No verificado en la aplicación: no se provocó) |
+| Recuadro «Paga tu suscripción con Yape» del inicio de sesión | 6.5.1 (No verificado en la aplicación) |
 | Sin «recordarme» ni regreso a la pantalla anterior | 6.4 |
 | Bloqueo de 5 intentos / 15 minutos | 6.5 (No verificado en la aplicación: no se provocó) |
 | Scope `login` sin uso | No aplica: es una observación técnica sin efecto para el usuario |
