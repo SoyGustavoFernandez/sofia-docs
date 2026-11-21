@@ -3,13 +3,15 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (versión 1.2: revisión; solo se corrigieron citas) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (versión 1.3: se agrega la exportación de devoluciones, 4.23; el resto se verificó por última vez en `6f6b837`) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código de ambos repositorios (sin navegador y sin llamar a la API). Versión 1.2: los dos repos tenían cambios locales de otra tarea, que no se usaron (todo se leyó de `6f6b837` y `558ad35`), por lo que no hay afirmaciones marcadas «En curso (sin commitear)»; se corrigieron 4 citas fuera de rango (`SanitizationBehavior.cs`, `ExportHeadersAttribute.cs`, `ExportLabelAttribute.cs`, `CargaMasivaMedicamentosCommandHandler.cs`) y las de `ApplicationDbContext.cs` desplazadas. |
 
-Este documento lo usan quienes escriben el manual de usuario (para explicar cada plantilla) y QA (para probar cada carga). Cubre las **12 cargas masivas** y las **22 exportaciones** del sistema.
+**Versión 1.3 (2026-11-20).** Se agrega la exportación de devoluciones (4.23) y los conteos pasan de 22 a 23 exportaciones y de 58 a 59 endpoints (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`).
+
+Este documento lo usan quienes escriben el manual de usuario (para explicar cada plantilla) y QA (para probar cada carga). Cubre las **12 cargas masivas** y las **23 exportaciones** del sistema (la de devoluciones, 4.23, se agregó en la versión 1.3 y no está aún en `endpoints.csv`).
 
 **Abreviaturas de rutas en las fuentes:** `API/` = `sofia-apis/src/SOFIA.API/`; `APP/` = `sofia-apis/src/SOFIA.Application/`; `INF/` = `sofia-apis/src/SOFIA.Infrastructure/`; `DOM/` = `sofia-apis/src/SOFIA.Domain/`; `DBUP/` = `sofia-apis/src/SOFIA.DbUp/Scripts/`; `SPA/` = `sofia-web-spa/src/app/`; `I18N/` = `sofia-web-spa/public/i18n/`.
 
@@ -24,7 +26,7 @@ Este documento lo usan quienes escriben el manual de usuario (para explicar cada
 1. [Inventario y conteos](#1-inventario-y-conteos)
 2. [Parte 1: mecánica común](#2-parte-1-mecánica-común)
 3. [Parte 2: una ficha por carga masiva (12)](#3-parte-2-una-ficha-por-carga-masiva)
-4. [Parte 3: una ficha por exportación (22)](#4-parte-3-una-ficha-por-exportación)
+4. [Parte 3: una ficha por exportación (23)](#4-parte-3-una-ficha-por-exportación)
 5. [Tabla resumen por módulo](#5-tabla-resumen-por-módulo)
 6. [Pendientes y «No verificado»](#6-pendientes-y-no-verificado)
 7. [Tabla de cobertura](#7-tabla-de-cobertura)
@@ -39,10 +41,10 @@ Se filtró `docs/_inventario/endpoints.csv` (241 endpoints) por las rutas que te
 | Concepto | Cantidad | Detalle |
 |---|---|---|
 | Cargas masivas | **12** | 12 × 3 endpoints (`GET …/plantilla`, `POST …/previsualizar`, `POST …/carga-masiva`) = **36 endpoints** |
-| Exportaciones | **22** | `POST …/exportar` (21) + `POST /api/v1/POS/sesiones/exportar` (1) |
-| Total de endpoints | **58** | 36 + 22 |
+| Exportaciones | **23** | `POST …/exportar` (22, incluida `Devoluciones/exportar`) + `POST /api/v1/POS/sesiones/exportar` (1) |
+| Total de endpoints | **59** | 36 + 23 |
 | Cargas con pantalla en el SPA | 12 de 12 | rutas `…/carga-masiva` (`docs/_inventario/rutas-spa.csv`) |
-| Exportaciones con botón en pantalla | 22 de 22 | ninguna es «Solo API» |
+| Exportaciones con botón en pantalla | 23 de 23 | ninguna es «Solo API» |
 | Handlers de importación sin endpoint | **0** | ver el párrafo siguiente |
 
 **Handlers de importación «sin endpoint».** Existen diez carpetas vacías `Importar*` en `SOFIA.Application` (ningún archivo dentro): `Empleados/Commands/ImportarEmpleados`, `Inventarios/Commands/ImportarInventario`, `JerarquiasUoM/Commands/ImportarJerarquiasUoM`, `Laboratorios/Commands/ImportarLaboratorios`, `Medicamentos/Commands/ImportarMedicamentos`, `Pacientes/Commands/ImportarPacientes`, `Proveedores/Commands/ImportarProveedores`, `Servicios/Commands/ImportarServicios`, `Sucursales/Commands/ImportarSucursales`, `UnidadesMedida/Commands/ImportarUnidadesMedida` (verificado con `find` sobre `SOFIA.Application`). Son carpetas sin código: **no existen handlers de importación sin endpoint**. Tampoco existe carga masiva de Empleados, Inventario (lotes y stock) ni Servicios: los tres nombres de carpeta no tienen implementación. Todas las cargas implementadas viven en carpetas `CargaMasiva*` y `PreviewImport*`, y las 12 tienen endpoint.
@@ -753,7 +755,7 @@ Nota: `NumberStyles.Number` permite separador de miles; con cultura invariante l
 
 Reglas comunes de todas las fichas (detalle en §2.8): hoja **«Data»**; límite de **10 000 filas** (`Export.TooManyRows`, 400, sin mensaje propio en el SPA); permiso `Leer` del módulo; botón «Exportar» (`actions.export`) en la pantalla de búsqueda, que aparece cuando ya hay resultados; cada título de columna lo traduce el SPA con `transloco.translate(clave, {}, '<scope>')` (clave del scope indicada en cada tabla); el archivo lo nombra el SPA con la clave `export-filename`. **Ninguna exportación es «Solo API»**: las 22 tienen botón. Las columnas de la tabla van **en el orden del Excel**. «Texto» = la celda sale como texto; «número» = celda numérica.
 
-**Resumen de las 22 exportaciones**
+**Resumen de las 23 exportaciones**
 
 | # | Pantalla (ruta) | Endpoint (`archivo:línea`) | Permiso | Archivo que descarga el SPA | Aviso si falla |
 |---|---|---|---|---|---|
@@ -779,10 +781,11 @@ Reglas comunes de todas las fichas (detalle en §2.8): hoja **«Data»**; límit
 | 4.20 | Sucursales (`/sucursales`) | `POST /api/v1/Sucursales/exportar` (`SucursalesController.cs:81`) | `Sucursales:Leer` | `sucursales.xlsx` | Error al buscar sucursales |
 | 4.21 | Unidades de medida (`/unidades-medida`) | `POST /api/v1/UnidadesMedida/exportar` (`UnidadesMedidaController.cs:103`) | `UnidadesMedida:Leer` | `unidades-medida.xlsx` | Error al buscar unidades de medida |
 | 4.22 | Ventas (`/pos`, `VentasSearchComponent`) | `POST /api/v1/Ventas/exportar` (`VentasController.cs:103`) | `Ventas:Leer` | `ventas.xlsx` | Error al buscar ventas |
+| 4.23 | Devoluciones (`/devoluciones`, `DevolucionesSearchComponent`) | `POST /api/v1/Devoluciones/exportar` (`DevolucionesController.cs:41`) | `Devoluciones:Leer` | `devoluciones.xlsx` | No se pudo exportar las devoluciones. |
 
 Cada aviso es la clave `<scope>.search.search-error` (en Series fiscales `seriesFiscales.search.export-error`; en Ventas `pos.ventasSearch.searchError`) de `I18N/<scope>/es.json`. En las pantallas que usan `showServerError` (4.1, 4.2, 4.5, 4.6, 4.11, 4.13, 4.14) el aviso podría llevar referencia de seguimiento, pero como la respuesta es un `blob` el `traceId` nunca se lee y el efecto es el mismo que `showError`. Los archivos de descarga y avisos de la tabla se resolvieron leyendo cada `export-filename` y `search-error` en su `es.json`.
 
-Ubicación en el código del SPA de cada `exportar()` (componente de búsqueda `SPA/pages/<carpeta>/<…>-search/<…>-search.component.ts`) y de su botón (`….html`): 4.1 `:117-139` / `:119`; 4.2 `:113-137` / `:124`; 4.3 `:152-182` / `:192`; 4.4 `:130-161` / `:139`; 4.5 `:123-148` / `:141`; 4.6 `:117-139` / `:118`; 4.7 `:203-233` / `:215`; 4.8 `:117-139` / `:119`; 4.9 `:168-188` / `:204`; 4.10 `:177-207` / `:227`; 4.11 `:131-160` / `:185`; 4.12 `:161-176` / `:154`; 4.13 `:116-139` / `:129`; 4.14 `:129-154` / `:127`; 4.15 `:180-210` / `:212`; 4.16 `:130-155` / `:136`; 4.17 `:150-183` / `:168`; 4.18 `:127-153` / `:169`; 4.19 `:202-224` / `:237`; 4.20 `:114-140` / `:138`; 4.21 `:116-138` / `:113`; 4.22 `pos/search/ventas-search.component.ts:214-237` / `.html:227`.
+Ubicación en el código del SPA de cada `exportar()` (4.23 `devoluciones-search.component.ts:211-237` / `.html:267-273`; su aviso es `devoluciones.search.exportError`) (componente de búsqueda `SPA/pages/<carpeta>/<…>-search/<…>-search.component.ts`) y de su botón (`….html`): 4.1 `:117-139` / `:119`; 4.2 `:113-137` / `:124`; 4.3 `:152-182` / `:192`; 4.4 `:130-161` / `:139`; 4.5 `:123-148` / `:141`; 4.6 `:117-139` / `:118`; 4.7 `:203-233` / `:215`; 4.8 `:117-139` / `:119`; 4.9 `:168-188` / `:204`; 4.10 `:177-207` / `:227`; 4.11 `:131-160` / `:185`; 4.12 `:161-176` / `:154`; 4.13 `:116-139` / `:129`; 4.14 `:129-154` / `:127`; 4.15 `:180-210` / `:212`; 4.16 `:130-155` / `:136`; 4.17 `:150-183` / `:168`; 4.18 `:127-153` / `:169`; 4.19 `:202-224` / `:237`; 4.20 `:114-140` / `:138`; 4.21 `:116-138` / `:113`; 4.22 `pos/search/ventas-search.component.ts:214-237` / `.html:227`.
 
 ### 4.1 Aseguradoras
 
@@ -1067,6 +1070,29 @@ El aviso de error es «Error al consultar el stock» (`stockPorSucursal.search.s
 
 Como la fecha sale en UTC y sin conversión, una venta hecha por la noche en hora de Lima (UTC−5, a partir de las 19:00) aparece con la fecha del día siguiente en el Excel. (Inferencia por lectura de código; no probada con datos.)
 
+### 4.23 Devoluciones
+
+Ficha agregada en la versión 1.3 (`0678e40`, `37048ea`); ejemplo de uso y errores en [tecnico/api/ventas-caja-y-devoluciones.md](api/ventas-caja-y-devoluciones.md) y regla [RN-DEV-041](../negocio/reglas/caja-devoluciones-y-dashboard.md).
+
+- **Petición** (`DevolucionExportRequest`, `DevolucionesController.cs:85`): `headers` (`[ExportHeaders]`), `dateFormat` (`[ExportDateFormat]`), `empleadoAutorizaId`, `fechaInicio`, `fechaFin`, `metodoReembolso`, `destino`, `motivoSunatCatalogo`, `numeroNotaCredito`, `montoMin`, `montoMax`. Servidor: `devoluciones.xlsx` (`:81`); el SPA lo guarda con el nombre de `devoluciones.search.exportFilename`. Los enumerados (`metodoReembolso`, `destino`) viajan como número.
+- **Filtros que respeta:** todos los de la pantalla (nota de crédito, «Autorizó», motivo, fechas, método, destino y el rango de «Monto reembolsado (S/)», que no envía el extremo que no se movió), con inicio y fin del día local (`toLocalDayStartIso`/`toLocalDayEndIso`, `devoluciones-search.component.ts:145-158`). Reutiliza `GetDevolucionesQuery` con `PageSize` de 10 000, así que también aplica sus validaciones (`GetDevolucionesQuery.*`, 400).
+- **`dateFormat`:** `dd/MM/yyyy` (idioma `es`) o `MM/dd/yyyy` (`devoluciones-search.component.ts:225`); sobre el instante UTC, sin conversión (§2.8).
+
+| # | Cabecera (scope `devoluciones`) | Dato | Formato |
+|---|---|---|---|
+| 1 | Nota de crédito (`table.colNotaCredito`) | `NumeroNotaCredito` | texto `{prefijo}-{correlativo de 8 dígitos}`; vacío si no hay |
+| 2 | Venta (`table.colVenta`) | `CodigoVenta` | texto: el número del **comprobante de origen** (no el código corto de la venta) |
+| 3 | Fecha (`table.colFecha`) | `FechaDevolucion` | texto con `dateFormat`; fecha UTC |
+| 4 | Cliente (`table.colCliente`) | `ClienteNombre` | texto; «Público General» si la venta no tiene cliente |
+| 5 | Autorizó (`table.colAutoriza`) | `EmpleadoAutorizaNombre` | texto; «N/A» si no se encuentra |
+| 6 | Sucursal (`table.colSucursal`) | `SucursalNombre` | texto |
+| 7 | Motivo (`table.colMotivo`) | `MotivoSunatCatalogo` | texto: el **código** `06` o `07`, sin traducir |
+| 8 | Monto de la nota (S/) (`table.colMontoNotaCredito`) | `MontoNotaCredito` | número; vacío si no hay nota |
+| 9 | Reembolsado (S/) (`table.colMontoReembolsado`) | `MontoReembolsado` | número; vacío en devoluciones anteriores al script `0016` |
+| 10 | Método de reembolso (`table.colMetodo`) | `MetodoReembolso` | texto: nombre interno del enumerado sin traducir (`Efectivo`, `YapePlin`, `Tarjeta`, `Transferencia`) |
+
+No exporta las líneas devueltas ni el destino. **No verificado:** el contenido real del archivo (no se descargó) y cómo escribe el generador las celdas nulas (lectura de código).
+
 ---
 
 ## 5. Tabla resumen por módulo
@@ -1097,9 +1123,10 @@ Como la fecha sale en UTC y sin conversión, una venta hecha por la noche en hor
 | Sucursales | Sí (3.11) | Sí (4.20) | 5 MB | `NumeroLicencia` |
 | Unidades de medida | Sí (3.12) | Sí (4.21) | 5 MB | `Codigo` |
 | Ventas | No | Sí (4.22) | — | — |
+| Devoluciones | No | Sí (4.23) | — | — |
 | Carpetas `Importar*` vacías (Empleados, Inventario, Servicios y otras 7) | **Sin implementación ni endpoint** | — | — | — |
 
-Totales: 12 módulos con carga masiva, 22 exportaciones.
+Totales: 12 módulos con carga masiva, 23 exportaciones.
 
 ---
 
@@ -1171,9 +1198,10 @@ Los 58 endpoints del inventario (`docs/_inventario/endpoints.csv`) y su apartado
 | `POST Sucursales/exportar` | 4.20 |
 | `POST UnidadesMedida/exportar` | 4.21 |
 | `POST Ventas/exportar` | 4.22 |
+| `POST Devoluciones/exportar` | 4.23 |
 | Handlers de importación sin endpoint | §1: ninguno (10 carpetas `Importar*` vacías) |
 
-Conteo: 36 endpoints de carga masiva + 22 de exportación = 58, todos cubiertos. Mecánica común: §2.
+Conteo: 36 endpoints de carga masiva + 23 de exportación = 59, todos cubiertos (el de devoluciones, escrito desde el código, aún no está en `endpoints.csv`). Mecánica común: §2.
 
 ---
 
