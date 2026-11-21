@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -77,7 +77,8 @@ La tabla tiene estas columnas:
 | Empresa | El nombre. Es un enlace: haz clic para abrir el detalle |
 | RUC | Los 11 dígitos |
 | Estado | «Trial Activo», «Activo», «Suspendido» o «Cancelado» |
-| Vigente | Un icono: una marca verde de aprobado si la empresa está vigente (puede entrar y operar) o una equis si no lo está. No lleva texto |
+| Vencimiento | La fecha en que vence el acceso de la empresa, como `dd/MM/yyyy` (columna agregada en `sofia-web-spa` `558ad35`; No verificado en la aplicación) |
+| Vigente | Un icono: una marca verde de aprobado si la empresa está vigente (puede entrar y operar) o una equis si no lo está. No lleva texto. Desde `sofia-apis` `6f6b837`, una empresa solo está vigente si su estado es «Trial Activo» o «Activo» **y** su fecha de vencimiento todavía no pasó: una suscripción «Activa» también vence sola en su fecha (`sofia-apis/src/SOFIA.Domain/Entities/Empresa.cs`, `EstaVigenteEn`) |
 
 Bajo la tabla, a la izquierda, está el botón **Exportar** (con un icono de descarga) y, a la derecha, el paginador: «Items por página» (10, 25 o 50) y «Página 1 de 1», con los botones de primera, anterior, siguiente y última página.
 
@@ -107,7 +108,7 @@ La tarjeta tiene seis campos, todos deshabilitados (solo lectura) mientras no pu
 | Nombre de la Empresa | «Botica Manual Demo S.A.C.» | Sí, con **Editar** |
 | RUC (11 dígitos, opcional) | `20538291746` | Sí, con **Editar** |
 
-Solo se pueden editar el nombre y el RUC. No existe pantalla para cambiar el estado de la suscripción, las fechas ni el número de sucursales, ni para crear o eliminar empresas (la empresa se crea una sola vez con el registro del capítulo 1). Tampoco hay en esta pantalla opciones de configuración de la empresa, como la exigencia de registrar la receta en las ventas.
+Solo se pueden editar el nombre y el RUC, y solo de **tu propia empresa**: desde `sofia-web-spa` `558ad35` el botón **Editar** solo aparece cuando la empresa abierta es la tuya. Con tu usuario de administrador no existe pantalla para cambiar el estado de la suscripción, las fechas ni el número de sucursales, ni para crear o eliminar empresas (la empresa se crea una sola vez con el registro del capítulo 1). El estado y la fecha de vencimiento los cambia el **operador de plataforma** con otros botones de esta misma pantalla, que solo él ve (capítulo 12, sección 5). Tampoco hay en esta pantalla opciones de configuración de la empresa, como la exigencia de registrar la receta en las ventas.
 
 Si no ves el botón **Editar**, a tu rol le falta el permiso `Actualizar` del módulo «Empresa».
 
