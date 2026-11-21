@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.4: solo el conteo de rutas; el resto se verificó por última vez en `6f6b837`) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código fuente (sin compilar, sin ejecutar la aplicación ni llamar a la API). Conteos tomados de `docs/_inventario/*.csv` y contrastados con el árbol de archivos |
 
 ## Historial de cambios
@@ -1199,7 +1199,7 @@ Fuente: `src/app/app.routes.ts`.
 | 23 rutas de módulo: `sucursales`, `empresas`, `empleados`, `roles`, `cuentas`, `unidades-medida`, `jerarquias`, `laboratorios`, `ingredientes-activos`, `medicamentos`, `presentaciones-venta`, `formulaciones-clinicas`, `proveedores`, `aseguradoras`, `lotes`, `stock-por-sucursal`, `sesiones-caja`, `pos`, `pacientes`, `profesionales-salud`, `recetas-medicas`, `digemid-catalogo`, `series-fiscales` | `loadChildren` hacia el `*.routes.ts` del módulo | Heredan | 48-174 |
 | `**` → redirige a `dashboard` | — | — | 177-180 |
 
-Dentro de cada módulo, cada pantalla se carga con `loadComponent`. El patrón habitual es búsqueda en `''`, alta en `nueva` o `nuevo`, `carga-masiva` y detalle en `:id` (`src/app/pages/sucursales/sucursales.routes.ts:3-26`). El inventario completo son las 86 rutas de `docs/_inventario/rutas-spa.csv`.
+Dentro de cada módulo, cada pantalla se carga con `loadComponent`. El patrón habitual es búsqueda en `''`, alta en `nueva` o `nuevo`, `carga-masiva` y detalle en `:id` (`src/app/pages/sucursales/sucursales.routes.ts:3-26`). El inventario completo son las 86 rutas de `docs/_inventario/rutas-spa.csv` más `/configuracion-pago` (`558ad35`), `/devoluciones` y `/devoluciones/:id` (`37048ea`): 89 en total (ver [matriz de permisos](seguridad/matriz-de-permisos.md), sección 5).
 
 Seis carpetas de `src/app/pages` no están referenciadas desde `app.routes.ts`: `auditoria`, `inventarios`, `login`, `servicios`, `transferencias` y `uom` (`login` está vacía). No tienen pantalla enrutada.
 
