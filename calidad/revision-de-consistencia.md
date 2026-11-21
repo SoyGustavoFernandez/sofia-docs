@@ -3,11 +3,18 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-21 |
+| **Backend** | `sofia-apis`, rama `main`, commits `9c16f35` (primera ronda) y `0678e40` (segunda ronda) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commits `7070e1a` (primera ronda) y `37048ea` (segunda ronda) |
 | **Método** | Lectura de código y de los documentos publicados; `git log`, `git show` y `git diff` de solo lectura; scripts de comprobación sobre todos los documentos. Sin navegador y sin API. |
+
+## Historial de cambios
+
+| Versión | Fecha | Cambio |
+|---|---|---|
+| 1.1 | 2026-11-21 | Se agrega la sección 8 con la segunda ronda: la revisión contra el código del 2026-11-09 al 2026-11-20. Las secciones 1 a 7 son las de la primera ronda (2026-11-04) y no se tocaron |
+| 1.0 | 2026-11-04 | Primera ronda |
 
 ## 1. Alcance
 
@@ -190,6 +197,113 @@ Script `cie-checks.js`, de solo lectura, sobre los 65 archivos `.md` de `sofia-d
 Falsos positivos descartados: el script marca 4 IDs de la matriz (`RN-XXX-999`, `HU-ADM-999`, `CU-ADM-99`, `TC-ADM-999`); son los IDs inventados que la propia matriz usa para probar su detector (`calidad/matriz-de-trazabilidad.md:2429`).
 
 Comprobaciones adicionales sobre las ediciones de esta pasada: los conteos de reglas, historias, casos de uso, casos de prueba y endpoints de la matriz no cambiaron (sección 5); tras el cambio de `0005` se buscaron las citas viejas y no quedan (`0005:54-70`, `:54-69`, `:81-83`, `:75-84`, `:37-39`).
+
+## 8. Segunda ronda: revisión contra el código (2026-11-09 al 2026-11-20)
+
+Esta sección se agregó en la versión 1.1. Todos los documentos publicados se volvieron a revisar contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea` (ambos repositorios sin cambios locales), en tres tramos: la reorganización de carpetas, la reconciliación de los commits nuevos y un cierre con comprobaciones globales. Sin navegador y sin llamar a la API; los scripts son de solo lectura.
+
+### 8.1 Reorganización de carpetas (`35dceec`, 2026-11-09)
+
+Los 54 documentos pasaron de las carpetas por ola (`ola-1-fundamentos`, `ola-2-funcional`, `ola-3-calidad`, `ola-4-cierre`) a carpetas por tema, sin prefijos numéricos:
+
+| Antes | Ahora |
+|---|---|
+| `01-reglas-de-negocio`, glosario y procesos | `negocio/reglas`, `negocio/glosario`, `negocio/procesos-de-negocio` |
+| `12-historias-de-usuario`, `13-casos-de-uso`, `19-inventario-de-pantallas` | `producto/historias-de-usuario`, `producto/casos-de-uso`, `producto/pantallas` |
+| arquitectura, `03-modelo-de-datos`, `04-referencia-api`, `05-seguridad`, integraciones, carga masiva y códigos de error | `tecnico/` (`modelo-de-datos`, `api`, `seguridad`) |
+| guía del desarrollador, despliegue y estado | `desarrollo/` |
+| `manual-usuario` | `manual-de-usuario` |
+| `09-pruebas`, `16-casos-de-prueba`, matriz y revisión | `calidad/` (`pruebas-automatizadas`, `casos-de-prueba`) |
+
+Se reescribieron por script unos 2 950 enlaces y referencias por nombre (rutas, referencias numeradas del tipo «documento 04a» y títulos de apartados). Los IDs (`RN`, `HU`, `CU`, `TC`) no cambiaron. Las rutas viejas de los scripts `17-…` de la matriz dejaron de servir (ver 8.5).
+
+### 8.2 Reconciliación de commits
+
+| Commit | Fecha | Qué cambió | Dónde se reflejó |
+|---|---|---|---|
+| `9c16f35` (apis) | 2026-10-31 | Catálogo DIGEMID compartido entre empresas, de solo lectura | Primera ronda en reglas, producto, manual y casos de prueba; en la segunda, en desarrollo, pruebas automatizadas, modelo de datos y deuda técnica |
+| `6f6b837` (apis) y `558ad35` (spa) | 2026-11-14 | Gestión de suscripciones por el operador de plataforma: vencimiento también para `Activo`, 4 endpoints de suscripción, 3 de plataforma, columna `Es_Admin_Plataforma`, tabla `Plataforma_Configuracion_Pago` (script `0029`), pantalla de configuración de pago, QR de pago en el login, aviso de vencimiento y sección «Suscripciones» del Inicio | Reglas nuevas (RN-GEN-042 y 043, RN-AUT-040, RN-CTA-021, RN-EMP-019 a 028, RN-DAS-025 y 026), proceso 10 de procesos, glosario, modelo de datos, seguridad, API, errores, pantallas, historias HU-ADM-051 a 057, casos de uso CU-ADM-38 a 43, casos de prueba TC-ADM-414 a 455, capítulo 12 del manual |
+| `0678e40` (apis) y `37048ea` (spa) | 2026-11-14 | Listado de devoluciones con filtros, detalle con líneas, exportación a Excel (`POST Devoluciones/exportar`) y pantallas `/devoluciones` y `/devoluciones/:id` | RN-DEV-030 a 032 reescritas y RN-DEV-038 a 044 nuevas, API, matriz de permisos, carga masiva, errores, pantallas, HU-DEV-009 y 010, CU-DEV-09 y 10, TC-DEV-060 a 079, manual (capítulos 8, 9 y 11) |
+| `7091c43`, `a71f480` | 2026-11-14 | Despliegue a UAT tras publicar las imágenes | Guía del desarrollador, despliegue y operación, deuda técnica (FP-19 parcial) |
+| `9079e00` (spa) | 2026-11-14 | Solo una prueba (spec de pago) | Catálogo de pruebas del SPA |
+
+### 8.3 Qué se revisó y con qué profundidad
+
+«Mecánico» es lectura por script: citas `archivo:línea` (existe, rango y primera línea), códigos de error, HTTP, mensajes entre «» contra los `es.json`, endpoints, permisos, rutas y conteos. «Semántico» es leer el código y compararlo con lo que dice el documento, regla por regla o escenario por escenario.
+
+| Carpeta | Documento | Profundidad |
+|---|---|---|
+| `negocio/reglas` | `administracion-y-seguridad` | Semántico regla por regla en las 203 reglas anteriores (ronda de 2026-11-09); las 14 nuevas se escribieron leyendo el código; citas desplazadas reubicadas por script |
+| `negocio/reglas` | `catalogos`, `inventario-y-recetas`, `ventas-y-comprobantes`, `modulos-solo-api` | Mecánico: citas reubicadas por comparación de bloques de código entre commits y revisadas una a una; sin lectura semántica regla por regla |
+| `negocio/reglas` | `caja-devoluciones-y-dashboard` | Mecánico, más lectura de código para RN-DEV-030 a 032, RN-DEV-038 a 044 y RN-DAS-025 y 026 |
+| `negocio` | `procesos-de-negocio`, `glosario` | Solo lo que tocan los commits nuevos (proceso 10, devoluciones, vigencia, 3 términos nuevos); las demás 133 definiciones y los procesos 1 a 9 no se releyeron contra cada handler |
+| `producto/pantallas` | acceso, administración y punto de venta | Lectura de código de lo nuevo (pago, suscripción, configuración de pago, devoluciones) y citas remapeadas con el diff de git (139) |
+| `producto/pantallas` | catálogos, productos e inventario | Mecánico (citas); sin lectura semántica |
+| `producto/historias-de-usuario`, `producto/casos-de-uso` | acceso y punto de venta | Lectura de lo nuevo y de los escenarios corregidos; el resto, mecánico |
+| `producto/historias-de-usuario`, `producto/casos-de-uso` | catálogos, inventario y atención | Solo verificación mecánica (mensajes): los commits no los afectan |
+| `tecnico/modelo-de-datos` | las dos partes | Mecánico completo del esquema: 51 tablas por columna, tipo, nulo y valor por defecto, 41 índices, 25 `CHECK`, 88 claves foráneas, 1 020 citas a scripts: 0 diferencias en lo anterior |
+| `tecnico/api` | las cinco partes | Mecánico: método, ruta, permiso, límite y línea de cada ficha (249 endpoints); 101 cuerpos contra sus commands. La semántica de respuestas y errores ficha por ficha no se releyó en catálogos, productos, inventario ni ventas |
+| `tecnico/seguridad` | autenticación y controles; matriz de permisos | Mecánico (más de 4 900 citas de `tecnico`, 105 pares de permisos); lectura de lo nuevo (operador, `IgnoreQueryFilters`, política `public-info`) |
+| `tecnico` | códigos de error, arquitectura, integraciones, carga masiva | Recalculado por script (357 códigos, conteos, 39 claves de configuración); lectura de lo nuevo |
+| `desarrollo` | guía del desarrollador, despliegue y operación | Mecánico (más de 500 citas, versiones, puertos, variables, scripts) y lectura de lo nuevo (imágenes, UAT, operador); la sección de convenciones se contrastó por la primera línea citada |
+| `desarrollo` | estado y deuda técnica | Mecánico (unas 210 citas, 249 endpoints, conteos); DT-013 a DT-060 por la primera línea citada, no una por una |
+| `manual-de-usuario` | capítulos 1 a 11 y README | Mecánico (unos 3 300 textos entre «» contra `es.json` y código); lectura de lo nuevo. Capítulos 5, 6 y 7 solo por muestreo; capítulo 2 (series), 4 (cargas masivas), 8 (secciones 15 a 17) y 9 (cierre) solo mensajes |
+| `manual-de-usuario` | capítulo 12 (nuevo) | Escrito desde el código; todo «No verificado en la aplicación» |
+| `calidad/pruebas-automatizadas` | backend y SPA | Mecánico: 204 archivos y 1 344 pruebas del backend, 83 specs y 584 casos del SPA, fila por fila; la columna «Qué verifica» no se releyó cuerpo a cuerpo |
+| `calidad/casos-de-prueba` | las tres partes | Mecánico (referencias, mensajes, códigos, rutas, permisos) y casos nuevos (42 en la parte A, 20 en la C); no se releyó caso por caso la lógica de ventas, caja, stock, recetas y series |
+| `calidad` | matriz de trazabilidad | Regenerada (ver 8.5) |
+| `_inventario` | CSV y README | Regenerados desde los commits (249 endpoints, 105 permisos, 357 códigos, 204 archivos de prueba) |
+
+### 8.4 Correcciones del cierre (2026-11-20 y 2026-11-21)
+
+| # | Documento | Antes | Después | Evidencia |
+|---|---|---|---|---|
+| B1 | `negocio/reglas/caja-devoluciones-y-dashboard` | Las filas reescritas RN-DEV-030 a 032 y las nuevas RN-DEV-038 a 044 estaban dentro de la tabla de historial y el apartado 4.7 conservaba las filas viejas («Solo API») | Las filas nuevas están en 4.7 y las viejas se quitaron | Script de IDs: 812 definiciones sin repetidos |
+| B2 | `producto/casos-de-uso/punto-de-venta-y-caja` y `producto/historias-de-usuario/punto-de-venta-y-caja` | «No existe un RN-DEV para filtros, alcance ni Excel»; HU-DEV-008 y 009 con reglas «de la versión anterior»; anclas al apartado 4.7 viejo | Citan RN-DEV-038 a 044; trazabilidad y anclas actualizadas; la afirmación «el listado y el detalle son Solo API» se quitó | `DevolucionesController.cs:15-55`, `GetDevolucionByIdQueryHandler.cs:16-32` (valor plano) |
+| B3 | `tecnico/seguridad/autenticacion-y-controles` (9.2) | `GetDevolucionByIdQueryHandler.cs:15`, `GetDevolucionesQueryHandler.cs:17` | `:18-21` y `:19-20` | `ISucursalAccess.GetAllowedSucursalesAsync` en esas líneas |
+| B4 | `tecnico/api/ventas-caja-y-devoluciones` | Anclas `#47-consultas-solo-api-sin-pantalla` | `#47-consultas-búsqueda-detalle-y-exportación` | Script de enlaces |
+| B5 | Manual capítulos 1 y 10 | «24 opciones» del menú del administrador y 12 del cajero | 25 y 13 (la opción «Devoluciones» de `sidebar-data.ts:138`); la del cajero, No verificado | `sidebar-data.ts` |
+| B6 | `producto/historias-de-usuario/acceso-y-administracion` y `calidad/casos-de-prueba/acceso-y-administracion` | Escenario «En estado Activo la fecha de vencimiento no se evalúa» (el cuerpo ya decía lo contrario) | «…también se evalúa» | `Empresa.cs:27-33` |
+| B7 | `desarrollo/estado-y-deuda-tecnica`, `tecnico/carga-masiva-y-exportacion`, `negocio/procesos-de-negocio` (13.2), `calidad/casos-de-prueba` | Pendientes ya resueltos; 241 endpoints; 789 reglas; capítulo 5 «a medias»; `Devoluciones/{id}` con `Result` completo | Actualizados (249, 812, 395 y 497 IDs) | `_inventario/endpoints.csv` y scripts de 8.5 |
+| B8 | Cinco documentos de `tecnico` y `producto/pantallas` | Cabeceras y apartados «En curso» que describían cambios locales de los repositorios | Sin referencias a cambios locales (el repositorio de documentación es público) | Búsqueda por script |
+
+### 8.5 Matriz de trazabilidad y comprobaciones globales
+
+Los scripts `17-…` ya no existían. Se reescribieron como `cie2-model.js` y `cie2-gen.js` con el mismo criterio de extracción y la matriz salió en la versión 1.2: 812 reglas, 201 historias, 187 casos de uso, 1 306 casos de prueba, 249 endpoints y el capítulo 12; la tabla 8.1 de la matriz cierra sin diferencias. La clasificación `BE` de RN-DEV-030 y 031 pasó a «Sí» (`DevolucionesConsultaIntegrationTests`). Quedó un hueco nuevo: RN-CTA-021 no la cita ningún caso de uso (HU-ADM-051 no tiene caso de uso).
+
+Comprobaciones sobre todos los documentos publicados (todos menos `REGISTRO.md`, `_inventario/*-AGENTES.md`, plantillas, `RECONCILIACION.md` y `arquitectura-ia/`):
+
+| Comprobación | Resultado |
+|---|---|
+| Enlaces y anclas (regla de GitHub) | 5 469 enlaces revisados, 0 rotos |
+| IDs definidos | 812 RN, 201 HU, 187 CU, 1 306 TC, sin repetidos |
+| IDs citados que no existen | 0 reales; los 4 de control (`RN-XXX-999`, `HU-ADM-999`, `CU-ADM-99`, `TC-ADM-999`) son los de 6.8 de la matriz y de 7 de este documento |
+| Voseo | 0 (la forma «escribí» es primera persona del pretérito) |
+| Rutas absolutas de la máquina | 0 |
+| Bloques de código sin cerrar | 0 |
+| Cambios locales sin commitear de los repositorios | Ninguna afirmación vigente; quedan los apartados «En curso (sin commitear)» con «ninguno» y filas de historial que recuerdan que un archivo ya está commiteado |
+
+### 8.6 Hallazgos de código que la documentación dejó a la vista
+
+| # | Hallazgo | Evidencia | Documento |
+|---|---|---|---|
+| H1 | El catálogo de permisos de roles ya no incluye `Empresas:Leer`: solo recorre `HasPermissionAttribute` y los tres endpoints de lectura de Empresas usan `HasPermissionOrPlataforma`; un rol que no sea `Admin` no puede recibir ese permiso desde la pantalla (deducción del código) | `RolesController.cs:110` | DT-097 |
+| H2 | El Excel de devoluciones saca códigos sin traducir: el motivo SUNAT como `06` o `07` y el método de reembolso con el nombre interno | RN-DEV-041 | `negocio/reglas/caja-devoluciones-y-dashboard` |
+| H3 | `Plataforma_Configuracion_Pago` no impide más de una fila (sin índice único ni `CHECK`) y el handler toma la más antigua | `0029_Plataforma_Suscripciones.sql:6-22`; `GuardarConfiguracionPagoCommandHandler.cs:22-25` | DT-098 |
+| H4 | La marca de operador solo se cambia en la base de datos: ningún comando la asigna ni la audita | RN-CTA-021 | `negocio/reglas/administracion-y-seguridad` 12.3 |
+| H5 | `GET plataforma/pago` es anónimo y devuelve el QR de Yape como `data:` URL (intencional) | RN-EMP-025 | ídem |
+| H6 | El autocompletado «Autorizó» de la búsqueda de devoluciones llama a `GET Empleados` (exige `Empleados:Leer`) y el SPA no captura el error | RN-DEV-042 | `producto/historias-de-usuario/punto-de-venta-y-caja` (HU-DEV-009) |
+| H7 | Los workflows de despliegue a UAT no corren pruebas; sigue sin haber una prueba por módulo de farmacia con un rol sin permiso que espere 403 | `docker-publish.yml`; `calidad/pruebas-automatizadas/backend` 6.6 | DT-070 |
+| H8 | `_inventario/permisos.csv` y `endpoints.csv` no distinguían `PLATAFORMA_ADMIN`; se regeneraron con la columna `permiso` ampliada | `_inventario/README.md` | — |
+
+### 8.7 «No verificado» y lo que no se revisó a fondo
+
+- Todo lo nuevo (suscripciones, operador, devoluciones, capítulo 12) se escribió desde el código y no se recorrió en la aplicación.
+- El contenido real del `devoluciones.xlsx`, más de 10 000 filas, el autocompletado sin `Empleados:Leer`, el `TenantId` de la fila de pago y la sustitución de `${API_BASE_URL}` en la imagen del SPA.
+- La existencia de los recursos de UAT en Azure y el efecto del salto de línea CRLF en los hooks.
+- Sin lectura semántica regla por regla: cuatro de los seis catálogos de reglas (8.3), procesos 1 a 9, glosario, fichas de API de catálogos, productos, inventario y ventas, pantallas de catálogos e inventario, capítulos 5, 6 y 7 del manual, y la lógica de ventas, caja, stock y recetas en los casos de prueba.
+- La clasificación `BE` y `SPA` de la matriz es por contexto y por pantalla, no una lectura de las pruebas.
+- Los números de línea citados son los de `0678e40` y `37048ea`; cualquier commit posterior los desplaza.
 
 ## Pendientes y «No verificado»
 
