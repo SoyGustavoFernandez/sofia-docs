@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `37048ea` |
 | **Método** | Integración de los capítulos publicados |
 
 ## 1. Presentación del manual
@@ -26,7 +26,7 @@ Se habla siempre en segunda persona y con frases cortas. Cada capítulo dice al 
 
 ### 1.3 Cómo está organizado
 
-El manual tiene once capítulos, uno por archivo, en esta misma carpeta. Los primeros siete son de **puesta en marcha** y siguen el orden en que se prepara una botica; los capítulos 8 a 10 son de **uso diario**; el capítulo 11 es de **consulta** cuando algo no sale como esperabas.
+El manual tiene doce capítulos, uno por archivo, en esta misma carpeta. Los primeros siete son de **puesta en marcha** y siguen el orden en que se prepara una botica; los capítulos 8 a 10 son de **uso diario**; el capítulo 11 es de **consulta** cuando algo no sale como esperabas; el capítulo 12 es solo para el **operador de plataforma** de SOFIA (suscripciones de las empresas y datos de pago).
 
 | Capítulo | Tema | Lector principal |
 |---|---|---|
@@ -41,6 +41,7 @@ El manual tiene once capítulos, uno por archivo, en esta misma carpeta. Los pri
 | [9. Ventas, devoluciones y cierre](capitulo-09-ventas-devoluciones-y-cierre.md) | Buscar ventas, anular, devolver, cerrar la caja con arqueo | Cajero |
 | [10. Inicio y roles](capitulo-10-inicio-y-roles.md) | El Inicio (dashboard) y qué ve cada rol | Administrador y cajero |
 | [11. Problemas frecuentes](capitulo-11-problemas-frecuentes.md) | Situaciones sin mensaje, mensajes de error por tarea e índice alfabético | Todos |
+| [12. Operador de plataforma](capitulo-12-operador-de-plataforma.md) | Datos de pago, activar, extender, suspender y cancelar la suscripción de una empresa, cifras de suscripciones | Operador de plataforma de SOFIA |
 
 ### 1.4 Cómo leerlo
 
@@ -69,7 +70,7 @@ Lee los capítulos 1 a 7 **en orden**. Cada uno usa lo que dejó el anterior. Es
 | 8 | **Lotes y stock** por sucursal | [Capítulo 6, §5 Crear un lote](capitulo-06-inventario.md#5-crear-un-lote) y [Capítulo 6, §8 Ingresar stock](capitulo-06-inventario.md#8-ingresar-stock) | **El lote y el stock van antes del terminal**: sin lotes con existencia no hay nada que agregar al carrito |
 | 9 | Pacientes, profesionales de salud y recetas (solo si vendes productos con receta) | [Capítulo 7, §5 Registrar un paciente](capitulo-07-pacientes-y-recetas.md#5-registrar-un-paciente), [Capítulo 7, §9 Profesionales de salud](capitulo-07-pacientes-y-recetas.md#9-profesionales-de-salud) y [Capítulo 7, §10 Registrar una receta](capitulo-07-pacientes-y-recetas.md#10-registrar-una-receta) | La receta necesita un paciente y un médico ya registrados |
 
-Cuando termines, tu botica está lista para vender. El uso diario está en los capítulos 8 a 10, y el capítulo 11 queda como consulta.
+Cuando termines, tu botica está lista para vender. El uso diario está en los capítulos 8 a 10, y el capítulo 11 queda como consulta. El capítulo 12 no forma parte de la puesta en marcha de una botica.
 
 Dos cuidados que los capítulos señalan:
 
@@ -124,6 +125,7 @@ Cada capítulo con sus secciones. Los enlaces llevan directo al título.
     - [6.3 Campos](capitulo-01-primeros-pasos.md#63-campos)
     - [6.4 Qué pasa al terminar](capitulo-01-primeros-pasos.md#64-qué-pasa-al-terminar)
     - [6.5 Errores que puedes ver](capitulo-01-primeros-pasos.md#65-errores-que-puedes-ver)
+      - [6.5.1 El recuadro de pago cuando tu empresa no está vigente](capitulo-01-primeros-pasos.md#651-el-recuadro-de-pago-cuando-tu-empresa-no-está-vigente)
     - [6.6 Otros enlaces de la pantalla](capitulo-01-primeros-pasos.md#66-otros-enlaces-de-la-pantalla)
   - [7. Cambiar tu contraseña](capitulo-01-primeros-pasos.md#7-cambiar-tu-contraseña)
     - [7.1 Cómo es la pantalla](capitulo-01-primeros-pasos.md#71-cómo-es-la-pantalla)
@@ -551,6 +553,7 @@ Cada capítulo con sus secciones. Los enlaces llevan directo al título.
     - [Lo que se comprobó en la aplicación](capitulo-09-ventas-devoluciones-y-cierre.md#lo-que-se-comprobó-en-la-aplicación-1)
     - [Si no ves el botón Devolver](capitulo-09-ventas-devoluciones-y-cierre.md#si-no-ves-el-botón-devolver)
     - [Errores que puedes ver](capitulo-09-ventas-devoluciones-y-cierre.md#errores-que-puedes-ver-3)
+    - [7.1 Buscar y ver devoluciones](capitulo-09-ventas-devoluciones-y-cierre.md#71-buscar-y-ver-devoluciones)
   - [8. Cerrar tu caja con arqueo](capitulo-09-ventas-devoluciones-y-cierre.md#8-cerrar-tu-caja-con-arqueo)
     - [Cuánto efectivo debería haber (la fórmula)](capitulo-09-ventas-devoluciones-y-cierre.md#cuánto-efectivo-debería-haber-la-fórmula)
     - [Pasos](capitulo-09-ventas-devoluciones-y-cierre.md#pasos-4)
@@ -582,6 +585,7 @@ Cada capítulo con sus secciones. Los enlaces llevan directo al título.
     - [3.6 Tendencia, más vendidos y devoluciones](capitulo-10-inicio-y-roles.md#36-tendencia-más-vendidos-y-devoluciones)
     - [3.7 Cada indicador: valor visto frente a valor esperado](capitulo-10-inicio-y-roles.md#37-cada-indicador-valor-visto-frente-a-valor-esperado)
     - [3.8 El mismo Inicio con una venta y una caja abierta](capitulo-10-inicio-y-roles.md#38-el-mismo-inicio-con-una-venta-y-una-caja-abierta)
+    - [3.9 El aviso de vencimiento de la suscripción](capitulo-10-inicio-y-roles.md#39-el-aviso-de-vencimiento-de-la-suscripción)
   - [4. Los botones de acceso directo](capitulo-10-inicio-y-roles.md#4-los-botones-de-acceso-directo)
   - [5. Ventas por sucursal](capitulo-10-inicio-y-roles.md#5-ventas-por-sucursal)
   - [6. El Inicio como cajero](capitulo-10-inicio-y-roles.md#6-el-inicio-como-cajero)
@@ -634,6 +638,19 @@ Cada capítulo con sus secciones. Los enlaces llevan directo al título.
     - [7.1 Mensajes de las tablas «Mensajes al usuario» de `producto/pantallas/acceso-layout-y-compartidos` a `producto/pantallas/punto-de-venta`](capitulo-11-problemas-frecuentes.md#71-mensajes-de-las-tablas-mensajes-al-usuario-de-productopantallasacceso-layout-y-compartidos-a-productopantallaspunto-de-venta)
     - [7.2 Tareas y situaciones pedidas en el encargo](capitulo-11-problemas-frecuentes.md#72-tareas-y-situaciones-pedidas-en-el-encargo)
   - [8. Fuentes](capitulo-11-problemas-frecuentes.md#8-fuentes)
+
+- **[Capítulo 12 — Operador de plataforma: suscripciones de las empresas y datos de pago](capitulo-12-operador-de-plataforma.md)**
+  - [1. Introducción](capitulo-12-operador-de-plataforma.md#1-introducción)
+  - [2. Quién es el operador de plataforma](capitulo-12-operador-de-plataforma.md#2-quién-es-el-operador-de-plataforma)
+  - [3. Cómo cambia el menú del operador](capitulo-12-operador-de-plataforma.md#3-cómo-cambia-el-menú-del-operador)
+  - [4. Configuración de Pago](capitulo-12-operador-de-plataforma.md#4-configuración-de-pago)
+  - [5. Cambiar la suscripción de una empresa](capitulo-12-operador-de-plataforma.md#5-cambiar-la-suscripción-de-una-empresa)
+  - [6. La sección «Suscripciones» del Inicio](capitulo-12-operador-de-plataforma.md#6-la-sección-suscripciones-del-inicio)
+  - [7. Qué ve la empresa que no paga](capitulo-12-operador-de-plataforma.md#7-qué-ve-la-empresa-que-no-paga)
+  - [8. Errores que puedes ver](capitulo-12-operador-de-plataforma.md#8-errores-que-puedes-ver)
+  - [9. Pendientes y «No verificado»](capitulo-12-operador-de-plataforma.md#9-pendientes-y-no-verificado)
+  - [10. Tabla de cobertura](capitulo-12-operador-de-plataforma.md#10-tabla-de-cobertura)
+  - [11. Fuentes](capitulo-12-operador-de-plataforma.md#11-fuentes)
 
 ## 4. Tareas frecuentes: en qué capítulo y sección está cada una
 
@@ -743,6 +760,10 @@ Busca lo que quieres hacer. Cada fila te lleva a la sección con los pasos.
 | No puedo cerrar mi caja | [Capítulo 11, §2.5 No puedo cerrar mi caja](capitulo-11-problemas-frecuentes.md#25-no-puedo-cerrar-mi-caja) |
 | Entender por qué la boleta dice «Pendiente de envío a SUNAT» | [Capítulo 11, §2.7 La boleta dice «Pendiente de envío a SUNAT»](capitulo-11-problemas-frecuentes.md#27-la-boleta-dice-pendiente-de-envío-a-sunat) |
 | Buscar un mensaje de error | [Capítulo 11, §3 Mensajes de error por tarea](capitulo-11-problemas-frecuentes.md#3-mensajes-de-error-por-tarea) y [Capítulo 11, §5 Índice alfabético de mensajes](capitulo-11-problemas-frecuentes.md#5-índice-alfabético-de-mensajes) |
+| Pagar la suscripción de mi empresa cuando no puedo entrar o está por vencer | [Capítulo 1, §6.5.1 El recuadro de pago](capitulo-01-primeros-pasos.md#651-el-recuadro-de-pago-cuando-tu-empresa-no-está-vigente) y [Capítulo 10, §3.9 El aviso de vencimiento](capitulo-10-inicio-y-roles.md#39-el-aviso-de-vencimiento-de-la-suscripción) |
+| Consultar las devoluciones ya hechas y sus notas de crédito | [Capítulo 9, §7.1 Buscar y ver devoluciones](capitulo-09-ventas-devoluciones-y-cierre.md#71-buscar-y-ver-devoluciones) |
+| Activar, extender, suspender o cancelar la suscripción de una empresa (operador) | [Capítulo 12, §5 Cambiar la suscripción de una empresa](capitulo-12-operador-de-plataforma.md#5-cambiar-la-suscripción-de-una-empresa) |
+| Publicar el QR y los datos de pago (operador) | [Capítulo 12, §4 Configuración de Pago](capitulo-12-operador-de-plataforma.md#4-configuración-de-pago) |
 | Saber cuándo pedir ayuda y qué datos dar | [Capítulo 11, §4 Cuándo pedir ayuda al administrador o a soporte](capitulo-11-problemas-frecuentes.md#4-cuándo-pedir-ayuda-al-administrador-o-a-soporte) |
 
 ## 5. Convenciones del manual
@@ -801,7 +822,7 @@ Esta tabla reúne lo que los capítulos dejan a la vista al usar la aplicación:
 | El terminal no registra pacientes ni recibe el número de receta | El cliente y su receta se registran antes, en Pacientes y Recetas Médicas | [Capítulo 8, §10 El cliente (opcional) y la búsqueda de clientes](capitulo-08-caja-y-venta.md#10-el-cliente-opcional-y-la-búsqueda-de-clientes); [Capítulo 8, §11.3 Receta retenida y estupefaciente: exigen número de receta](capitulo-08-caja-y-venta.md#113-receta-retenida-y-estupefaciente-exigen-número-de-receta) |
 | El bloque de cobertura de seguro del terminal está oculto | No aparece en la pantalla; las aseguradoras que registres no se usan hoy en la venta | [Capítulo 5, §9.1 Qué es una aseguradora y para qué sirve hoy](capitulo-05-productos-y-proveedores.md#91-qué-es-una-aseguradora-y-para-qué-sirve-hoy); [Capítulo 8, §13.2 Lo que el servidor puede rechazar al confirmar](capitulo-08-caja-y-venta.md#132-lo-que-el-servidor-puede-rechazar-al-confirmar) |
 | No se puede abrir caja en una sucursal que no sea tu sucursal base | La pantalla de apertura no tiene campo de sucursal; un administrador de varias sucursales vende solo en la suya | [Capítulo 10, §5 Ventas por sucursal](capitulo-10-inicio-y-roles.md#5-ventas-por-sucursal); [Capítulo 8, §5.2 Abrir la caja desde Sesiones de Caja y ver tus sesiones](capitulo-08-caja-y-venta.md#52-abrir-la-caja-desde-sesiones-de-caja-y-ver-tus-sesiones) |
-| La lista de ventas, el detalle, el terminal, las anulaciones y las devoluciones trabajan solo con la sucursal base | Abrir una venta de otra sucursal da «Error al cargar la venta» | [Capítulo 11, §2.6 El cajero no ve ventas de otra sucursal](capitulo-11-problemas-frecuentes.md#26-el-cajero-no-ve-ventas-de-otra-sucursal); [Capítulo 9, §4 Ver el detalle de una venta y reimprimir el comprobante](capitulo-09-ventas-devoluciones-y-cierre.md#4-ver-el-detalle-de-una-venta-y-reimprimir-el-comprobante) |
+| La lista de ventas, el detalle, el terminal, las anulaciones y las devoluciones hechas desde el detalle de la venta trabajan solo con la sucursal base (la pantalla de consulta Devoluciones, desde `37048ea`, muestra las de todas tus sucursales: capítulo 9, §7.1) | Abrir una venta de otra sucursal da «Error al cargar la venta» | [Capítulo 11, §2.6 El cajero no ve ventas de otra sucursal](capitulo-11-problemas-frecuentes.md#26-el-cajero-no-ve-ventas-de-otra-sucursal); [Capítulo 9, §4 Ver el detalle de una venta y reimprimir el comprobante](capitulo-09-ventas-devoluciones-y-cierre.md#4-ver-el-detalle-de-una-venta-y-reimprimir-el-comprobante) |
 | Anular una venta cobrada o devolver exige tu propia caja abierta, también al administrador | «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» y «Necesitas una caja abierta para procesar la devolución.» | [Capítulo 9, §5 Anular una venta cobrada](capitulo-09-ventas-devoluciones-y-cierre.md#5-anular-una-venta-cobrada); [Capítulo 9, §7 Devolver productos](capitulo-09-ventas-devoluciones-y-cierre.md#7-devolver-productos) |
 | No existe la pantalla de Devoluciones | El aviso de una venta con devoluciones remite a «Devoluciones», que no es una opción del menú; las devoluciones se hacen desde el detalle de la venta | [Capítulo 9, §5 Anular una venta cobrada](capitulo-09-ventas-devoluciones-y-cierre.md#5-anular-una-venta-cobrada); [Capítulo 9, §11 Diferencias con la documentación técnica](capitulo-09-ventas-devoluciones-y-cierre.md#11-diferencias-con-la-documentación-técnica) |
 | La devolución con destino «Cuarentena DIGEMID» solo anota el destino | No repone stock ni crea una cuarentena | [Capítulo 9, §7 Devolver productos](capitulo-09-ventas-devoluciones-y-cierre.md#7-devolver-productos); [Capítulo 9, §11 Diferencias con la documentación técnica](capitulo-09-ventas-devoluciones-y-cierre.md#11-diferencias-con-la-documentación-técnica) |
@@ -857,8 +878,8 @@ Esta tabla reúne lo que los capítulos dejan a la vista al usar la aplicación:
 ## 8. Pendientes y «No verificado»
 
 - **En curso (sin commitear):** ninguno que este documento afirme. Este documento no se apoya en archivos de los repositorios: integra capítulos ya publicados.
-- **No verificado en la aplicación:** este documento no se recorrió en la aplicación; es una integración de los once capítulos. Todo lo que afirma sobre la aplicación sale de esos capítulos y conserva allí su marca de «Verificado» o «No verificado en la aplicación». En particular, cada fila de la tabla de limitaciones (sección 7) remite a la sección donde el capítulo explica cómo se comprobó.
-- **Commits.** La cabecera indica los commits sobre los que se integra este manual (`sofia-apis` `9c16f35`, `sofia-web-spa` `7070e1a`). Los capítulos 1 a 11 se escribieron sobre commits anteriores, que cada uno declara en su propia cabecera; este documento no volvió a recorrer la aplicación con los commits nuevos.
+- **No verificado en la aplicación:** este documento no se recorrió en la aplicación; es una integración de los doce capítulos. Todo lo que afirma sobre la aplicación sale de esos capítulos y conserva allí su marca de «Verificado» o «No verificado en la aplicación». En particular, cada fila de la tabla de limitaciones (sección 7) remite a la sección donde el capítulo explica cómo se comprobó.
+- **Commits.** La cabecera indica los commits sobre los que se integra este manual (`sofia-apis` `9c16f35`, `sofia-web-spa` `7070e1a`). Los capítulos 1 a 11 se escribieron sobre commits anteriores y se revisaron contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea` (el capítulo 12 y las secciones sobre devoluciones, suscripción y aviso de vencimiento se escribieron desde el código, sin recorrer la aplicación), que cada uno declara en su propia cabecera; este documento no volvió a recorrer la aplicación con los commits nuevos.
 - **Índice generado por script.** Los enlaces y las anclas del índice (sección 3) y de las tablas de las secciones 2, 4 y 7 se generaron leyendo los títulos de los capítulos. Si un capítulo cambia sus títulos, hay que volver a generar este documento.
 - **Capturas de pantalla:** ninguna, por la razón de la sección 5.
 
@@ -870,7 +891,7 @@ Esta tabla reúne lo que los capítulos dejan a la vista al usar la aplicación:
 | Presentación: qué es SOFIA, para quién es, cómo está organizado, cómo leerlo | Sección 1 |
 | Recorrido del administrador que empieza de cero (capítulos 1 a 7) con el orden de puesta en marcha | Sección 2.1 |
 | Recorrido del cajero en su día a día (capítulos 1, 8, 9 y 10) | Sección 2.2 |
-| Índice completo (títulos de nivel 2 y 3 de los once capítulos, con enlaces y anclas generados por script) | Sección 3 |
+| Índice completo (títulos de nivel 2 y 3 de los doce capítulos, con enlaces y anclas generados por script) | Sección 3 |
 | Lista de tareas frecuentes con capítulo y sección | Sección 4 |
 | Convenciones: negritas, «», «No verificado en la aplicación», capturas, datos de «Botica Manual Demo» | Sección 5 |
 | Glosario breve con enlace al glosario de la documentación (sin copiarlo) | Sección 6 |
@@ -881,7 +902,7 @@ Esta tabla reúne lo que los capítulos dejan a la vista al usar la aplicación:
 
 Documentos consultados (todos en esta carpeta, salvo el glosario):
 
-- `manual-de-usuario/capitulo-01-primeros-pasos.md`, `manual-de-usuario/capitulo-02-empresa-sucursales-series.md`, `manual-de-usuario/capitulo-03-empleados-roles-cuentas.md`, `manual-de-usuario/capitulo-04-catalogos-basicos.md`, `manual-de-usuario/capitulo-05-productos-y-proveedores.md`, `manual-de-usuario/capitulo-06-inventario.md`, `manual-de-usuario/capitulo-07-pacientes-y-recetas.md`, `manual-de-usuario/capitulo-08-caja-y-venta.md`, `manual-de-usuario/capitulo-09-ventas-devoluciones-y-cierre.md`, `manual-de-usuario/capitulo-10-inicio-y-roles.md` y `manual-de-usuario/capitulo-11-problemas-frecuentes.md`: títulos para el índice, secciones «Antes de empezar» para el orden de puesta en marcha, y secciones «Diferencias con la documentación técnica» y «Pendientes y «No verificado»» para las limitaciones.
+- `manual-de-usuario/capitulo-12-operador-de-plataforma.md`, `manual-de-usuario/capitulo-01-primeros-pasos.md`, `manual-de-usuario/capitulo-02-empresa-sucursales-series.md`, `manual-de-usuario/capitulo-03-empleados-roles-cuentas.md`, `manual-de-usuario/capitulo-04-catalogos-basicos.md`, `manual-de-usuario/capitulo-05-productos-y-proveedores.md`, `manual-de-usuario/capitulo-06-inventario.md`, `manual-de-usuario/capitulo-07-pacientes-y-recetas.md`, `manual-de-usuario/capitulo-08-caja-y-venta.md`, `manual-de-usuario/capitulo-09-ventas-devoluciones-y-cierre.md`, `manual-de-usuario/capitulo-10-inicio-y-roles.md` y `manual-de-usuario/capitulo-11-problemas-frecuentes.md`: títulos para el índice, secciones «Antes de empezar» para el orden de puesta en marcha, y secciones «Diferencias con la documentación técnica» y «Pendientes y «No verificado»» para las limitaciones.
 - [Glosario de la documentación](../negocio/glosario.md): solo enlazado.
 - [Reglas comunes para los agentes de documentación](../_inventario/REGLAS-AGENTES.md) y [Instrucciones comunes para los capítulos del manual](../_inventario/MANUAL-AGENTES.md): formato y convenciones.
 
