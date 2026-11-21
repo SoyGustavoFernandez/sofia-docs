@@ -3,13 +3,17 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea`; las fichas de Empleados, Roles y Cuentas están reconciliadas con `37d053d` y `7070e1a` |
 | **Método** | Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores y validadores necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear. La versión 1.1 reconcilia el documento (escrito sobre `sofia-apis` `00991bc` y `sofia-web-spa` `31af681`) con el código actual. |
 
 ## Historial de cambios
+
+### Versión 1.4 (2026-11-21)
+
+Apartado de «En curso (sin commitear)» sin referencias a cambios locales.
 
 ### Versión 1.3 (2026-11-20)
 
@@ -1157,7 +1161,7 @@ Las claves `seriesFiscales.errors.*` se usan solo como mensajes de guardado (y c
 
 ## 7. Pendientes y «No verificado»
 
-**«En curso (sin commitear)»:** ninguno. Ningún archivo de las carpetas de esta parte (`pages/empresa`, `pages/sucursales`, `pages/empleados`, `pages/roles`, `pages/seguridad`, `pages/series-fiscales`) ni de los i18n de sus scopes está en la lista de cambios sin commitear de `REGLAS-AGENTES.md` §3.
+**«En curso (sin commitear)»:** ninguno. Los dos repositorios estaban limpios al revisar esta versión (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`): las citas son de esos commits.
 
 **«No verificado»** (no se ejecutó la aplicación ni se llamó a la API):
 
