@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-11-02 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` (más nuevo que la línea base `43f5529`; `git status --short` sin cambios locales al empezar) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` (más nuevo que la línea base `eeffbb6`; `git status --short` sin cambios locales al empezar) |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -567,7 +567,7 @@ Comprobado con `carlos.cajero` (rol «Cajero» del capítulo 3) y con `ana.manua
 
 | Pantalla | Administrador (`ana.manual`) | Cajero (`carlos.cajero`) |
 |---|---|---|
-| Menú PUNTO DE VENTA | «Sesiones de Caja» y «Ventas» (además de todos los demás grupos: Administración, Catálogos, etc.) | Las mismas dos opciones. Ve solo las opciones que su rol permite (Dashboard, Empleados, Medicamentos, Aseguradoras, Lotes, Stock por Sucursal, Pacientes, Profesionales de Salud, Recetas Médicas y Catálogo DIGEMID) |
+| Menú PUNTO DE VENTA | «Sesiones de Caja», «Ventas» y, desde `sofia-web-spa` `37048ea`, «Devoluciones» (pantalla de consulta, capítulo 9 sección 7.1; No verificado en la aplicación), además de todos los demás grupos: Administración, Catálogos, etc. | Las mismas opciones (con `eeffbb6`, las dos primeras). Ve solo las opciones que su rol permite (Dashboard, Empleados, Medicamentos, Aseguradoras, Lotes, Stock por Sucursal, Pacientes, Profesionales de Salud, Recetas Médicas y Catálogo DIGEMID) |
 | Terminal de venta | El mismo terminal. Para vender **también necesita su propia caja**: sin caja, ve «Debes aperturar la caja del turno antes de procesar una venta.» aunque haya cajas abiertas de otros | El mismo terminal. **Debe abrir su propia caja** y vender en ella |
 | Dashboard, tarjeta «Caja» | «No tienes una caja abierta» con el botón **Abrir caja**, y además «Cajas abiertas (1)» con la tabla Cajero, Sucursal, Abierta desde y el enlace «Ver cajas abiertas». También «Ventas por sucursal» con el total de la empresa | «Tienes una caja abierta», con Sucursal, Abierta desde, Monto de apertura, **Efectivo esperado** y el enlace «Ver mi caja»; y «Mis ventas de hoy» con sus propias ventas |
 | Lista de ventas | Ve las ventas de **todos** los empleados de su sucursal (9 filas: 8 cobradas y 1 en espera) | Ve **las mismas** 9 filas. Para ver solo las suyas, filtra por «Empleado» |
