@@ -3,15 +3,19 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-14 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
-| **Método** | Lectura de código (handlers, entidades, middlewares, configuración de infraestructura, scripts DbUp, interceptores y guards del SPA). No se ejecutó la aplicación ni se llamó a la API. Versión 1.1: los dos repositorios tenían cambios locales de otra tarea sin commitear (devoluciones, textos y rutas del SPA); no se usaron, todo se leyó de `6f6b837` y `558ad35` con `git archive`/`git show`. |
+| **Método** | Lectura de código (handlers, entidades, middlewares, configuración de infraestructura, scripts DbUp, interceptores y guards del SPA). No se ejecutó la aplicación ni se llamó a la API. Versión 1.1: todo se leyó de `6f6b837` y `558ad35` con `git archive`/`git show`. |
 
 Este documento es la parte A de la documentación de seguridad. La parte B es la matriz de permisos (módulo × acción × endpoint × pantalla): [tecnico/seguridad/matriz-de-permisos.md](matriz-de-permisos.md); aquí no se repite. Las reglas de negocio con sus IDs (`RN-GEN-…`, `RN-AUT-…`) están en [negocio/reglas/administracion-y-seguridad.md](../../negocio/reglas/administracion-y-seguridad.md) y se citan por ID. Contexto relacionado: [tecnico/arquitectura.md](../arquitectura.md), [tecnico/integraciones.md](../integraciones.md), [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md), [desarrollo/despliegue-y-operacion.md](../../desarrollo/despliegue-y-operacion.md) y [producto/pantallas/acceso-layout-y-compartidos.md](../../producto/pantallas/acceso-layout-y-compartidos.md).
 
 ## Historial de cambios
+
+### Versión 1.2 (2026-11-21)
+
+Citas de devoluciones corregidas (`GetDevolucionByIdQueryHandler.cs:18-21`, `GetDevolucionesQueryHandler.cs:19-20`); cabecera sin referencias a cambios locales.
 
 ### Versión 1.1 (2026-11-14)
 
@@ -543,7 +547,7 @@ Regla RN-GEN-023.
 |---|---|
 | Dashboard | `DashboardScopeResolver` y los de Caja, Cuarentena, Devoluciones, Inventario y Ventas (`APP/Dashboard/Common/DashboardScopeResolver.cs:10-12`; `Queries/GetDashboard*/…Handler.cs`) |
 | Delivery | `ProgramarDeliveryCommandHandler.cs:23`, `GetDespachoDeliveryByIdQueryHandler.cs:18`, `GetDespachosQueryHandler.cs:17` |
-| Devoluciones | `GetDevolucionByIdQueryHandler.cs:15`, `GetDevolucionesQueryHandler.cs:17` |
+| Devoluciones | `GetDevolucionByIdQueryHandler.cs:18-21`, `GetDevolucionesQueryHandler.cs:19-20` |
 | DIGEMID | `GetCuarentenaQueryHandler.cs:16` |
 | Inventarios | `AdjustStockCommandHandler.cs:21`, `RegisterInventarioCommandHandler.cs:25`, `GetStockPorSucursalQueryHandler.cs:20`, `GetStockPorSucursalByIdQueryHandler.cs:14` |
 | Magistrales | `GetOrdenByIdQueryHandler.cs:15`, `GetOrdenesQueryHandler.cs` |
