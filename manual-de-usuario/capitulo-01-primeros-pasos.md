@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
@@ -454,7 +454,7 @@ El administrador que registra la empresa **no** pasa por este paso: su cuenta se
 | Registrar empresa | Lo hace una sola vez al comenzar; la pantalla es pública | No lo usa: su cuenta la crea el administrador (capítulo 3) |
 | Iniciar sesión, cerrar sesión, recuperar contraseña | Igual | Igual. Un cajero recupera su contraseña con el correo que el administrador registró en su ficha de empleado |
 | Cambiar contraseña | Voluntario: tiene **Cancelar** y la flecha de volver | Voluntario igual; pero si el administrador le asignó una contraseña inicial, la primera vez es **obligatorio** (sección 9.2) |
-| Menú lateral | Las 24 opciones en 8 grupos (sección 4.1) | Solo las opciones de los módulos sobre los que su rol tiene el permiso `Leer`; los grupos sin opciones desaparecen. «Dashboard» siempre aparece |
+| Menú lateral | Las 25 opciones en 8 grupos (sección 4.1) | Solo las opciones de los módulos sobre los que su rol tiene el permiso `Leer`; los grupos sin opciones desaparecen. «Dashboard» siempre aparece |
 | Cabecera | Igual para todos: fecha, campana, idioma, menú de usuario | Igual |
 | Menú de usuario | Nombre, empresa, **Cambiar contraseña**, **Cerrar sesión**, versión | Igual |
 | Inicio (dashboard) | Ve el total de toda la empresa (y, con varias sucursales, el desglose por sucursal) | Ve solo los bloques de los módulos que puede leer y los datos de sus sucursales; sus propias ventas y su caja aparecen en «Mis ventas de hoy» y «Caja». El detalle está en el capítulo 10 |
@@ -605,7 +605,7 @@ Cada elemento de las fichas de `producto/pantallas/acceso-layout-y-compartidos.m
 | «Versión: 1.0.0» | 4.4 (verificado) |
 | Sin buscador ni selector de tema | 4.2 |
 | Marca «⚕ SOFIA» y enlace al Inicio | 4.1 |
-| 8 grupos y 24 opciones del menú (administrador) | 4.1 (verificado) |
+| 8 grupos y 25 opciones del menú (administrador) | 4.1 (verificado) |
 | Reglas de visibilidad por permiso, aviso de permisos no cargados | 4.1 (reglas; el menú del cajero No verificado en la aplicación) |
 | Opción resaltada, Ctrl + clic, vista angosta | 4.1 (Ctrl + clic y vista angosta: No verificado en la aplicación) |
 | Opciones sin pantalla (Transferencias, Delivery, etc.) | 4.1 |
