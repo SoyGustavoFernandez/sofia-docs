@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
@@ -360,7 +360,7 @@ Esta sección reúne en un solo lugar lo que cada capítulo anterior comprobó. 
 | DIGEMID › Catálogo DIGEMID | Sí | Sí, solo consulta y **Exportar** | Capítulo 4 §10 |
 | SUNAT › Series Fiscales | Sí | No (el grupo SUNAT desaparece) | Capítulo 2 §12 |
 
-Resumen: el administrador ve **24 opciones en 8 grupos**; el cajero del ejemplo ve **12 opciones en 7 grupos** (no ve SUNAT).
+Resumen: el administrador ve **25 opciones en 8 grupos**; el cajero del ejemplo ve **13 opciones en 7 grupos** (no ve SUNAT). Con la opción «Devoluciones» (desde `sofia-web-spa` `37048ea`) el administrador pasó de 24 a 25 y el cajero de 12 a 13; la cifra del cajero se deduce de su permiso `Devoluciones › Leer`. No verificado en la aplicación.
 
 **Comprobado en este capítulo con el cajero (lo que faltaba):** escribir a mano `/series-fiscales` lo devolvió al Inicio con el aviso rojo «No tienes permisos para acceder a esta pantalla.»; escribir `/lotes/nueva` y `/proveedores` también lo devolvió al Inicio (el aviso no alcanzó a leerse en esas dos pruebas). Con esto quedan comprobadas las redirecciones que los capítulos 4, 5 y 6 habían dejado como «No verificado». El capítulo 3 ya había comprobado `/roles`, `/cuentas` y `/empleados/nueva`, y el capítulo 7 `/pacientes/nueva` y `/pacientes/carga-masiva`.
 
@@ -492,7 +492,7 @@ Una precisión sobre el capítulo 1: su sección 4.5 lista los botones **Ver ven
 | `RN-DAS-022` | Secciones 3.5 y 3.7 | Recorrido (0 con devolución a «Cuarentena DIGEMID») |
 | `RN-DAS-023` | Secciones 3.6 y 3.7 | Recorrido en 0 |
 | `RN-DAS-024` | Sección 7 | Recorrido (errores: No verificado) |
-| `producto/pantallas/acceso-layout-y-compartidos` §4.3 menú lateral y regla de visibilidad | Sección 8.1 | Recorrido (administrador: 24 opciones; cajero: 12) |
+| `producto/pantallas/acceso-layout-y-compartidos` §4.3 menú lateral y regla de visibilidad | Sección 8.1 | Recorrido (administrador: 25 opciones; cajero: 13) |
 | `producto/pantallas/acceso-layout-y-compartidos` §5.3 `permissionGuard` (aviso y redirección al Inicio) | Sección 8.1 | Recorrido |
 | Matriz `tecnico/seguridad/matriz-de-permisos` §6.5 (permisos de un cajero) y §7 (acceso por sucursal) | Secciones 2, 5 y 8 | Consultados |
 
