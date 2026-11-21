@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
-| **Método** | Lectura de documentos validados y comprobación puntual en el código; casos no ejecutados |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Lectura de documentos validados y comprobación en el código (mensajes, códigos de error, rutas y permisos por script sobre todos los casos; resultados esperados de prioridad Alta contrastados con el código en lo que toca a suscripciones, vigencia, menú, catálogo de permisos y rutas de la API); casos no ejecutados |
 
 ## 1. Convenciones
 
@@ -66,8 +66,9 @@ Todos los datos son ficticios y evidentes (dominio de correo `sofia-manual.test`
 | Segundo empleado | «Nora Norte Demo», sucursal base «Sucursal Demo Norte», usuario `nora.norte` | Casos de sucursales y de eliminación |
 | Rol «Cajero» | Nivel 30, descripción «Cajero de mostrador: atención al público y punto de venta», con los 19 permisos recomendados del manual ([capítulo 3, sección 5.3][m3]): Ventas (Leer, Crear, Actualizar, Anular), Sesiones de Caja (Leer, Aperturar caja, Cerrar caja), Devoluciones (Procesar devolución, Leer), Inventario Leer, DIGEMID Leer, Medicamentos Leer, Pacientes Leer, Aseguradoras Leer, Recetas Médicas (Leer, Analizar con IA, Crear), Profesionales de Salud Leer, Empleados Leer | Casos de menú, rutas y permisos. Se crea en TC-ADM-216 y se completa en TC-ADM-238 |
 | Empresa B | «Farmacia Prueba Dos S.A.C.», RUC `20123456789`, administrador `luis.dos`, sede «Sede Principal» | Casos de aislamiento entre empresas y de unicidad entre empresas |
-| Empresa con suscripción no vigente | Una empresa de prueba cuyo estado sea suspendido, cancelado o con prueba vencida | Casos de HU-ADM-016. Ningún endpoint ni pantalla cambia el estado de la suscripción ([RN-EMP-015][rn]); hay que dejarla así por base de datos, y los casos lo marcan «No verificado en la aplicación» como la historia |
-| Rol «Consulta Demo» y cuenta `consulta.demo` | Rol de solo lectura: `Leer` en Empresa, Sucursales, Empleados, Roles y Cuentas de Usuario y Series Fiscales, sin ninguna otra acción | Casos de permisos que necesitan una cuenta con `Leer` y sin `Crear`, `Actualizar` ni `Eliminar` |
+| Empresa con suscripción no vigente | Una empresa de prueba («Vencida Demo S.A.C.», usuario `vencida.demo`) cuyo estado sea suspendido, cancelado, con la prueba vencida o activo con la suscripción vencida | Casos de HU-ADM-016 y HU-ADM-053. Desde `6f6b837` el operador de plataforma cambia el estado con los botones de suscripción de `/empresas/:id` o con los endpoints `PUT /empresas/{id}/suscripcion/...` ([RN-EMP-015, RN-EMP-019 a RN-EMP-021][rn]); sin operador hay que dejarla así por base de datos. Los casos lo marcan «No verificado en la aplicación» porque ningún recorrido del manual lo ejecutó |
+| Operador de plataforma | Cuenta `operador.demo` de una empresa de prueba propia («Plataforma Demo S.A.C.»), con la marca `Es_Admin_Plataforma` en 1 puesta a mano en la base de datos ([RN-CTA-021][rn]); un rol sin `Empresas › Leer` | Casos de la sección 4.10 (HU-ADM-051 a HU-ADM-057) |
+| Rol «Consulta Demo» y cuenta `consulta.demo` | Rol de solo lectura: `Leer` en Sucursales, Empleados, Roles y Cuentas de Usuario y Series Fiscales, sin ninguna otra acción (`Empresas › Leer` ya no aparece en la matriz de permisos de «Roles»: si un caso lo necesita se carga por base de datos) | Casos de permisos que necesitan una cuenta con `Leer` y sin `Crear`, `Actualizar` ni `Eliminar` |
 | Rol «Sin Permisos Demo» y cuenta `sin.permisos` | Rol con todas las casillas desmarcadas | Casos de menú y Dashboard sin permisos |
 | Rol «Rol Prueba Eliminar» | Rol descartable sin permisos | Casos de eliminación de roles y de cambio de rol |
 | Gestor sin rol `Admin` | Cuenta con un rol «Gerente Demo» que tiene `Leer`, `Actualizar`, `Eliminar`, `Asignar roles` y `Gestionar permisos` de Roles y Cuentas de Usuario | Casos de protección del rol y de las cuentas `Admin` y de ampliación de permisos propios |
@@ -77,7 +78,7 @@ Antes de cada ronda conviene tener a mano: una cuenta de prueba **solo para bloq
 
 ## 3. Suite de humo
 
-Estos 26 casos, todos de prioridad Alta, se corren primero y en este orden, porque cada uno prepara datos para el siguiente (la empresa A, el rol «Cajero», la cuenta de Carlos y las series). Si alguno falla, detén la ronda y repórtalo antes de seguir con los demás módulos.
+Estos 28 casos, todos de prioridad Alta, se corren primero y en este orden, porque cada uno prepara datos para el siguiente (la empresa A, el rol «Cajero», la cuenta de Carlos y las series). Si alguno falla, detén la ronda y repórtalo antes de seguir con los demás módulos.
 
 | Orden | Caso | Qué comprueba |
 |---|---|---|
@@ -107,6 +108,8 @@ Estos 26 casos, todos de prioridad Alta, se corren primero y en este orden, porq
 | 24 | TC-ADM-112 | Solo veo mi propia empresa |
 | 25 | TC-ADM-156 | No se elimina una sucursal con registros asociados |
 | 26 | TC-ADM-357 | Un registro de otra empresa se comporta como inexistente |
+| 27 | TC-ADM-419 | Abrir la configuración de pago y guardar el WhatsApp (necesita la cuenta de operador) |
+| 28 | TC-ADM-435 | Activar la suscripción de una empresa hasta una fecha (necesita la cuenta de operador) |
 
 Los casos de numeración de comprobantes (TC-ADM-354 a TC-ADM-356) también son de prioridad Alta, pero necesitan caja abierta y un producto con stock (parte C), así que se corren después de la suite de humo de esa parte.
 
@@ -400,13 +403,13 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Negativo | Alta | [HU-ADM-002][hu] «La empresa no tiene suscripción vigente»; [HU-ADM-016][hu] «No se puede iniciar sesión»; [CU-ADM-02][cu] excepción paso 6; [RN-AUT-009, RN-EMP-014][rn] |
+| Negativo | Alta | [HU-ADM-002][hu] «La empresa no tiene suscripción vigente»; [HU-ADM-016][hu] «No se puede iniciar sesión»; [HU-ADM-053][hu] «Mi empresa no está vigente y el operador publicó los datos»; [CU-ADM-02][cu] excepción paso 6; [RN-AUT-009, RN-AUT-040, RN-EMP-014][rn] |
 
-**Precondiciones:** empresa de prueba suspendida, cancelada o con la prueba vencida (se prepara por base de datos). No verificado en la aplicación: la empresa de prueba del manual está vigente.
+**Precondiciones:** empresa de prueba suspendida, cancelada, con la prueba vencida o activa con la suscripción vencida (se prepara con el operador de plataforma, TC-ADM-440, o por base de datos). No verificado en la aplicación: la empresa de prueba del manual está vigente.
 **Datos:** usuario y contraseña **correctos** de esa empresa.
 **Pasos:**
 1. Intenta iniciar sesión.
-**Resultado esperado:** aviso «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» (API 403 `Auth.EmpresaNoVigente`).
+**Resultado esperado:** aviso «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» (API 403 `Auth.EmpresaNoVigente`); debajo, si el operador publicó datos de pago, aparece el bloque «Paga tu suscripción con Yape» (TC-ADM-426).
 
 #### TC-ADM-021 — La vigencia solo se comprueba con la contraseña correcta
 
@@ -1243,7 +1246,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 **Pasos:**
 1. Entra al sistema y mira el menú lateral.
 2. Cuenta los grupos y las opciones.
-**Resultado esperado:** 8 grupos y 24 opciones: Dashboard; Empresa, Sucursales, Empleados, Roles & Permisos y Cuentas de Usuario; los nueve catálogos; Lotes y Stock por Sucursal; Sesiones de Caja y Ventas; Pacientes, Profesionales de Salud y Recetas Médicas; Catálogo DIGEMID; y Series Fiscales.
+**Resultado esperado:** 8 grupos y 25 opciones: Dashboard; Empresa, Sucursales, Empleados, Roles & Permisos y Cuentas de Usuario; los nueve catálogos; Lotes y Stock por Sucursal; Sesiones de Caja, Ventas y Devoluciones; Pacientes, Profesionales de Salud y Recetas Médicas; Catálogo DIGEMID; y Series Fiscales. La opción «Configuración de Pago» (Administración) no aparece: solo la ve el operador de plataforma (TC-ADM-415).
 
 #### TC-ADM-083 — El cajero ve solo lo que su rol puede leer
 
@@ -1256,7 +1259,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 **Pasos:**
 1. Inicia sesión como `carlos.cajero`.
 2. Revisa el menú lateral.
-**Resultado esperado:** ve Dashboard, Empleados, Medicamentos, Aseguradoras, Lotes, Stock por Sucursal, Sesiones de Caja, Ventas, Pacientes, Profesionales de Salud, Recetas Médicas y Catálogo DIGEMID; no ve «Empresa», «Sucursales», «Roles & Permisos», «Cuentas de Usuario» ni «Series Fiscales»; el grupo SUNAT desaparece por quedarse sin opciones.
+**Resultado esperado:** ve Dashboard, Empleados, Medicamentos, Aseguradoras, Lotes, Stock por Sucursal, Sesiones de Caja, Ventas, Devoluciones, Pacientes, Profesionales de Salud, Recetas Médicas y Catálogo DIGEMID; no ve «Empresa», «Sucursales», «Roles & Permisos», «Cuentas de Usuario» ni «Series Fiscales»; el grupo SUNAT desaparece por quedarse sin opciones.
 
 #### TC-ADM-084 — Un rol sin permisos solo ve Dashboard
 
@@ -1369,7 +1372,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 |---|---|---|
 | Permisos | Alta | [HU-ADM-011][hu] «Pantalla de creación sin la acción Crear»; [HU-ADM-011][hu] «Carga masiva sin la acción Crear»; [CU-ADM-12][cu] precondiciones; [RN-EPL-001, RN-SUC-001][rn] |
 
-**Precondiciones:** rol «Consulta Demo» (solo `Leer` en Empresas, Sucursales, Empleados, Roles y Cuentas de Usuario y Series Fiscales) asignado a la cuenta `consulta.demo`. La historia marca la carga masiva «No verificado» porque el administrador tiene todos los permisos; con este rol sí se puede probar.
+**Precondiciones:** rol «Consulta Demo» (solo `Leer` en Sucursales, Empleados, Roles y Cuentas de Usuario y Series Fiscales) asignado a la cuenta `consulta.demo`. La historia marca la carga masiva «No verificado» porque el administrador tiene todos los permisos; con este rol sí se puede probar.
 **Datos:** direcciones de la tabla.
 **Pasos:**
 1. Inicia sesión como `consulta.demo`.
@@ -1520,7 +1523,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 1. Abre `/empresas` (menú Administración › «Empresa»).
 2. Mira la pantalla antes de buscar.
 3. Haz clic en «Buscar».
-**Resultado esperado:** antes de buscar ves la tarjeta «Búsqueda de Empresas» con «Ingresa los criterios de búsqueda» y los filtros «Nombre de la Empresa», «Estado», «Vencimiento desde» y «Vencimiento hasta», sin tabla; tras buscar ves «Resultados (1)» con una fila de columnas «Empresa», «RUC», «Estado» y «Vigente»: «Botica Manual Demo S.A.C.», «20538291746», «Trial Activo» y una marca verde en «Vigente». La empresa B no aparece (las demás se comportan como inexistentes).
+**Resultado esperado:** antes de buscar ves la tarjeta «Búsqueda de Empresas» con «Ingresa los criterios de búsqueda» y los filtros «Nombre de la Empresa», «Estado», «Vencimiento desde» y «Vencimiento hasta», sin tabla; tras buscar ves «Resultados (1)» con una fila de columnas «Empresa», «RUC», «Estado», «Vencimiento» (dd/MM/yyyy) y «Vigente»: «Botica Manual Demo S.A.C.», «20538291746», «Trial Activo», la fecha de vencimiento (30 días después del registro) y una marca verde en «Vigente». La empresa B no aparece (las demás se comportan como inexistentes).
 
 #### TC-ADM-103 — Filtrar empresas por nombre sin distinguir mayúsculas
 
@@ -1595,7 +1598,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 |---|---|---|
 | Negativo | Baja | [HU-ADM-013][hu] «Exportación demasiado grande»; [HU-ADM-013][hu] «Error al buscar»; [CU-ADM-09][cu] excepciones pasos 3 y 8; [RN-IMP-017][rn] |
 
-**Precondiciones:** No verificado en la aplicación para las más de 10 000 filas: la búsqueda de empresas solo devuelve la empresa propia, por lo que no se puede superar el límite desde este módulo (el límite se prueba con sucursales o empleados, ver el caso de HU-ADM-047).
+**Precondiciones:** No verificado en la aplicación para las más de 10 000 filas: la búsqueda de empresas de un usuario de empresa solo devuelve la empresa propia, por lo que no se puede superar el límite desde este módulo (el operador de plataforma ve todas las empresas, HU-ADM-056) (el límite se prueba con sucursales o empleados, ver el caso de HU-ADM-047).
 **Datos:** bloqueo de las llamadas `GET /empresas` y `POST /empresas/exportar` en las herramientas del navegador.
 **Pasos:**
 1. Con el bloqueo activo, haz clic en «Buscar».
@@ -1690,7 +1693,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 |---|---|---|
 | Permisos | Alta | [HU-ADM-015][hu] «Sin el permiso no hay botón»; [CU-ADM-10][cu] A2; [RN-EMP-001][rn] |
 
-**Precondiciones:** cuenta `consulta.demo` (solo `Empresas › Leer`).
+**Precondiciones:** una cuenta cuyo rol tiene `Empresas › Leer` y no `Actualizar`. Como `Empresas › Leer` ya no aparece en la matriz de permisos de «Roles», ese permiso se carga por base de datos en el rol (No verificado en la aplicación); `consulta.demo` sin esa carga no puede abrir `/empresas`.
 **Datos:** ninguno.
 **Pasos:**
 1. Abre el detalle de la empresa.
@@ -1806,7 +1809,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 |---|---|---|
 | Positivo | Alta | [HU-ADM-016][hu] «Cuándo una empresa está vigente»; [HU-ADM-016][hu] «Cuándo no está vigente»; [HU-ADM-016][hu] «En estado Activo la fecha de vencimiento no se evalúa»; [CU-ADM-02][cu] excepción paso 6; [RN-EMP-014, RN-EMP-015][rn] |
 
-**Precondiciones:** empresas de prueba que se llevan al estado de cada fila por base de datos (ningún endpoint ni pantalla cambia el estado: Pendiente de producto). No verificado en la aplicación.
+**Precondiciones:** empresas de prueba que se llevan al estado de cada fila con el operador de plataforma (activar, extender la prueba, suspender o cancelar, TC-ADM-435 a TC-ADM-440) o por base de datos. No verificado en la aplicación.
 **Datos:** una fila por vez; cuenta de la empresa con contraseña correcta.
 **Pasos:**
 1. Para cada fila, deja la empresa en el estado y vencimiento indicados.
@@ -1816,9 +1819,9 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 | Estado | Vencimiento | ¿Vigente? | Resultado al iniciar sesión |
 |---|---|---|---|
 | Trial Activo | posterior a la hora actual | Sí | entra |
-| Trial Activo | ya pasó (prueba vencida) | No | «La suscripción de tu empresa no está activa o ha vencido. Comunícate con soporte para reactivarla.» |
+| Trial Activo | ya pasó (prueba vencida) | No | «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» |
 | Activo | posterior | Sí | entra |
-| Activo | ya pasó | Sí (la fecha no se evalúa) | entra |
+| Activo | ya pasó (suscripción vencida) | No (desde `6f6b837` el estado Activo también vence en su fecha) | el mismo aviso de suscripción |
 | Suspendido | cualquiera | No | el mismo aviso de suscripción |
 | Cancelado | cualquiera | No | el mismo aviso de suscripción |
 | Empresa eliminada | cualquiera | No | «Credenciales inválidas. Verifica tu usuario y contraseña.» (la cuenta ya no se encuentra) |
@@ -3283,7 +3286,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Pasos:**
 1. Envía la petición y cuenta módulos y pares módulo-acción.
 2. Compara con los paneles de la matriz.
-**Resultado esperado:** 105 pares en 27 módulos, agrupados por módulo y ordenados alfabéticamente; la matriz muestra exactamente esos pares.
+**Resultado esperado:** 104 pares en 27 módulos, agrupados por módulo y ordenados alfabéticamente; la matriz muestra exactamente esos pares. El módulo de empresa solo ofrece «Actualizar»: `Empresas › Leer` se declara como `[HasPermissionOrPlataforma]` y el catálogo solo recorre `[HasPermission]` (RN-ROL-016).
 
 #### TC-ADM-236 — Marcar casillas no guarda nada
 
@@ -4468,7 +4471,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 | Negativo | Baja | [HU-ADM-040][hu] «Formato de fecha inválido en la exportación»; [CU-ADM-17][cu] excepción paso 7; [RN-IMP-011][rn] |
 
 **Precondiciones:** Solo API; `<token>` de Ana.
-**Datos:** `POST /series-fiscales/exportar` con `dateFormat` `yyyy-MM-dd` (el cuerpo completo sale de una exportación hecha desde el SPA); repite con `dd/MM/yyyy HH:mm`.
+**Datos:** `POST /SeriesFiscales/exportar` con `dateFormat` `yyyy-MM-dd` (el cuerpo completo sale de una exportación hecha desde el SPA); repite con `dd/MM/yyyy HH:mm`.
 **Pasos:**
 1. Envía cada petición.
 **Resultado esperado:** con `yyyy-MM-dd` la API responde 400 sin campo `code`; la pantalla, si lo recibiera, muestra su genérico «Error al exportar las series fiscales»; con `dd/MM/yyyy HH:mm` (formato admitido, junto con `dd/MM/yyyy`, `MM/dd/yyyy` y `MM/dd/yyyy HH:mm`) responde 200. No verificado: el nombre exacto de la propiedad del formato de fecha en el cuerpo.
@@ -4482,8 +4485,8 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Precondiciones:** bloqueos de red; las más de 10 000 filas son No verificado (ver HU-ADM-047).
 **Datos:** ninguno.
 **Pasos:**
-1. Bloquea `GET /series-fiscales` y haz clic en «Buscar».
-2. Con búsqueda hecha, bloquea `POST /series-fiscales/exportar` y haz clic en «Exportar».
+1. Bloquea `GET /SeriesFiscales` y haz clic en «Buscar».
+2. Con búsqueda hecha, bloquea `POST /SeriesFiscales/exportar` y haz clic en «Exportar».
 3. Con una cuenta sin `Sucursales › Leer` abre la pantalla.
 **Resultado esperado:** «Error al buscar series fiscales» y «Error al exportar las series fiscales»; sin `Sucursales › Leer` el filtro de sucursal queda sin opciones y se ve «No se pudieron cargar las sucursales».
 
@@ -4634,7 +4637,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 | Negativo | Baja | [HU-ADM-041][hu] «Prefijo rechazado por el servidor»; [CU-ADM-18][cu] excepción paso 5; [RN-SER-004][rn] |
 
 **Precondiciones:** Solo API; `<token>` de Ana.
-**Datos:** `POST /series-fiscales` con `{ "sucursalId": "<id>", "tipoComprobante": "Boleta", "prefijoSerie": "F001", "correlativoActual": 0, "estadoSerie": "Activa" }`.
+**Datos:** `POST /SeriesFiscales` con `{ "sucursalId": "<id>", "tipoComprobante": "Boleta", "prefijoSerie": "F001", "correlativoActual": 0, "estadoSerie": "Activa" }`.
 **Pasos:**
 1. Envía la petición.
 **Resultado esperado:** 400 `CreateSerieFiscalCommand.PrefijoSerie`; el SPA mostraría «El prefijo debe tener 4 caracteres en mayúsculas y empezar con la letra que exige el tipo de comprobante.» No verificado: la forma exacta de los valores de `tipoComprobante` y `estadoSerie` en el cuerpo.
@@ -4662,7 +4665,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 **Precondiciones:** bloqueos de red.
 **Datos:** ninguno.
 **Pasos:**
-1. Bloquea `POST /series-fiscales` y guarda un formulario válido.
+1. Bloquea `POST /SeriesFiscales` y guarda un formulario válido.
 2. Bloquea `GET /sucursales` y abre `/series-fiscales/nueva`.
 **Resultado esperado:** «Error al guardar la serie fiscal»; con el selector sin datos ves «No se pudieron cargar las sucursales».
 
@@ -4736,7 +4739,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 | Negativo | Alta | [HU-ADM-042][hu] «La API protege la numeración ya emitida»; [CU-ADM-19][cu] excepción paso 5; [RN-SER-009, RN-SER-010][rn] |
 
 **Precondiciones:** Solo API; serie con comprobantes (ver TC-ADM-345).
-**Datos:** `PUT /series-fiscales/<id>` cambiando el prefijo, otra vez el correlativo, y otra solo el estado.
+**Datos:** `PUT /SeriesFiscales/<id>` cambiando el prefijo, otra vez el correlativo, y otra solo el estado.
 **Pasos:**
 1. Envía las tres peticiones.
 **Resultado esperado:** al cambiar sucursal, tipo, prefijo o correlativo responde 409 `SerieFiscal.ConComprobantes` y la pantalla muestra «La serie ya emitió comprobantes: solo puedes cambiar su estado.»; al cambiar solo el estado responde 204.
@@ -4800,7 +4803,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 |---|---|---|
 | Negativo | Baja | [HU-ADM-043][hu] «Otros errores»; [CU-ADM-20][cu] excepción paso 2 |
 
-**Precondiciones:** bloqueo de red de `DELETE /series-fiscales/<id>`.
+**Precondiciones:** bloqueo de red de `DELETE /SeriesFiscales/<id>`.
 **Datos:** ninguno.
 **Pasos:**
 1. Intenta eliminar una serie con el bloqueo activo.
@@ -4813,7 +4816,7 @@ La última fila es un comportamiento esperado derivado de la historia («la empr
 | Permisos | Alta | [HU-ADM-043][hu] «Serie inexistente»; [CU-ADM-20][cu] excepción paso 3; [RN-SER-001, RN-GEN-001][rn] |
 
 **Precondiciones:** Solo API; `<token>` de Ana; identificador de una serie de la empresa B.
-**Datos:** `DELETE /series-fiscales/<id de B>`.
+**Datos:** `DELETE /SeriesFiscales/<id de B>`.
 **Pasos:**
 1. Envía la petición.
 2. Comprueba la serie desde la empresa B.
@@ -4888,7 +4891,7 @@ Las historias de esta sección no tienen caso de uso propio: sus reglas se citan
 | Permisos | Alta | [HU-ADM-045][hu] «Un registro de otra empresa se comporta como inexistente»; Transversal; [RN-GEN-001, RN-GEN-002, RN-EMP-017][rn] |
 
 **Precondiciones:** Solo API; `<token>` de Ana (empresa A) y, de la empresa B, los identificadores de: empresa, sucursal, empleado, rol, cuenta y serie fiscal.
-**Datos:** las siete llamadas de la tabla.
+**Datos:** las seis llamadas de la tabla.
 **Pasos:**
 1. Envía cada petición con el token de Ana.
 **Resultado esperado:** la API responde como si el registro no existiera:
@@ -4900,7 +4903,7 @@ Las historias de esta sección no tienen caso de uso propio: sus reglas se citan
 | `GET /empleados/<id de B>` | 404 `Empleado.NotFound` |
 | `GET /roles/<id de B>` | 404 `Rol.NotFound` |
 | `GET /cuentas/<id de B>` | 404 `Cuenta.NotFound` |
-| `GET /series-fiscales/<id de B>` | 404 `SerieFiscal.NotFound` |
+| `GET /SeriesFiscales/<id de B>` | 404 `SerieFiscal.NotFound` |
 
 #### TC-ADM-358 — Las listas solo traen filas de mi empresa
 
@@ -5254,7 +5257,7 @@ Las historias de esta sección no tienen caso de uso propio: sus reglas se citan
 **Precondiciones:** Solo API; exportación de series fiscales.
 **Datos:** `dd/MM/yyyy`, `MM/dd/yyyy`, `dd/MM/yyyy HH:mm`, `MM/dd/yyyy HH:mm`, y `yyyy/MM/dd`.
 **Pasos:**
-1. Envía `POST /series-fiscales/exportar` con cada valor.
+1. Envía `POST /SeriesFiscales/exportar` con cada valor.
 **Resultado esperado:** los cuatro primeros responden 200; `yyyy/MM/dd` responde 400 sin `code` (mensaje del modelo `Export.DateFormat.Invalid`). Hallazgo (Brecha conocida de HU-ADM-047): el usuario nunca ve el mensaje del backend, solo el genérico de la pantalla.
 
 ### HU-ADM-048 — Dejar rastro de las acciones de seguridad
@@ -5491,11 +5494,11 @@ Las historias de esta sección no tienen caso de uso propio: sus reglas se citan
 | Permisos | Alta | [HU-ADM-049][hu] «Denegación por defecto»; [HU-ADM-004][hu] «Un token no válido recibe 401 sin código»; Transversal; [RN-GEN-015][rn] |
 
 **Precondiciones:** Solo API; sin token.
-**Datos:** una llamada sin token a un endpoint de cada controlador de esta parte, y a los siete anónimos.
+**Datos:** una llamada sin token a un endpoint de cada controlador de esta parte, y a los ocho anónimos.
 **Pasos:**
-1. Envía `GET /sucursales`, `GET /empleados`, `GET /roles`, `GET /cuentas`, `GET /series-fiscales`, `GET /empresas`, `GET /auth/me` y `POST /auditoria/anonimizar` sin token.
-2. Envía los anónimos sin token (con cuerpos inválidos para no crear datos): `POST /auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password`, `POST /empresas/registrar`, `GET /health`.
-**Resultado esperado:** los del paso 1 responden 401; los del paso 2 no responden 401 (responden 400, 403 `Auth.Csrf`, 200 o 204 según el caso). Solo esos siete son anónimos.
+1. Envía `GET /sucursales`, `GET /empleados`, `GET /roles`, `GET /cuentas`, `GET /SeriesFiscales`, `GET /empresas`, `GET /auth/me`, `GET /plataforma/dashboard` y `POST /auditoria/anonimizar` sin token.
+2. Envía los anónimos sin token (con cuerpos inválidos para no crear datos): `POST /auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password`, `POST /empresas/registrar`, `GET /plataforma/pago`, `GET /health`.
+**Resultado esperado:** los del paso 1 responden 401; los del paso 2 no responden 401 (responden 400, 403 `Auth.Csrf`, 200 o 204 según el caso). Solo esos ocho son anónimos.
 
 #### TC-ADM-403 — Validación previa de cada request
 
@@ -5634,6 +5637,597 @@ Las historias de esta sección no tienen caso de uso propio: sus reglas se citan
 2. Lee el aviso de la pantalla.
 **Resultado esperado:** la API devuelve el campo `detail` con texto en inglés, pero ninguna pantalla lo muestra: usa su mapa de códigos o su mensaje genérico. Hallazgo (Brecha conocida de HU-ADM-050): no existe un traductor global de códigos; las claves `errors.forbidden`, `errors.unauthorized`, `errors.notFound`, `errors.serverError` y `errors.networkError` existen y no se usan.
 
+## 4.10 Suscripciones de plataforma y operador
+
+Casos nuevos de las historias HU-ADM-051 a HU-ADM-057 y los casos de uso CU-ADM-38 a CU-ADM-43 (`sofia-apis` `6f6b837` y `sofia-web-spa` `558ad35`). Necesitan la cuenta de operador de plataforma de la sección 2.2 («Operador de plataforma»), cuya marca se pone a mano en la base de datos; **No verificado en la aplicación:** ningún recorrido del manual incluyó una cuenta de operador, así que los resultados esperados salen de las historias, de los casos de uso y del código.
+
+### HU-ADM-051 — Reconocer al operador de plataforma
+
+#### TC-ADM-414 — La marca de operador solo se cambia en la base de datos
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-051][hu] «La marca de operador solo se cambia en la base de datos»; sin caso de uso propio (Transversal); [RN-CTA-021, RN-GEN-042][rn] |
+
+**Precondiciones:** sesión de `ana.manual` (rol `Admin`, no operador).
+**Datos:** una cuenta nueva `prueba.marca` creada desde «Cuentas de Usuario».
+**Pasos:**
+1. Abre la pantalla de alta y de edición de una cuenta y busca algún campo o casilla que marque a la cuenta como operador de plataforma.
+2. Crea la cuenta `prueba.marca`.
+3. Con la base de datos, consulta la columna `Es_Admin_Plataforma` de esa cuenta.
+**Resultado esperado:** ninguna pantalla ni endpoint de cuentas ofrece la marca; la cuenta nueva queda con `Es_Admin_Plataforma` en 0; un administrador de empresa con el rol `Admin` no puede convertir una cuenta en operador.
+
+#### TC-ADM-415 — El token del operador lleva la marca y el rol Admin no basta
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-051][hu] «El token del operador lleva la marca»; [HU-ADM-051][hu] «El rol Admin no basta»; sin caso de uso propio (Transversal); [RN-GEN-042, RN-GEN-021, RN-AUT-017][rn] |
+
+**Precondiciones:** la cuenta `operador.demo` con la marca de operador (sección 2.2); sesión de `ana.manual` (rol `Admin`, sin marca).
+**Datos:** `<token del operador>` y `<token de Ana>`; `GET /plataforma/dashboard?inicioMes=<primer día del mes en ISO>`; en el SPA, la dirección `/configuracion-pago`.
+**Pasos:**
+1. Inicia sesión como `operador.demo`, decodifica su token de acceso y mira el menú lateral.
+2. Con `<token de Ana>` llama a `GET /plataforma/dashboard` y escribe `/configuracion-pago` en la barra con la sesión de Ana.
+3. Repite la llamada con `<token del operador>`.
+**Resultado esperado:** el token del operador trae el claim `plat_admin` con valor `true` y el menú muestra «Configuración de Pago»; con el token de Ana la API responde 403 y el SPA muestra «No tienes permisos para acceder a esta pantalla.» y vuelve al Inicio; con el token del operador la API responde 200.
+
+#### TC-ADM-416 — Quitar la marca corta el privilegio sin esperar al token
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-051][hu] «Quitar la marca corta el privilegio sin esperar al vencimiento del token»; sin caso de uso propio (Transversal); [RN-GEN-042][rn] |
+
+**Precondiciones:** sesión abierta de `operador.demo`; No verificado en la aplicación: requiere cambiar la base de datos con la sesión abierta.
+**Datos:** `UPDATE` de `Seguridad_Cuentas` dejando `Es_Admin_Plataforma` en 0 para esa cuenta.
+**Pasos:**
+1. Con la sesión abierta, quita la marca en la base de datos.
+2. Con el mismo token llama a `GET /plataforma/dashboard`.
+**Resultado esperado:** en la siguiente petición autenticada el claim `plat_admin` se retira y la API responde 403, sin esperar a que venza el token.
+
+#### TC-ADM-417 — El operador lee las empresas sin tener el permiso en un rol
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Media | [HU-ADM-051][hu] «El operador lee las empresas sin tener el permiso en un rol»; [CU-ADM-43][cu] precondiciones; [RN-EMP-022, RN-GEN-042, RN-ROL-016][rn] |
+
+**Precondiciones:** la cuenta `operador.demo` tiene un rol sin `Empresas › Leer`; sesión de `ana.manual` para comparar la matriz de permisos.
+**Datos:** `GET /empresas` con `<token del operador>`; `PUT /empresas/<id>` con el mismo token y `{ "nombre": "X", "ruc": "20538291746" }`.
+**Pasos:**
+1. Como operador, abre `/empresas` desde el menú Administración › «Empresa».
+2. Llama a `GET /empresas` y a `PUT /empresas/<id>` con el token del operador.
+3. Como Ana, abre la pestaña «Permisos» de un rol y busca el módulo de empresa.
+**Resultado esperado:** el operador ve la opción «Empresa» y la pantalla abre; `GET /empresas` responde 200 y `PUT /empresas/<id>` responde 403 (la exención solo cubre la lectura); en la matriz de permisos el módulo de empresa solo ofrece «Actualizar»: `Empresas › Leer` ya no figura en el catálogo de «Roles».
+
+#### TC-ADM-418 — El operador no se bloquea por la vigencia de su propia empresa
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-051][hu] «El operador no se bloquea por la vigencia de su propia empresa»; [CU-ADM-02][cu] excepción paso 6; [RN-AUT-009, RN-AUT-034, RN-GEN-018][rn] |
+
+**Precondiciones:** la empresa de `operador.demo` está suspendida (se prepara por base de datos); Mailpit disponible; la cuenta con correo. No verificado en la aplicación.
+**Datos:** usuario y contraseña correctos de `operador.demo`.
+**Pasos:**
+1. Intenta iniciar sesión.
+2. Con la sesión abierta, espera a que venza el token de acceso y navega para que se renueve la sesión.
+3. Cierra sesión y pide el enlace de recuperación en `/auth/forgot-password`.
+**Resultado esperado:** el operador entra, la sesión se renueva y el correo de recuperación se envía; no se rechaza por la vigencia de su empresa (a diferencia de cualquier otra cuenta de esa empresa, TC-ADM-020).
+
+### HU-ADM-052 — Publicar los datos de pago de la plataforma
+
+#### TC-ADM-419 — Abrir la configuración de pago por primera vez y guardar solo el WhatsApp
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-052][hu] «Abrir la pantalla por primera vez»; [HU-ADM-052][hu] «Guardar solo el WhatsApp»; [CU-ADM-38][cu] flujo básico; [RN-EMP-023, RN-EMP-025, RN-EMP-027, RN-GEN-042][rn] |
+
+**Precondiciones:** sesión de `operador.demo`; nunca se guardaron datos de pago (instalación nueva).
+**Datos:** WhatsApp `51987654321`.
+**Pasos:**
+1. Abre `/configuracion-pago` desde Administración › «Configuración de Pago».
+2. Haz clic en «Editar», escribe el WhatsApp en «WhatsApp para recibir capturas» y haz clic en «Guardar».
+**Resultado esperado:** la pantalla muestra «Configuración de Pago» con «Estos datos se muestran a las empresas que deben pagar su suscripción.», los campos «WhatsApp para recibir capturas», «Número de Yape (opcional)» e «Indicaciones de pago (opcional)» vacíos y deshabilitados, y el panel «Aún no has subido un código QR.»; tras guardar aparece «Configuración de pago guardada.» y la pantalla vuelve al modo ver con los datos recargados.
+
+#### TC-ADM-420 — Validación del WhatsApp, del Yape y de las indicaciones
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-ADM-052][hu] «El WhatsApp es obligatorio y de 8 a 15 dígitos»; [HU-ADM-052][hu] «El número de Yape tiene exactamente 9 dígitos»; [HU-ADM-052][hu] «Las indicaciones admiten hasta 500 caracteres»; [CU-ADM-38][cu] excepción paso 3; [RN-EMP-023][rn] |
+
+**Precondiciones:** `operador.demo` en `/configuracion-pago`, en modo editar.
+**Datos:** la tabla.
+**Pasos:**
+1. Para cada fila, escribe el valor, haz clic en «Guardar» y observa el campo.
+
+| Campo | Valor | Resultado |
+|---|---|---|
+| «WhatsApp para recibir capturas» | vacío | «Este campo es obligatorio» y no se envía nada |
+| «WhatsApp para recibir capturas» | `5198-765` | «Ingresa de 8 a 15 dígitos, con código de país y sin espacios ni signos» |
+| «Número de Yape (opcional)» | `98765` | «Ingresa exactamente 9 dígitos» |
+| «Número de Yape (opcional)» | 9 dígitos o vacío | el formulario es válido |
+| «Indicaciones de pago (opcional)» | 501 caracteres | el campo se detiene en 500; un texto en blanco se guarda como vacío |
+
+**Resultado esperado:** según la tabla; el WhatsApp acepta de 8 a 15 dígitos y el Yape exactamente 9.
+
+#### TC-ADM-421 — Subir el código QR y conservarlo al guardar sin imagen
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-052][hu] «Subir el código QR»; [HU-ADM-052][hu] «Guardar sin elegir imagen conserva el QR publicado»; [CU-ADM-38][cu] flujo básico (pasos 2 y 6); [RN-EMP-024][rn] |
+
+**Precondiciones:** `operador.demo` en `/configuracion-pago`, en modo editar; un PNG de 200 KB.
+**Datos:** el PNG; luego solo un número de Yape de 9 dígitos.
+**Pasos:**
+1. Haz clic en «Elegir imagen», elige el PNG y mira el panel.
+2. Haz clic en «Guardar».
+3. Vuelve a «Editar», cambia solo «Número de Yape (opcional)» y haz clic en «Guardar».
+**Resultado esperado:** en el paso 1 ves la imagen con «Imagen nueva, se publicará al guardar»; al guardar el QR queda publicado y el botón pasa a decir «Cambiar imagen»; en el paso 3 el QR publicado no cambia.
+
+#### TC-ADM-422 — Formato o tamaño de imagen no admitidos
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-ADM-052][hu] «Formato o tamaño de imagen no admitidos»; [HU-ADM-052][hu] «El servidor decide el formato por el contenido del archivo»; [CU-ADM-38][cu] A2 y excepciones pasos 4 a 6; [RN-EMP-024][rn] |
+
+**Precondiciones:** `operador.demo` en modo editar; un GIF, una imagen de más de 1 MB y un archivo de texto renombrado `.png`; `<token del operador>`.
+**Datos:** los tres archivos; `PUT /plataforma/pago` (`multipart/form-data`) con `whatsappNumero` `51987654321` y `qr` igual a cada archivo.
+**Pasos:**
+1. En el SPA, elige el GIF y luego la imagen pesada.
+2. Con el cliente HTTP, envía el archivo de texto renombrado y después la imagen pesada.
+**Resultado esperado:** el SPA muestra «La imagen debe ser PNG o JPG.» o «La imagen no puede pesar más de 1 MB.» bajo el panel y no cambia la imagen; la API responde 400 `ConfiguracionPago.Qr.Formato` para el archivo cuyo contenido no es PNG ni JPEG (el formato se decide por la firma, no por la extensión) y 400 `ConfiguracionPago.Qr.Tamano` para el de más de 1 MB.
+
+#### TC-ADM-423 — Cancelar descarta los cambios y hay un único conjunto de datos de pago
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-052][hu] «Cancelar descarta los cambios»; [HU-ADM-052][hu] «Hay un único conjunto de datos de pago»; [CU-ADM-38][cu] A1 y flujo básico (pasos 6 y 7); [RN-EMP-023, RN-GEN-013][rn] |
+
+**Precondiciones:** ya hay datos de pago publicados.
+**Datos:** otro WhatsApp y otra imagen; después, un guardado correcto.
+**Pasos:**
+1. Haz clic en «Editar», escribe otro WhatsApp, elige otra imagen y haz clic en «Cancelar».
+2. Guarda de nuevo unos datos válidos.
+3. Consulta en la base de datos `Plataforma_Configuracion_Pago` y el evento de auditoría.
+**Resultado esperado:** al cancelar vuelven los datos publicados, se descarta la imagen elegida y la pantalla vuelve al modo ver; al guardar se actualiza el registro existente (sigue habiendo una sola fila) y se registra el evento `PAGO_CONFIG_GUARDAR`.
+
+#### TC-ADM-424 — Solo el operador entra a la configuración de pago
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-052][hu] «Solo el operador entra»; [CU-ADM-38][cu] precondiciones; [RN-EMP-027, RN-GEN-042][rn] |
+
+**Precondiciones:** sesión de `ana.manual` (rol `Admin`, sin marca); `<token de Ana>`.
+**Datos:** `PUT /plataforma/pago` con `whatsappNumero` `51987654321`.
+**Pasos:**
+1. Mira el menú y escribe `/configuracion-pago` en la barra de direcciones.
+2. Llama a `PUT /plataforma/pago` con `<token de Ana>`.
+**Resultado esperado:** la opción «Configuración de Pago» no aparece en el menú; el SPA muestra «No tienes permisos para acceder a esta pantalla.» y vuelve al Inicio; la API responde 403.
+
+#### TC-ADM-425 — Error al guardar la configuración de pago
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Baja | [HU-ADM-052][hu] «Error al guardar»; [CU-ADM-38][cu] excepción paso 3 |
+
+**Precondiciones:** `operador.demo` en modo editar con datos válidos; bloqueo de la llamada `PUT /plataforma/pago` en las herramientas del navegador.
+**Datos:** ninguno.
+**Pasos:**
+1. Haz clic en «Guardar» con el bloqueo activo.
+**Resultado esperado:** aviso «No se pudo guardar la configuración de pago.» y la pantalla se queda en modo editar.
+
+### HU-ADM-053 — Ver cómo pagar al iniciar sesión con la suscripción vencida
+
+#### TC-ADM-426 — Empresa no vigente: mensaje y bloque «Paga tu suscripción con Yape»
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Alta | [HU-ADM-053][hu] «Mi empresa no está vigente y el operador publicó los datos»; [HU-ADM-053][hu] «Si no puedo escanear el código»; [HU-ADM-053][hu] «El mensaje de WhatsApp me identifica»; [CU-ADM-39][cu] flujo básico; [RN-AUT-009, RN-AUT-040, RN-EMP-025][rn] |
+
+**Precondiciones:** el operador publicó WhatsApp, número de Yape, indicaciones y QR (TC-ADM-419 y TC-ADM-421); una empresa de prueba suspendida, cancelada o con la prueba vencida; sin sesión.
+**Datos:** usuario y contraseña correctos de esa empresa (`vencida.demo`).
+**Pasos:**
+1. En `/auth/login` escribe el usuario y la contraseña y haz clic en «Ingresar».
+2. Mira el mensaje, el bloque de debajo y el campo de usuario.
+3. Haz clic en «Enviar captura por WhatsApp».
+**Resultado esperado:** aviso «La suscripción de tu empresa no está activa o ha vencido. Realiza el pago para reactivarla.» (API 403 `Auth.EmpresaNoVigente`); debajo aparece «Paga tu suscripción con Yape» con el código QR, «Si no puedes escanear el código, yapea al número» seguido del número agrupado de tres en tres, las indicaciones del operador y el botón «Enviar captura por WhatsApp»; el usuario escrito se conserva; el botón abre en otra pestaña `https://wa.me/<número del operador>` con el texto «Hola, adjunto la captura del pago de mi suscripción de SOFIA. Usuario: <usuario>». Sin QR publicado, el texto dice «Yapea al número».
+
+#### TC-ADM-427 — Sin datos de pago publicados o con la lectura caída
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-ADM-053][hu] «Todavía no hay datos de pago»; [HU-ADM-053][hu] «No se pudieron cargar los datos de pago»; [CU-ADM-39][cu] A1 y A2; [RN-AUT-040, RN-GEN-043][rn] |
+
+**Precondiciones:** empresa de prueba no vigente (`vencida.demo`); caso A: el operador nunca guardó datos de pago; caso B: bloqueo de la llamada `GET /plataforma/pago` en las herramientas del navegador.
+**Datos:** credenciales correctas de la empresa no vigente.
+**Pasos:**
+1. En el caso A, inicia sesión y mira el bloque.
+2. En el caso B, repite con el bloqueo activo, haz clic en «Reintentar» y quita el bloqueo.
+**Resultado esperado:** caso A: «Todavía no hay datos de pago publicados. Comunícate con soporte para reactivar tu suscripción.»; caso B: «No pudimos cargar los datos de pago.» con el botón «Reintentar», que vuelve a pedir los datos.
+
+#### TC-ADM-428 — Otro rechazo no muestra el bloque y el bloque desaparece al reintentar
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-ADM-053][hu] «Con cualquier otro error no se muestra el bloque de pago»; [HU-ADM-053][hu] «El bloque desaparece al reintentar»; [CU-ADM-39][cu] A3; [RN-AUT-040][rn] |
+
+**Precondiciones:** empresa no vigente con datos de pago publicados.
+**Datos:** una contraseña incorrecta; luego la correcta.
+**Pasos:**
+1. Con la contraseña incorrecta haz clic en «Ingresar».
+2. Con la contraseña correcta haz clic en «Ingresar» y vuelve a hacer clic en «Ingresar».
+**Resultado esperado:** con la contraseña incorrecta ves «Credenciales inválidas. Verifica tu usuario y contraseña.» y ningún bloque de pago; con la correcta aparece el bloque, y al volver a enviar el formulario se oculta hasta la siguiente respuesta.
+
+#### TC-ADM-429 — La lectura de los datos de pago es pública y tiene límite
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-053][hu] «La API de datos de pago es pública»; [CU-ADM-39][cu] A2; [RN-EMP-025, RN-GEN-043][rn] |
+
+**Precondiciones:** Solo API; sin token. No verificado en la aplicación: el 429 no se provocó para no agotar el límite de la IP.
+**Datos:** `GET /plataforma/pago` sin `Authorization`.
+**Pasos:**
+1. Envía la petición una vez.
+2. Envíala 31 veces en un minuto desde la misma IP.
+**Resultado esperado:** responde 200 con `whatsappNumero`, `yapeNumero`, `instrucciones` y `qrDataUrl` (nulos si el operador nunca guardó nada); la petición 31 del minuto responde 429 sin campo `code` (límite `public-info` de 30 por minuto por IP, sin cola).
+
+### HU-ADM-054 — Recibir el aviso de vencimiento y ver cómo pagar
+
+#### TC-ADM-430 — Aviso de vencimiento a 7 días o menos
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-054][hu] «Mi prueba vence en 7 días o menos»; [HU-ADM-054][hu] «Mi suscripción vence en 7 días o menos»; [HU-ADM-054][hu] «Falta un día o menos»; [CU-ADM-40][cu] flujo básico (paso 2); [RN-EMP-026, RN-EMP-014][rn] |
+
+**Precondiciones:** sesión de `ana.manual` (tiene `Empresas › Leer`); el vencimiento de su empresa se ajusta con el operador (TC-ADM-437 y TC-ADM-435) o por base de datos.
+**Datos:** la tabla.
+**Pasos:**
+1. Para cada fila deja la empresa en ese estado y vencimiento y abre el Inicio.
+
+| Estado | Vence en | Aviso |
+|---|---|---|
+| Trial Activo | 5 días | «Tu periodo de prueba vence en 5 días (dd/MM/aaaa).» con el botón «Cómo pagar» |
+| Activo | 3 días | «Tu suscripción vence en 3 días (dd/MM/aaaa).» |
+| Trial Activo | menos de 24 horas | «Tu periodo de prueba vence en 1 día (dd/MM/aaaa).» |
+| Activo | menos de 24 horas | «Tu suscripción vence en 1 día (dd/MM/aaaa).» |
+
+**Resultado esperado:** según la tabla; el aviso nunca dice menos de 1 día.
+
+#### TC-ADM-431 — Cuándo no hay aviso
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-ADM-054][hu] «Faltan más de 7 días»; [HU-ADM-054][hu] «Sin permiso para leer la empresa no hay aviso»; [HU-ADM-054][hu] «Si la carga falla, no aparece el aviso»; [CU-ADM-40][cu] A1, A2 y A3; [RN-EMP-026][rn] |
+
+**Precondiciones:** sesión de `ana.manual` con la empresa vencida dentro de 20 días; una cuenta cuyo rol no tiene `Empresas › Leer` (por ejemplo `carlos.cajero`); bloqueo de `GET /empresas/<id>` para el último paso.
+**Datos:** ninguno.
+**Pasos:**
+1. Abre el Inicio con la sesión de Ana.
+2. Abre el Inicio con la sesión de `carlos.cajero` y mira la pestaña de red.
+3. Con Ana y el bloqueo de `GET /empresas/<id>` activo, recarga el Inicio.
+**Resultado esperado:** en los tres casos no se ve ningún aviso de vencimiento; para `carlos.cajero` el Inicio no pide la empresa; con la carga bloqueada el Inicio no muestra un error por ello.
+
+#### TC-ADM-432 — «Cómo pagar» abre el diálogo con el nombre de la empresa
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-054][hu] «Abrir cómo pagar»; [CU-ADM-40][cu] flujo básico (paso 3); [RN-EMP-025][rn] |
+
+**Precondiciones:** el aviso de TC-ADM-430 visible; el operador publicó datos de pago.
+**Datos:** ninguno.
+**Pasos:**
+1. Haz clic en «Cómo pagar».
+2. Haz clic en «Enviar captura por WhatsApp» y luego en «Cerrar».
+**Resultado esperado:** se abre un diálogo con el bloque «Paga tu suscripción con Yape» y el botón «Cerrar»; el mensaje de WhatsApp dice «Hola, adjunto la captura del pago de mi suscripción de SOFIA. Empresa: <nombre de la empresa>».
+
+#### TC-ADM-433 — Una empresa vencida no llega a ver el aviso
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-ADM-054][hu] «Una empresa ya vencida no llega a ver el aviso»; [CU-ADM-40][cu] precondiciones; [RN-EMP-014, RN-GEN-018][rn] |
+
+**Precondiciones:** sesión abierta de una cuenta de una empresa de prueba; el operador deja la empresa vencida (TC-ADM-440). No verificado en la aplicación.
+**Datos:** ninguno.
+**Pasos:**
+1. Con la sesión abierta, haz que la empresa venza y navega al Inicio pasado como máximo un minuto.
+**Resultado esperado:** la API rechaza las peticiones con 401 y el sistema lleva a «Iniciar sesión»; no se muestra el aviso.
+
+### HU-ADM-055 — Activar, extender, suspender o cancelar la suscripción de una empresa
+
+#### TC-ADM-434 — Los botones de suscripción según el estado de la empresa
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-055][hu] «Los botones según el estado de la empresa»; [CU-ADM-41][cu] precondiciones; [CU-ADM-42][cu] precondiciones; [RN-EMP-022, RN-EMP-021, RN-GEN-042][rn] |
+
+**Precondiciones:** sesión de `operador.demo`; empresas de prueba en estado «Trial Activo», «Activo», «Suspendido» y «Cancelado» distintas de la del operador.
+**Datos:** la tabla.
+**Pasos:**
+1. Abre el detalle de cada empresa desde `/empresas` y mira los botones de la cabecera de la tarjeta.
+
+| Estado de la empresa | Botones |
+|---|---|
+| Trial Activo | «Activar suscripción», «Extender prueba», «Suspender» y «Cancelar suscripción» |
+| Activo | «Activar suscripción», «Suspender» y «Cancelar suscripción» (sin «Extender prueba») |
+| Suspendido | «Activar suscripción» y «Cancelar suscripción» (sin «Suspender») |
+| Cancelado | «Activar suscripción» y «Suspender» (sin «Cancelar suscripción») |
+
+**Resultado esperado:** según la tabla; en ninguna de estas empresas aparece «Editar» (no son la del operador).
+
+#### TC-ADM-435 — Activar la suscripción hasta una fecha
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-055][hu] «Activar la suscripción hasta una fecha»; [CU-ADM-41][cu] flujo básico; [RN-EMP-019, RN-EMP-028, RN-EMP-014, RN-GEN-042][rn] |
+
+**Precondiciones:** sesión de `operador.demo`; la empresa de prueba `vencida.demo` en «Trial Activo» con la prueba vencida.
+**Datos:** fecha elegida: dentro de 3 meses.
+**Pasos:**
+1. En el detalle de la empresa haz clic en «Activar suscripción» y mira el diálogo.
+2. Elige el atajo «3 meses» y haz clic en «Confirmar».
+3. Mira el detalle y consulta el vencimiento en la base de datos.
+4. Inicia sesión con una cuenta de esa empresa.
+**Resultado esperado:** el diálogo dice «Elige hasta qué día queda activa la suscripción de <empresa>. Al llegar esa fecha el acceso se bloquea solo.» con el campo «Vigente hasta» y los atajos «1 mes», «3 meses», «6 meses» y «12 meses»; la fecha propuesta es un mes después de hoy (la empresa ya venció); tras confirmar ves «Suscripción activada.», el «Estado» pasa a «Activo» y el «Vencimiento» es el día elegido (a las 23:59:59 hora local); los usuarios de la empresa vuelven a iniciar sesión.
+
+#### TC-ADM-436 — El calendario del diálogo y la suma de meses
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Límite | Media | [HU-ADM-055][hu] «El calendario no admite fechas pasadas»; [HU-ADM-055][hu] «Sumar meses a un día 31»; [CU-ADM-41][cu] excepción paso 2; [RN-EMP-028][rn] |
+
+**Precondiciones:** `operador.demo` con el diálogo «Activar suscripción» abierto; una empresa cuyo vencimiento actual es el 31/01 (si se puede preparar).
+**Datos:** ninguno.
+**Pasos:**
+1. Abre el calendario e intenta elegir hoy o una fecha pasada.
+2. Borra la fecha y haz clic en «Confirmar».
+3. Con la fecha base 31/01 haz clic en «1 mes».
+**Resultado esperado:** el calendario no admite una fecha anterior a mañana; sin fecha ves «Este campo es obligatorio» y no se envía nada; con la base 31/01 la fecha propuesta es el último día de febrero.
+
+#### TC-ADM-437 — Extender la prueba
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-055][hu] «Extender la prueba»; [CU-ADM-41][cu] flujo básico; [RN-EMP-020, RN-EMP-028][rn] |
+
+**Precondiciones:** sesión de `operador.demo`; una empresa en «Trial Activo».
+**Datos:** una fecha de dentro de 15 días.
+**Pasos:**
+1. En el detalle haz clic en «Extender prueba», elige la fecha y haz clic en «Confirmar».
+2. Mira el detalle.
+**Resultado esperado:** aviso «Periodo de prueba extendido.»; el «Vencimiento» pasa a la fecha elegida y el «Estado» sigue en «Trial Activo» (la nueva fecha puede ser anterior a la que había, siempre que sea futura).
+
+#### TC-ADM-438 — No se puede extender la prueba de una empresa que ya no está en prueba
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Alta | [HU-ADM-055][hu] «Extender la prueba de una empresa que ya no está en prueba»; [CU-ADM-41][cu] excepción paso 6; [RN-EMP-020][rn] |
+
+**Precondiciones:** Solo API; `<token del operador>`; una empresa en estado «Activo».
+**Datos:** `PUT /empresas/<id>/suscripcion/extender-prueba` con `{ "fechaVencimiento": "<fecha futura en ISO>" }`.
+**Pasos:**
+1. Envía la petición.
+**Resultado esperado:** la API responde 409 `Empresa.Suscripcion.NoEstaEnPrueba`; el SPA (si la petición viniera de la pantalla) mostraría «Solo se puede extender la prueba de una empresa que sigue en periodo de prueba.»; la empresa no cambia.
+
+#### TC-ADM-439 — La fecha de vencimiento debe ser futura (API)
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Alta | [HU-ADM-055][hu] «La fecha debe ser futura»; [CU-ADM-41][cu] excepción paso 4; [RN-EMP-019, RN-EMP-020][rn] |
+
+**Precondiciones:** Solo API; `<token del operador>`.
+**Datos:** `PUT /empresas/<id>/suscripcion/activar` con `{ "fechaVencimiento": "<fecha de ayer en ISO>" }`; lo mismo en `…/extender-prueba` de una empresa en prueba.
+**Pasos:**
+1. Envía ambas peticiones.
+**Resultado esperado:** la API responde 400 (`ActivarSuscripcionEmpresaCommand.FechaVencimiento` y `ExtenderPruebaEmpresaCommand.FechaVencimiento`); el SPA mostraría «La fecha de vencimiento debe ser posterior a hoy.»; las empresas no cambian.
+
+#### TC-ADM-440 — Suspender y cancelar con confirmación
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-055][hu] «Suspender con confirmación»; [HU-ADM-055][hu] «Cancelar con confirmación»; [CU-ADM-42][cu] flujo básico; [RN-EMP-021, RN-GEN-018][rn] |
+
+**Precondiciones:** sesión de `operador.demo`; una empresa de prueba «Activo».
+**Datos:** ninguno.
+**Pasos:**
+1. En el detalle haz clic en «Suspender» y mira el diálogo; confirma.
+2. Con la empresa suspendida haz clic en «Cancelar suscripción» y confirma.
+3. Intenta iniciar sesión con una cuenta de esa empresa.
+**Resultado esperado:** el diálogo «Suspender empresa» dice «<empresa> perderá el acceso de inmediato. Puedes devolvérselo activando su suscripción.»; al confirmar ves «Empresa suspendida.» y el «Estado» pasa a «Suspendido»; al cancelar ves «Suscripción cancelada.» y el «Estado» pasa a «Cancelado»; la empresa no puede iniciar sesión (TC-ADM-020); no se borra ningún dato.
+
+#### TC-ADM-441 — No puedo bloquear mi propia empresa
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Alta | [HU-ADM-055][hu] «No puedo bloquear mi propia empresa»; [CU-ADM-42][cu] excepción paso 3; [RN-EMP-021][rn] |
+
+**Precondiciones:** sesión de `operador.demo`; `<token del operador>`.
+**Datos:** `PUT /empresas/<id de la empresa del operador>/suscripcion/suspender` y `…/cancelar`.
+**Pasos:**
+1. Abre el detalle de la empresa del operador y mira los botones.
+2. Llama a los dos endpoints.
+**Resultado esperado:** no ves «Suspender» ni «Cancelar suscripción» (sí «Activar suscripción» y, si está en prueba, «Extender prueba»); la API responde 409 `Empresa.Suscripcion.PropiaEmpresa` y el SPA dice «No puedes suspender ni cancelar tu propia empresa.».
+
+#### TC-ADM-442 — Reactivar una empresa bloqueada y cuándo llega el bloqueo
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-055][hu] «Reactivar una empresa suspendida o cancelada»; [HU-ADM-055][hu] «El bloqueo llega a las sesiones abiertas en un minuto como máximo»; [CU-ADM-41][cu] flujo básico (paso 6); [CU-ADM-42][cu] flujo básico (paso 7); [RN-EMP-019, RN-EMP-021, RN-GEN-018][rn] |
+
+**Precondiciones:** una empresa de prueba con un usuario con la sesión abierta; sesión de `operador.demo`. No verificado en la aplicación: el corte de un minuto depende de la caché de vigencia.
+**Datos:** una fecha futura.
+**Pasos:**
+1. Suspende la empresa con el operador y, con la sesión del usuario abierta, espera hasta un minuto y navega.
+2. Intenta iniciar sesión y renovar la sesión con el usuario.
+3. Activa la suscripción de la empresa con una fecha futura y vuelve a iniciar sesión.
+**Resultado esperado:** al suspender, el usuario pierde el acceso al iniciar sesión y al renovar, y en las peticiones con un token vivo en un minuto como máximo (401 sin `code`); al activar con una fecha futura la empresa vuelve a estar vigente y sus usuarios entran.
+
+#### TC-ADM-443 — La empresa no existe
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-ADM-055][hu] «La empresa no existe»; [CU-ADM-41][cu] excepción paso 5; [CU-ADM-42][cu] excepción paso 4; [RN-EMP-019][rn] |
+
+**Precondiciones:** Solo API; `<token del operador>`.
+**Datos:** `PUT /empresas/00000000-0000-0000-0000-000000000001/suscripcion/suspender` (identificador inexistente).
+**Pasos:**
+1. Envía la petición.
+**Resultado esperado:** la API responde 404 `Empresa.NotFound`.
+
+#### TC-ADM-444 — Un administrador de empresa no puede cambiar suscripciones
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-055][hu] «Un administrador de empresa no puede»; [CU-ADM-41][cu] excepción paso 4; [CU-ADM-42][cu] excepción paso 3; [RN-EMP-019, RN-EMP-021, RN-GEN-042][rn] |
+
+**Precondiciones:** sesión de `ana.manual` (rol `Admin`, no operador); `<token de Ana>`.
+**Datos:** `PUT /empresas/<id de A>/suscripcion/activar` con una fecha futura, y `…/extender-prueba`, `…/suspender`, `…/cancelar`.
+**Pasos:**
+1. Abre el detalle de su propia empresa y mira los botones.
+2. Llama a los cuatro endpoints con el token de Ana.
+**Resultado esperado:** no ve «Activar suscripción», «Extender prueba», «Suspender» ni «Cancelar suscripción»; los cuatro endpoints responden 403 y la empresa no cambia.
+
+#### TC-ADM-445 — Los cambios de suscripción quedan en la auditoría
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-055][hu] «Quedan registradas en la auditoría»; [CU-ADM-41][cu] flujo básico (paso 7); [CU-ADM-42][cu] flujo básico (paso 5); [RN-GEN-013][rn] |
+
+**Precondiciones:** acceso de solo lectura a `Auditoria_Eventos_Seguridad`; TC-ADM-435, 437 y 440 ejecutados.
+**Datos:** ninguno.
+**Pasos:**
+1. Consulta los eventos de auditoría de esos cambios.
+**Resultado esperado:** existen los eventos `EMPRESA_ACTIVAR` (con «Vence: aaaa-mm-dd»), `EMPRESA_EXT_PRUEBA`, `EMPRESA_SUSPENDER` y `EMPRESA_CANCELAR`.
+
+#### TC-ADM-446 — Error al cambiar la suscripción
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Baja | [HU-ADM-055][hu] «Error al cambiar la suscripción»; [CU-ADM-41][cu] excepción paso 3 |
+
+**Precondiciones:** `operador.demo` en el detalle de una empresa; bloqueo de la llamada `PUT …/suscripcion/suspender` en las herramientas del navegador.
+**Datos:** ninguno.
+**Pasos:**
+1. Haz clic en «Suspender» y confirma con el bloqueo activo.
+**Resultado esperado:** aviso «No se pudo cambiar la suscripción.»; mientras la acción se ejecuta los cuatro botones quedan deshabilitados.
+
+### HU-ADM-056 — Buscar y abrir cualquier empresa como operador de plataforma
+
+#### TC-ADM-447 — El operador ve las empresas de todos; un usuario de empresa solo la suya
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-056][hu] «El operador ve las empresas de todos»; [HU-ADM-056][hu] «Un usuario de empresa sigue viendo solo la suya»; [CU-ADM-43][cu] flujo básico (paso 5); [RN-EMP-017, RN-EMP-018, RN-EMP-022, RN-GEN-001, RN-GEN-042][rn] |
+
+**Precondiciones:** existen las empresas A, B y la del operador; sesiones de `operador.demo` y de `ana.manual`; `<token de Ana>`.
+**Datos:** `GET /empresas/<id de B>` con `<token de Ana>`.
+**Pasos:**
+1. Como operador abre `/empresas` y haz clic en «Buscar».
+2. Como Ana repite la búsqueda y llama a `GET /empresas/<id de B>`.
+**Resultado esperado:** el operador ve «Resultados (N)» con todas las empresas no eliminadas, ordenadas por nombre, con las columnas «Empresa», «RUC», «Estado», «Vencimiento» (dd/MM/yyyy) y «Vigente»; Ana ve solo su empresa y la empresa B responde 404 `Empresa.NotFound`.
+
+#### TC-ADM-448 — Llegar desde el panel con el estado filtrado y filtrar por vencimiento
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-056][hu] «Llegar desde el panel con el estado ya filtrado»; [HU-ADM-056][hu] «Filtrar por vencimiento»; [CU-ADM-43][cu] flujo básico (paso 4); [RN-EMP-017][rn]; [RN-DAS-026][rn-d] |
+
+**Precondiciones:** `operador.demo` en el Inicio, con al menos una empresa suspendida.
+**Datos:** «Vencimiento desde» y «Vencimiento hasta» alrededor del vencimiento de una empresa conocida.
+**Pasos:**
+1. En la sección «Suscripciones» haz clic en «Ver lista» de «Suspendidas».
+2. En `/empresas` elige «Vencimiento desde» y «Vencimiento hasta» y haz clic en «Buscar».
+**Resultado esperado:** se abre `/empresas` con «Estado» en «Suspendido» y los resultados ya cargados; con el rango, solo aparecen las empresas cuyo vencimiento cae en él.
+
+#### TC-ADM-449 — El operador edita solo su propia empresa
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Media | [HU-ADM-056][hu] «Editar solo mi propia empresa»; [CU-ADM-43][cu] flujo básico (paso 5); [RN-EMP-022, RN-EMP-001][rn] |
+
+**Precondiciones:** `operador.demo` con un rol que tiene `Empresas › Actualizar`.
+**Datos:** ninguno.
+**Pasos:**
+1. Abre el detalle de una empresa que no es la del operador.
+2. Abre el detalle de la empresa del operador.
+**Resultado esperado:** en la ajena no ves «Editar»; en la propia sí lo ves (porque el rol tiene `Empresas › Actualizar`).
+
+#### TC-ADM-450 — Exportar todas las empresas como operador
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-056][hu] «Exportar todas las empresas»; [CU-ADM-43][cu] flujo básico (paso 5); [RN-IMP-008, RN-IMP-009, RN-EMP-022][rn] |
+
+**Precondiciones:** `operador.demo` ya hizo clic en «Buscar» en `/empresas`. No verificado en la aplicación: el contenido del archivo.
+**Datos:** sin filtros.
+**Pasos:**
+1. Haz clic en «Exportar» y abre `empresas.xlsx`.
+**Resultado esperado:** el archivo trae las empresas de todas las empresas que cumplen los filtros actuales del formulario, no solo la del operador, con las columnas de TC-ADM-107.
+
+### HU-ADM-057 — Ver las cifras de suscripciones en el panel
+
+#### TC-ADM-451 — Las tarjetas de suscripciones y qué cuenta como vencida
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-ADM-057][hu] «Las tarjetas de suscripciones»; [HU-ADM-057][hu] «Qué cuenta como vencida»; [CU-ADM-43][cu] flujo básico (pasos 1 a 3); [RN-EMP-014][rn]; [RN-DAS-025, RN-DAS-026][rn-d] |
+
+**Precondiciones:** sesión de `operador.demo`; empresas en prueba, con suscripción vigente, con suscripción vencida, suspendidas y canceladas.
+**Datos:** `GET /plataforma/dashboard?inicioMes=<primer día del mes en ISO>`.
+**Pasos:**
+1. Abre el Inicio.
+2. Compara las tarjetas con el resultado de la API.
+**Resultado esperado:** la sección «Suscripciones» muestra «Empresas vigentes» (con «<n> en prueba · <n> con suscripción»), «Vencen en 7 días o menos», «Vencidas sin renovar», «Suspendidas», «Canceladas» y «Registradas este mes» (con «<n> empresas en total»); una empresa en «Trial Activo» o «Activo» con el vencimiento pasado cuenta en «Vencidas sin renovar» y no en «Empresas vigentes».
+
+#### TC-ADM-452 — La tabla de próximas a vencer
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-057][hu] «La tabla de próximas a vencer»; [HU-ADM-057][hu] «Solo se muestran las diez más próximas»; [HU-ADM-057][hu] «Ninguna por vencer»; [CU-ADM-43][cu] A1 y A2; [RN-DAS-025, RN-DAS-026][rn-d] |
+
+**Precondiciones:** `operador.demo` en el Inicio; tres escenarios: pocas empresas por vencer, más de 10 por vencer y ninguna.
+**Datos:** ninguno.
+**Pasos:**
+1. Con pocas empresas por vencer mira «Próximas a vencer (7 días)».
+2. Con más de 10, mira el pie de la tabla.
+3. Con ninguna, mira la tabla.
+**Resultado esperado:** la tabla trae «Empresa», «Tipo» («Prueba» o «Suscripción»), «Vence» y «Días restantes», de la más próxima a la más lejana, y el nombre abre el detalle de la empresa; con más de 10 muestra 10 y dice «Se muestran las 10 más próximas de <total>.»; con ninguna dice «Ninguna empresa vence en los próximos días.».
+
+#### TC-ADM-453 — «Ver lista» de suspendidas y canceladas
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-ADM-057][hu] «Ver la lista de suspendidas o canceladas»; [CU-ADM-43][cu] flujo básico (paso 4); [RN-DAS-026][rn-d] |
+
+**Precondiciones:** `operador.demo` en el Inicio.
+**Datos:** ninguno.
+**Pasos:**
+1. Haz clic en «Ver lista» de «Suspendidas», vuelve y haz lo mismo en «Canceladas».
+2. Haz clic en «Ver todas las empresas».
+**Resultado esperado:** se abre `/empresas` filtrada por «Suspendido» o «Cancelado»; «Ver todas las empresas» la abre sin filtro.
+
+#### TC-ADM-454 — Fallo en la sección de suscripciones
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Baja | [HU-ADM-057][hu] «Fallo en la sección»; [CU-ADM-43][cu] A3; [RN-DAS-026][rn-d] |
+
+**Precondiciones:** `operador.demo`; bloqueo de la llamada `GET /plataforma/dashboard` en las herramientas del navegador.
+**Datos:** ninguno.
+**Pasos:**
+1. Abre el Inicio con el bloqueo activo y haz clic en «Reintentar» tras quitarlo.
+**Resultado esperado:** la sección dice «No se pudo cargar esta sección.» con «Reintentar» y el resto del Inicio sigue visible; al reintentar se cargan las cifras.
+
+#### TC-ADM-455 — Los demás no ven la sección de suscripciones
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-ADM-057][hu] «Los demás no ven la sección»; [CU-ADM-43][cu] excepción paso 2; [RN-GEN-042][rn]; [RN-DAS-025, RN-DAS-026][rn-d] |
+
+**Precondiciones:** sesión de `ana.manual` (rol `Admin`, no operador); `<token de Ana>`.
+**Datos:** `GET /plataforma/dashboard?inicioMes=<fecha en ISO>`.
+**Pasos:**
+1. Abre el Inicio y mira las secciones y la pestaña de red.
+2. Llama al endpoint con `<token de Ana>`.
+**Resultado esperado:** el Inicio no muestra «Suscripciones» ni pide el endpoint; la API responde 403.
+
 ## 5. Pendientes y «No verificado»
 
 ### 5.1 En curso (sin commitear)
@@ -5646,7 +6240,8 @@ Ninguno. Este documento no ejecutó comandos git (lo prohíben las instrucciones
 |---|---|
 | Límite de peticiones (429) no provocado para no bloquear cuentas ni la IP | TC-ADM-011, 022, 057, 072, 080, 392, 393, 394 |
 | Falla del servidor o de la red no provocada | TC-ADM-023, 073, 081, 411 |
-| Estado de la empresa (suspendida, cancelada, prueba vencida, eliminada) solo cambiable por base de datos; no hay endpoint ni pantalla | TC-ADM-020, 021, 039, 124, 125, 126 |
+| Estado de la empresa (suspendida, cancelada, prueba vencida, suscripción vencida, eliminada): se cambia con el operador de plataforma o por base de datos, y ningún recorrido del manual lo ejecutó | TC-ADM-020, 021, 039, 124, 125, 126 |
+| Cuenta de operador de plataforma (la marca se pone por base de datos) y los datos de pago, el QR y el aviso de vencimiento: ningún recorrido del manual los ejecutó | TC-ADM-414 a 455 |
 | Token fabricado sin roles o sin empresa (exige la clave de firma) | TC-ADM-097, 143, 166, 412 |
 | Carreras entre dos peticiones (difíciles de repetir) | TC-ADM-003, 048, 139, 165, 193, 200, 223, 265, 282, 356 |
 | Contenido de los archivos `.xlsx` descargados (el navegador integrado no mostró descargas) | TC-ADM-107, 132, 159, 179, 213, 260, 325, 380 |
@@ -5669,7 +6264,7 @@ Ninguno. Este documento no ejecutó comandos git (lo prohíben las instrucciones
 | `forgot-password` responde 200 aunque el usuario esté vacío o tenga más de 50 caracteres (RN-AUT-032) | TC-ADM-071 |
 | El SPA nunca avisa «sesión expirada» (`producto/pantallas/acceso-layout-y-compartidos` §5.4) | TC-ADM-033 |
 | El formulario de empresa limita el nombre a 150 (la API admite 200) y no valida el RUC (`producto/historias-de-usuario/acceso-y-administracion` HU-ADM-015) | TC-ADM-118, 119, 121 |
-| El detalle de la empresa no muestra días restantes ni «Vigente»; la política de receta no tiene pantalla; ningún endpoint cambia el estado de la suscripción (`producto/historias-de-usuario/acceso-y-administracion` HU-ADM-014 y 016) | TC-ADM-109, 124 |
+| El detalle de la empresa no muestra días restantes ni «Vigente»; la política de receta no tiene pantalla; el estado de la suscripción solo lo cambia el operador de plataforma (`producto/historias-de-usuario/acceso-y-administracion` HU-ADM-014, 016 y 055) | TC-ADM-109, 124 |
 | El filtro «Vencimiento hasta» se envía a medianoche local; la exportación de empresas trae el estado sin traducir (`producto/casos-de-uso/acceso-y-administracion` CU-ADM-09) | TC-ADM-107, 364 |
 | Eliminar una sucursal, un empleado o un rol: el aviso no dice qué bloquea y el SPA decide por el estado 409 (hallazgo 3 de la sección 12.3 de `negocio/reglas/administracion-y-seguridad`) | TC-ADM-156, 206, 257 |
 | Eliminar un empleado con cuenta no se impide: la cuenta queda oculta y su usuario ocupado (`producto/historias-de-usuario/acceso-y-administracion` HU-ADM-026) | TC-ADM-207 |
@@ -5704,13 +6299,13 @@ El script de comprobación (solo lectura, en el directorio temporal de la sesió
 
 | Concepto | Total | Con caso |
 |---|---|---|
-| Escenarios (`Escenario:` y `Esquema del escenario:`) de las 50 historias | 424 | 423 (el que falta es el de «Resolver nombres de otros catálogos», que no aplica) |
-| Historias de usuario HU-ADM-001 a HU-ADM-050 | 50 | 50 |
-| Casos de uso CU-ADM-01 a CU-ADM-37 | 37 | 37 |
-| Reglas de negocio de `negocio/reglas/administracion-y-seguridad` (RN) | 203 | 202 (falta `RN-GEN-028`, de la parte B) |
-| Casos de prueba | 413 | — |
+| Escenarios (`Escenario:` y `Esquema del escenario:`) de las 57 historias | 489 | 488 (el que falta es el de «Resolver nombres de otros catálogos», que no aplica) |
+| Historias de usuario HU-ADM-001 a HU-ADM-057 | 57 | 57 |
+| Casos de uso CU-ADM-01 a CU-ADM-43 | 43 | 43 |
+| Reglas de negocio de `negocio/reglas/administracion-y-seguridad` (RN) | 217 | 216 (falta `RN-GEN-028`, de la parte B); además se citan `RN-DAS-025` y `RN-DAS-026` de [`negocio/reglas/caja-devoluciones-y-dashboard`][rn-d] |
+| Casos de prueba | 455 | — |
 
-Los casos por tipo son: Positivo 163, Negativo 129, Permisos 60, Límite 37, Concurrencia 13, Integración 11. Por prioridad: Alta 166, Media 149, Baja 98.
+Los casos por tipo son: Positivo 179, Negativo 143, Permisos 71, Límite 38, Concurrencia 13, Integración 11. Por prioridad: Alta 187, Media 167, Baja 101.
 
 | Módulo | Sección | Casos | Alta | Media | Baja |
 |---|---|---|---|---|---|
@@ -5723,7 +6318,8 @@ Los casos por tipo son: Positivo 163, Negativo 129, Permisos 60, Límite 37, Con
 | Cuentas de usuario | 4.7 | 51 | 22 | 17 | 12 |
 | Series fiscales | 4.8 | 38 | 18 | 7 | 13 |
 | Reglas transversales y de plataforma | 4.9 | 57 | 12 | 27 | 18 |
-| **Total** | | **413** | **166** | **149** | **98** |
+| Suscripciones de plataforma y operador | 4.10 | 42 | 21 | 18 | 3 |
+| **Total** | | **455** | **187** | **167** | **101** |
 
 ### 6.2 Escenarios de las historias → casos
 
@@ -5781,6 +6377,13 @@ Cada fila lista, en el orden en que aparecen en la historia, el número del esce
 | HU-ADM-048 | 7 | 1→385; 2→386; 3→387; 4→388; 5→389; 6→390; 7→391 |
 | HU-ADM-049 | 12 | 1→392; 2→393; 3→394; 4→395; 5→396; 6→397; 7→398; 8→399; 9→400; 10→401; 11→402; 12→403 |
 | HU-ADM-050 | 10 | 1→404; 2→405; 3→406; 4→407; 5→408; 6→409; 7→410; 8→411; 9→412; 10→413 |
+| HU-ADM-051 | 6 | 1→414; 2→415; 3→415; 4→416; 5→417; 6→418 |
+| HU-ADM-052 | 13 | 1→419; 2→419; 3→420; 4→420; 5→420; 6→421; 7→422; 8→421; 9→422; 10→423; 11→423; 12→424; 13→425 |
+| HU-ADM-053 | 8 | 1→020+426; 2→426; 3→426; 4→427; 5→427; 6→428; 7→428; 8→429 |
+| HU-ADM-054 | 8 | 1→430; 2→430; 3→430; 4→431; 5→431; 6→432; 7→433; 8→431 |
+| HU-ADM-055 | 16 | 1→434; 2→435; 3→436; 4→436; 5→437; 6→438; 7→439; 8→440; 9→440; 10→441; 11→442; 12→442; 13→443; 14→444; 15→445; 16→446 |
+| HU-ADM-056 | 6 | 1→447; 2→447; 3→448; 4→448; 5→449; 6→450 |
+| HU-ADM-057 | 8 | 1→451; 2→451; 3→452; 4→452; 5→452; 6→453; 7→454; 8→455 |
 
 ### 6.3 Historias de usuario → casos
 
@@ -5836,13 +6439,20 @@ Cada fila lista, en el orden en que aparecen en la historia, el número del esce
 | HU-ADM-048 | 385 a 391 |
 | HU-ADM-049 | 392 a 403 |
 | HU-ADM-050 | 404 a 413 |
+| HU-ADM-051 | 414 a 418 |
+| HU-ADM-052 | 419 a 425 |
+| HU-ADM-053 | 020, 426 a 429 |
+| HU-ADM-054 | 430 a 433 |
+| HU-ADM-055 | 434 a 446 |
+| HU-ADM-056 | 447 a 450 |
+| HU-ADM-057 | 451 a 455 |
 
 ### 6.4 Casos de uso → casos
 
 | Caso de uso | Casos que lo citan |
 |---|---|
 | CU-ADM-01 | 001 a 011, 063, 110, 146, 209, 359, 394, 396, 404, 413 |
-| CU-ADM-02 | 012 a 030, 124, 359, 387, 393, 411 |
+| CU-ADM-02 | 012 a 030, 124, 359, 387, 393, 411, 418 |
 | CU-ADM-03 | 043 a 048, 405 |
 | CU-ADM-04 | 049 a 057 |
 | CU-ADM-05 | 058 a 062, 064, 288 |
@@ -5878,19 +6488,25 @@ Cada fila lista, en el orden en que aparecen en la historia, el número del esce
 | CU-ADM-35 | 040, 295 a 304 |
 | CU-ADM-36 | 291, 305 a 311 |
 | CU-ADM-37 | 312 a 318 |
+| CU-ADM-38 | 419 a 425 |
+| CU-ADM-39 | 426 a 429 |
+| CU-ADM-40 | 430 a 433 |
+| CU-ADM-41 | 434 a 439, 442 a 446 |
+| CU-ADM-42 | 434, 440 a 445 |
+| CU-ADM-43 | 417, 447 a 455 |
 
 ### 6.5 Reglas de negocio → casos
 
-Cada fila agrupa las reglas de un prefijo; `nnn→casos` indica la regla (por ejemplo `AUT-001`) y los primeros casos que la ejercen (el signo … indica que hay más). Las 203 reglas de [`negocio/reglas/administracion-y-seguridad`][rn] tienen caso salvo `GEN-028`, que es del límite de los endpoints de IA y lo ejerce la parte B.
+Cada fila agrupa las reglas de un prefijo; `nnn→casos` indica la regla (por ejemplo `AUT-001`) y los primeros casos que la ejercen (el signo … indica que hay más). Las 217 reglas de [`negocio/reglas/administracion-y-seguridad`][rn] tienen caso salvo `GEN-028`, que es del límite de los endpoints de IA y lo ejerce la parte B.
 
 | Prefijo | Reglas | Regla → casos |
 |---|---|---|
-| EMP | 18 | 001→091,102,114,115; 002→001,114,117,118; 003→001,005; 004→119,121; 005→001,008,120; 006→001,004,005; 007→001,004,005,006; 008→001,004,005; 009→001,004,005; 010→001,002,005,007…; 011→002,003,209; 012→002,109,110; 013→001; 014→020,124,125; 015→111,124; 016→109; 017→102,103,109,112…; 018→102 |
+| EMP | 28 | 001→091,102,114,115…; 002→001,114,117,118; 003→001,005; 004→119,121; 005→001,008,120; 006→001,004,005; 007→001,004,005,006; 008→001,004,005; 009→001,004,005; 010→001,002,005,007…; 011→002,003,209; 012→002,109,110; 013→001; 014→020,124,125,430…; 015→111,124; 016→109; 017→102,103,109,112…; 018→102,447; 019→435,439,442,443…; 020→437,438,439; 021→434,440,441,442…; 022→417,434,447,449…; 023→419,420,423; 024→421,422; 025→419,426,429,432; 026→430,431; 027→419,424; 028→435,436,437 |
 | SUC | 13 | 001→091,092,093,127…; 002→135,136,137; 003→135,136,137; 004→135,136,137,146…; 005→138,150; 006→141,142,151; 007→135,143; 008→145,152,154,157; 009→154,156,353; 010→169,170,171; 011→127; 012→160,163,165,167; 013→160,161,162 |
-| GEN | 41 | 001→102,112,123,127…; 002→357,358,359; 003→154,203,255,312…; 004→002,360; 005→360,362; 006→363; 007→365; 008→105,364; 009→106,130,131,173…; 010→396; 011→010,403,413; 012→003,030,385,387…; 013→049,076,114,216…; 014→389; 015→041,095,097,402; 016→031,041; 017→032,040,044,076…; 018→032,034,041,125; 019→059,061,064,288; 020→082,083,084,089…; 021→082,094,246,247; 022→087,238,255,258; 023→169,170,172,250…; 024→135,143,160,166…; 025→392; 026→022,057,072,080…; 027→011,394; 028→sin caso (parte B); 029→395; 030→397; 031→398; 032→399; 033→400; 034→401; 035→037,405; 036→139,193,200,223…; 037→140,407; 038→140,408; 039→370,409; 040→023,073,081,411; 041→231,410 |
-| AUT | 39 | 001→012,016,017; 002→012,016; 003→012,013,019; 004→012,019,024; 005→019,025,027; 006→018,025; 007→025,026,028,387; 008→012,019; 009→012,020,021; 010→014,015,029,058…; 011→014; 012→014; 013→035,047; 014→031,035; 015→031,033; 016→038; 017→033,039; 018→031,036; 019→037; 020→043,047; 021→043,044; 022→045,046,048; 023→040,042,085,086…; 024→049,054; 025→049,052; 026→006,049,052; 027→049,052; 028→056; 029→053,062; 030→049,050,055,060; 031→024,049,055,075…; 032→065,071; 033→065,067; 034→065,067,068,126; 035→065,068,069; 036→065,066,070; 037→075,077,078; 038→075,079; 039→030,076 |
+| GEN | 43 | 001→102,112,123,127…; 002→357,358,359; 003→154,203,255,312…; 004→002,360; 005→360,362; 006→363; 007→365; 008→105,364; 009→106,130,131,173…; 010→396; 011→010,403,413; 012→003,030,385,387…; 013→049,076,114,216…; 014→389; 015→041,095,097,402; 016→031,041; 017→032,040,044,076…; 018→032,034,041,125…; 019→059,061,064,288; 020→082,083,084,089…; 021→082,094,246,247…; 022→087,238,255,258; 023→169,170,172,250…; 024→135,143,160,166…; 025→392; 026→022,057,072,080…; 027→011,394; 028→sin caso (parte B); 029→395; 030→397; 031→398; 032→399; 033→400; 034→401; 035→037,405; 036→139,193,200,223…; 037→140,407; 038→140,408; 039→370,409; 040→023,073,081,411; 041→231,410; 042→414,415,416,417…; 043→427,429 |
+| AUT | 40 | 001→012,016,017; 002→012,016; 003→012,013,019; 004→012,019,024; 005→019,025,027; 006→018,025; 007→025,026,028,387; 008→012,019; 009→012,020,021,418…; 010→014,015,029,058…; 011→014; 012→014; 013→035,047; 014→031,035; 015→031,033; 016→038; 017→033,039,415; 018→031,036; 019→037; 020→043,047; 021→043,044; 022→045,046,048; 023→040,042,085,086…; 024→049,054; 025→049,052; 026→006,049,052; 027→049,052; 028→056; 029→053,062; 030→049,050,055,060; 031→024,049,055,075…; 032→065,071; 033→065,067; 034→065,067,068,126…; 035→065,068,069; 036→065,066,070; 037→075,077,078; 038→075,079; 039→030,076; 040→020,426,427,428 |
 | ROL | 23 | 001→091,095,208,209…; 002→216,218,221; 003→216,220,222; 004→216,218,219,224; 005→220,223; 006→226,228,229; 007→226,232,255,259…; 008→255,257; 009→216,228,255,258; 010→234,235; 011→236,238,239; 012→238,241,242; 013→096,243; 014→234; 015→082,083,087,237; 016→238,239,244,246; 017→249,250,251; 018→252,253; 019→208; 020→260,261,265; 021→261,262; 022→264,266; 023→208 |
-| CTA | 20 | 001→091,268,274,285…; 002→274,276,277,283; 003→274,276,278; 004→274,276,279; 005→274; 006→281; 007→002,009,207,280…; 008→058,060,274; 009→286,287,292,312…; 010→286,289; 011→061,288; 012→039,286,287; 013→312,314,316,318; 014→295,302,303,305…; 015→295,296; 016→295,296,299; 017→295,300,301; 018→042,298; 019→305,306,309,311; 020→268,270 |
+| CTA | 21 | 001→091,268,274,285…; 002→274,276,277,283; 003→274,276,278; 004→274,276,279; 005→274; 006→281; 007→002,009,207,280…; 008→058,060,274; 009→286,287,292,312…; 010→286,289; 011→061,288; 012→039,286,287; 013→312,314,316,318; 014→295,302,303,305…; 015→295,296; 016→295,296,299; 017→295,300,301; 018→042,298; 019→305,306,309,311; 020→268,270; 021→414 |
 | EPL | 18 | 001→091,092,093,153…; 002→182,183,186,195; 003→182,183,186,195; 004→182,186,187; 005→182,186; 006→188,198; 007→188; 008→186,189,190; 009→074,189,191,192…; 010→195,197; 011→197,199,201; 012→198,201; 013→195,202,203,206; 014→203,204,205; 015→207; 016→173; 017→176,177; 018→182,183,184,185 |
 | SER | 14 | 001→091,319,328,339…; 002→328,329,341; 003→328,330,331; 004→328,330,331,332…; 005→334,354,355; 006→334,355; 007→328,335,341,342; 008→328,336,337,341…; 009→345,346,349,350; 010→345,346; 011→349,350; 012→337,342,343; 013→354,356; 014→322 |
 | IMP | 17 | 001→368,369; 002→369; 003→372; 004→370; 005→371; 006→167,261,266,371…; 007→167,261,266,376…; 008→107,132,179,213…; 009→107,132,179,213…; 010→107,380,383; 011→325,326,384; 012→373; 013→373; 014→160,161,261,262…; 015→376; 016→159,260,366,367; 017→107,108,132,133… |
@@ -5899,15 +6515,15 @@ Cada fila agrupa las reglas de un prefijo; `nnn→casos` indica la regla (por ej
 
 | Verificación | Resultado |
 |---|---|
-| Los 413 casos tienen IDs únicos y consecutivos de `TC-ADM-001` a `TC-ADM-413` | Sí |
-| Todos los `RN-…` citados existen en [`negocio/reglas/administracion-y-seguridad`][rn] | Sí |
+| Los 455 casos tienen IDs únicos y consecutivos de `TC-ADM-001` a `TC-ADM-455` | Sí |
+| Todos los `RN-…` citados existen en [`negocio/reglas/administracion-y-seguridad`][rn] (y `RN-DAS-025` y `RN-DAS-026` en [`negocio/reglas/caja-devoluciones-y-dashboard`][rn-d]) | Sí |
 | Todos los `HU-ADM-…` y `CU-ADM-…` citados existen en [`producto/historias-de-usuario/acceso-y-administracion`][hu] y [`producto/casos-de-uso/acceso-y-administracion`][cu] | Sí |
 | Cada título de escenario citado entre « » existe en su historia | Sí (0 referencias sin escenario) |
 | Todos los `TC-ADM-…` mencionados en pasos y precondiciones existen | Sí |
 | Las filas «Tipo, Prioridad, Cubre» de todos los casos tienen tres celdas | Sí |
 | Este documento no contiene bloques de código (los esquemas se resolvieron con tablas) | Sí (0 delimitadores) |
 | Las definiciones de enlaces del final del documento apuntan a archivos que existen | Sí |
-| Los 26 casos de la suite de humo son de prioridad Alta | Sí |
+| Los 28 casos de la suite de humo son de prioridad Alta | Sí |
 
 ## 7. Fuentes
 
@@ -5915,20 +6531,21 @@ Documentos consultados (rutas relativas a la raíz de `sofia-docs`):
 
 - [Historias de usuario, parte A][hu] (`producto/historias-de-usuario/acceso-y-administracion.md`): fuente principal de escenarios, mensajes y datos.
 - [Casos de uso, parte A][cu] (`producto/casos-de-uso/acceso-y-administracion.md`): flujos, excepciones por paso, códigos de error y mensajes.
-- [Catálogo de reglas de negocio, parte A][rn] (`negocio/reglas/administracion-y-seguridad.md`): identificadores `RN-…` y su existencia.
+- [Catálogo de reglas de negocio, parte A][rn] (`negocio/reglas/administracion-y-seguridad.md`): identificadores `RN-…` y su existencia; [reglas de caja, devoluciones y dashboard][rn-d] solo para `RN-DAS-025` y `RN-DAS-026`.
 - [Inventario de pantallas, acceso y compartidos][p19a] y [administración][p19b].
 - [Autenticación y controles][p05a], [matriz de permisos][p05b] y [catálogo de códigos de error][p21].
 - [Carga masiva y exportación a Excel][p20].
 - [Procesos de negocio][p14] (procesos 1 y 2) y [glosario][p06].
 - Manual de usuario: [capítulo 1][m1], [capítulo 2][m2] (secciones de sucursales, series y carga masiva) y [capítulo 3][m3] (secciones 5.3 a 5.5 para los permisos recomendados del cajero).
 - [Guía del desarrollador][g08] (sección 3, entorno local), [despliegue y operación][g10] y [pruebas automáticas del backend][p09a].
-- Código, solo para comprobar nombres de propiedades de una petición: `sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommand.cs:12-26` y la lista de controladores de `sofia-apis/src/SOFIA.API/Controllers`. El resto de nombres de propiedades de los cuerpos JSON se marca «No verificado» en cada caso.
+- Código de `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea` para contrastar los resultados esperados: `EmpresasController.cs`, `PlataformaController.cs`, `RolesController.cs` (catálogo de permisos), `SeriesFiscalesController.cs` (ruta de la API), `sidebar-data.ts`, `route-permissions.ts` y los `es.json` de `auth`, `empresa` y `suscripcion`; y, para comprobar nombres de propiedades de una petición: `sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommand.cs:12-26` y la lista de controladores de `sofia-apis/src/SOFIA.API/Controllers`. El resto de nombres de propiedades de los cuerpos JSON se marca «No verificado» en cada caso.
 
 No se usaron los `README.md` ni `CLAUDE.md` de los repositorios, ni `swagger.json`, ni la memoria del proyecto.
 
 [hu]: ../../producto/historias-de-usuario/acceso-y-administracion.md
 [cu]: ../../producto/casos-de-uso/acceso-y-administracion.md
 [rn]: ../../negocio/reglas/administracion-y-seguridad.md
+[rn-d]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md
 [p19a]: ../../producto/pantallas/acceso-layout-y-compartidos.md
 [p19b]: ../../producto/pantallas/administracion.md
 [m1]: ../../manual-de-usuario/capitulo-01-primeros-pasos.md
