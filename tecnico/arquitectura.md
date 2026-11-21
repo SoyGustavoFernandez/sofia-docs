@@ -3,17 +3,21 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.4 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.5 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.4: solo el conteo de rutas; el resto se verificó por última vez en `6f6b837`) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código fuente (sin compilar, sin ejecutar la aplicación ni llamar a la API). Conteos tomados de `docs/_inventario/*.csv` y contrastados con el árbol de archivos |
 
 ## Historial de cambios
 
+### Versión 1.5 (2026-11-21)
+
+Cabecera sin referencias a cambios locales.
+
 ### Versión 1.3 (2026-11-14)
 
-Revisión contra el código y reconciliación con la gestión de suscripciones por el operador de plataforma (`sofia-apis` `43f5529` → `6f6b837`, `sofia-web-spa` `eeffbb6` → `558ad35`). Los repositorios tenían cambios locales de otra tarea sin commitear; no se usaron (todo se leyó de los commits).
+Revisión contra el código y reconciliación con la gestión de suscripciones por el operador de plataforma (`sofia-apis` `43f5529` → `6f6b837`, `sofia-web-spa` `eeffbb6` → `558ad35`). Todo se leyó de los commits.
 
 | Apartado | Decía | Dice ahora | Commit |
 |---|---|---|---|
