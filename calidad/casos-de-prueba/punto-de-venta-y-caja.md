@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` (el de la línea base y de los documentos fuente; en esta tarea no se ejecutan comandos git, por lo que no se comprobó si hay commits más nuevos) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` (ídem) |
-| **Método** | Lectura de documentos validados y comprobación puntual en el código; casos no ejecutados |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Lectura de documentos validados y comprobación en el código (mensajes, códigos de error, rutas y permisos por script sobre todos los casos; resultados esperados de prioridad Alta contrastados con el código en lo que toca a devoluciones y a la API de devoluciones); casos no ejecutados |
 
 ## 1. Convenciones
 
@@ -90,7 +90,7 @@ Los números de lote, de receta y de operación de los casos (`OP-QA-0001`, etc.
 
 ## 3. Suite de humo
 
-Son 28 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja los datos del siguiente (caja abierta, venta cobrada, lote con stock conocido). Si uno falla, los de su bloque que dependen de él no son concluyentes.
+Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja los datos del siguiente (caja abierta, venta cobrada, lote con stock conocido). Si uno falla, los de su bloque que dependen de él no son concluyentes.
 
 | Orden | Caso | Qué comprueba |
 |---|---|---|
@@ -113,15 +113,17 @@ Son 28 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 | 17 | TC-DEV-023 | Reembolso en efectivo baja el esperado de la caja |
 | 18 | TC-DEV-033 | Nota de crédito `BC01-00000001` |
 | 19 | TC-DEV-047 | Mensajes de rechazo de una devolución |
-| 20 | TC-VEN-183 | Una venta con devoluciones no se anula |
-| 21 | TC-VEN-172 | Anular una venta cobrada |
-| 22 | TC-VEN-175 | Anular exige caja propia abierta |
-| 23 | TC-DAS-017 | El Inicio muestra el efectivo esperado de la caja |
-| 24 | TC-CAJ-029 | Ejemplo completo del arqueo: apertura + efectivo − vuelto − reembolsos |
-| 25 | TC-CAJ-016 | Cierre con monto exacto: «Cuadrada» |
-| 26 | TC-CAJ-017 | Resultado del cierre: faltante, sobrante y centavo |
-| 27 | TC-CAJ-037 | Efectivo esperado negativo impide cerrar |
-| 28 | TC-OPS-013 | Despachar una transferencia descuenta el stock del origen |
+| 20 | TC-DEV-074 | Productos devueltos, subtotal y total devuelto en el detalle de la devolución |
+| 21 | TC-DEV-067 | Solo veo las devoluciones de mis sucursales |
+| 22 | TC-VEN-183 | Una venta con devoluciones no se anula |
+| 23 | TC-VEN-172 | Anular una venta cobrada |
+| 24 | TC-VEN-175 | Anular exige caja propia abierta |
+| 25 | TC-DAS-017 | El Inicio muestra el efectivo esperado de la caja |
+| 26 | TC-CAJ-029 | Ejemplo completo del arqueo: apertura + efectivo − vuelto − reembolsos |
+| 27 | TC-CAJ-016 | Cierre con monto exacto: «Cuadrada» |
+| 28 | TC-CAJ-017 | Resultado del cierre: faltante, sobrante y centavo |
+| 29 | TC-CAJ-037 | Efectivo esperado negativo impide cerrar |
+| 30 | TC-OPS-013 | Despachar una transferencia descuenta el stock del origen |
 
 ## 4. Casos del módulo Ventas (`TC-VEN`)
 
@@ -1983,7 +1985,7 @@ El monto exonerado es 0.00 y base más IGV suman exactamente el total. La base e
 **Precondiciones:** venta con una devolución parcial (30 de 100 unidades).
 **Pasos:** 1. Abre el detalle. 2. Por API `PUT /api/v1/ventas/{id}/anular` con un motivo.
 **Resultado esperado:** paso 1: no se muestra «Anular Venta». Paso 2: «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» (`Venta.Anular.ConDevoluciones`); la venta y el stock no cambian.
-**Hallazgo:** el texto remite a «Devoluciones», que no es una pantalla: las devoluciones se procesan desde el mismo detalle.
+**Hallazgo:** el texto remite a «Devoluciones», que desde `37048ea` es una pantalla de consulta (Punto de Venta › «Devoluciones», con `Devoluciones:Leer`); las devoluciones se siguen procesando desde el detalle de la venta.
 
 #### TC-VEN-184 — La venta está totalmente devuelta
 
@@ -2833,7 +2835,7 @@ La diferencia se muestra sin rótulo de «faltante» o «sobrante»: solo el nú
 
 ## 6. Casos del módulo Devoluciones (`TC-DEV`)
 
-Los casos de pantalla se ejecutan sobre el detalle de una venta (`/pos/{id}`): no existe pantalla de listado ni de detalle de devoluciones. El cuerpo de `POST /api/v1/devoluciones` lleva en `comprobanteOrigenId` el identificador de la **venta** (HU-DEV-001). Los nombres exactos de los demás campos del cuerpo (líneas, destino, motivo, sustento, método de reembolso) son **No verificado**: consulta `sofia-apis/src/SOFIA.Application/Devoluciones/` antes de armar la petición.
+Los casos de pantalla se ejecutan sobre el detalle de una venta (`/pos/{id}`): desde `37048ea` existen también la búsqueda `/devoluciones` y el detalle `/devoluciones/:id` (casos TC-DEV-060 a TC-DEV-079). El cuerpo de `POST /api/v1/devoluciones` lleva en `comprobanteOrigenId` el identificador de la **venta** (HU-DEV-001). Los nombres exactos de los demás campos del cuerpo (líneas, destino, motivo, sustento, método de reembolso) son **No verificado**: consulta `sofia-apis/src/SOFIA.Application/Devoluciones/` antes de armar la petición.
 
 ### HU-DEV-001 — Devolver parte o todo lo vendido
 
@@ -3202,10 +3204,10 @@ La nota va por el 100 % del crédito, incluida la parte de la aseguradora (`TC-D
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Positivo | Media | [HU-DEV-004] «Qué ve el cajero de la nota»; [CU-DEV-04] flujo básico; [RN-DEV-022], [RN-CMP-013] |
+| Positivo | Media | [HU-DEV-004] «Qué ve el cajero de la nota»; [CU-DEV-04] flujo básico; [RN-DEV-022], [RN-CMP-013], [RN-DEV-044] |
 
 **Pasos:** abre el detalle de la venta tras una devolución.
-**Resultado esperado:** «Devoluciones / Notas de crédito» muestra «Nota de crédito» (el número o «—»), «Fecha» («dd/MM/yyyy HH:mm»), «Reembolsado (S/)» y «Método de reembolso»; la nota no cambia el código de venta (sigue `B001-…`) ni se toma como «el comprobante» de la venta.
+**Resultado esperado:** «Devoluciones / Notas de crédito» muestra «Nota de crédito» (el número o «—»), «Fecha» («dd/MM/yyyy HH:mm»), «Reembolsado (S/)» y «Método de reembolso»; la nota no cambia el código de venta (sigue `B001-…`) ni se toma como «el comprobante» de la venta; el número de la nota es un enlace a `/devoluciones/:id` solo si el usuario tiene `Devoluciones:Leer` (sin él es texto plano, RN-DEV-044; TC-DEV-077).
 **Hallazgo:** el SPA no imprime ni muestra la nota de crédito como documento (RN-DEV-022).
 
 #### TC-DEV-037 — La venta no tiene boleta ni factura
@@ -3373,7 +3375,7 @@ La nota va por el 100 % del crédito, incluida la parte de la aseguradora (`TC-D
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Positivo | Media | [HU-DEV-007] «Ver lo devuelto en la línea», «Ver las devoluciones de la venta»; [CU-DEV-07] flujo básico; [RN-DEV-032], [RN-VEN-074] |
+| Positivo | Media | [HU-DEV-007] «Ver lo devuelto en la línea», «Ver las devoluciones de la venta»; [CU-DEV-07] flujo básico; [RN-DEV-032], [RN-VEN-074], [RN-DEV-044] |
 
 **Precondiciones:** venta de 100 unidades con dos devoluciones (30 y 20 unidades).
 **Pasos:** abre `/pos/{id}`.
@@ -3403,11 +3405,12 @@ La nota va por el 100 % del crédito, incluida la parte de la aseguradora (`TC-D
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Positivo | Media | [HU-DEV-008] «Listar devoluciones»; [CU-DEV-08] flujo básico; [RN-DEV-030] |
+| Positivo | Media | [HU-DEV-008] «Listar devoluciones»; [CU-DEV-08] flujo básico; [RN-DEV-030], [RN-DEV-038] |
 
 **Precondiciones:** token con `Devoluciones:Leer`; varias devoluciones en «Sede Principal» y en «Sucursal Demo Norte».
-**Pasos:** `GET /api/v1/devoluciones?fechaDesde=<hoy>&fechaHasta=<hoy>` con token de Carlos. **No verificado:** los nombres exactos de los parámetros de fecha (consulta el controlador).
-**Resultado esperado:** HTTP 200 con las devoluciones de las sucursales a las que Carlos tiene acceso, ordenadas por fecha descendente; cada fila trae solo identificador, comprobante de origen, empleado que autoriza, fecha, motivo SUNAT y sustento (no monto, método de reembolso, nota de crédito, líneas ni destino); paginación de 10 por defecto; sin las devoluciones de «Sucursal Demo Norte» ni de otra empresa.
+**Pasos:** `GET /api/v1/devoluciones?fechaInicio=<hoy>&fechaFin=<hoy>` con token de Carlos (los parámetros de fecha son `fechaInicio` y `fechaFin`).
+**Resultado esperado:** HTTP 200 con las devoluciones de las sucursales a las que Carlos tiene acceso, ordenadas por fecha descendente; cada fila trae identificador, comprobante de origen, empleado que autoriza (identificador y nombre), fecha, motivo SUNAT, sustento, identificador y código de la venta, número de la nota de crédito, cliente, sucursal, monto de la nota, monto reembolsado y método de reembolso, y no trae las líneas ni el destino; admite además los filtros `metodoReembolso`, `destino`, `motivoSunatCatalogo`, `numeroNotaCredito`, `empleadoAutorizaId`, `montoMin` y `montoMax`; paginación de 10 por defecto; sin las devoluciones de «Sucursal Demo Norte» ni de otra empresa.
+**Hallazgo corregido:** hasta `9c16f35` cada fila traía solo seis campos; desde `0678e40` trae los quince descritos (RN-DEV-030 describe la versión anterior).
 
 #### TC-DEV-056 — Filtro por empleado vacío en el listado
 
@@ -3422,11 +3425,11 @@ La nota va por el 100 % del crédito, incluida la parte de la aseguradora (`TC-D
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Positivo | Media | [HU-DEV-008] «Consultar una devolución»; [CU-DEV-08] flujo básico; [RN-DEV-031] |
+| Positivo | Media | [HU-DEV-008] «Consultar una devolución»; [CU-DEV-08] flujo básico; [RN-DEV-031], [RN-DEV-040] |
 
 **Pasos:** `GET /api/v1/devoluciones/{id}` de una devolución de una sucursal accesible y de una de «Sucursal Demo Norte» (sin acceso).
-**Resultado esperado:** la primera: HTTP 200 con el objeto de resultado completo y los mismos seis campos en `value`; la segunda: no se devuelve (el comportamiento exacto, 404 o 403, es **No verificado** para sucursal no accesible).
-**Hallazgo:** `GET Devoluciones/{id}` devuelve el objeto `Result` completo y el listado el valor directo (`negocio/reglas/caja-devoluciones-y-dashboard` hallazgo 8).
+**Resultado esperado:** la primera: HTTP 200 con el valor plano (no el objeto de resultado), con los mismos quince campos del listado más `lineas` (producto, lote, presentación, cantidad devuelta, precio unitario, subtotal y destino de cada línea); la segunda: HTTP 404, `code` `Devolucion.NotFound` (una devolución de una sucursal sin acceso se comporta como inexistente).
+**Hallazgo corregido:** hasta `9c16f35` el detalle devolvía el objeto `Result` completo y seis campos; desde `0678e40` devuelve el valor plano con las líneas (hallazgo 8 de `negocio/reglas/caja-devoluciones-y-dashboard`, anterior).
 
 #### TC-DEV-058 — La devolución no existe
 
@@ -3437,14 +3440,250 @@ La nota va por el 100 % del crédito, incluida la parte de la aseguradora (`TC-D
 **Pasos:** `GET /api/v1/devoluciones/{id}` con un GUID inexistente.
 **Resultado esperado:** HTTP 404, `code` `Devolucion.NotFound`.
 
-#### TC-DEV-059 — No existe exportación de devoluciones
+#### TC-DEV-059 — Exportar devoluciones por API: permisos y resultado
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Negativo | Baja | [HU-DEV-008] «No existe exportación»; [CU-DEV-08] excepciones; [RN-DEV-032] |
+| Negativo | Baja | [HU-DEV-008] «No existe exportación»; [CU-DEV-08] excepciones; [RN-DEV-032], [RN-DEV-041] |
 
-**Pasos:** `POST /api/v1/devoluciones/exportar`.
-**Resultado esperado:** la ruta no existe (404 o 405: el código exacto es **No verificado**); no hay endpoint para exportar devoluciones.
+**Precondiciones:** Solo API; un `<token>` con `Devoluciones:Leer` y otro sin ese permiso.
+**Pasos:** 1. `POST /api/v1/devoluciones/exportar` sin token. 2. Con el token sin permiso. 3. Con el token con permiso y el cuerpo `{ "headers": [<diez títulos>], "dateFormat": "yyyy-MM-dd" }` (más, si quieres, los filtros de TC-DEV-066 en el cuerpo, con los enumerados como número).
+**Resultado esperado:** el paso 1 responde 401; el paso 2, 403 sin `code`; el paso 3, HTTP 200 con un libro `.xlsx` de diez columnas (RN-DEV-041). Más de 10 000 filas darían 400 `Export.TooManyRows` (No verificado).
+**Hallazgo corregido:** hasta `9c16f35` la ruta no existía; desde `0678e40` existe (la historia conserva el título «No existe exportación» con el texto actualizado).
+
+### HU-DEV-009 — Buscar devoluciones y exportarlas a Excel
+
+Casos nuevos de `sofia-web-spa` `37048ea` y `sofia-apis` `0678e40` (pantalla `/devoluciones`, menú Punto de Venta › «Devoluciones»). **No verificado en la aplicación:** ningún recorrido del manual incluyó estas pantallas; los resultados salen de las historias, los casos de uso, las reglas RN-DEV-038 a RN-DEV-044 y el código (`DevolucionesController.cs`, `GetDevolucionesQueryHandler.cs`, `DevolucionFilters.cs`). Usan las devoluciones de TC-DEV-001 a TC-DEV-040 como datos.
+
+#### TC-DEV-060 — La búsqueda no carga hasta pulsar «Buscar» y «Buscar» sin filtros
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-009] «Los resultados aparecen solo después de buscar», «Buscar sin filtros»; [CU-DEV-09] flujo básico; [RN-DEV-038], [RN-DEV-042], [RN-GEN-009] |
+
+**Precondiciones:** cuenta con `Devoluciones:Leer` (por ejemplo `carlos.cajero`) y devoluciones en su sucursal.
+**Pasos:** 1. Elige Punto de Venta › «Devoluciones» en el menú. 2. Mira la pantalla. 3. Haz clic en «Buscar».
+**Resultado esperado:** antes de buscar ves la tarjeta «Devoluciones» con «Consulta las devoluciones de tus ventas y sus notas de crédito.» y los filtros «Nota de crédito», «Autorizó», «Motivo», «Fecha desde», «Fecha hasta», «Método de reembolso», «Destino» y «Monto reembolsado (S/)», sin tabla; tras buscar ves «Resultados (N)» con las columnas «Nota de crédito», «Venta», «Fecha» (dd/MM/yyyy HH:mm), «Cliente», «Autorizó», «Sucursal», «Motivo», «Reembolsado (S/)» y «Método de reembolso», de la devolución más reciente a la más antigua. La tabla no muestra el monto de la nota de crédito.
+
+#### TC-DEV-061 — Filtrar por número de nota de crédito
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-009] «Filtrar por nota de crédito»; [CU-DEV-09] flujo básico (pasos 2 a 5); [RN-DEV-038], [RN-DEV-039] |
+
+**Precondiciones:** existe la nota `BC01-00000001` (TC-DEV-033) y una devolución sin nota de crédito (anterior a la serie de notas, si se puede preparar).
+**Datos:** `BC01-00000001`, `BC01`, `1`, `BC01-abc` y un texto de más de 20 caracteres.
+**Pasos:** 1. Escribe cada valor en «Nota de crédito» y presiona Enter. 2. Intenta escribir más de 20 caracteres.
+**Resultado esperado:** `BC01-00000001`, `BC01` (el prefijo se busca contenido en el de la serie) y `1` (el correlativo, por igualdad) traen la devolución con esa nota; `BC01-abc` filtra solo por el prefijo (lo que sigue al guion no es un entero y se ignora); una devolución sin nota de crédito no aparece cuando escribes un número; el campo se detiene en 20 caracteres.
+
+#### TC-DEV-062 — Filtrar por quien autorizó
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-009] «Filtrar por quien autorizó»; [CU-DEV-09] flujo básico (paso 2); [RN-DEV-038], [RN-DEV-042] |
+
+**Precondiciones:** devoluciones autorizadas por dos empleados; la cuenta tiene `Empleados:Leer` (el autocompletado llama a `GET /empleados`).
+**Datos:** parte del nombre de un empleado y un texto sin coincidencias.
+**Pasos:** 1. Escribe parte del nombre en «Autorizó» y elige un empleado de la lista. 2. Haz clic en «Buscar». 3. Escribe un texto sin coincidencias.
+**Resultado esperado:** la lista ofrece empleados (hasta 20) y, al elegir uno, la búsqueda trae solo sus devoluciones; sin coincidencias ves «Sin resultados» en la lista.
+
+#### TC-DEV-063 — Filtrar por motivo y por fechas
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-009] «Filtrar por motivo», «Filtrar por fechas»; [CU-DEV-09] flujo básico (pasos 2, 3 y 5); [RN-DEV-038], [RN-GEN-008] |
+
+**Precondiciones:** devoluciones con motivo `06` (total) y `07` (por ítem) en días distintos.
+**Datos:** «Devolución total»; «Fecha desde» y «Fecha hasta» el mismo día de una devolución.
+**Pasos:** 1. Elige «Devolución total» en «Motivo» y busca; luego «— Todos —». 2. Elige «Fecha desde» y «Fecha hasta» y busca.
+**Resultado esperado:** el motivo trae solo las devoluciones con el motivo SUNAT `06` (y «Devolución por ítem», las `07`); «— Todos —» quita el filtro; las fechas traen las devoluciones desde el inicio del primer día hasta el fin del último, hora local, ambos días incluidos.
+
+#### TC-DEV-064 — Filtrar por método de reembolso y por destino
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-009] «Filtrar por método de reembolso y por destino»; [CU-DEV-09] flujo básico (paso 5); [RN-DEV-038] |
+
+**Precondiciones:** una devolución reembolsada con tarjeta en la que una línea fue a cuarentena (TC-DEV-019 y TC-DEV-025) y otras con efectivo.
+**Datos:** «Tarjeta» y «Cuarentena DIGEMID».
+**Pasos:** 1. Mira las opciones de «Método de reembolso» y «Destino». 2. Elige «Tarjeta» y «Cuarentena DIGEMID» y busca.
+**Resultado esperado:** las opciones del método son «Efectivo», «Yape / Plin», «Tarjeta» y «Transferencia», y las del destino «Reingreso a venta» y «Cuarentena DIGEMID»; la tabla trae las devoluciones reembolsadas con tarjeta en las que al menos una línea fue a cuarentena.
+
+#### TC-DEV-065 — Filtrar por monto reembolsado con el deslizador
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Límite | Media | [HU-DEV-009] «Filtrar por monto reembolsado»; [CU-DEV-09] flujo básico (paso 2); [RN-DEV-038], [RN-DEV-042] |
+
+**Precondiciones:** devoluciones con reembolsos de S/ 20.00, S/ 100.00 y S/ 300.00.
+**Datos:** deslizador entre 50 y 200; luego en los extremos 0 y 1000.
+**Pasos:** 1. Mueve el deslizador a 50–200 y busca. 2. Déjalo en 0 y 1000 y busca.
+**Resultado esperado:** con 50–200 solo aparece la devolución de S/ 100.00; con los extremos 0 y 1000 no se filtra el mínimo ni el máximo (aparecen las tres, incluido el reembolso mayor de S/ 1 000 si lo hubiera); el filtro compara con el monto reembolsado, no con el de la nota de crédito.
+
+#### TC-DEV-066 — Los filtros del servidor se validan (API)
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-DEV-009] «Los filtros del servidor se validan»; [CU-DEV-09] excepción paso 4; [RN-DEV-038] |
+
+**Precondiciones:** Solo API; `<token>` con `Devoluciones:Leer`.
+**Datos:** la tabla.
+**Pasos:** 1. Envía cada petición `GET /devoluciones` con el parámetro indicado.
+
+| Parámetro | Valor | `code` esperado |
+|---|---|---|
+| `montoMin` | `-1` | `GetDevolucionesQuery.MontoMin` |
+| `montoMin` y `montoMax` | `100` y `50` | `GetDevolucionesQuery.MontoMax` |
+| `motivoSunatCatalogo` | `6` | `GetDevolucionesQuery.MotivoSunatCatalogo` |
+| `numeroNotaCredito` | 21 caracteres | `GetDevolucionesQuery.NumeroNotaCredito` |
+| `empleadoAutorizaId` | `00000000-0000-0000-0000-000000000000` | `GetDevolucionesQuery.EmpleadoAutorizaId` |
+
+**Resultado esperado:** la API responde 400 con el `code` de la tabla; `montoMax` igual a `montoMin` es válido. La pantalla no provoca estos errores (solo envía valores que ella ofrece); un rechazo se vería como «No se pudieron cargar las devoluciones.».
+
+#### TC-DEV-067 — Solo veo las devoluciones de mis sucursales
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-DEV-009] «Solo veo las devoluciones de mis sucursales»; [CU-DEV-09] flujo básico (paso 4); [RN-GEN-023], [RN-DEV-038] |
+
+**Precondiciones:** devoluciones en «Sede Principal» y en «Sucursal Demo Norte»; Carlos limitado a «Sede Principal»; `ana.manual` (`Admin`); devoluciones de la empresa B.
+**Datos:** ninguno.
+**Pasos:** 1. Busca sin filtros con la cuenta de Carlos. 2. Repite con Ana.
+**Resultado esperado:** Carlos ve solo las devoluciones de ventas de «Sede Principal» (la sucursal de la venta cuyo comprobante se acredita); Ana ve las de toda su empresa; nadie ve las de la empresa B.
+
+#### TC-DEV-068 — Abrir la devolución o la venta desde los resultados
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-009] «Abrir la venta o la devolución»; [CU-DEV-09] flujo básico (paso 7); [RN-DEV-042], [RN-DEV-043] |
+
+**Precondiciones:** resultados visibles; una cuenta con `Ventas:Leer` y otra con `Devoluciones:Leer` sin `Ventas:Leer` (rol de prueba).
+**Datos:** ninguno.
+**Pasos:** 1. Haz clic en el número de la nota de crédito. 2. Vuelve y mira la columna «Venta» con cada cuenta.
+**Resultado esperado:** el número de la nota abre `/devoluciones/:id`; el código de la venta es un enlace a `/pos/:id` solo con `Ventas:Leer` y texto simple sin ese permiso; una devolución sin nota de crédito muestra guiones en esa columna.
+
+#### TC-DEV-069 — Limpiar los filtros y paginar las devoluciones
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Baja | [HU-DEV-009] «Limpiar y paginar»; [CU-DEV-09] A1 y A3; [RN-GEN-009], [RN-DEV-042] |
+
+**Precondiciones:** filtros escritos y tabla visible.
+**Datos:** ninguno.
+**Pasos:** 1. Haz clic en «Limpiar». 2. Busca de nuevo y mira el paginador. 3. Busca con un filtro sin coincidencias.
+**Resultado esperado:** los filtros quedan vacíos, el deslizador vuelve a 0 y 1000 y la tabla se oculta; el paginador ofrece «Items por página» de 10, 25 o 50 con botones de primera y última página; sin coincidencias la tabla dice «Sin resultados». Al volver a la pantalla desde un detalle se restauran los filtros y la página de la última búsqueda.
+
+#### TC-DEV-070 — Exportar las devoluciones a Excel
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-009] «Exportar a Excel»; [CU-DEV-09] flujo básico (paso 8); [RN-DEV-041], [RN-IMP-008], [RN-IMP-009], [RN-IMP-010] |
+
+**Precondiciones:** ya hiciste clic en «Buscar». No verificado en la aplicación: el contenido del archivo (según RN-DEV-041).
+**Datos:** un filtro por método «Efectivo»; idioma español y luego inglés.
+**Pasos:** 1. Antes de buscar comprueba que no hay botón «Exportar». 2. Busca, escribe otro filtro sin buscar y haz clic en «Exportar». 3. Abre `devoluciones.xlsx`. 4. Repite con la interfaz en inglés.
+**Resultado esperado:** el botón no aparece antes de buscar; se descarga `devoluciones.xlsx` con diez columnas: «Nota de crédito», «Venta», «Fecha», «Cliente», «Autorizó», «Sucursal», «Motivo», «Monto de la nota (S/)», «Reembolsado (S/)» y «Método de reembolso»; la fecha sale dd/MM/yyyy en español y MM/dd/yyyy en inglés; el archivo trae los filtros escritos en ese momento (no necesariamente los de la última búsqueda); la columna «Motivo» trae el código `06` o `07` y la del método el nombre interno (por ejemplo `YapePlin`); no trae las líneas ni el destino.
+
+#### TC-DEV-071 — Exportación demasiado grande y error al buscar o exportar
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Negativo | Media | [HU-DEV-009] «Exportación demasiado grande», «Error al buscar»; [CU-DEV-09] excepciones pasos 3 y 8; [RN-DEV-041], [RN-IMP-017] |
+
+**Precondiciones:** No verificado en la aplicación para las más de 10 000 filas (no se puede provocar con los datos del manual); para el error, bloqueo de las llamadas `GET /devoluciones` y `POST /devoluciones/exportar` en las herramientas del navegador.
+**Datos:** ninguno.
+**Pasos:** 1. Con el bloqueo de `GET`, haz clic en «Buscar». 2. Quita el bloqueo, busca, bloquea solo `exportar` y haz clic en «Exportar».
+**Resultado esperado:** la búsqueda muestra «No se pudieron cargar las devoluciones.» y la exportación «No se pudo exportar las devoluciones.»; con más de 10 000 filas la API respondería 400 `Export.TooManyRows` y no generaría el archivo, con el mismo aviso de exportación.
+
+#### TC-DEV-072 — Sin el permiso no hay pantalla de devoluciones
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-DEV-009] «Sin el permiso no hay pantalla»; [CU-DEV-09] A2; [RN-DEV-042], [RN-GEN-020] |
+
+**Precondiciones:** una cuenta cuyo rol no tiene `Devoluciones › Leer` (por ejemplo `sin.permisos`); `<token>` de esa cuenta.
+**Datos:** `GET /devoluciones` y `GET /devoluciones/<id>`; la dirección `/devoluciones`.
+**Pasos:** 1. Mira el menú «Punto de Venta». 2. Escribe `/devoluciones` en la barra. 3. Llama a los dos endpoints.
+**Resultado esperado:** no ves «Devoluciones» en el menú; el SPA muestra «No tienes permisos para acceder a esta pantalla.» y vuelve al Inicio; la API responde 403 sin `code`.
+
+### HU-DEV-010 — Ver el detalle de una devolución y sus productos devueltos
+
+#### TC-DEV-073 — Ver el detalle de una devolución
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-010] «Ver el detalle»; [CU-DEV-10] flujo básico (pasos 1, 4 y 5); [RN-DEV-043], [RN-DEV-022] |
+
+**Precondiciones:** una devolución con nota de crédito `BC01-00000001` (TC-DEV-033).
+**Datos:** ninguno.
+**Pasos:** 1. Abre la devolución desde `/devoluciones`. 2. Mira la cabecera y los datos.
+**Resultado esperado:** ves «Detalle de devolución» con la flecha de volver, el número de la nota de crédito (o «Sin nota de crédito» en una devolución antigua) y la fecha dd/MM/yyyy HH:mm; y los datos «Venta», «Cliente», «Autorizó», «Sucursal», «Motivo», «Método de reembolso», «Monto de la nota (S/)», «Reembolsado (S/)» y «Sustento».
+
+#### TC-DEV-074 — Los productos devueltos, el subtotal y el total devuelto
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Alta | [HU-DEV-010] «Los productos devueltos»; [CU-DEV-10] flujo básico (pasos 3 y 5); [RN-DEV-040], [RN-DEV-043], [RN-DEV-016] |
+
+**Precondiciones:** una devolución parcial de 30 unidades a S/ 0.50 la unidad base y otra línea de 10 unidades a S/ 1.20 (datos de TC-DEV-001 o equivalentes).
+**Datos:** ninguno.
+**Pasos:** 1. Abre el detalle. 2. Compara cada línea con la venta de origen.
+**Resultado esperado:** «Productos devueltos» tiene una fila por línea con «Producto», «Lote», «Presentación», «Cantidad devuelta», «Precio unitario (S/)», «Subtotal (S/)» y «Destino»; el subtotal es la cantidad devuelta por el precio unitario fijado en la línea de la venta (30 × 0.50 = 15.00 y 10 × 1.20 = 12.00, sin redondear); «Total devuelto:» muestra la suma de los subtotales (27.00); esa suma puede diferir en céntimos del monto de la nota de crédito, que redondea.
+
+#### TC-DEV-075 — El destino de cada línea y las líneas vendidas por unidad
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-010] «El destino de cada línea», «Una línea vendida por unidad»; [CU-DEV-10] flujo básico (paso 3); [RN-DEV-040], [RN-DEV-024] |
+
+**Precondiciones:** una devolución con una línea que volvió a la venta y otra a cuarentena (TC-DEV-017 y TC-DEV-019); una línea vendida por unidad (sin presentación).
+**Datos:** ninguno.
+**Pasos:** 1. Abre el detalle y mira la columna «Destino» y la columna «Presentación».
+**Resultado esperado:** la primera línea dice «Reingreso a venta» y la segunda «Cuarentena DIGEMID»; en la línea vendida por unidad la columna «Presentación» muestra «—».
+
+#### TC-DEV-076 — Un producto o lote eliminado después de la venta no borra la línea
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Media | [HU-DEV-010] «Un producto o lote eliminado después de la venta»; [CU-DEV-10] flujo básico (paso 3); [RN-DEV-040] |
+
+**Precondiciones:** una devolución cuyo producto o lote se eliminó (lógicamente) después de la venta, y se pudo preparar por base de datos. No verificado en la aplicación.
+**Datos:** ninguno.
+**Pasos:** 1. Abre el detalle de esa devolución.
+**Resultado esperado:** la línea sigue apareciendo con «Producto desconocido» o «N/A» en vez de desaparecer del historial; el precio unitario es 0 si la línea de venta ya no se encuentra.
+
+#### TC-DEV-077 — Ver la venta de origen y llegar desde el detalle de la venta
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Media | [HU-DEV-010] «Ver la venta de origen», «Llegar desde el detalle de la venta»; [CU-DEV-10] flujo básico (paso 6); [RN-DEV-043], [RN-DEV-044] |
+
+**Precondiciones:** una venta con devoluciones; una cuenta con `Ventas:Leer` y `Devoluciones:Leer`, y otra con solo una de las dos.
+**Datos:** ninguno.
+**Pasos:** 1. En el detalle de la devolución mira el botón «Ver venta» con cada cuenta. 2. Abre `/pos/{id}` de la venta y mira la sección «Devoluciones / Notas de crédito».
+**Resultado esperado:** con `Ventas:Leer` ves «Ver venta», que abre `/pos/:id`; sin ese permiso no ves el botón y el código de la venta es texto; en el detalle de la venta el número de la nota de crédito es un enlace a `/devoluciones/:id` solo con `Devoluciones:Leer` (sin él es texto plano; el texto es el número o «—»).
+
+#### TC-DEV-078 — Una devolución de otra sucursal o inexistente
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Permisos | Alta | [HU-DEV-010] «Una devolución de otra sucursal o inexistente»; [CU-DEV-10] excepción paso 2; [RN-GEN-023], [RN-DEV-031] |
+
+**Precondiciones:** `<token>` de Carlos (limitado a «Sede Principal»); el identificador de una devolución de «Sucursal Demo Norte», el de una devolución de la empresa B y un GUID inexistente.
+**Datos:** `GET /devoluciones/<id>` con cada identificador; en el SPA, `/devoluciones/<id>`.
+**Pasos:** 1. Llama a la API con cada identificador. 2. Abre cada dirección en el SPA.
+**Resultado esperado:** la API responde 404 `Devolucion.NotFound` para las tres (una devolución de una sucursal sin acceso se comporta como inexistente); el SPA muestra «No se pudo cargar la devolución.» y no muestra datos.
+
+#### TC-DEV-079 — El detalle de la devolución es de solo lectura
+
+| Tipo | Prioridad | Cubre |
+|---|---|---|
+| Positivo | Baja | [HU-DEV-010] «Solo lectura»; [CU-DEV-10] flujo básico (paso 5); [RN-DEV-043] |
+
+**Precondiciones:** una devolución cualquiera, con la sesión de `ana.manual`.
+**Datos:** ninguno.
+**Pasos:** 1. Abre el detalle y busca botones de editar, eliminar o anular. 2. Haz clic en la flecha de volver.
+**Resultado esperado:** no hay botones para editar, eliminar ni anular la devolución; la flecha de volver lleva a `/devoluciones`.
 
 ## 7. Casos del módulo Dashboard (`TC-DAS`)
 
@@ -5351,12 +5590,12 @@ Los nombres de los campos del cuerpo de `POST /api/v1/Servicios/inmunizacion` so
 |---|---|---|---|---|
 | Ventas (`TC-VEN`) | 209 | 91 | 91 | 27 |
 | Caja (`TC-CAJ`) | 56 | 24 | 20 | 12 |
-| Devoluciones (`TC-DEV`) | 59 | 26 | 27 | 6 |
+| Devoluciones (`TC-DEV`) | 79 | 30 | 41 | 8 |
 | Dashboard (`TC-DAS`) | 49 | 7 | 25 | 17 |
 | Solo API (`TC-OPS`) | 137 | 32 | 72 | 33 |
-| **Total** | **510** | **180** | **235** | **95** |
+| **Total** | **530** | **184** | **249** | **97** |
 
-Estado de ejecución de los 510 casos: **No ejecutado**. En esta tarea no se ejecutó la aplicación, no se llamó a la API y no se ejecutó ningún comando git.
+Estado de ejecución de los 530 casos: **No ejecutado**. En esta tarea no se ejecutó la aplicación, no se llamó a la API y no se ejecutó ningún comando git.
 
 ### 9.2 Hallazgos documentados que los casos reproducen tal cual
 
@@ -5466,6 +5705,8 @@ Los números siguen el orden en que aparecen las líneas `Escenario:` y `Esquema
 | HU-DEV-006 | 1→DEV-047; 2→DEV-048; 3→DEV-049; 4→DEV-050; 5→DEV-051 | 5 |
 | HU-DEV-007 | 1→DEV-052; 2→DEV-052; 3→DEV-053; 4→DEV-054 | 3 |
 | HU-DEV-008 | 1→DEV-055; 2→DEV-056; 3→DEV-057; 4→DEV-058; 5→DEV-059 | 5 |
+| HU-DEV-009 | 1→DEV-060; 2→DEV-060; 3→DEV-061; 4→DEV-062; 5→DEV-063; 6→DEV-063; 7→DEV-064; 8→DEV-065; 9→DEV-066; 10→DEV-067; 11→DEV-068; 12→DEV-069; 13→DEV-070; 14→DEV-071; 15→DEV-071; 16→DEV-072 | 13 |
+| HU-DEV-010 | 1→DEV-073; 2→DEV-074; 3→DEV-075; 4→DEV-075; 5→DEV-076; 6→DEV-077; 7→DEV-077; 8→DEV-078; 9→DEV-079 | 7 |
 | HU-DAS-001 | 1→DAS-001; 2→DAS-002; 3→DAS-003; 4→DAS-004; 5→DAS-005; 6→DAS-006; 7→DAS-007 | 7 |
 | HU-DAS-002 | 1→DAS-008; 2→DAS-009; 3→DAS-010; 4→DAS-011; 5→DAS-012 | 5 |
 | HU-DAS-003 | 1→DAS-013; 2→DAS-014; 3→DAS-015; 4→DAS-016 | 4 |
@@ -5499,11 +5740,11 @@ Los números siguen el orden en que aparecen las líneas `Escenario:` y `Esquema
 | HU-OPS-021 | 1→OPS-129; 2→OPS-130; 3→OPS-131; 4→OPS-131 | 3 |
 | HU-OPS-022 | 1→OPS-132; 2→OPS-132; 3→OPS-133; 4→OPS-134; 5→OPS-135; 6→OPS-136; 7→OPS-137 | 6 |
 
-Las 76 historias tienen al menos un caso (la columna «Casos» cuenta los casos distintos que citan la historia).
+Las 78 historias tienen al menos un caso (la columna «Casos» cuenta los casos distintos que citan la historia).
 
 ### 10.2 Casos de uso → casos
 
-Los 76 casos de uso tienen al menos un caso (los rangos usan el prefijo del módulo: `TC-CAJ-001 a 010` es de `TC-CAJ-001` a `TC-CAJ-010`).
+Los 78 casos de uso tienen al menos un caso (los rangos usan el prefijo del módulo: `TC-CAJ-001 a 010` es de `TC-CAJ-001` a `TC-CAJ-010`).
 
 | Caso de uso | Casos |
 |---|---|
@@ -5551,6 +5792,8 @@ Los 76 casos de uso tienen al menos un caso (los rangos usan el prefijo del mód
 | CU-DEV-06 | TC-DEV-047 a 051 |
 | CU-DEV-07 | TC-DEV-052 a 054 |
 | CU-DEV-08 | TC-DEV-055 a 059 |
+| CU-DEV-09 | TC-DEV-060 a 072 |
+| CU-DEV-10 | TC-DEV-073 a 079 |
 | CU-DAS-01 | TC-DAS-001 a 007 |
 | CU-DAS-02 | TC-DAS-008 a 012 |
 | CU-DAS-03 | TC-DAS-013 a 016 |
@@ -5586,7 +5829,7 @@ Los 76 casos de uso tienen al menos un caso (los rangos usan el prefijo del mód
 
 ### 10.3 Reglas de negocio → casos
 
-Reglas de los catálogos [`negocio/reglas/ventas-y-comprobantes`](../../negocio/reglas/ventas-y-comprobantes.md) (`RN-VEN`, `RN-CMP`), [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (`RN-CAJ`, `RN-DEV`, `RN-DAS`) y [`negocio/reglas/modulos-solo-api`](../../negocio/reglas/modulos-solo-api.md) (`RN-TRA`, `RN-CUA`, `RN-MAG`, `RN-SRV`, `RN-DEL`, `RN-AUD`), más las transversales y de otras partes que mis casos citan. El caso se escribe sin el prefijo `TC-`. Las 320 reglas con comportamiento comprobable tienen caso; las cuatro restantes figuran en 10.4.
+Reglas de los catálogos [`negocio/reglas/ventas-y-comprobantes`](../../negocio/reglas/ventas-y-comprobantes.md) (`RN-VEN`, `RN-CMP`), [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (`RN-CAJ`, `RN-DEV`, `RN-DAS`) y [`negocio/reglas/modulos-solo-api`](../../negocio/reglas/modulos-solo-api.md) (`RN-TRA`, `RN-CUA`, `RN-MAG`, `RN-SRV`, `RN-DEL`, `RN-AUD`), más las transversales y de otras partes que mis casos citan. El caso se escribe sin el prefijo `TC-`. Las 327 reglas con comportamiento comprobable tienen caso; las seis restantes figuran en 10.4.
 
 | Regla | Casos |
 |---|---|
@@ -5721,35 +5964,42 @@ Reglas de los catálogos [`negocio/reglas/ventas-y-comprobantes`](../../negocio/
 | RN-DEV-013 | DEV-020 |
 | RN-DEV-014 | DEV-042, DEV-045 |
 | RN-DEV-015 | DEV-043, DEV-044 |
-| RN-DEV-016 | DEV-023, DEV-028 a 030 |
+| RN-DEV-016 | DEV-023, DEV-028 a 030, DEV-074 |
 | RN-DEV-017 | DEV-023, DEV-029 |
 | RN-DEV-018 | CAJ-034, DEV-024 a 026 |
 | RN-DEV-019 | CAJ-034, DEV-023, DEV-025, DEV-027 |
 | RN-DEV-020 | DEV-001, DEV-033, DEV-039 |
 | RN-DEV-021 | DEV-029, DEV-034 |
-| RN-DEV-022 | DEV-035, DEV-036 |
+| RN-DEV-022 | DEV-035, DEV-036, DEV-073 |
 | RN-DEV-023 | DEV-017, DEV-018 |
-| RN-DEV-024 | DEV-019, OPS-047 |
+| RN-DEV-024 | DEV-019, OPS-047, DEV-075 |
 | RN-DEV-025 | DEV-001, DEV-002 |
 | RN-DEV-026 | VEN-078, DEV-004 |
 | RN-DEV-027 | DEV-003 |
 | RN-DEV-028 | DEV-005 a 007, DEV-039 |
 | RN-DEV-029 | DEV-008, DEV-010 |
-| RN-DEV-030 | DEV-055, DEV-056 |
-| RN-DEV-031 | DEV-057, DEV-058 |
-| RN-DEV-032 | DEV-052, DEV-053, DEV-059 |
+| RN-DEV-030 | DEV-055, DEV-056, DEV-055 |
+| RN-DEV-031 | DEV-057, DEV-058, DEV-057, DEV-078 |
+| RN-DEV-032 | DEV-052, DEV-053, DEV-059, DEV-059 |
 | RN-DEV-033 | DEV-033, DEV-041, DEV-045 |
 | RN-DEV-034 | DEV-041 |
 | RN-DEV-035 | DEV-031, DEV-041 |
 | RN-DEV-036 | DEV-022, DEV-031, DEV-041 |
 | RN-DEV-037 | DEV-040 |
+| RN-DEV-038 | DEV-055, DEV-060 a 067 |
+| RN-DEV-039 | DEV-061 |
+| RN-DEV-040 | DEV-057, DEV-074 a 076 |
+| RN-DEV-041 | DEV-059, DEV-070, DEV-071 |
+| RN-DEV-042 | DEV-060, DEV-062, DEV-065, DEV-068, DEV-069, DEV-072 |
+| RN-DEV-043 | DEV-068, DEV-073, DEV-074, DEV-077, DEV-079 |
+| RN-DEV-044 | DEV-036, DEV-052, DEV-077 |
 | RN-GEN-007 | VEN-117 |
-| RN-GEN-008 | VEN-191, CAJ-048, OPS-055, OPS-087 |
-| RN-GEN-009 | VEN-191, VEN-197, CAJ-050, OPS-054 |
+| RN-GEN-008 | VEN-191, CAJ-048, OPS-055, OPS-087, DEV-063 |
+| RN-GEN-009 | VEN-191, VEN-197, CAJ-050, OPS-054, DEV-060, DEV-069 |
 | RN-GEN-010 | DEV-046 |
 | RN-GEN-011 | VEN-095 |
-| RN-GEN-020 | OPS-012 |
-| RN-GEN-023 | CAJ-049, DAS-040, OPS-054, OPS-086 |
+| RN-GEN-020 | OPS-012, DEV-072 |
+| RN-GEN-023 | CAJ-049, DAS-040, OPS-054, OPS-086, DEV-067, DEV-078 |
 | RN-GEN-024 | VEN-008, OPS-002 |
 | RN-GEN-035 | VEN-120 |
 | RN-GEN-041 | OPS-036 |
@@ -5920,17 +6170,19 @@ Otras reglas de las partes A y B que los casos citan para trazabilidad (se compr
 | RN-VEN-082 | Índices de rendimiento de ventas, detalle y pagos: sin efecto visible para el usuario ni resultado comprobable por un tester. |
 | RN-VEN-083 | Guards de la entidad `Venta` que ninguna ruta alcanza: no producen mensajes (la API o el validador responden antes). |
 | RN-CAJ-006 | Guards de la entidad `PosSesionCaja` que ninguna ruta alcanza (`TC-CAJ-009` revisa las restricciones de la base, no los guards). |
+| RN-DAS-025 | Cifras de suscripciones del operador de plataforma: se ejercen en la parte A (`TC-ADM-451` a `TC-ADM-455`), porque dependen de la cuenta de operador. |
+| RN-DAS-026 | Sección «Suscripciones» del panel: ídem, en la parte A (`TC-ADM-448` y `TC-ADM-451` a `TC-ADM-455`). |
 | RN-GEN-015 | Denegación por defecto de controladores sin `[Authorize]`: regla transversal de acceso, cubierta por los casos de autenticación de la parte A. |
 
 ### 10.5 Verificación
 
 | Comprobación | Resultado |
 |---|---|
-| Casos escritos | 510, sin IDs repetidos |
-| Escenarios (`Escenario:` y `Esquema del escenario:`) de las 76 historias | 566 de 566 con caso |
-| Historias con al menos un caso | 76 de 76 |
-| Casos de uso con al menos un caso | 76 de 76 |
-| Reglas del alcance con comportamiento comprobable con caso | 320 de 324 (las cuatro restantes, en 10.4) |
+| Casos escritos | 530, sin IDs repetidos |
+| Escenarios (`Escenario:` y `Esquema del escenario:`) de las 78 historias | 591 de 591 con caso |
+| Historias con al menos un caso | 78 de 78 |
+| Casos de uso con al menos un caso | 78 de 78 |
+| Reglas del alcance con comportamiento comprobable con caso | 327 de 333 (las seis restantes, en 10.4) |
 | Los títulos de escenario citados en «Cubre» coinciden con los de las historias | Sí (0 sin coincidencia) |
 | Los `HU-…`, `CU-…` y `RN-…` citados existen en sus documentos | Sí (0 inexistentes) |
 | Referencias cruzadas `TC-…` dentro del documento apuntan a casos existentes | Sí (0 inexistentes) |
@@ -5942,8 +6194,8 @@ Otras reglas de las partes A y B que los casos citan para trazabilidad (se compr
 Documentos del repositorio de documentación (`sofia-docs`):
 
 - `_inventario/REGLAS-AGENTES.md` y `_inventario/QA-AGENTES.md` (reglas comunes e instrucciones de los casos de prueba).
-- `producto/historias-de-usuario/punto-de-venta-y-caja.md` (fuente principal: 76 historias, 566 escenarios).
-- `producto/casos-de-uso/punto-de-venta-y-caja.md` (76 casos de uso; flujos básicos, alternativos y tablas de excepciones).
+- `producto/historias-de-usuario/punto-de-venta-y-caja.md` (fuente principal: 78 historias, 591 escenarios).
+- `producto/casos-de-uso/punto-de-venta-y-caja.md` (78 casos de uso; flujos básicos, alternativos y tablas de excepciones).
 - `negocio/reglas/inventario-y-recetas.md`, `negocio/reglas/ventas-y-comprobantes.md`, `negocio/reglas/caja-devoluciones-y-dashboard.md`, `negocio/reglas/modulos-solo-api.md` (y, solo para comprobar la existencia de reglas citadas, `negocio/reglas/administracion-y-seguridad.md` y `negocio/reglas/catalogos.md`).
 - `producto/pantallas/acceso-layout-y-compartidos.md` y `producto/pantallas/punto-de-venta.md` (a través de las historias).
 - `tecnico/catalogo-de-codigos-de-error.md` (códigos de error; enlazado).
@@ -5953,6 +6205,8 @@ Documentos del repositorio de documentación (`sofia-docs`):
 
 Código leído para comprobar los nombres de los campos de las peticiones de venta:
 
+- `sofia-apis/src/SOFIA.API/Controllers/DevolucionesController.cs`, `sofia-apis/src/SOFIA.Application/Devoluciones/Queries/GetDevoluciones/` (consulta, validador y DTO), `sofia-apis/src/SOFIA.Application/Devoluciones/Queries/GetDevolucionById/` y `sofia-apis/src/SOFIA.Application/Devoluciones/Common/DevolucionFilters.cs` (casos TC-DEV-055 a TC-DEV-079)
+- `sofia-web-spa/src/app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts` y `sofia-web-spa/src/app/core/auth/route-permissions.ts` (menú y permiso de `/devoluciones`)
 - `sofia-apis/src/SOFIA.Application/Ventas/Commands/CreateVenta/CreateVentaCommand.cs:12-31`
 - `sofia-apis/src/SOFIA.Application/Ventas/Commands/CompletarVenta/CompletarVentaCommand.cs`
 - `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommand.cs`
