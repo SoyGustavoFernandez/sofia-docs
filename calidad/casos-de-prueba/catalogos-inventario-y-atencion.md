@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; los casos TC-CAT-190, TC-CAT-201 y TC-CAT-202 (DIGEMID) están reconciliados con `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
-| **Método** | Lectura de documentos validados y comprobación puntual en el código; casos no ejecutados |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40`; los casos TC-CAT-190, TC-CAT-201 y TC-CAT-202 (DIGEMID) se reconciliaron con `9c16f35` y se volvieron a revisar sobre `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Lectura de documentos validados y comprobación en el código (mensajes, códigos de error, rutas y permisos por script sobre todos los casos; resultados esperados de prioridad Alta contrastados con el código en lo mecánico); casos no ejecutados. La revisión del 2026-11-20 (suscripciones de plataforma y devoluciones, `6f6b837` y `0678e40`) no cambió ninguna pantalla ni regla de esta parte: no hay casos nuevos |
 
 ## 1. Convenciones
 
@@ -4041,7 +4041,7 @@ Código leído de forma puntual y de solo lectura (`sofia-apis/src`):
 - `SOFIA.Application/Inventarios/Commands/RegisterInventario/RegisterInventarioCommandHandler.cs` y `RegisterInventarioCommand.cs`, `AdjustStock/AdjustStockCommandHandler.cs` y `AdjustStockCommand.cs`, `DeleteLote/DeleteLoteInventarioCommandHandler.cs`, `SOFIA.Application/Common/Models/AuditEventos.cs`.
 - `SOFIA.Domain/Entities/RecetaMedica.cs` (código `Venta.Receta.Agotada`).
 
-Herramientas de verificación (solo lectura, en el scratchpad de la sesión): `16b-cu.js` y `16b-verify.js`.
+Herramientas de verificación (solo lectura, en el scratchpad de la sesión): `16b-cu.js` y `16b-verify.js`. En la versión 1.2 se repitió la comprobación de referencias (HU, CU, RN y TC citados), de mensajes entre « », de códigos de error, de rutas de la API y de permisos contra el código de `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`; el conteo de escenarios por historia (401 en 66) sigue vigente.
 
 [hu]: ../../producto/historias-de-usuario/catalogos-inventario-y-atencion.md
 [hu-c]: ../../producto/historias-de-usuario/punto-de-venta-y-caja.md
