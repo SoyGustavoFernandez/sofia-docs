@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de documentos validados y comprobación en el código (mensajes, códigos de error, rutas y permisos por script sobre todos los casos; resultados esperados de prioridad Alta contrastados con el código en lo que toca a suscripciones, vigencia, menú, catálogo de permisos y rutas de la API); casos no ejecutados |
@@ -1807,7 +1807,7 @@ Los tiempos de respuesta son del mismo orden (la contraseña se verifica siempre
 
 | Tipo | Prioridad | Cubre |
 |---|---|---|
-| Positivo | Alta | [HU-ADM-016][hu] «Cuándo una empresa está vigente»; [HU-ADM-016][hu] «Cuándo no está vigente»; [HU-ADM-016][hu] «En estado Activo la fecha de vencimiento no se evalúa»; [CU-ADM-02][cu] excepción paso 6; [RN-EMP-014, RN-EMP-015][rn] |
+| Positivo | Alta | [HU-ADM-016][hu] «Cuándo una empresa está vigente»; [HU-ADM-016][hu] «Cuándo no está vigente»; [HU-ADM-016][hu] «En estado Activo la fecha de vencimiento también se evalúa»; [CU-ADM-02][cu] excepción paso 6; [RN-EMP-014, RN-EMP-015][rn] |
 
 **Precondiciones:** empresas de prueba que se llevan al estado de cada fila con el operador de plataforma (activar, extender la prueba, suspender o cancelar, TC-ADM-435 a TC-ADM-440) o por base de datos. No verificado en la aplicación.
 **Datos:** una fila por vez; cuenta de la empresa con contraseña correcta.
