@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.3: solo la entrada «Devolución» y la lista de pantallas sin ruta) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código (entidades, enums, handlers, scripts DbUp, componentes Angular y archivos `es.json`), contraste con los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y 19 búsquedas web en fuentes oficiales peruanas (SUNAT, DIGEMID, gob.pe, El Peruano). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay trabajo sin commitear que afecte a este documento. |
 
 ## 1. Cómo leer este glosario
@@ -48,7 +48,7 @@ Este documento fija **un término preferido** para cada concepto: el que usa la 
 
 Otros documentos a los que remite este glosario: [matriz de permisos](../tecnico/seguridad/matriz-de-permisos.md), [integraciones](../tecnico/integraciones.md), [modelo de datos: maestros y seguridad](../tecnico/modelo-de-datos/maestros-y-seguridad.md) y los inventarios de pantallas [`producto/pantallas/acceso-layout-y-compartidos`](../producto/pantallas/acceso-layout-y-compartidos.md), [`producto/pantallas/administracion`](../producto/pantallas/administracion.md) y [`producto/pantallas/catalogos-basicos`](../producto/pantallas/catalogos-basicos.md).
 
-**Estados de implementación que usa este glosario.** «Solo API (sin pantalla)»: existe el endpoint pero ninguna ruta del SPA lo muestra. «Parcial»: existe una parte. «Solo en el enum»: el valor existe en el código pero ninguna función lo usa. Los módulos sin pantalla enrutada son Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, Cuarentena y actas DIGEMID, listado y detalle de Devoluciones y Auditoría (comprobado contra `docs/_inventario/rutas-spa.csv`). El envío de comprobantes a SUNAT no existe.
+**Estados de implementación que usa este glosario.** «Solo API (sin pantalla)»: existe el endpoint pero ninguna ruta del SPA lo muestra. «Parcial»: existe una parte. «Solo en el enum»: el valor existe en el código pero ninguna función lo usa. Los módulos sin pantalla enrutada son Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, Cuarentena y actas DIGEMID y Auditoría (comprobado contra `docs/_inventario/rutas-spa.csv`). El envío de comprobantes a SUNAT no existe.
 
 **Aviso sobre los documentos de reglas.** Algunos documentos de reglas se escribieron sobre commits anteriores. Cuando el código actual difiere, manda el código y se avisa en la entrada (por ejemplo, el registro de precios de proveedor: ver «Precio de compra»).
 
@@ -738,9 +738,9 @@ Mapa de la familia: el cajero **abre una sesión de caja** con un monto de apert
 
 **Definición.** Entrega de vuelta de mercadería ya vendida, con la nota de crédito que reduce el comprobante. Ver «Nota de crédito». Definición general, no verificada en fuente oficial.
 
-**En SOFIA.** Se procesa **desde el detalle de la venta** (botón «Devolver»). Condiciones: venta `Completada` de la **propia sucursal**, **caja propia abierta** y una **boleta o factura** emitida que acreditar, más una serie de nota de crédito activa. Se indica la cantidad por línea, el destino, el motivo SUNAT, el sustento y el método de reembolso. Una devolución **parcial** deja la venta `Completada`; cuando todo queda devuelto, la venta pasa a `Devuelta` (`DOM/Venta.cs:148-152`). Devolver **no libera** la dispensación de la receta ([RN-DEV-026](reglas/caja-devoluciones-y-dashboard.md)). Las pantallas de listado y detalle de devoluciones no existen aunque la API las expone.
+**En SOFIA.** Se procesa **desde el detalle de la venta** (botón «Devolver»). Condiciones: venta `Completada` de la **propia sucursal**, **caja propia abierta** y una **boleta o factura** emitida que acreditar, más una serie de nota de crédito activa. Se indica la cantidad por línea, el destino, el motivo SUNAT, el sustento y el método de reembolso. Una devolución **parcial** deja la venta `Completada`; cuando todo queda devuelto, la venta pasa a `Devuelta` (`DOM/Venta.cs:148-152`). Devolver **no libera** la dispensación de la receta ([RN-DEV-026](reglas/caja-devoluciones-y-dashboard.md)). Desde `37048ea` las devoluciones ya hechas se buscan en `/devoluciones` y se ven en `/devoluciones/:id` ([RN-DEV-042](reglas/caja-devoluciones-y-dashboard.md), [RN-DEV-043](reglas/caja-devoluciones-y-dashboard.md)).
 
-**Dónde aparece.** Detalle de venta: «Devolver» (`I18N/pos/es.json:106`), «Procesar devolución» (`:107`), «Devolver todo lo pendiente» (`:109`), columnas «Vendido», «Devuelto», «Devolvible», «A devolver», «Destino» (`:110-114`). Reglas: [RN-DEV-001](reglas/caja-devoluciones-y-dashboard.md) a [RN-DEV-037](reglas/caja-devoluciones-y-dashboard.md).
+**Dónde aparece.** Detalle de venta: «Devolver» (`I18N/pos/es.json:106`), «Procesar devolución» (`:107`), «Devolver todo lo pendiente» (`:109`), columnas «Vendido», «Devuelto», «Devolvible», «A devolver», «Destino» (`:110-114`). Reglas: [RN-DEV-001](reglas/caja-devoluciones-y-dashboard.md) a [RN-DEV-044](reglas/caja-devoluciones-y-dashboard.md).
 
 ### Diferencia de arqueo (faltante y sobrante)
 *También aparece como:* «Diferencia Arqueo (S/)», «Faltante», «Sobrante», `DiferenciaArqueo`, `Diferencia_Arqueo`.
@@ -1675,7 +1675,7 @@ Se hicieron 19 búsquedas web (el máximo permitido era 25) y un intento de abri
 ### 10.3 Pendientes (existe el nombre, falta la función)
 
 - Envío de comprobantes a SUNAT (OSE o PSE), factura, ticket, nota de débito y proforma: solo el enum o la serie.
-- Pantallas de Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, Cuarentena y actas, listado de Devoluciones y Auditoría: solo API.
+- Pantallas de Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, Cuarentena y actas y Auditoría: solo API.
 - Operaciones de cuarentena para liberar, destruir o devolver un lote (los estados existen, nadie los asigna).
 - Cobertura de seguro en el POS: apagada por una constante.
 - Estado `Aprobada` de la transferencia: ningún endpoint lo alcanza.
