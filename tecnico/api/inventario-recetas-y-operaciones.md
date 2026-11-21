@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (revisión: solo se corrigió la cita de `RateLimitingExtensions.cs`; las fichas de esta parte no cambiaron) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-21 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (revisión a fondo de las 46 fichas contra controlador, validador, handler y entidades; los ejemplos reales son capturas del 2026-10-30 sobre `34089ec` y ningún archivo de estos módulos cambió después) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y llamadas reales a la API local |
 
 ## Contenido
@@ -334,8 +334,8 @@ Edita el número de lote y las fechas. El producto no se puede cambiar (RN-LOT-0
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `UpdateLoteInventarioCommand.NumeroLoteMfr` / `.FechaCaducidad` / `.FechaFabricacion` | Falla el validador. | RN-LOT-003 a RN-LOT-007 |
-| 404 | `LoteInventario.NotFound` | El lote no existe. | RN-LOT-013 |
-| 400 | `LoteInventario.Duplicate` | Otro lote del mismo producto ya tiene ese número. | RN-LOT-010 |
+| 404 | `LoteInventario.NotFound` | El lote no existe. El handler lo busca con `FindAsync` (no filtra `IsDeleted` de forma explícita): No verificado si un lote eliminado también responde 404 al editarlo. | RN-LOT-013 |
+| 400 | `LoteInventario.Duplicate` | Otro lote del mismo producto ya tiene ese número (se compara contra los no eliminados). | RN-LOT-010 |
 
 **Ejemplo real:**
 
@@ -421,7 +421,7 @@ Ingresa stock de un lote en una sucursal: **suma** la cantidad a la fila existen
 |---|---|---|---|
 | `sucursalId` | GUID | Sí | Debe existir y ser accesible para el usuario (sucursal base, asignadas o todas si es `Admin`; RN-STK-002, RN-STK-005, RN-STK-006). |
 | `loteId` | GUID | Sí | Debe existir en la empresa. No se comprueba que esté vigente ni libre de cuarentena (RN-STK-003, RN-STK-007). |
-| `cantidad` | decimal | Sí | Mayor o igual que 0; hasta 4 decimales (RN-STK-004). |
+| `cantidad` | decimal | Sí | Mayor o igual que 0; hasta 4 decimales (RN-STK-004). La columna es `DECIMAL(12,4)` (hasta 8 dígitos enteros); el validador no pone tope superior y qué responde la API con un valor que no cabe es No verificado. |
 | `esAjusteDirecto` | booleano | No (por defecto `false`) | `true` reemplaza la cantidad en vez de sumarla y deja un evento de auditoría `STOCK_AJUSTAR` (RN-STK-008). |
 
 **Respuesta correcta:** `200 OK` con el identificador de la **fila de stock** (`InventarioSucursal`) como cuerpo, tanto si la creó como si la actualizó (el 201 que pasa el handler no llega al cliente; RN-STK-009).
@@ -741,7 +741,7 @@ Fija la cantidad física de una fila de stock al valor indicado (no es una suma;
 
 | Campo | Tipo | Obligatorio | Reglas |
 |---|---|---|---|
-| `nuevaCantidad` | decimal | Sí | Mayor o igual que 0 (RN-STK-004). |
+| `nuevaCantidad` | decimal | Sí | Mayor o igual que 0 (RN-STK-004). Es un valor no anulable: si el cuerpo no trae el campo llega como 0 y el ajuste dejaría la fila en 0 (el mismo comportamiento se capturó con el `id` ausente de `PUT /Delivery/{id}/estado`, que llegó como GUID vacío; para este endpoint no se probó). |
 
 **Respuesta correcta:** `204 No Content`.
 
@@ -1063,7 +1063,7 @@ Recibe la imagen de una receta y devuelve los medicamentos que la IA interpreta,
 | Campo | Tipo | Significado |
 |---|---|---|
 | `medicamentoId` | GUID o `null` | Producto de la empresa que coincide; `null` si no hay coincidencia (RN-REC-024). |
-| `nombreOficial` | texto | Nombre del producto de la empresa, o el de DIGEMID / el detectado si no hubo coincidencia. |
+| `nombreOficial` | texto | Nombre del producto de la empresa, o el nombre DIGEMID si lo hubo, o el detectado más su concentración (por ejemplo «Amoxicilina 500 mg») si no hubo coincidencia. |
 | `nombreDetectado` | texto o `null` | Lo que la IA leyó en la imagen. |
 | `confianzaFinal` | número | Entre 0 y 1; para los ítems de la receta es `nivel de confianza de la IA × 0,6 + parecido × 0,4`, y las sugerencias llevan 0,7 fijo (RN-REC-025). |
 | `tipoSugerencia` | texto | `Receta` (leído de la receta) o `Recomendacion` (sugerido por la IA; RN-REC-028). |
@@ -1078,7 +1078,7 @@ Recibe la imagen de una receta y devuelve los medicamentos que la IA interpreta,
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `AnalizarRecetaQuery.EspecialidadContexto` | `especialidadContexto` con más de 50 caracteres o con caracteres que no son letras ni espacios. | RN-REC-020 |
-| 400 | — (texto plano «Image is required.») | Falta el campo `imagen` o el archivo está vacío. | RN-REC-018 |
+| 400 | — (texto plano «Image is required.») | El archivo `imagen` está vacío (`Length == 0`) o el parámetro llega nulo. El parámetro `IFormFile imagen` no es anulable y el proyecto tiene `Nullable` habilitado, así que si falta el campo es probable que ASP.NET responda antes con su 400 estándar (`errors.imagen`) y no con este texto: No verificado en ejecución. | RN-REC-018 |
 | 413 | `Request.TooLarge` | El cuerpo supera 10 MB. | RN-REC-018, RN-GEN-039 |
 | 429 | — (sin `code`) | Más de 10 análisis por minuto de la misma empresa. | RN-REC-018, RN-GEN-028 |
 | 500 | — (sin `code`) | Falla Gemini (clave, cuota, red) o Presidio: el análisis se aborta y el texto del paciente no llega a la IA. `ProblemDetails` con `title` «Error del Servidor» y `traceId`. | RN-REC-021 |
@@ -2408,6 +2408,7 @@ Completa una orden `Iniciada`: crea un lote nuevo del producto resultante y su s
 | 404 | `Orden.NotFound` | La orden no existe. | RN-MAG-013 |
 | 403 | `OrdenMagistral.OtraSucursal` | La orden es de otra sucursal; también para el `Admin` (se compara con la sucursal del token). | RN-MAG-013 |
 | 400 | `Orden.Estado` | La orden ya está `Completada`. | RN-MAG-014 |
+| 400 | `Orden.Cantidad` | La orden no tiene una cantidad producida mayor que 0 (comprobación de respaldo: `iniciar` ya exige `cantidadProducida` > 0, de modo que no se alcanza con órdenes creadas por la API). | RN-MAG-014 |
 | 409 | `Db.Duplicado` | Ya existe un lote con ese número para el producto (índice `UX_Lotes_Producto_NumeroLote`). | RN-MAG-016, RN-GEN-036 |
 
 **Ejemplo real:**
@@ -2633,7 +2634,7 @@ Agenda un servicio (cita) para un paciente.
 |---|---|---|---|
 | `clienteId` | GUID | Sí | Paciente de la empresa (RN-SRV-003). |
 | `productoId` | GUID | Sí | Medicamento de la empresa; puede ser cualquiera, no se exige que sea un servicio (RN-SRV-003). |
-| `ventaId` | GUID o `null` | No | Si se envía, la venta debe existir; no se compara con el paciente ni se revisa su sucursal o estado. Un GUID vacío se guarda como «sin venta» (RN-SRV-003, RN-SRV-004). |
+| `ventaId` | GUID o `null` | No | Si se envía, la venta debe existir; no se compara con el paciente ni se revisa su sucursal o estado. Un GUID vacío (`00000000-…`) **no** se trata como «sin venta»: el handler lo busca primero y responde 404 `Venta.NotFound`; la conversión de la entidad de GUID vacío a «sin venta» (`ServicioAgenda.cs:50`) no se alcanza. Para no ligar una venta, envía `null` o no incluyas el campo (RN-SRV-003, RN-SRV-004). |
 | `fechaHoraProgramada` | fecha y hora | Sí | Sin ninguna comprobación: puede ser pasada o futura; no hay horario de atención ni choque de citas (RN-SRV-004). |
 | `estadoCita` | texto | No (por defecto `Programada`) | No vacío ni solo espacios, hasta 20 caracteres; cualquier texto es válido (RN-SRV-004). |
 
@@ -2724,7 +2725,7 @@ Registra una dosis administrada. **Solo guarda la referencia al lote usado:** no
 | `fechaAdmnFisica` | fecha y hora | Sí | Distinta de la fecha por defecto; con ella se juzga el vencimiento del lote. Puede ser pasada o futura (RN-SRV-007, RN-SRV-009). |
 | `fechaEntregaVis` | fecha y hora o `null` | No | Entrega de la hoja informativa al paciente (RN-SRV-010). |
 | `modalidadRegistro` | entero | Sí | `0` `Corriente` o `1` `Historica`; no condiciona ninguna regla (RN-SRV-011). |
-| `ventaId` | GUID o `null` | No | Si se envía, debe existir (RN-SRV-008). |
+| `ventaId` | GUID o `null` | No | Si se envía, debe existir; un GUID vacío tampoco se toma como «sin venta» y responde 404 `Venta.NotFound` (RN-SRV-008). |
 
 **Respuesta correcta:** `200 OK` con el identificador del registro como cuerpo (RN-SRV-013).
 
@@ -3307,7 +3308,8 @@ Todos con el prefijo `4D-` en su nombre o código, en la empresa «Farmacia API 
 | 5 | 409 `Concurrency.Conflict`, `InventarioSucursal.RegistroConcurrente` y `Db.Duplicado` por peticiones simultáneas (stock, transferencias, delivery, órdenes). | No se probó con concurrencia. `Db.Duplicado` sí se obtuvo en `Magistrales/completar` por un número de lote repetido. |
 | 6 | Si la base de datos en uso tiene las columnas `LastModifiedAt`, `LastModifiedBy`, `DeletedAt` y `DeletedBy` en `Servicios_Agenda` (RN-SRV-019). | No se consultó la base. La API funcionó (sección 7), pero el script `0001` no crea esas columnas. |
 | 7 | Comportamiento con un volumen de dosis de 3 o 4 decimales (la columna es `DECIMAL(8,2)`) y con cantidades que desbordan `DECIMAL(12,4)`. | No se probó (RN-SRV-020, RN-STK-004). |
-| 8 | Las fichas de `Delivery`, `Magistrales`, `Servicios` y `Transferencias` indican «Pantalla del SPA: Solo API» por la comprobación de `negocio/reglas/modulos-solo-api`, apartado 1; no se volvió a buscar en el SPA. | Ya validado en el catálogo `negocio/reglas/modulos-solo-api` (commit `27597cd`); los commits posteriores (`34089ec`, `5fc2ebf`, `d79d6fa` en `sofia-apis`) no tocan estos módulos (`git diff --stat 43f5529..HEAD` sobre controladores, `Application` y `Domain`: vacío). |
+| 8 | Qué responde `PUT /LotesInventario/{id}` con un lote ya eliminado, qué responde `POST /Recetas/analizar` si falta el campo `imagen` (no anulable) y qué hace `PUT /StockPorSucursal/{id}/ajustar` si el cuerpo no trae `nuevaCantidad`. | Se dedujeron del código (`FindAsync` en el handler de lotes; `IFormFile` no anulable con `Nullable` habilitado; valor por defecto 0 de un decimal ausente) y no se probaron. |
+| 9 | Las fichas de `Delivery`, `Magistrales`, `Servicios` y `Transferencias` indican «Pantalla del SPA: Solo API» por la comprobación de `negocio/reglas/modulos-solo-api`, apartado 1; no se volvió a buscar en el SPA. | Ya validado en el catálogo `negocio/reglas/modulos-solo-api` (commit `27597cd`); los commits posteriores (`34089ec`, `5fc2ebf`, `d79d6fa` en `sofia-apis`) no tocan estos módulos (`git diff --stat 43f5529..HEAD` sobre controladores, `Application` y `Domain`: vacío). |
 
 ### 9.2 En curso (sin commitear)
 
