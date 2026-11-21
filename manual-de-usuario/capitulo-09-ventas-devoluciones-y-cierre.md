@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-11-02 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` (más nuevo que la línea base `43f5529`; `git status --short` sin cambios locales al empezar) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` (más nuevo que la línea base `eeffbb6`; `git status --short` sin cambios locales al empezar) |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## Índice
@@ -154,7 +154,7 @@ La pantalla es **solo de lectura**. De arriba hacia abajo:
 | Comprobante | «Nº Comprobante:» con el tipo y el número («Boleta B001-00000003») y «Estado SUNAT:» con «Pendiente de envío a SUNAT». Solo si la venta tiene comprobante; una venta en espera no lo tiene |
 | Productos Vendidos | Columnas «Producto», «Lote», «Cantidad», «Devuelto», «P. Unitario (S/)» y «Subtotal (S/)» |
 | Pagos Registrados | Columnas «Método de Pago», «Monto (S/)», «Referencia de Operación» (con «—» si no hay) y «Fecha de Pago». Debajo, «Vuelto: S/ x.xx» si hubo vuelto |
-| Devoluciones / Notas de crédito | Solo si la venta tiene devoluciones (sección 7) |
+| Devoluciones / Notas de crédito | Solo si la venta tiene devoluciones (sección 7). Con `Devoluciones › Leer`, el número de la nota es un enlace a su detalle (sección 7.1) |
 
 Datos que se comprobaron en la aplicación:
 
@@ -238,7 +238,7 @@ Aparece el aviso «Venta anulada correctamente.» y el detalle se recarga ya com
 |---|---|---|
 | «El motivo es obligatorio.» | Dejaste el motivo vacío | Escribe el motivo |
 | «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» | Anulas una venta cobrada sin tener **tu** caja abierta. Se comprobó con el administrador `ana.manual`, que no tiene caja: la venta quedó «Completada» | Abre tu caja (capítulo 8) y vuelve a anular. La caja abierta de otra persona no te sirve |
-| «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» | La venta ya tiene una devolución. **No viste este mensaje en la aplicación**: el botón **Anular Venta** desaparece en cuanto la venta tiene devoluciones. Además, el texto habla de «Devoluciones», que no es una opción de menú: las devoluciones se hacen desde el detalle de la venta | Si hace falta corregir más, haz otra devolución de lo que queda (sección 7) |
+| «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» | La venta ya tiene una devolución. **No viste este mensaje en la aplicación**: el botón **Anular Venta** desaparece en cuanto la venta tiene devoluciones. Además, el texto habla de «Devoluciones»: con `eeffbb6` no era una opción de menú, y desde `37048ea` es una pantalla de consulta (sección 7.1); las devoluciones se siguen haciendo desde el detalle de la venta | Si hace falta corregir más, haz otra devolución de lo que queda (sección 7) |
 | «Error al anular la venta.» | Mensaje general: motivo con solo espacios, venta que ya no se puede anular o de otra sucursal | Revisa el estado de la venta y el motivo |
 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Otra persona cambió la venta a la vez | Actualiza la pantalla y vuelve a intentar. **No verificado en la aplicación**: no se provocó un conflicto simultáneo (fuente: `producto/pantallas/punto-de-venta` §8) |
 
@@ -364,6 +364,48 @@ Lo que aprendes de esto:
 | «Error al procesar la devolución.» | Mensaje general. **No verificado** | Revisa los datos y repite |
 
 **Importante:** la devolución es **permanente**: una vez emitida la nota de crédito, no se puede deshacer desde la pantalla.
+
+### 7.1 Buscar y ver devoluciones
+
+Desde `sofia-web-spa` `37048ea` y `sofia-apis` `0678e40` existe la pantalla **Devoluciones**, que sirve para consultar las devoluciones ya hechas; **no** sirve para hacer una devolución (eso se sigue haciendo con el botón **Devolver** del detalle de una venta, sección 7). Cuando se recorrió este capítulo esa pantalla no existía. Todo lo de esta sección sale del código (`sofia-web-spa/src/app/pages/devoluciones/`, `sofia-web-spa/public/i18n/devoluciones/es.json` y `sofia-apis/src/SOFIA.Application/Devoluciones/`) y es **No verificado en la aplicación**.
+
+**Cómo llegar:** menú lateral › **PUNTO DE VENTA** › **Devoluciones** (`/devoluciones`). Necesitas el permiso `Devoluciones › Leer`. El rol «Cajero» del capítulo 3 lo tiene.
+
+La pantalla se titula «Devoluciones», con el texto «Consulta las devoluciones de tus ventas y sus notas de crédito.» y las migas «Inicio / Punto de Venta / Devoluciones». Como en Ventas, **no muestra resultados al entrar**: primero pulsa **Buscar**. Todos los filtros son opcionales:
+
+| Campo | Qué escribir o elegir | Reglas |
+|---|---|---|
+| Nota de crédito | El número tal como se imprime (por ejemplo `BC01-00000002`), solo la serie (`BC01`) o solo el correlativo (`2`) | Hasta 20 caracteres. La serie busca las que **contengan** lo escrito. Una devolución sin nota de crédito nunca coincide si escribes algo aquí |
+| Autorizó | Escribe un nombre y **elige una opción de la lista** (muestra hasta 20 empleados) | Solo filtra si eliges la opción; si dejas el texto sin elegir, el filtro se ignora. La lista usa la búsqueda de empleados, que pide el permiso `Empleados › Leer` |
+| Motivo | «— Todos —», «Devolución total» o «Devolución por ítem» | Son los motivos SUNAT 06 y 07 |
+| Fecha desde, Fecha hasta | Fechas con calendario | Incluyen el día completo, en la hora de tu navegador |
+| Método de reembolso | «— Todos —», «Efectivo», «Yape / Plin», «Tarjeta» o «Transferencia» | |
+| Destino | «— Todos —», «Reingreso a venta» o «Cuarentena DIGEMID» | El destino es por línea: la devolución coincide si **alguna** de sus líneas fue a ese destino |
+| Monto reembolsado (S/) | Control deslizante de 0 a 1000, de 10 en 10 | Si dejas el extremo izquierdo en 0 no hay mínimo; si dejas el derecho en 1000 **no hay máximo** (un reembolso puede ser mayor) |
+
+Abajo a la derecha de la tarjeta están **Limpiar** y **Buscar**. **Limpiar** vacía los filtros y oculta la tabla. La pantalla recuerda tus filtros y la página al volver del detalle.
+
+Con **Buscar** aparece «Resultados (N)» con la tabla, de la devolución más reciente a la más antigua:
+
+| Columna | Qué muestra |
+|---|---|
+| Nota de crédito | El número de la nota (por ejemplo `BC01-00000002`) o «—» si no tiene. Es un enlace al detalle |
+| Venta | El código de la venta (por ejemplo `B001-00000002`). Es un enlace al detalle de la venta solo si tu rol tiene `Ventas › Leer`; si no, es texto |
+| Fecha | Fecha y hora de la devolución |
+| Cliente | El cliente de la venta, o «Público General» |
+| Autorizó | El empleado que procesó la devolución |
+| Sucursal | La sucursal de la venta |
+| Motivo | «Devolución total» o «Devolución por ítem» |
+| Reembolsado (S/) | El monto reembolsado |
+| Método de reembolso | «Efectivo», «Yape / Plin», «Tarjeta» o «Transferencia» |
+
+**Qué devoluciones ves.** Un administrador (rol «Admin») ve las de todas las sucursales de la empresa. Los demás usuarios ven las de las sucursales a las que tienen acceso: su sucursal base, las que tengan asignadas en su cuenta y las asignadas a sus roles. Esto es distinto de **Ventas**, que solo trae la sucursal de tu inicio de sesión (sección 3). Una devolución pertenece a la sucursal de la venta que acredita.
+
+**Exportar** (abajo a la izquierda de la tabla) descarga `devoluciones.xlsx` con los mismos filtros que tienes puestos y diez columnas: «Nota de crédito», «Venta», «Fecha», «Cliente», «Autorizó», «Sucursal», «Motivo», «Monto de la nota (S/)», «Reembolsado (S/)» y «Método de reembolso». La fecha sale como `dd/MM/yyyy` en español. En el archivo el motivo sale como el código `06` o `07` y el método de reembolso con su nombre interno (por ejemplo `YapePlin`), no con las etiquetas de la pantalla. Si hay más de 10 000 filas, la exportación se rechaza y debes aplicar filtros. Fallos: «No se pudieron cargar las devoluciones.» (búsqueda) y «No se pudo exportar las devoluciones.» (exportación).
+
+**El detalle de una devolución.** Al hacer clic en el número de la nota de crédito se abre «Detalle de devolución» (`/devoluciones/…`), solo de lectura. Arriba muestra el número de la nota de crédito (o «Sin nota de crédito») y, si tu rol tiene `Ventas › Leer`, el enlace «Ver venta». Debajo: «Venta», «Cliente», «Autorizó», «Sucursal», «Motivo», «Método de reembolso», «Monto de la nota (S/)», «Reembolsado (S/)» y «Sustento». Luego viene la tabla «Productos devueltos» con «Producto», «Lote», «Presentación», «Cantidad devuelta» (en unidades base), «Precio unitario (S/)», «Subtotal (S/)» y «Destino», y al final «Total devuelto:». Si un lote o producto se eliminó después de la venta, su línea sigue apareciendo como «Producto desconocido» o «N/A». Si la devolución no existe o es de una sucursal que no puedes ver, aparece «No se pudo cargar la devolución.»
+
+En el detalle de una venta, el número de cada nota de crédito de la tabla «Devoluciones / Notas de crédito» es un enlace a este detalle si tu rol tiene `Devoluciones › Leer`; si no, es texto.
 
 ## 8. Cerrar tu caja con arqueo
 
@@ -536,7 +578,7 @@ Se recorrieron las mismas pantallas con el cajero `carlos.cajero` (rol «Cajero�
 
 | Tema | Cajero | Administrador |
 |---|---|---|
-| Menú del grupo **PUNTO DE VENTA** | **Sesiones de Caja** y **Ventas** | Lo mismo, y además el menú completo de administración (Empresa, Sucursales, Roles & Permisos, Cuentas de Usuario, Series Fiscales, etc.) |
+| Menú del grupo **PUNTO DE VENTA** | **Sesiones de Caja** y **Ventas** (y, desde `sofia-web-spa` `37048ea`, **Devoluciones**; No verificado en la aplicación) | Lo mismo, y además el menú completo de administración (Empresa, Sucursales, Roles & Permisos, Cuentas de Usuario, Series Fiscales, etc.) |
 | **Ventas**: qué ventas aparecen | Las de la sucursal, de **todos** los empleados | **Las mismas**: ambos vieron «Resultados (10)» con las ventas de todos los cajeros. Para ver solo las propias se filtra por **Empleado** |
 | **Ventas**: filtros, tabla y **Exportar** | Iguales | Iguales |
 | Detalle de venta «Completada» | **Reimprimir Comprobante**, **Devolver** y **Anular Venta** (porque su rol tiene `Ventas › Anular` y `Devoluciones › Procesar devolución`) | Los mismos tres botones (el rol Admin pasa siempre) |
@@ -546,6 +588,7 @@ Se recorrieron las mismas pantallas con el cajero `carlos.cajero` (rol «Cajero�
 | **Anular** una venta cobrada | Funciona, porque tiene **su propia caja abierta** | **Falla sin caja propia**: «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» Ser administrador no evita esta regla |
 | **Devolver** | Funciona con su caja abierta | **Falla sin caja propia**: «Necesitas una caja abierta para procesar la devolución.» |
 | Anular una venta en espera | No pide caja | No pide caja |
+| Pantalla **Devoluciones** (sección 7.1) | La ve con `Devoluciones › Leer` (el rol «Cajero» lo tiene); ve las devoluciones de las sucursales a las que tiene acceso | Ve las de todas las sucursales de la empresa (No verificado en la aplicación) |
 | **Sesiones de Caja**: qué cajas aparecen | Las de las sucursales a las que tiene acceso, de todos los cajeros | Las de todas las sucursales de la empresa. Con una sola sucursal con cajas, vieron lo mismo |
 | **Nuevo** (abrir caja) y **Cerrar Sesión** | Los ve (tiene `Aperturar caja` y `Cerrar caja`); solo puede cerrar la caja que él abrió | Los ve y puede cerrar la caja de cualquier cajero. **No verificado en la aplicación:** el cierre de la caja de otra persona (el administrador vio el botón **Cerrar Sesión** en la caja abierta del cajero, pero no lo confirmó) |
 | Dashboard: tarjeta «Caja» | «Tienes una caja abierta» con sucursal, apertura, monto de apertura y «Efectivo esperado», y el enlace «Ver mi caja» | «No tienes una caja abierta» y el botón «Abrir caja» (el administrador no abrió caja) |
@@ -568,7 +611,7 @@ No hubo contradicciones: la aplicación se comportó como describen el inventari
 | Efectivo esperado antes de cerrar (`producto/pantallas/punto-de-venta` §1.3) | El panel de cierre no lo muestra; el tablero sí | Confirmado |
 | Cantidad devuelta mayor a lo vendido (`producto/pantallas/punto-de-venta` §9) | El campo se ajusta entre 0 y lo devolvible | Confirmado (200 pasó a 100); por eso el mensaje «La cantidad supera lo que queda por devolver…» no se ve desde un cuadro actualizado |
 | «Cuarentena DIGEMID» (`producto/pantallas/punto-de-venta` §9, `RN-DEV-024`) | Solo anota el destino, no repone stock ni crea cuarentena | Confirmado: stock del lote sin cambio y «Lotes en cuarentena 0» |
-| Texto de «Esta venta tiene devoluciones…» (`producto/pantallas/punto-de-venta` §8) | Remite a «Devoluciones», que no es opción de menú | Confirmado que no existe tal opción; además el botón **Anular Venta** desaparece antes de que se pueda ver ese mensaje |
+| Texto de «Esta venta tiene devoluciones…» (`producto/pantallas/punto-de-venta` §8) | Remite a «Devoluciones». Con `eeffbb6` no era opción de menú; desde `37048ea` existe la pantalla **Devoluciones** (sección 7.1), pero solo para consultar: las devoluciones se siguen haciendo desde el detalle de la venta | Con `eeffbb6` se confirmó que no existía tal opción; además el botón **Anular Venta** desaparece antes de que se pueda ver ese mensaje |
 
 ## 12. Pendientes y «No verificado»
 
@@ -586,6 +629,7 @@ No hubo contradicciones: la aplicación se comportó como describen el inventari
 | 10 | Cuarentena formal | La operación de cuarentena del módulo DIGEMID existe solo por API (sin pantalla) y no se usó |
 | 11 | Cuenta del administrador con caja | No se abrió caja al administrador; por eso no se vio a un administrador anulando o devolviendo con caja propia |
 | 12 | **En curso (sin commitear)** | Ninguno: ambos repositorios estaban sin cambios locales |
+| 13 | Pantalla **Devoluciones** (búsqueda, detalle y exportación, sección 7.1) | No verificado en la aplicación: se escribió desde el código de `sofia-web-spa` `37048ea` y `sofia-apis` `0678e40`; no se recorrió |
 
 ## 13. Lista de cobertura
 
@@ -621,6 +665,7 @@ Alcance: `producto/pantallas/punto-de-venta.md` §1 (sesiones: lista, detalle, c
 | §5 Reimpresión: título, subtítulo, Nº Comprobante, Estado SUNAT, Total Pagado, Medio de Pago, ticket | Sección 4 | Recorrido |
 | Reglas `RN-VEN-062` a `RN-VEN-069`, `RN-CMP-012` (anulación) | Secciones 5 y 6 | Comprobadas en la aplicación (excepto lo de la tabla 12) |
 | Reglas `RN-CAJ-011` a `RN-CAJ-018` (arqueo) y `RN-DEV-005` a `RN-DEV-026` (devolución) | Secciones 7, 8 y 8.1 | Comprobadas en la aplicación (excepto lo de la tabla 12) |
+| Pantalla Devoluciones: búsqueda, filtros, detalle y exportación (`37048ea`, `0678e40`) | Sección 7.1 | No verificado en la aplicación |
 
 ## 14. Fuentes
 
