@@ -3,15 +3,15 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-09 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y de archivos de configuración de ambos repositorios (solo lectura). No se ejecutó docker, ni compilación, ni servicios, ni navegador, ni llamadas a la API; no se abrió ningún `.env` real. `git status --short` en ambos repositorios: sin cambios sin commitear (no hay marcas «En curso»). |
 
-**Historial de cambios.** 1.2 (2026-11-09): reconciliado con `d79d6fa` (el backend publica las imágenes `sofia-api` y `sofia-presidio` en ghcr), `5fc2ebf` (`.gitattributes` fuerza CRLF) y, en el SPA, `9ad15f0` (imagen nginx en ghcr con `environment.js` generado al arrancar). Con ello dejan de ser ciertas las afirmaciones «el SPA no tiene Dockerfile ni servidor web ni workflow», «no hay publicación de imágenes», «no hay regla de reescritura a `index.html`» y «no hay generación de `environment.js`» (para la imagen nginx; `staticwebapp.config.json` no cambió). El script `0004` y `ApplicationDbContext` (`9c16f35`) no alteran lo descrito. 1.1 (2026-11-04): riesgo del script `0004` reconciliado con `34089ec`.
+**Historial de cambios.** 1.3 (2026-11-20): reconciliado con `7091c43` (API) y `a71f480` (SPA), que despliegan a UAT en Azure Container Apps después de publicar (6.4; deja de ser cierto que no hay ambiente ni pasos de despliegue), y con las suscripciones de plataforma (`6f6b837`, `558ad35`): script `0029` (columna `Seguridad_Cuentas.Es_Admin_Plataforma` y tabla `Plataforma_Configuracion_Pago`), alta manual del operador (4.8), política de límite `public-info` (5.6), 29 scripts en lugar de 28 y citas de `DependencyInjection.cs`, `RateLimitingExtensions.cs` y `PermissionAuthorizationHandler.cs` desplazadas. 1.2 (2026-11-09): reconciliado con `d79d6fa` (el backend publica las imágenes `sofia-api` y `sofia-presidio` en ghcr), `5fc2ebf` (`.gitattributes` fuerza CRLF) y, en el SPA, `9ad15f0` (imagen nginx en ghcr con `environment.js` generado al arrancar). Con ello dejan de ser ciertas las afirmaciones «el SPA no tiene Dockerfile ni servidor web ni workflow», «no hay publicación de imágenes», «no hay regla de reescritura a `index.html`» y «no hay generación de `environment.js`» (para la imagen nginx; `staticwebapp.config.json` no cambió). El script `0004` y `ApplicationDbContext` (`9c16f35`) no alteran lo descrito. 1.1 (2026-11-04): riesgo del script `0004` reconciliado con `34089ec`.
 
-Este documento describe lo que **existe hoy** en los repositorios para desplegar y operar SOFIA y marca como **Pendiente** lo que no existe. El despliegue previsto es Azure, pero en los repositorios no hay ninguna definición de infraestructura (ver [sección 8](#8-pendientes-para-azure)); por eso no se describe ningún recurso, nombre ni arquitectura de Azure.
+Este documento describe lo que **existe hoy** en los repositorios para desplegar y operar SOFIA y marca como **Pendiente** lo que no existe. El despliegue es a Azure: desde `7091c43` y `a71f480` los workflows actualizan un ambiente UAT en Azure Container Apps (6.4), pero los recursos se crearon fuera de los repositorios, que no contienen infraestructura como código (ver [sección 8](#8-pendientes-para-azure)); por eso solo se nombran los recursos que citan los workflows y no se describe ninguna arquitectura de Azure.
 
 Documentos relacionados (no se repite su contenido): [desarrollo/guia-del-desarrollador.md](guia-del-desarrollador.md) (entorno local, secretos, DbUp, hooks, CI), [tecnico/arquitectura.md](../tecnico/arquitectura.md) (configuración, requisitos no funcionales, health check, logging), [tecnico/integraciones.md](../tecnico/integraciones.md) (Gemini, Presidio, correo) y [tecnico/seguridad/matriz-de-permisos.md](../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -247,10 +247,10 @@ Columnas: «Obligatoria en producción» = sin ella la API no sirve la función 
 | `Jwt:SecretKey` | `Jwt__SecretKey` | Sí (secreto) | **Arranque**: vacía → error; menos de 32 bytes UTF-8 → error | Vacía | `appsettings.json:9`; `JwtOptions.cs:8,17-25` |
 | `Jwt:Issuer` | `Jwt__Issuer` | Sí | **Arranque**: vacío → error | `SOFIA.API` | `appsettings.json:6`; `JwtOptions.cs:27-30` |
 | `Jwt:Audience` | `Jwt__Audience` | Sí | **Arranque**: vacío → error | `SOFIA.Clients` | `appsettings.json:7`; `JwtOptions.cs:27-30` |
-| `Jwt:ExpiryMinutes` | `Jwt__ExpiryMinutes` | No | No se valida (sin valor sería 0) | `15` | `appsettings.json:8`; `JwtOptions.cs:13`; `JwtProvider.cs:57` |
+| `Jwt:ExpiryMinutes` | `Jwt__ExpiryMinutes` | No | No se valida (sin valor sería 0) | `15` | `appsettings.json:8`; `JwtOptions.cs:13`; `JwtProvider.cs:62` |
 | `AllowedOrigins` (lista) | `AllowedOrigins__0`, ... | **Sí** | Falla al construir la política CORS (el momento exacto es No verificado, ver [tecnico/arquitectura.md](../tecnico/arquitectura.md#123-qué-hace-fallar-el-inicio)); en Development se ignora | No existe en `appsettings.json`; solo en `appsettings.Testing.json:2` | `Program.cs:39-63` |
-| `App:FrontendBaseUrl` | `App__FrontendBaseUrl` | **Sí** (URL absoluta `https`) | **Arranque** si el entorno no es Development/Testing o si hay proveedor de correo | No existe en `appsettings.json` | `AppOptions.cs:9-16`; `DependencyInjection.cs:163-167` |
-| `Email:Provider` | `Email__Provider` | **Sí**: `Smtp` o `AzureCommunication` (vacío o `None` no se admite fuera de Development/Testing) | **Arranque** | No existe en `appsettings.json` | `EmailOptions.cs:16,18-28,60`; `DependencyInjection.cs:159-161` |
+| `App:FrontendBaseUrl` | `App__FrontendBaseUrl` | **Sí** (URL absoluta `https`) | **Arranque** si el entorno no es Development/Testing o si hay proveedor de correo | No existe en `appsettings.json` | `AppOptions.cs:9-16`; `DependencyInjection.cs:178-182` |
+| `Email:Provider` | `Email__Provider` | **Sí**: `Smtp` o `AzureCommunication` (vacío o `None` no se admite fuera de Development/Testing) | **Arranque** | No existe en `appsettings.json` | `EmailOptions.cs:16,18-28,60`; `DependencyInjection.cs:174-176` |
 | `Email:FromAddress` | `Email__FromAddress` | Sí, con proveedor | **Arranque** | — | `EmailOptions.cs:30-33` |
 | `Email:FromDisplayName` | `Email__FromDisplayName` | No | — | `SOFIA` (valor de la clase) | `EmailOptions.cs:12` |
 | `Email:Smtp:Host` | `Email__Smtp__Host` | Sí, con `Smtp` | **Arranque** | — | `EmailOptions.cs:37-40` |
@@ -258,8 +258,8 @@ Columnas: «Obligatoria en producción» = sin ella la API no sirve la función 
 | `Email:Smtp:UseSsl` | `Email__Smtp__UseSsl` | No | — | `true` (valor de la clase; `false` solo para un receptor local) | `EmailOptions.cs:68-69` |
 | `Email:Smtp:UserName`, `Email:Smtp:Password` | `Email__Smtp__UserName`, `Email__Smtp__Password` | Ambos o ninguno (secreto) | **Arranque**: uno sin el otro → error | — | `EmailOptions.cs:42-45` |
 | `Email:AzureCommunication:ConnectionString` | `Email__AzureCommunication__ConnectionString` | Sí, con `AzureCommunication` (secreto) | **Arranque** | — | `EmailOptions.cs:50-56` |
-| `PresidioApi:BaseUrl` | `PresidioApi__BaseUrl` | Sí, para analizar recetas con IA | **Uso**: se valida al crear el cliente HTTP (primer análisis) | No existe en `appsettings.json` | `DependencyInjection.cs:142,188-191` |
-| `PresidioApi:InternalKey` | `PresidioApi__InternalKey` | Recomendada (secreto); si está vacía no se envía la cabecera, y Presidio solo la exige si tiene su propia clave | Ninguna | Vacía | `DependencyInjection.cs:193-198`; `main.py:12,18-21` |
+| `PresidioApi:BaseUrl` | `PresidioApi__BaseUrl` | Sí, para analizar recetas con IA | **Uso**: se valida al crear el cliente HTTP (primer análisis) | No existe en `appsettings.json` | `DependencyInjection.cs:149,203-206` |
+| `PresidioApi:InternalKey` | `PresidioApi__InternalKey` | Recomendada (secreto); si está vacía no se envía la cabecera, y Presidio solo la exige si tiene su propia clave | Ninguna | Vacía | `DependencyInjection.cs:208-213`; `main.py:12,18-21` |
 | `GeminiApi:ApiKey` | `GeminiApi__ApiKey` | Sí, para analizar recetas con IA (secreto) | **Uso**: ausente (`null`) → excepción; cadena vacía → falla al llamar a Gemini | Vacía | `appsettings.json:25`; `GeminiRecetaAnalyzer.cs:29` |
 | `GeminiApi:BaseUrl` | `GeminiApi__BaseUrl` | Sí, para analizar recetas con IA | **Uso** (igual que la anterior) | Vacía en `appsettings.json`; el compose y `.env.example` usan `https://generativelanguage.googleapis.com/v1beta/models/` | `appsettings.json:22`; `GeminiRecetaAnalyzer.cs:67-68`; `docker-compose.yml:53` |
 | `GeminiApi:OcrModel` | `GeminiApi__OcrModel` | No | — | Vacía → el código usa `gemini-3.6-flash` | `GeminiRecetaAnalyzer.cs:21,66,201-202` |
@@ -281,12 +281,12 @@ La tabla completa está en [tecnico/arquitectura.md, sección 12.4](../tecnico/a
 |---|---|---|---|
 | CORS | Orígenes fijos `http://localhost:4200` y `https://localhost:4200` | Los de `AllowedOrigins`; si falta, excepción | `Program.cs:44-62` |
 | HSTS | No se envía | Sí (365 días, subdominios incluidos) | `Program.cs:31-36,120-123` |
-| Correo | Puede estar sin proveedor (los correos se descartan) | Proveedor obligatorio | `DependencyInjection.cs:159-161,173-175` |
+| Correo | Puede estar sin proveedor (los correos se descartan) | Proveedor obligatorio | `DependencyInjection.cs:174-176,188-190` |
 | `App:FrontendBaseUrl` | Acepta `http` | Solo `https` | `AppOptions.cs:9-16` |
 | `AllowedHosts` | Amplía a `127.0.0.1` y `[::1]` | `localhost` si no se sobrescribe | `appsettings.Development.json:5` |
-| Límite de peticiones, cabeceras de seguridad, redirección a HTTPS | Igual | Igual | `RateLimitingExtensions.cs:12-50`; `Program.cs:125` |
+| Límite de peticiones, cabeceras de seguridad, redirección a HTTPS | Igual | Igual | `RateLimitingExtensions.cs:12-59`; `Program.cs:125` |
 
-Hay un tercer entorno, `Testing`, con trato de Development para el correo y la URL del SPA y su propio `appsettings.Testing.json` (nivel de log `Warning` y el origen `http://localhost:3000`) (`DependencyInjection.cs:159`; `appsettings.Testing.json:1-7`). No existe `appsettings.Production.json` ni `appsettings.Staging.json`: la configuración de producción debe llegar por variables de entorno u otro proveedor de configuración que añada el despliegue.
+Hay un tercer entorno, `Testing`, con trato de Development para el correo y la URL del SPA y su propio `appsettings.Testing.json` (nivel de log `Warning` y el origen `http://localhost:3000`) (`DependencyInjection.cs:174`; `appsettings.Testing.json:1-7`). No existe `appsettings.Production.json` ni `appsettings.Staging.json`: la configuración de producción debe llegar por variables de entorno u otro proveedor de configuración que añada el despliegue.
 
 **Cookie de sesión.** La cookie `refresh_token` se emite siempre con `HttpOnly`, `Secure` y `SameSite=None` (`RefreshTokenCookieExtensions.cs:5,15-21`); el comentario del código indica que SPA y API viven en sitios distintos (`:7`). Como es `Secure`, el navegador solo la acepta si la comunicación con la API es por HTTPS (comportamiento del navegador, **No verificado** aquí).
 
@@ -317,10 +317,10 @@ El esquema lo crea y lo evoluciona **solo DbUp**; EF Core no migra (búsqueda de
 |---|---|---|
 | Entrada | Cadena de conexión: primer argumento de línea de comandos o `ConnectionStrings:DefaultConnection` (`appsettings.json` opcional → user-secrets → variables de entorno). Sin cadena: imprime «Connection string is missing!» y sale con `-1` | `SOFIA.DbUp/Program.cs:5-22` |
 | Base inexistente | La crea: `EnsureDatabase.For.SqlDatabase(connectionString)`. El usuario de la cadena necesita, por tanto, permiso para crear bases en un ambiente nuevo (requisito derivado de la llamada; el detalle lo resuelve la biblioteca y **no se verificó**) | `Program.cs:24-25` |
-| Scripts | Los 28 `.sql` embebidos de `SOFIA.DbUp/Scripts` (solo los del primer nivel de la carpeta) | `Program.cs:30`; `SOFIA.DbUp.csproj:19` |
-| Orden | El prefijo numérico de cuatro dígitos (`0001_` a `0028_`), según la convención del repositorio | Ver [`desarrollo/guia-del-desarrollador`, sección 3.4](guia-del-desarrollador.md#34-base-de-datos-con-dbup) |
+| Scripts | Los 29 `.sql` embebidos de `SOFIA.DbUp/Scripts` (solo los del primer nivel de la carpeta) | `Program.cs:30`; `SOFIA.DbUp.csproj:19` |
+| Orden | El prefijo numérico de cuatro dígitos (`0001_` a `0029_`), según la convención del repositorio | Ver [`desarrollo/guia-del-desarrollador`, sección 3.4](guia-del-desarrollador.md#34-base-de-datos-con-dbup) |
 | Registro de aplicados | El código no configura un diario propio (no hay llamada a `JournalTo...`), así que se usa el de la biblioteca `dbup-sqlserver` 7.2.0; el nombre exacto de la tabla es **No verificado** (ningún archivo del repositorio la nombra) | `Program.cs:27-32`; `SOFIA.DbUp.csproj:12` |
-| Transacciones | `Program.cs` no elige modo de transacción (no hay llamadas a `WithTransaction`, `WithTransactionPerScript` ni `WithoutTransaction`) y solo el script `0004` abre una propia (`SET XACT_ABORT ON` y `BEGIN TRANSACTION`, `0004:2-3`; búsqueda de `BEGIN TRAN`, `COMMIT`, `ROLLBACK`, `XACT_ABORT` en los 28 scripts: únicamente `0004`). El efecto del modo por defecto de la biblioteca ante un fallo a mitad de un script es **No verificado** | `Program.cs:27-32` |
+| Transacciones | `Program.cs` no elige modo de transacción (no hay llamadas a `WithTransaction`, `WithTransactionPerScript` ni `WithoutTransaction`) y solo el script `0004` abre una propia (`SET XACT_ABORT ON` y `BEGIN TRANSACTION`, `0004:2-3`; búsqueda de `BEGIN TRAN`, `COMMIT`, `ROLLBACK`, `XACT_ABORT` en los 29 scripts: únicamente `0004`). El efecto del modo por defecto de la biblioteca ante un fallo a mitad de un script es **No verificado** | `Program.cs:27-32` |
 | Salida | `Success!` y código `0`; en error, imprime el error y código `-1` (en compilación `DEBUG` espera un `Enter` antes: no ocurre en la imagen, que compila en `Release`) | `Program.cs:36-50`; `SOFIA.DbUp/Dockerfile:9` |
 | Registro (log) | `LogToConsole()`: la salida va a la consola del proceso o del contenedor; no escribe archivo | `Program.cs:31` |
 
@@ -330,7 +330,7 @@ El esquema lo crea y lo evoluciona **solo DbUp**; EF Core no migra (búsqueda de
 2. Ejecuta DbUp con esa cadena: variable `ConnectionStrings__DefaultConnection` o primer argumento (`dotnet run --project src/SOFIA.DbUp` en el código fuente, o la imagen de `SOFIA.DbUp/Dockerfile`). En el compose lo hace el servicio `sofia-dbup` (`docker-compose.yml:91-101`).
 3. Espera el código de salida `0` y el mensaje `Success!`.
 4. Arranca la API. El orden DbUp → API **no** lo impone el compose (ver [2.3](#23-dependencias-y-orden-de-arranque)); en un despliegue real debe imponerlo quien despliega.
-5. Crea la primera empresa: no hay usuario sembrado; los scripts solo siembran seis roles base sin empresa (`0002_SeedBaseRoles.sql`). El primer usuario sale del registro público de empresa, `POST empresas/registrar`, anónimo y con límite de 5 por hora por IP (ver [`desarrollo/guia-del-desarrollador`, sección 3.7](guia-del-desarrollador.md#37-primer-acceso) y [5.6](#56-límites-de-peticiones-y-proxy)).
+5. Crea la primera empresa y, si necesitas operar suscripciones, marca al operador de plataforma (4.8): no hay usuario sembrado; los scripts solo siembran seis roles base sin empresa (`0002_SeedBaseRoles.sql`). El primer usuario sale del registro público de empresa, `POST empresas/registrar`, anónimo y con límite de 5 por hora por IP (ver [`desarrollo/guia-del-desarrollador`, sección 3.7](guia-del-desarrollador.md#37-primer-acceso) y [5.6](#56-límites-de-peticiones-y-proxy)).
 
 ### 4.3 Ambiente existente
 
@@ -343,7 +343,7 @@ La idempotencia depende de cada script, no de DbUp. Medida por búsqueda de guar
 | Scripts | Guardas de existencia | Consecuencia |
 |---|---|---|
 | `0001`, `0003`, `0004`, `0006`, `0007`, `0008`, `0010`, `0011`, `0012`, `0013`, `0014`, `0016` | Ninguna (en `0004` el único `IF EXISTS` es la verificación posterior a la carga, no una guarda previa) | Si se ejecutan por segunda vez (o tras un fallo parcial), `CREATE TABLE`, `ALTER TABLE ADD` o `CREATE INDEX` fallan por objeto ya existente; `0004` falla en su verificación de conteo y se revierte |
-| `0002`, `0005`, `0009`, `0015`, `0017`, `0018` a `0028` | Sí (en distinto grado; `0009` solo una; `0017` usa `NOT EXISTS` dentro del `INSERT`) | Se pueden volver a ejecutar sin duplicar, en su mayor parte; no se revisó cada sentencia una por una |
+| `0002`, `0005`, `0009`, `0015`, `0017`, `0018` a `0029` | Sí (en distinto grado; `0009` solo una; `0017` usa `NOT EXISTS` dentro del `INSERT`) | Se pueden volver a ejecutar sin duplicar, en su mayor parte; no se revisó cada sentencia una por una |
 
 `0001_Initial_Schema.sql` crea 44 tablas en un solo lote de 857 líneas, sin `GO` ni guardas (conteo por búsqueda de `CREATE TABLE`).
 
@@ -365,6 +365,22 @@ El repositorio no documenta un procedimiento. Lo que se puede afirmar:
 ### 4.7 Respaldos
 
 **Pendiente.** No hay scripts, trabajos ni configuración de respaldo o restauración en los repositorios (búsqueda de `BACKUP DATABASE` en `SOFIA.DbUp` y de archivos de respaldo en la raíz de ambos repositorios: sin resultados). El volumen `sqlserver_data` del compose conserva los datos entre reinicios del contenedor, pero no es un respaldo (`docker-compose.yml:12-13,103-105`).
+
+### 4.8 Operador de plataforma (suscripciones)
+
+Desde `6f6b837` y `558ad35` existe un operador de plataforma que activa, extiende, suspende y cancela la suscripción de cualquier empresa y carga los datos de pago. Lo que importa al desplegar:
+
+| Aspecto | Detalle | Evidencia |
+|---|---|---|
+| Script | `0029_Plataforma_Suscripciones.sql` agrega `Seguridad_Cuentas.Es_Admin_Plataforma BIT NOT NULL DEFAULT 0` y crea `Plataforma_Configuracion_Pago` (WhatsApp, Yape, instrucciones de hasta 500 caracteres, imagen del QR; una sola fila por convención). Ambos pasos son repetibles (`COL_LENGTH` y `OBJECT_ID`) | `0029_Plataforma_Suscripciones.sql:2-3,6-22` |
+| Alta del operador | **Solo en la base de datos**: ningún comando, pantalla ni script lo otorga (`EsAdminPlataforma` es `private set` y el registro lo crea en `false`). Hay que ejecutar a mano algo como `UPDATE Seguridad_Cuentas SET Es_Admin_Plataforma = 1 WHERE Nombre_Usuario = '<usuario>';` sobre la cuenta que será operadora, que debe existir antes (por ejemplo, la creada al registrar su empresa, 4.2). El rol `Admin` de una empresa no basta | `Cuenta.cs:27,67`; `0029:1` (comentario del script); la sentencia es un ejemplo derivado de los nombres de tabla y columna, **No verificado** en ejecución |
+| Efecto | Al iniciar sesión el token lleva el claim `plat_admin`; en cada petición autenticada el valor de la base reemplaza al del token, así que quitar o poner la marca se aplica sin esperar a que venza el token | `JwtProvider.cs:43`; `DependencyInjection.cs:112` |
+| Vigencia propia | El operador no queda bloqueado por la vigencia de su propia empresa (login, renovación y peticiones), y no puede suspender ni cancelar su propia empresa (409 `Empresa.Suscripcion.PropiaEmpresa`) | `EmpresaVigencia.cs:14-15`; `DependencyInjection.cs:121`; `EmpresaPlataformaExtensions.cs` |
+| Endpoints | 4 de suscripción en `EmpresasController.cs:78-103` y `GET/PUT plataforma/pago`, `GET plataforma/dashboard` en `PlataformaController.cs:19-38`; el `GET plataforma/pago` es anónimo y tiene el límite `public-info` (5.6) | ver 5.6 |
+| Datos de pago | Se cargan desde la pantalla `/configuracion-pago` (solo operador); no van en la configuración ni en el código. Sin fila cargada, el `GET` devuelve campos nulos | `GetConfiguracionPagoQueryHandler.cs` |
+| Empresas vencidas | Una empresa `TrialActivo` o `Activo` con `FechaVencimiento` pasada no puede iniciar sesión hasta que el operador la active o extienda | `Empresa.cs:30-33` |
+
+Pendiente en el despliegue: dar de alta al operador en cada ambiente (UAT incluido) y cargar sus datos de pago; el repositorio no tiene un procedimiento ni un script para ello.
 
 ## 5. Operación
 
@@ -390,7 +406,7 @@ El repositorio no trae scripts ni runbooks de arranque o parada. Lo que existe:
 
 Detalles que afectan a quien configure sondas de salud en una plataforma:
 
-- `/health` pasa por el middleware de límite de peticiones: el límite global de 200 por minuto y por IP aplica a todo endpoint sin política con nombre (`RateLimitingExtensions.cs:17-24`; `Program.cs:132`). Una sonda frecuente desde una sola IP tiene cupo de sobra, pero comparte contador con el resto del tráfico de esa IP (deducción del código; no se probó).
+- `/health` pasa por el middleware de límite de peticiones: el límite global de 200 por minuto y por IP aplica a todo endpoint sin política con nombre (`RateLimitingExtensions.cs:17-25`; `Program.cs:132`). Una sonda frecuente desde una sola IP tiene cupo de sobra, pero comparte contador con el resto del tráfico de esa IP (deducción del código; no se probó).
 - `UseHttpsRedirection()` está antes de `/health` en la tubería (`Program.cs:125,136`). El efecto sobre una sonda por HTTP depende de si hay puerto HTTPS configurado en el host y **no se verificó**.
 - `AllowedHosts` filtra la cabecera `Host`: una sonda que use otro nombre de host (la IP interna del contenedor, por ejemplo) puede ser rechazada si no está en la lista (`appsettings.json:30`; comportamiento del framework, **No verificado**).
 - El health check de la API en el compose usa `curl`; el `Dockerfile` no lo instala (ver [1.1](#11-api-sofiaapi)).
@@ -429,7 +445,7 @@ Como los logs llevan IP y usuario, tratar el volumen de logs y sus copias como i
 
 ### 5.5 Tareas en segundo plano: `OutboxProcessor`
 
-Fuente: `sofia-apis/src/SOFIA.Infrastructure/Services/OutboxProcessor.cs`; se registra con `AddHostedService` (`DependencyInjection.cs:139`).
+Fuente: `sofia-apis/src/SOFIA.Infrastructure/Services/OutboxProcessor.cs`; se registra con `AddHostedService` (`DependencyInjection.cs:146`).
 
 | Aspecto | Comportamiento | Línea |
 |---|---|---|
@@ -452,14 +468,15 @@ Definidos en `SOFIA.API/Extensions/RateLimitingExtensions.cs`; todas las políti
 
 | Política | Límite | Partición | Cola | Líneas |
 |---|---|---|---|---|
-| Global (todo endpoint) | 200 por minuto | IP del cliente | 10 | 17-24 |
-| `auth` (login, cambio y recuperación de contraseña) | 10 por minuto | IP del cliente | 0 | 27-32 |
-| `signup` (`Empresas/registrar`) | 5 por hora | IP del cliente | 0 | 35-40 |
-| `ai-endpoints` (`Recetas/analizar`) | 10 por minuto | Empresa (claim `empresaId`); sin claim, IP | 2 | 43-49, 55-58 |
+| Global (todo endpoint) | 200 por minuto | IP del cliente | 10 | 17-25 |
+| `auth` (login, cambio y recuperación de contraseña) | 10 por minuto | IP del cliente | 0 | 27-33 |
+| `signup` (`Empresas/registrar`) | 5 por hora | IP del cliente | 0 | 35-41 |
+| `public-info` (`GET plataforma/pago`, anónimo; `0678e40`/`6f6b837`) | 30 por minuto | IP del cliente | 0 | 43-49 |
+| `ai-endpoints` (`Recetas/analizar`) | 10 por minuto | Empresa (claim `empresaId`); sin claim, IP | 2 | 51-58, 64-67 |
 
 **Efecto detrás de un proxy o balanceador.** La partición por IP usa `HttpContext.Connection.RemoteIpAddress` (línea 52-53). La API solo reescribe esa dirección desde `X-Forwarded-For` si `ForwardedHeaders:KnownProxies` tiene al menos una IP; con la lista vacía (valor por defecto) desactiva el procesamiento de cabeceras reenviadas (`Program.cs:81-95`; `appsettings.json:27-29`). Por tanto, detrás de un balanceador sin `KnownProxies`, **todos los clientes comparten la IP del balanceador y el mismo cupo**: 10 intentos de login por minuto, 5 registros por hora y 200 peticiones por minuto en total (deducción del código; no se probó). Solo se aceptan IP de proxies exactas (`options.KnownProxies`), no rangos (`options.KnownIPNetworks` se vacía y no se rellena: `Program.cs:88-94`); si la plataforma cambia de IP, hay que actualizar la lista. Otras consecuencias de la IP:
 
-- Se registra como IP del cliente en la auditoría y en los intentos de login (`SOFIA.API/Services/CurrentUser.cs:26-27`; `AuditBehavior.cs:36`).
+- Se registra como IP del cliente en la auditoría y en los intentos de login (`SOFIA.API/Services/CurrentUser.cs:31`; `AuditBehavior.cs:36`).
 - Los contadores están en memoria de cada instancia; con varias instancias el límite efectivo se multiplica y no se comparte (no hay `RedisRateLimiting` ni equivalente: ver [`tecnico/arquitectura`, sección 13.2](../tecnico/arquitectura.md#132-límite-de-peticiones-rate-limiting)).
 - Los límites no son configurables: están escritos en el código (no hay claves en `appsettings`).
 
@@ -505,17 +522,18 @@ El único workflow es el de publicación de la imagen (6.4); no hay ninguno que 
 |---|---|
 | Workflow de CI para el SPA (lint, pruebas, build) | `sofia-web-spa/.github/workflows/` solo tiene `docker-publish.yml` |
 | Publicación de la imagen de DbUp | Falta en la matriz de `sofia-apis/.github/workflows/docker-publish.yml:21-27` (API, Presidio y SPA sí se publican, ver 6.4) |
-| Despliegue de la API, de DbUp y de Presidio a un ambiente | Sin pasos de despliegue, ni definición de infraestructura como código en ambos repositorios |
-| Despliegue del SPA (la imagen se publica, pero nada la despliega) | Sin pasos de despliegue; `staticwebapp.config.json` solo sugiere el destino |
-| Ejecución de DbUp como paso del despliegue, antes de la API | El compose no lo impone y no hay pipeline |
+| Despliegue de DbUp a un ambiente; despliegue de la API y de Presidio a producción | La API y Presidio se despliegan solo a UAT (6.4); DbUp no tiene paso; sin infraestructura como código en ambos repositorios |
+| Despliegue del SPA a producción | Solo se despliega a UAT (`sofia-web-spa/.github/workflows/docker-publish.yml:43-72`); `staticwebapp.config.json` solo sugiere otro destino |
+| Ejecución de DbUp como paso del despliegue, antes de la API | El compose no lo impone y el job `deploy` actualiza la API sin ejecutar DbUp (`docker-publish.yml:54-86`): un script nuevo exige ejecutarlo a mano antes |
 | Gestión de secretos del pipeline y de los ambientes | `.env.example` menciona un «Azure staging» sin más; el SPA ignora `scripts/azure/keyvault-secrets.example.json`, que no existe (`.gitignore:52`) |
 | Pruebas de integración en CI | No se ejecutan en `security.yml` |
-| Promoción entre ambientes y reversión | Sin definición |
+| Pruebas antes de desplegar | `deploy` depende solo de `publish` (`needs: publish`, línea 56), que no ejecuta pruebas; `security.yml` corre aparte y no bloquea el despliegue |
+| Promoción entre ambientes y reversión | Sin definición; cada despliegue usa la etiqueta `:<sha>` (se podría volver a una anterior a mano) |
 | Generación de `environment.js` por ambiente para el SPA | Resuelto en la imagen nginx por `nginx/40-runtime-env.sh` (`9ad15f0`); sin mecanismo para un despliegue de archivos estáticos (ver [3.3](#33-configuración-en-tiempo-de-ejecución-del-spa)) |
 
 ### 6.4 Publicación de imágenes en ghcr
 
-Dos workflows idénticos en estructura, uno por repositorio. Ninguno ejecuta pruebas ni análisis antes de publicar y ninguno despliega.
+Dos workflows idénticos en estructura, uno por repositorio. Ninguno ejecuta pruebas ni análisis antes de publicar; cada uno despliega a UAT después (job `deploy`, abajo).
 
 | Aspecto | `sofia-apis` (`d79d6fa`) | `sofia-web-spa` (`9ad15f0`) |
 |---|---|---|
@@ -528,7 +546,9 @@ Dos workflows idénticos en estructura, uno por repositorio. Ninguno ejecuta pru
 | Caché | `type=gha` por imagen (51-52) | `type=gha` (40-41) |
 | Acciones | Fijadas por hash de commit (30, 33, 36, 43) | Fijadas por hash (20, 23, 26, 33) |
 
-La etiqueta `:uat` se sobrescribe en cada `push` a `main`: sirve para un ambiente de pruebas, y `:<sha>` permite fijar una versión. Que exista un ambiente `uat` desplegado es **No verificado**: ningún archivo de los repositorios lo define. El registro es GitHub Container Registry, no un servicio de Azure.
+**Despliegue a UAT (`7091c43` API, `a71f480` SPA).** Cada workflow tiene un job `deploy` («Deploy to UAT») con `needs: publish` (backend líneas 54-56, SPA 43-45), `permissions: id-token: write` (OIDC, sin contraseña guardada; 58-60 y 47-49), `concurrency: deploy-uat` sin cancelar los despliegues en curso (61-63 y 50-52) y `RESOURCE_GROUP: rg-sofia-uat` (65 y 54). Pasos: `azure/login` con `vars.AZURE_CLIENT_ID`, `AZURE_TENANT_ID` y `AZURE_SUBSCRIPTION_ID` (variables del repositorio, no secretos; 67-72 y 56-61, acción fijada por hash), instalar la extensión `containerapp`, y `az containerapp update --image ghcr.io/soygustavofernandez/<imagen>:${{ github.sha }}` para `ca-sofia-api` y `ca-sofia-presidio` (backend, 77-81) y `ca-sofia-web` (SPA, 66-67). Cierra con una comprobación de salud: la API con `GET /health` y el SPA con `GET /healthz`, hasta 12 reintentos cada 10 s sobre el FQDN de la app (backend 83-86, SPA 69-72). No cambia variables de entorno ni secretos de las apps, no ejecuta DbUp y no tiene paso de reversión. Que las apps `ca-sofia-*` y el grupo de recursos existan, y su configuración, es **No verificado**: ningún archivo de los repositorios los define.
+
+La etiqueta `:uat` se sobrescribe en cada `push` a `main`: sirve para un ambiente de pruebas, y `:<sha>` permite fijar una versión. El registro es GitHub Container Registry, no un servicio de Azure.
 
 **`.gitattributes` del backend (`5fc2ebf`).** `sofia-apis/.gitattributes:1-4` fuerza CRLF en el checkout (igual que `.editorconfig`) y LF en `*.sh` y `Dockerfile`; evita que `IDE0055` falle en el build de Linux de `security.yml`. Los `Dockerfile` en LF no se ven afectados por el CRLF.
 
@@ -538,20 +558,20 @@ Solo puntos sustentados por el código o la configuración. Marca cada uno antes
 
 | # | Verificación | Evidencia |
 |---|---|---|
-| 1 | `ASPNETCORE_ENVIRONMENT` distinto de `Development`. El compose lo fija a `Development`; en ese modo CORS queda fijo a `localhost:4200`, no hay HSTS y el correo puede estar apagado | `docker-compose.yml:45`; `Program.cs:44,120`; `DependencyInjection.cs:159` |
+| 1 | `ASPNETCORE_ENVIRONMENT` distinto de `Development`. El compose lo fija a `Development`; en ese modo CORS queda fijo a `localhost:4200`, no hay HSTS y el correo puede estar apagado | `docker-compose.yml:45`; `Program.cs:44,120`; `DependencyInjection.cs:174` |
 | 2 | `Jwt:SecretKey` generada, secreta, de al menos 32 bytes UTF-8, distinta por ambiente y fuera del repositorio (no uses el marcador de `.env.example`) | `JwtOptions.cs:17-25`; `.env.example:8` |
 | 3 | Cadena de conexión (`ConnectionStrings__DefaultConnection`) entregada como secreto; la API no la valida al arrancar, así que compruébala aparte | `DependencyInjection.cs:32` |
 | 4 | **Usuario de base de datos sin privilegios de administrador** para la API (el compose usa `sa`); un usuario aparte, con permiso de crear objetos, para DbUp. Quita `TrustServerCertificate=True` si hay certificado válido | `docker-compose.yml:46,97`; [4.6](#46-usuario-de-base-de-datos) |
 | 5 | `AllowedOrigins` con el origen exacto (esquema, host y puerto) del SPA; sin él, CORS lanza excepción fuera de Development | `Program.cs:39,51-62` |
 | 6 | `App:FrontendBaseUrl` con `https` (URL absoluta del SPA); es la base del enlace de recuperación de contraseña | `AppOptions.cs:9-16`; `FrontendLinks.cs:9` |
-| 7 | `Email:Provider` = `Smtp` o `AzureCommunication` (no `None` ni vacío), con `Email:FromAddress` y la configuración del proveedor; `Email:Smtp:UserName` y `Email:Smtp:Password` juntos o ninguno; `UseSsl` en `true` salvo un receptor local | `EmailOptions.cs:16-60,68-69`; `DependencyInjection.cs:159-161` |
+| 7 | `Email:Provider` = `Smtp` o `AzureCommunication` (no `None` ni vacío), con `Email:FromAddress` y la configuración del proveedor; `Email:Smtp:UserName` y `Email:Smtp:Password` juntos o ninguno; `UseSsl` en `true` salvo un receptor local | `EmailOptions.cs:16-60,68-69`; `DependencyInjection.cs:174-176` |
 | 8 | `AllowedHosts` con el dominio real (el valor base es `localhost`) | `appsettings.json:30` |
-| 9 | `ForwardedHeaders:KnownProxies` con las IP del proxy o balanceador; sin ello el límite de peticiones es compartido por todos los clientes y la IP de auditoría es la del proxy | `Program.cs:81-95`; `RateLimitingExtensions.cs:52-53`; [5.6](#56-límites-de-peticiones-y-proxy) |
+| 9 | `ForwardedHeaders:KnownProxies` con las IP del proxy o balanceador; sin ello el límite de peticiones es compartido por todos los clientes y la IP de auditoría es la del proxy | `Program.cs:81-95`; `RateLimitingExtensions.cs:61-62`; [5.6](#56-límites-de-peticiones-y-proxy) |
 | 10 | HTTPS de extremo a extremo hacia el navegador (la cookie de sesión es `Secure`, la API redirige a HTTPS y envía HSTS); definir dónde termina TLS | `RefreshTokenCookieExtensions.cs:15-21`; `Program.cs:120-125` |
-| 11 | Clave interna de Presidio: la misma cadena en `PRESIDIO_INTERNAL_KEY` (Presidio) y `PresidioApi__InternalKey` (API). Vacía, Presidio acepta cualquier llamada. Presidio no debe quedar accesible desde fuera de la red interna | `main.py:12,18-21`; `DependencyInjection.cs:193-198`; `docker-compose.yml:27,52` |
-| 12 | `PresidioApi:BaseUrl` configurada (no figura en ningún `appsettings`) | `DependencyInjection.cs:190` |
+| 11 | Clave interna de Presidio: la misma cadena en `PRESIDIO_INTERNAL_KEY` (Presidio) y `PresidioApi__InternalKey` (API). Vacía, Presidio acepta cualquier llamada. Presidio no debe quedar accesible desde fuera de la red interna | `main.py:12,18-21`; `DependencyInjection.cs:208-213`; `docker-compose.yml:27,52` |
+| 12 | `PresidioApi:BaseUrl` configurada (no figura en ningún `appsettings`) | `DependencyInjection.cs:205` |
 | 13 | `GeminiApi:ApiKey` y `GeminiApi:BaseUrl` si se usará el análisis de recetas con IA; sin ellos falla en uso con error 500. Tenerlo en cuenta: la imagen de la receta completa viaja a Gemini en la primera llamada | `GeminiRecetaAnalyzer.cs:29,35-38,67-68,79`; [`tecnico/arquitectura`, sección 13.1](../tecnico/arquitectura.md#131-seguridad) |
-| 14 | DbUp ejecutado con éxito (código `0`) **antes** de la API; probar los 28 scripts contra una base nueva (ver el riesgo de `0004` en [4.5](#45-si-un-script-falla)) | `Program.cs:36-50`; [4.5](#45-si-un-script-falla) |
+| 14 | DbUp ejecutado con éxito (código `0`) **antes** de la API; probar los 29 scripts contra una base nueva (ver el riesgo de `0004` en [4.5](#45-si-un-script-falla)) | `Program.cs:36-50`; [4.5](#45-si-un-script-falla) |
 | 15 | Respaldo de la base de datos y prueba de restauración (no existen) | [4.7](#47-respaldos) |
 | 16 | **Cifrado de datos personales: pendiente.** El código no cifra campos en la base (búsqueda de `DataProtection`, `AesGcm`, `Aes.Create`, `ENCRYPTBY` y `ColumnEncryption` en `src`: sin resultados). Queda por definir el cifrado en reposo a nivel de plataforma | Ausencia verificada; no hay definición de infraestructura |
 | 17 | Volumen persistente para `/app/logs`, sabiendo que el archivo diario tiene un tope de 50 MB y se conservan 30 | `Program.cs:24-29`; `SOFIA.API/Dockerfile:30-31` |
@@ -559,6 +579,7 @@ Solo puntos sustentados por el código o la configuración. Marca cada uno antes
 | 19 | SPA: `environment.js` con `production`, `api.baseurl` y `appVersion` (la imagen nginx lo genera con `API_BASE_URL` y `APP_VERSION`, `nginx/40-runtime-env.sh:4-9`); la CSP debe permitir el origen de la API en `connect-src` (nginx lo hace, `default.conf.template:10`; `staticwebapp.config.json` no); el servidor debe devolver `index.html` en las rutas internas (nginx lo hace, `default.conf.template:37-39`) | `environment.model.ts:9-31`; `staticwebapp.config.json:3`; `app.config.ts:32-35` |
 | 20 | Imágenes base: `aspnet:10.0`, `sdk:10.0`, `runtime:10.0`, `mssql/server:2022-latest`, `node:22-alpine` y `nginx-unprivileged:1.27-alpine` van por etiqueta flotante (sin digest; solo Presidio fija digest); decide si fijarlas | `SOFIA.API/Dockerfile:1,6`; `SOFIA.DbUp/Dockerfile:1,11`; `docker-compose.yml:4`; `sofia-web-spa/Dockerfile:1,11` |
 | 21 | SQL Server en producción con la edición y licencia que correspondan: el compose usa `MSSQL_PID=Developer` | `docker-compose.yml:9` |
+| 23 | Operador de plataforma marcado en la base (`Es_Admin_Plataforma`) y datos de pago cargados en `/configuracion-pago`; sin ello nadie puede activar suscripciones ni las empresas vencidas ven cómo pagar | [4.8](#48-operador-de-plataforma-suscripciones) |
 | 22 | El `HEALTHCHECK` de la API usa `curl`; verifica que la imagen resultante lo tenga o cambia la sonda | `docker-compose.yml:77`; `SOFIA.API/Dockerfile` (no lo instala) |
 
 ## 8. Pendientes para Azure
@@ -567,12 +588,12 @@ El despliegue previsto es Azure, pero **no hay ningún ambiente creado** y los r
 
 | Necesidad que se deduce del código | Evidencia | Estado |
 |---|---|---|
-| Hosting estático para el SPA (indicio de Azure Static Web Apps por el nombre y la clave `globalHeaders`) | `sofia-web-spa/public/staticwebapp.config.json:2-9` | Pendiente |
+| Hosting del SPA: en UAT corre como contenedor (`ca-sofia-web`, imagen nginx); `staticwebapp.config.json` (clave `globalHeaders`, indicio de Static Web Apps) no se usa en ese camino | `sofia-web-spa/.github/workflows/docker-publish.yml:66-67`; `sofia-web-spa/public/staticwebapp.config.json:2-9` | Parcial: UAT sí; producción pendiente |
 | Regla de reescritura a `index.html` para las rutas internas del SPA | Resuelta en la imagen nginx (`default.conf.template:37-39`, `9ad15f0`); `staticwebapp.config.json` sigue sin `navigationFallback` (solo `globalHeaders`) | Resuelto para la imagen nginx; Pendiente si se usara Static Web Apps |
 | Cómo llega el SPA a la API: otro origen (requiere `AllowedOrigins`, CSP `connect-src` y cookie `SameSite=None`) o mismo origen (`baseurl` vacío en producción); no está decidido en el código | `environment.prod.ts:6-8`; `staticwebapp.config.json:3`; `Program.cs:51-62` | Pendiente |
 | Generación de `environment.js` por ambiente al desplegar el SPA | Resuelta en la imagen nginx (`nginx/40-runtime-env.sh:4-9`, `9ad15f0`); `public/environment.js:1` sigue vacío; `.gitignore:52,55-56` menciona archivos que no existen | Resuelto para la imagen nginx |
-| Hosting para las imágenes de la API, de DbUp y del SPA (contenedores) | `SOFIA.API/Dockerfile`; `SOFIA.DbUp/Dockerfile` | Pendiente |
-| Hosting para Presidio (contenedor) accesible solo por la API | `SOFIA.PresidioAPI/Dockerfile`; `main.py:12,18-21` | Pendiente |
+| Hosting para las imágenes de la API, de DbUp y del SPA (contenedores) | `SOFIA.API/Dockerfile`; `SOFIA.DbUp/Dockerfile`; UAT: Azure Container Apps `ca-sofia-api`, `ca-sofia-presidio` y `ca-sofia-web` en `rg-sofia-uat` (solo nombrados en los workflows, 6.4) | Parcial: UAT sí; DbUp y producción pendientes |
+| Hosting para Presidio (contenedor) accesible solo por la API | `SOFIA.PresidioAPI/Dockerfile`; `main.py:12,18-21`; `ca-sofia-presidio` en UAT (`docker-publish.yml:80-81`); que solo la API lo alcance es **No verificado** | Parcial: UAT sí; aislamiento y producción pendientes |
 | Registro de imágenes de contenedor | Existe ghcr con `:uat` y `:<sha>` para API, Presidio y SPA (6.4, `d79d6fa`, `9ad15f0`); falta DbUp y no es un registro de Azure | Parcial |
 | Servidor SQL Server, usuarios (migración y aplicación) y cadena de conexión | `docker-compose.yml:46,97` usa `sa` | Pendiente |
 | Respaldo y restauración de la base | Ninguno en los repositorios | Pendiente |
@@ -583,14 +604,14 @@ El despliegue previsto es Azure, pero **no hay ningún ambiente creado** y los r
 | Persistencia de logs o envío a un servicio de monitoreo | Logs a archivo y consola; sin sink externo (`Program.cs:23-29`) | Pendiente |
 | Monitoreo, alertas y sondas de salud (el `/health` de la API no mira dependencias) | `Program.cs:136-143` | Pendiente |
 | Pipeline de despliegue (imágenes, DbUp, API, Presidio, SPA) | [6.3](#63-qué-falta-para-un-despliegue-automatizado-pendiente) | Pendiente |
-| Estrategia para varias instancias de la API: límite de peticiones y caché de permisos son por instancia, y `OutboxProcessor` no reserva filas | `RateLimitingExtensions.cs:17-24`; `MemoryPermissionCache.cs:9`; `OutboxProcessor.cs:41-47` | Pendiente |
+| Estrategia para varias instancias de la API: límite de peticiones y caché de permisos son por instancia, y `OutboxProcessor` no reserva filas | `RateLimitingExtensions.cs:17-25`; `MemoryPermissionCache.cs:9`; `OutboxProcessor.cs:41-47` | Pendiente |
 | Cifrado de datos personales | [7](#7-lista-de-verificación-previa-a-producción), punto 16 | Pendiente |
 
 ## Pendientes y «No verificado»
 
 ### En curso (sin commitear)
 
-Ninguno. `git status --short` en `sofia-apis` y `sofia-web-spa` no mostró cambios al revisar este documento (commits `9c16f35` y `7070e1a`).
+Ninguno. `git status --short` en `sofia-apis` y `sofia-web-spa` no mostró cambios al revisar este documento (commits `0678e40` y `37048ea`).
 
 ### No verificado
 
@@ -649,7 +670,7 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 | `sofia-apis/src/SOFIA.API/appsettings.Development.json` | 3.1; 3.2 |
 | `sofia-apis/src/SOFIA.API/appsettings.Testing.json` | 3.1; 3.2 |
 | `sofia-apis/src/SOFIA.DbUp/appsettings.json` | 1.2; 4.1 |
-| `sofia-apis/src/SOFIA.DbUp/Program.cs` y scripts (28) | 4 |
+| `sofia-apis/src/SOFIA.DbUp/Program.cs` y scripts (29) | 4 |
 | `sofia-apis/src/SOFIA.API/Program.cs` | 3; 5.2; 5.3; 5.6; 5.7 |
 | `OutboxProcessor` | 5.5 |
 | `RateLimitingExtensions.cs` | 5.6 |
@@ -663,6 +684,8 @@ Este documento se hizo solo con lectura. No se ejecutó docker, ni compilación,
 | Workflows del SPA (`docker-publish.yml`) | 6.2, 6.4 (no hay CI de calidad) |
 | `sofia-apis/.github/workflows/docker-publish.yml`, `sofia-apis/.gitattributes` | 6.4 |
 | `sofia-web-spa/Dockerfile`, `.dockerignore`, `nginx/default.conf.template`, `nginx/40-runtime-env.sh` | 1.4; 3.3; 6.4 |
+| `0029_Plataforma_Suscripciones.sql`, operador de plataforma | 4.4; 4.8 |
+| Job `deploy` de ambos `docker-publish.yml` | 6.4 |
 | Componentes: API, DbUp, Presidio, SPA, SQL Server, correo | Sección 1 |
 | Configuración por entorno | Sección 3 |
 | Base de datos | Sección 4 |
@@ -680,7 +703,7 @@ Backend (`sofia-apis`):
 - `.husky/task-runner.json`
 - `src/Directory.Build.props`
 - `src/SOFIA.API/Dockerfile`, `Program.cs`, `SOFIA.API.csproj`, `appsettings.json`, `appsettings.Development.json`, `appsettings.Testing.json`, `Properties/launchSettings.json`, `Extensions/RateLimitingExtensions.cs`, `Extensions/RefreshTokenCookieExtensions.cs`, `Infrastructure/SecurityHeadersMiddleware.cs`, `Infrastructure/GlobalExceptionHandler.cs`, `Services/CurrentUser.cs`, `Controllers/AuthController.cs`, `Controllers/EmpresasController.cs`, `Controllers/RecetasController.cs`
-- `src/SOFIA.DbUp/Dockerfile`, `Program.cs`, `SOFIA.DbUp.csproj`, `appsettings.json`, `Scripts/0001` a `Scripts/0028` (lectura de estructura; `0002`, `0003`, `0004`, `0017` y `0028` leídos en parte)
+- `src/SOFIA.DbUp/Dockerfile`, `Program.cs`, `SOFIA.DbUp.csproj`, `appsettings.json`, `Scripts/0001` a `Scripts/0029` (lectura de estructura; `0002`, `0003`, `0004`, `0017`, `0028` y `0029` leídos en parte)
 - `src/SOFIA.PresidioAPI/Dockerfile`, `main.py`, `requirements.txt`, `requirements-model.txt`
 - `src/SOFIA.Infrastructure/DependencyInjection.cs`, `Authentication/JwtOptions.cs`, `Authentication/JwtProvider.cs`, `Authentication/MemoryPermissionCache.cs`, `Email/EmailOptions.cs`, `Email/AppOptions.cs`, `Email/FrontendLinks.cs`, `Services/OutboxProcessor.cs`, `Services/GeminiRecetaAnalyzer.cs`, `Persistence/ApplicationDbContext.cs`
 - `src/SOFIA.Application/Security/Commands/Login/LoginCommandHandler.cs`, `Common/Behaviors/AuditBehavior.cs`, `Ventas/Events/VentaCompletadaEvent.cs`
