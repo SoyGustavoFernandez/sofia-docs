@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-09 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` (revisado contra el código el 2026-11-09) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
-| **Método** | Lectura de código (los tres proyectos de prueba, sus `.csproj`, `.husky`, `.github`) y de los inventarios `sofia-docs/_inventario`; los cruces de cobertura se calcularon con un script de solo lectura. No se ejecutó ninguna prueba ni compilación. Revisado el 2026-11-09 contra el contenido del commit `9c16f35` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
+| **Método** | Lectura de código (los tres proyectos de prueba, sus `.csproj`, `.husky`, `.github`) y de los inventarios `sofia-docs/_inventario`; los cruces de cobertura se calcularon con un script de solo lectura. No se ejecutó ninguna prueba ni compilación. Revisado el 2026-11-20 contra el commit `0678e40` (árbol limpio; recuento con `git ls-files` sin `bin` ni `obj`) |
 
 Este documento describe qué pruebas automatizadas tiene el backend, cómo están hechas y qué queda sin cubrir. Los comandos para correrlas y los requisitos de Docker y secretos están en la [guía del desarrollador, sección 4.1](../../desarrollo/guia-del-desarrollador.md#41-backend); aquí solo se agrega lo que esa guía no dice. Para la arquitectura de capas ver [tecnico/arquitectura.md](../../tecnico/arquitectura.md). La parte hermana del SPA es [calidad/pruebas-automatizadas/spa.md](spa.md).
 
@@ -24,7 +24,7 @@ Este documento describe qué pruebas automatizadas tiene el backend, cómo está
 9. Tabla de cobertura
 10. Fuentes
 
-Convención de conteo: «pruebas» = métodos con `[Fact]` o `[Theory]` (así los cuenta `pruebas-backend.csv`). Un `[Theory]` con varios `[InlineData]` ejecuta más casos que métodos; en `SOFIA.UnitTests` hay 357 líneas `InlineData` repartidas en 48 archivos que contienen `[Theory]`. Rutas abreviadas: `UT/` = `sofia-apis/src/SOFIA.UnitTests/`, `IT/` = `sofia-apis/src/SOFIA.IntegrationTests/`, `AT/` = `sofia-apis/src/SOFIA.ArchitectureTests/`.
+Convención de conteo: «pruebas» = métodos con `[Fact]` o `[Theory]` (así los cuenta `pruebas-backend.csv`). Un `[Theory]` con varios `[InlineData]` ejecuta más casos que métodos; en `SOFIA.UnitTests` hay 421 líneas `InlineData` repartidas en 55 archivos que contienen `[Theory]`. Rutas abreviadas: `UT/` = `sofia-apis/src/SOFIA.UnitTests/`, `IT/` = `sofia-apis/src/SOFIA.IntegrationTests/`, `AT/` = `sofia-apis/src/SOFIA.ArchitectureTests/`.
 
 ---
 
@@ -34,16 +34,18 @@ Convención de conteo: «pruebas» = métodos con `[Fact]` o `[Theory]` (así lo
 
 | Proyecto | Archivos de prueba | Pruebas (`[Fact]`/`[Theory]`) | Archivos de apoyo (sin pruebas) |
 |---|---|---|---|
-| `SOFIA.UnitTests` | 162 | 1 087 | 3: `UT/Security/CuentaFactory.cs`, `UT/Security/EmpresaFactory.cs`, `UT/Ventas/Common/EmisorMocks.cs` |
-| `SOFIA.IntegrationTests` | 32 | 173 | 7 en `IT/Infrastructure/` (más `xunit.runner.json`) |
+| `SOFIA.UnitTests` | 169 | 1 149 | 3: `UT/Security/CuentaFactory.cs`, `UT/Security/EmpresaFactory.cs`, `UT/Ventas/Common/EmisorMocks.cs` |
+| `SOFIA.IntegrationTests` | 34 | 192 | 7 en `IT/Infrastructure/` (más `xunit.runner.json`) |
 | `SOFIA.ArchitectureTests` | 1 | 3 | — |
-| **Total** | **195** | **1 263** | 10 |
+| **Total** | **204** | **1 344** | 10 |
 
 Versión 1.1: las cifras incluyen los 9 métodos de prueba (2 archivos nuevos) que agregó `sofia-apis` `9c16f35` (catálogo DIGEMID compartido): `DeleteDigemidProductoCommandHandlerTests` (3), `DigemidCatalogoProductoTests` (4), una prueba más en `UpdateDigemidProductoCommandHandlerTests` y una más en `TenantIsolationIntegrationTests`. Recuento hecho sobre el diff del commit (`git show 9c16f35`), no con el script del inventario CSV.
 
 Versión 1.2 (2026-11-09): revisión contra el commit `9c16f35` (recuento hecho sobre el contenido del commit, no sobre el árbol de trabajo). Se corrigieron: total de la tabla de 3 (162 archivos y 1 087 pruebas), resumen de integración (173 pruebas), 97 archivos con `Mock<IApplicationDbContext>`, las citas de línea de `SofiaWebAppFactory.cs` y `TestCurrentUser.cs`, el apartado de rotulado Arrange/Act/Assert, el recuento de entidades sin prueba de dominio (26 de 50, `DigemidCatalogoProducto` ya tiene prueba), las pruebas de concurrencia de la anulación (1) y el número de archivos `.cs` (205).
 
-Fuente: `sofia-docs/_inventario/pruebas-backend.csv` (193 filas de datos; el `README.md` del inventario dice «186 archivos», cifra desfasada: el CSV tiene 193) y recuento de archivos `.cs` fuera de `bin`/`obj` (205 = 195 + 10 de apoyo; el CSV se generó antes de `9c16f35` y no incluye los 2 archivos de ese commit). Ninguna prueba está marcada con `Skip`: la búsqueda de `Skip =` en `UnitTests` e `IntegrationTests` no devolvió resultados.
+Versión 1.3 (2026-11-20): revisión contra `0678e40`. Se agregan las pruebas de `6f6b837` (suscripciones de plataforma: 5 archivos nuevos de `SOFIA.UnitTests` en Empresas y Plataforma, más `PlataformaSuscripcionIntegrationTests` y casos nuevos en `EmpresaTests` y en los handlers de Login, RefreshToken y ForgotPassword) y de `0678e40` (consultas de devoluciones: `DevolucionFiltersTests`, `GetDevolucionesQueryValidatorTests` y `DevolucionesConsultaIntegrationTests`); `7091c43` agrega el despliegue a UAT en `docker-publish.yml` (no toca pruebas). `9079e00` es del SPA y no afecta a este documento. En total 9 archivos nuevos y 81 pruebas más (1 263 -> 1 344): en `SOFIA.UnitTests` 7 archivos con 54 pruebas más 8 casos en archivos existentes (1 087 -> 1 149) y en `SOFIA.IntegrationTests` 2 archivos con 19 pruebas (173 -> 192). Se recalculan 5.2 y 6.
+
+Fuente: `sofia-docs/_inventario/pruebas-backend.csv` (193 filas de datos; el `README.md` del inventario dice «186 archivos», cifra desfasada: el CSV tiene 193) y recuento de archivos `.cs` fuera de `bin`/`obj` (214 = 204 + 10 de apoyo; el CSV se generó antes de `9c16f35` y no incluye los 11 archivos nuevos desde ese commit). Ninguna prueba está marcada con `Skip`: la búsqueda de `Skip =` en `UnitTests` e `IntegrationTests` no devolvió resultados (recontado sobre `0678e40`).
 
 ### 1.2 Herramientas y versiones
 
@@ -63,7 +65,7 @@ Leídas de los `.csproj` (todos `net10.0`, `Nullable` habilitado; `UT`/`IT` con 
 | Microsoft.Extensions.Configuration.UserSecrets | 10.0.7 | solo Integration | `IT/…csproj:14` |
 | NetArchTest.eNhancedEdition | 1.4.5 | solo Architecture | `AT/…csproj:19` |
 
-Particularidades: `SOFIA.ArchitectureTests` compila con `TreatWarningsAsErrors=true` y `EnforceCodeStyleInBuild=true` (`AT/…csproj:7-9`); `SOFIA.UnitTests` e `IntegrationTests` no. `SonarAnalyzer.CSharp` no se aplica a ningún proyecto cuyo nombre termina en `Tests` (`sofia-apis/src/Directory.Build.props:7-8`). `SOFIA.Domain` expone sus tipos `internal` a `SOFIA.UnitTests` (`sofia-apis/src/SOFIA.Domain/SOFIA.Domain.csproj:12-13`), por eso las pruebas pueden usar `SetId` y otros miembros internos.
+Particularidades: `SOFIA.ArchitectureTests` compila con `TreatWarningsAsErrors=true` y `EnforceCodeStyleInBuild=true` (`AT/…csproj:7-9`); `SOFIA.UnitTests` e `IntegrationTests` no. `SonarAnalyzer.CSharp` no se aplica a ningún proyecto cuyo nombre termina en `Tests` (`sofia-apis/src/Directory.Build.props:8-9`). `SOFIA.Domain` expone sus tipos `internal` a `SOFIA.UnitTests` (`sofia-apis/src/SOFIA.Domain/SOFIA.Domain.csproj:12-13`), por eso las pruebas pueden usar `SetId` y otros miembros internos.
 
 ### 1.3 Organización y nombres
 
@@ -76,12 +78,12 @@ Particularidades: `SOFIA.ArchitectureTests` compila con `TreatWarningsAsErrors=t
 
 ### 1.4 Patrones de las pruebas unitarias
 
-1. **Handlers de Application con `Mock<IApplicationDbContext>`**: 97 archivos de prueba crean `Mock<IApplicationDbContext>` y le asignan `DbSet` falsos con `BuildMockDbSet()` de MockQueryable (`new List<Venta> { _venta }.BuildMockDbSet().Object`, ejemplo `UT/Ventas/Commands/AnularVenta/AnularVentaCommandHandlerTests.cs:43-49`). Las colecciones se declaran como campos `List<T>` para afirmar sobre ellas después del `Handle`. No hay base de datos en memoria ni SQLite: la búsqueda de `UseInMemory`/`Sqlite` en `UT/` no encontró resultados.
+1. **Handlers de Application con `Mock<IApplicationDbContext>`**: 99 archivos de prueba crean `Mock<IApplicationDbContext>` y le asignan `DbSet` falsos con `BuildMockDbSet()` de MockQueryable (`new List<Venta> { _venta }.BuildMockDbSet().Object`, ejemplo `UT/Ventas/Commands/AnularVenta/AnularVentaCommandHandlerTests.cs:43-49`). Las colecciones se declaran como campos `List<T>` para afirmar sobre ellas después del `Handle`. No hay base de datos en memoria ni SQLite: la búsqueda de `UseInMemory`/`Sqlite` en `UT/` no encontró resultados.
 2. **Usuario actual simulado** con `Mock<ICurrentUser>` (`IsAuthenticated`, `SucursalId`, `Id`, …), ver `AnularVentaCommandHandlerTests.cs:30-32`.
 3. **Qué se afirma**: `Result.IsSuccess`/`IsFailure`, el código y tipo de `Error` (NotFound, Conflict, Forbidden, Validation…), el estado mutado de la entidad y que `SaveChangesAsync` se llame una vez (`Times.Once`) o nunca (`Times.Never`) en los caminos de rechazo.
 4. **Entidades de dominio**: se prueban sin dobles, llamando a las fábricas (`Venta.Create(...)`, `LoteInventario.Create(...)`) y verificando el `Result` y el estado.
-5. **Validadores FluentValidation**: se instancian directamente; 7 archivos usan `FluentValidation.TestHelper` y 10 usan `TestValidate`/`ShouldHaveValidationError`; el resto llama `Validate(...)` y revisa `Errors`.
-6. **Constructores de datos compartidos** (únicos tres archivos de apoyo): `CuentaFactory.WithBaseBranch` arma una cuenta con empleado y sucursal base cargados vía reflexión sobre campos de respaldo (`UT/Security/CuentaFactory.cs`); `EmpresaFactory.WithId` crea una empresa de prueba con un `Id` dado (`UT/Security/EmpresaFactory.cs`); `EmisorMocks.Setup` configura empresa y sucursal emisora del comprobante, con la bandera `ExigirRegistroReceta` fijada por reflexión (`UT/Ventas/Common/EmisorMocks.cs`). Fuera de eso cada clase de prueba arma sus datos en su constructor.
+5. **Validadores FluentValidation**: se instancian directamente; 10 archivos usan `FluentValidation.TestHelper` y 13 usan `TestValidate`/`ShouldHaveValidationError`; el resto llama `Validate(...)` y revisa `Errors`.
+6. **Constructores de datos compartidos** (únicos tres archivos de apoyo): `CuentaFactory.WithBaseBranch` arma una cuenta con empleado y sucursal base cargados vía reflexión sobre campos de respaldo (y `AsPlatformOperator` marca la cuenta como operador de plataforma con `<EsAdminPlataforma>k__BackingField`) (`UT/Security/CuentaFactory.cs`); `EmpresaFactory.WithId` crea una empresa de prueba con un `Id` dado (`UT/Security/EmpresaFactory.cs`); `EmisorMocks.Setup` configura empresa y sucursal emisora del comprobante, con la bandera `ExigirRegistroReceta` fijada por reflexión (`UT/Ventas/Common/EmisorMocks.cs`). Fuera de eso cada clase de prueba arma sus datos en su constructor.
 7. **Reflexión sobre campos de respaldo** para poblar propiedades de navegación sin setter público (por ejemplo `<Sucursal_Base>k__BackingField` en `CuentaFactory.cs`); es frágil ante renombres de las propiedades.
 8. **Convención de no probar query handlers**: ver 1.7; se cumple casi sin excepción.
 
@@ -89,8 +91,8 @@ Particularidades: `SOFIA.ArchitectureTests` compila con `TreatWarningsAsErrors=t
 
 - **Fábrica de la aplicación**: `SofiaWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime` (`IT/Infrastructure/SofiaWebAppFactory.cs:19`). Levanta un contenedor `mcr.microsoft.com/mssql/server:2022-latest` con Testcontainers (`:23-25`), arranca la API en entorno `Development` (`:61`), fuerza `Email:Provider=None` y `App:FrontendBaseUrl=https://app.sofia.test` (`:64-65`), reemplaza el `DbContext` por uno apuntado al contenedor (`:69-77`), sustituye `ICurrentUser` por `TestCurrentUser` (`:79-82`) y `IEmailSender` por `CapturingEmailSender` (`:84-85`).
 - **Esquema con `EnsureCreated`**: la base de pruebas se crea a partir del modelo de EF Core con `db.Database.EnsureCreated()` (`SofiaWebAppFactory.cs:90`), **no** con los scripts DbUp. Consecuencia: un cambio de esquema hecho solo en un script SQL no se verá en estas pruebas, y los índices, restricciones o columnas que solo existan en los scripts no están probados aquí. Entorno de la API durante las pruebas: `Development` (`:61`).
-- **Base de datos por clase de prueba**: `BaseIntegrationTest` implementa `IClassFixture<SofiaWebAppFactory>` (`IT/Infrastructure/BaseIntegrationTest.cs:11`), así que xUnit crea **una fábrica —y por tanto un contenedor SQL Server— por clase** y la comparte entre las pruebas de esa clase. Cada prueba obtiene un `IServiceScope` propio con `ISender` (MediatR) y `ApplicationDbContext` (`:28-31`). Los datos de una clase no se limpian entre sus pruebas: el código crea los datos con identificadores únicos (`Guid.NewGuid()`) y varias clases aíslan cada prueba en una empresa propia (`CurrentUser.Empresa = Guid.NewGuid()` en el constructor, o un `RegistrarEmpresa` nuevo por prueba), ver los comentarios «Every test runs in its own company» en `IT/Ventas/AnularVentaCajaIntegrationTests.cs`, `IT/Maestros/DeleteMaestroInUseIntegrationTests.cs` y `IT/Dashboard/DashboardVentasIntegrationTests.cs`.
-- **Inquilino controlado**: `TestCurrentUser` expone `Empresa`, `Empleado`, `Sucursal` y `Admin` modificables; `BaseIntegrationTest` los restablece al construir cada prueba (`BaseIntegrationTest.cs:22-26`) con la empresa fija `6f1b2c3d-0000-4000-8000-000000000001` (`IT/Infrastructure/TestCurrentUser.cs:10`).
+- **Base de datos por clase de prueba**: `BaseIntegrationTest` implementa `IClassFixture<SofiaWebAppFactory>` (`IT/Infrastructure/BaseIntegrationTest.cs:11`), así que xUnit crea **una fábrica —y por tanto un contenedor SQL Server— por clase** y la comparte entre las pruebas de esa clase. Cada prueba obtiene un `IServiceScope` propio con `ISender` (MediatR) y `ApplicationDbContext` (`:29-32`). Los datos de una clase no se limpian entre sus pruebas: el código crea los datos con identificadores únicos (`Guid.NewGuid()`) y varias clases aíslan cada prueba en una empresa propia (`CurrentUser.Empresa = Guid.NewGuid()` en el constructor, o un `RegistrarEmpresa` nuevo por prueba), ver los comentarios «Every test runs in its own company» en `IT/Ventas/AnularVentaCajaIntegrationTests.cs`, `IT/Maestros/DeleteMaestroInUseIntegrationTests.cs` y `IT/Dashboard/DashboardVentasIntegrationTests.cs`.
+- **Inquilino controlado**: `TestCurrentUser` expone `Empresa`, `Empleado`, `Sucursal`, `Admin` y `EsAdminPlataforma` modificables; `BaseIntegrationTest` los restablece al construir cada prueba (`BaseIntegrationTest.cs:22-27`) con la empresa fija `6f1b2c3d-0000-4000-8000-000000000001` (`IT/Infrastructure/TestCurrentUser.cs:10`).
 - **Ejecución secuencial**: `parallelizeTestCollections` es `false` (`IT/xunit.runner.json:3`).
 - **Dos estilos**: (a) pruebas que llaman a handlers por MediatR con la base real (`Sender.Send(...)`), (b) pruebas HTTP de extremo a extremo con `Factory.CreateClient()` contra los controladores reales (`IT/Api`, `IT/Security`).
 - **Constructores de datos**: `RegistroEmpresaBuilder.Nuevo` (RUC aleatorio único y correo de administrador, `IT/Infrastructure/RegistroEmpresaBuilder.cs`), `PosCatalogSeeder` (sucursal, empleado, medicamento, lote, stock y ventas, `IT/Infrastructure/PosCatalogSeeder.cs`), `DashboardTestClock.HoyLima()` (inicio del día en Lima, UTC-5, `IT/Infrastructure/DashboardTestClock.cs`).
@@ -108,7 +110,7 @@ El analizador de recetas con IA (Gemini) y el servicio de anonimización (Presid
 
 ### 1.7 Convención «no probar query handlers»
 
-Confirmada en el código con una excepción: de los 90 queries de `commands-queries.csv` solo `PreviewImportMedicamentosQueryHandler` tiene prueba de handler (`UT/Medicamentos/Queries/PreviewImportMedicamentos/PreviewImportMedicamentosQueryHandlerTests.cs`, 11 pruebas); los demás archivos bajo `Queries/` son pruebas de validadores (`DashboardHoyValidatorTests`, `AnalizarRecetaQueryValidatorTests`). Algunos queries sí se ejercitan indirectamente en integración (`IT/Dashboard/*`, `IT/Medicamentos/GetMedicamentosPosCatalogIntegrationTests.cs`, `IT/Pacientes/GetPacientesIntegrationTests.cs`, `IT/Ventas/PosLookupsIntegrationTests.cs`); el detalle por query está en la sección 5.
+Confirmada en el código con una excepción: de los 92 queries (recalculados desde `SOFIA.Application`; el CSV tiene 90) solo `PreviewImportMedicamentosQueryHandler` tiene prueba de handler (`UT/Medicamentos/Queries/PreviewImportMedicamentos/PreviewImportMedicamentosQueryHandlerTests.cs`, 11 pruebas); los demás archivos bajo `Queries/` son pruebas de validadores (`DashboardHoyValidatorTests`, `AnalizarRecetaQueryValidatorTests`). Algunos queries sí se ejercitan indirectamente en integración (`IT/Dashboard/*`, `IT/Medicamentos/GetMedicamentosPosCatalogIntegrationTests.cs`, `IT/Pacientes/GetPacientesIntegrationTests.cs`, `IT/Ventas/PosLookupsIntegrationTests.cs`, `IT/Ventas/DevolucionesConsultaIntegrationTests.cs`, `IT/Security/PlataformaSuscripcionIntegrationTests.cs`); el detalle por query está en la sección 5.
 
 ---
 
@@ -138,9 +140,9 @@ Resumen por módulo:
 | DIGEMID | 9 | 31 |
 | Dashboard | 4 | 21 |
 | Delivery | 2 | 10 |
-| Devoluciones | 4 | 28 |
+| Devoluciones | 6 | 42 |
 | Empleados | 6 | 61 |
-| Empresas | 3 | 57 |
+| Empresas | 5 | 78 |
 | FormulacionesClinicas | 6 | 40 |
 | IngredientesActivos | 4 | 11 |
 | Inventarios | 8 | 57 |
@@ -150,18 +152,19 @@ Resumen por módulo:
 | Medicamentos | 8 | 76 |
 | POS | 4 | 39 |
 | Pacientes | 7 | 29 |
+| Plataforma | 3 | 23 |
 | PresentacionesVenta | 6 | 34 |
 | Profesionales | 4 | 11 |
 | Proveedores | 7 | 30 |
 | Recetas | 7 | 31 |
-| Security | 20 | 103 |
+| Security | 20 | 107 |
 | SeriesFiscales | 7 | 44 |
 | Servicios | 3 | 18 |
 | Sucursales | 5 | 27 |
 | Transferencias | 2 | 29 |
 | UnidadesMedida | 4 | 12 |
 | Ventas | 12 | 180 |
-| **Total** | **162** | **1 087** |
+| **Total** | **169** | **1 149** |
 
 (Los totales por módulo se calcularon sumando las filas del CSV con un script de lectura; ver 5.1.)
 
@@ -220,6 +223,8 @@ Resumen por módulo:
 | `Commands/ProcesarDevolucion/ProcesarDevolucionCommandValidatorTests.cs` | `ProcesarDevolucionCommandValidator` | 8 | Comando válido; `ComprobanteOrigenId` vacío; motivo SUNAT o sustento inválidos; detalles inválidos o lista vacía; destino y método de reembolso fuera del enum; método de reembolso omitido toma `Efectivo`. |
 | `Common/CantidadesDevueltasExtensionsTests.cs` | `GetCantidadesDevueltasAsync` (extensión) | 3 | Suma por línea cuando se devolvió varias veces; ignora líneas de otra venta; ignora devoluciones o líneas eliminadas lógicamente. |
 | `Domain/DevolucionCabeceraTests.cs` | `DevolucionCabecera` (entidad) | 3 | `RegistrarReembolso` guarda sesión, monto y método; falla con sesión vacía y con monto negativo. |
+| `Queries/DevolucionFiltersTests.cs` | `DevolucionFilters.ParseNumeroNotaCredito` | 6 | (`0678e40`) Un texto en blanco no devuelve nada; separa un número impreso (serie y correlativo); un texto sin dígitos se toma solo como prefijo de serie; un número suelto se toma como correlativo; conserva solo el prefijo si falta el correlativo o no es un número; conserva solo el correlativo si falta el prefijo. |
+| `Queries/GetDevolucionesQueryValidatorTests.cs` | `GetDevolucionesQueryValidator` | 8 | (`0678e40`) Pasa sin filtros y con todos los filtros; falla con empleado igual al Guid vacío, motivo que no tiene dos caracteres, número de nota de crédito demasiado largo, monto mínimo negativo y monto máximo menor que el mínimo; pasa si el máximo es igual al mínimo. |
 
 ### 3.7 Empleados
 
@@ -238,7 +243,9 @@ Resumen por módulo:
 |---|---|---|---|
 | `Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandlerTests.cs` | `RegistrarEmpresaCommandHandler` | 17 | Conflict por RUC o usuario repetidos (2); devuelve JWT y emite refresh token (2); guarda las cuatro entidades (empresa, sucursal, empleado, cuenta) (1); crea el rol Admin propio de la empresa y no reutiliza uno existente (2); valores por defecto de campos opcionales y uso de los suministrados (2); licencia vacía/recortada (2); dirección recortada en la sede principal (1); RUC guardado y falla sin guardar si el RUC viene vacío (2); empleado admin con nombres y correo normalizado y sin apellido materno si no se da (2); no guarda si falla la validación (1). |
 | `Commands/RegistrarEmpresa/RegistrarEmpresaCommandValidatorTests.cs` | `RegistrarEmpresaCommandValidator` | 18 | Solo obligatorios pasa; falla con nombre de empresa vacío, usuario o contraseña cortos o vacíos, RUC vacío o inválido (pasa con RUC válido), nombres/apellido paterno vacíos o de más de 75 caracteres, apellido materno omitido o válido y de más de 75, correo vacío, inválido o largo, dirección de la sede vacía o de más de 255 caracteres (pasa en el máximo). |
-| `Domain/EmpresaTests.cs` | `Empresa` (entidad) | 22 | `Create` con solo nombre o con RUC; falla con nombre vacío o RUC inválido; nace en `TrialActivo`, vence a 30 días, `TenantId` igual a su propio id (7). Vigencia: `EstaVigente` y `EstaVigenteEn` según estado, periodo, suspendida, cancelada, trial vencido y eliminada lógicamente (7). `ActivarSuscripcion` y `ExtenderTrial` (4). `Update` válido, con RUC nulo y falla con nombre vacío (3). Por defecto no exige registro de receta (1). |
+| `Commands/Suscripcion/SuscripcionEmpresaCommandHandlerTests.cs` | Handlers de `ActivarSuscripcionEmpresa`, `ExtenderPruebaEmpresa`, `SuspenderEmpresa` y `CancelarEmpresa` | 11 | (`6f6b837`) Forbidden sin cambiar nada si quien llama no es operador de plataforma (1); NotFound si la empresa no existe (1); Conflict al bloquear la empresa del propio operador (1); activar otra empresa hasta la fecha dada y permitir la del propio operador (2); falla sin guardar si la fecha no es futura (1); extender la prueba mueve el vencimiento y conserva el estado de prueba, y da Conflict si no está en prueba (2); suspender y cancelar bloquean a otra empresa (2); la entrada de auditoría nombra el evento y la empresa afectada (1). |
+| `Commands/Suscripcion/SuscripcionEmpresaCommandValidatorTests.cs` | Validadores de los cuatro comandos de suscripción | 6 | (`6f6b837`) Activar y extender la prueba: pasan con id y fecha futura, fallan con id vacío o fecha no futura (4); suspender y cancelar: fallan con id vacío y pasan con id (2). |
+| `Domain/EmpresaTests.cs` | `Empresa` (entidad) | 26 | `Create` con solo nombre o con RUC; falla con nombre vacío o RUC inválido; nace en `TrialActivo`, vence a 30 días, `TenantId` igual a su propio id (7). Vigencia: `EstaVigente` y `EstaVigenteEn` según estado, periodo, suspendida, cancelada, trial vencido, activa con suscripción vencida y eliminada lógicamente (8). `ActivarSuscripcion` y `ExtenderTrial` (7): activar cambia el estado y fija el vencimiento, falla si la fecha no es futura y reactiva una empresa suspendida o cancelada; extender la prueba fija el vencimiento, falla si no está en prueba o si la fecha no es futura. `Update` válido, con RUC nulo y falla con nombre vacío (3). Por defecto no exige registro de receta (1). |
 
 ### 3.9 FormulacionesClinicas
 
@@ -386,10 +393,10 @@ Resumen por módulo:
 | `Commands/ChangePassword/ChangePasswordCommandHandlerTests.cs` | `ChangePasswordCommandHandler` | 3 | Actualiza la contraseña y revoca todas las sesiones si la actual es correcta; falla sin cambios si es incorrecta; falla si la cuenta está inactiva. |
 | `Commands/ChangePassword/ChangePasswordCommandValidatorTests.cs` | `ChangePasswordCommandValidator` | 5 | Pasa con contraseña nueva fuerte y distinta; falla con `CuentaId` vacío, contraseña actual vacía, nueva débil o igual a la actual. |
 | `Commands/Cuentas/CuentaAdminProtectionTests.cs` | `UpdateCuentaCommandHandler` y `DeleteCuentaCommandHandler` | 5 | Un no administrador no puede desactivar ni eliminar una cuenta administradora (Forbidden, código `Cuenta.AdminProtegida`, estado 403) (2); un administrador sí puede (2); un no administrador puede desactivar una cuenta común (1). |
-| `Commands/ForgotPassword/ForgotPasswordCommandHandlerTests.cs` | `ForgotPasswordCommandHandler` | 8 | Guarda solo el hash del token; emite un token distinto cada vez; envía al empleado un enlace con fragmento y el token en claro; no emite token pero responde igual si la cuenta está inactiva, el empleado no tiene correo, está eliminado o la empresa no está vigente (4); responde éxito genérico aunque el correo no se pueda enviar. |
-| `Commands/Login/LoginCommandHandlerTests.cs` | `LoginCommandHandler` | 8 | Credenciales válidas devuelven tokens; cuenta bloqueada devuelve el mismo error que contraseña errónea; sucursal base de otro inquilino igual error y sin tokens; usuario desconocido igual verifica una contraseña (anti enumeración por tiempo); empresa no vigente con contraseña válida devuelve Forbidden sin tokens, con contraseña errónea devuelve credenciales genéricas; empresa eliminada o inexistente devuelve Forbidden (2). |
+| `Commands/ForgotPassword/ForgotPasswordCommandHandlerTests.cs` | `ForgotPasswordCommandHandler` | 9 | Guarda solo el hash del token; emite un token distinto cada vez; envía al empleado un enlace con fragmento y el token en claro; no emite token pero responde igual si la cuenta está inactiva, el empleado no tiene correo, está eliminado o la empresa no está vigente (4); responde éxito genérico aunque el correo no se pueda enviar; (`6f6b837`) emite el token a un operador de plataforma aunque su empresa no esté vigente, porque nadie más podría ayudarlo (1). |
+| `Commands/Login/LoginCommandHandlerTests.cs` | `LoginCommandHandler` | 10 | Credenciales válidas devuelven tokens; cuenta bloqueada devuelve el mismo error que contraseña errónea; sucursal base de otro inquilino igual error y sin tokens; usuario desconocido igual verifica una contraseña (anti enumeración por tiempo); empresa no vigente con contraseña válida devuelve Forbidden sin tokens, con contraseña errónea devuelve credenciales genéricas; empresa eliminada o inexistente devuelve Forbidden (2); (`6f6b837`) un operador de plataforma inicia sesión aunque su empresa esté suspendida o cancelada, y con contraseña errónea recibe credenciales inválidas (2). |
 | `Commands/Logout/LogoutCommandHandlerTests.cs` | `LogoutCommandHandler` | 8 | Revoca la sesión de la cookie con el access token vencido; revoca la del principal sin cookie; éxito sin cambios sin principal ni cookie, con cookie desconocida o vencida (3); revoca la sesión rotada si un refresh concurrente la rotó; reintenta y revoca el token emitido entretanto; se rinde tras tres conflictos de concurrencia. |
-| `Commands/RefreshToken/RefreshTokenCommandHandlerTests.cs` | `RefreshTokenCommandHandler` | 10 | Rota un token activo; Unauthorized sin emitir token si la sucursal base es de otro inquilino, la empresa no está vigente (sin revocar), está eliminada, el token venció o es desconocido (5); revoca todas las sesiones si un token rotado se reutiliza pasado el periodo de gracia y conserva las demás dentro de la gracia (2); Unauthorized ante rotación concurrente y ante conflicto al revocar la sesión reutilizada (2). |
+| `Commands/RefreshToken/RefreshTokenCommandHandlerTests.cs` | `RefreshTokenCommandHandler` | 11 | Rota un token activo; Unauthorized sin emitir token si la sucursal base es de otro inquilino, la empresa no está vigente (sin revocar), está eliminada, el token venció o es desconocido (5); revoca todas las sesiones si un token rotado se reutiliza pasado el periodo de gracia y conserva las demás dentro de la gracia (2); Unauthorized ante rotación concurrente y ante conflicto al revocar la sesión reutilizada (2); (`6f6b837`) rota el token de un operador de plataforma aunque su empresa no esté vigente (1). |
 | `Commands/Register/RegisterAccountCommandHandlerTests.cs` | `RegisterAccountCommandHandler` | 5 | NotFound si el empleado no existe; Conflict si ya tiene cuenta o el usuario está tomado; crea la cuenta si todo pasa; no guarda si falla alguna comprobación. |
 | `Commands/ResetPassword/ResetPasswordCommandHandlerTests.cs` | `ResetPasswordCommandHandler` | 9 | Revoca los refresh tokens al restablecer; registra el evento de auditoría para el dueño; no lo registra con token inválido; falla si se presenta el hash almacenado como token, si el token se reutiliza o venció; conserva los refresh tokens si el token es inválido; usuario desconocido devuelve el mismo error que un token inválido y aun así calcula el hash. |
 | `Commands/Roles/AssignPermission/AssignPermissionToRolCommandHandlerTests.cs` | `AssignPermissionToRolCommandHandler` | 6 | Un no administrador no puede dar permisos a su propio rol (Forbidden) pero sí a otro; un administrador sí; permiso nuevo o restaurado invalida la caché de permisos del rol (2); un permiso duplicado no la invalida. |
@@ -469,11 +476,23 @@ Resumen por módulo:
 
 ---
 
+### 3.29 Plataforma (configuración de pago de las suscripciones)
+
+Módulo nuevo de `6f6b837` (`UT/Plataforma/`). Los handlers de suscripción de empresas (activar, extender la prueba, suspender y cancelar) están en 3.8 Empresas.
+
+| Archivo | Clase bajo prueba | Pruebas | Qué verifica |
+|---|---|---|---|
+| `Commands/GuardarConfiguracionPagoCommandHandlerTests.cs` | `GuardarConfiguracionPagoCommandHandler` | 5 | Forbidden sin guardar si quien llama no es operador de plataforma (1); crea la fila si no existe (1); actualiza la fila existente y conserva su QR si no se envía imagen (1); falla sin guardar si la imagen no es PNG ni JPEG (1); la entrada de auditoría registra si el QR cambió (1). |
+| `Commands/GuardarConfiguracionPagoCommandValidatorTests.cs` | `GuardarConfiguracionPagoCommandValidator` | 6 | Pasa solo con el número de WhatsApp; falla con WhatsApp inválido; el número de Yape en blanco o de nueve dígitos pasa y otro formato falla; falla con instrucciones demasiado largas o con el tamaño del QR fuera de rango. |
+| `Domain/PlataformaConfiguracionPagoTests.cs` | `PlataformaConfiguracionPago` (entidad) | 12 | `Create` válido (1), falla con WhatsApp inválido (1) y guarda el Yape si se da (1); `Update` vacía el Yape o las instrucciones en blanco, y falla conservando los valores con Yape inválido o instrucciones demasiado largas (4); `CambiarQr` reconoce PNG y JPEG, falla conservando el QR anterior si el contenido no es PNG ni JPEG, y falla si está vacío o excede el límite (5). |
+
+---
+
 ## 4. Catálogo de pruebas de integración
 
 Rutas relativas a `IT/`. «Base real» = SQL Server 2022 en contenedor con esquema creado por `EnsureCreated` (1.5). «HTTP» = `Factory.CreateClient` contra los controladores reales; «MediatR» = `Sender.Send(...)` directo al pipeline real (validación, transacción, auditoría). Muchas clases aíslan cada prueba en una empresa nueva (`CurrentUser.Empresa = Guid.NewGuid()` o `RegistrarEmpresa` con `RegistroEmpresaBuilder`) para que los datos de una prueba no cuenten en otra.
 
-Resumen: 32 archivos, 173 pruebas; 26 archivos usan contenedor SQL Server y 6 no (1.5).
+Resumen: 34 archivos, 192 pruebas; 28 archivos usan contenedor SQL Server y 6 no (1.5).
 
 ### 4.1 Api (HTTP y manejo de errores)
 
@@ -503,6 +522,7 @@ Resumen: 32 archivos, 173 pruebas; 26 archivos usan contenedor SQL Server y 6 no
 | `Security/CsrfHeaderIntegrationTests.cs` | HTTP, base real | 4 | `POST /api/v1/auth/refresh` y `/auth/logout`, y un preflight `OPTIONS` | 403 con código CSRF si falta el encabezado en endpoints de cookie (2 rutas); con encabezado llega a la acción y el cierre de sesión funciona; el preflight permite el encabezado solo para orígenes configurados. |
 | `Security/JwtOptionsTests.cs` | Unidad de opciones (sin contenedor) | 3 | `JwtOptions.EnsureValid` | Válida con clave de 32 bytes, emisor y audiencia; lanza si la clave falta o mide menos de 32 bytes; lanza si emisor o audiencia están vacíos. |
 | `Security/MemoryPermissionCacheTests.cs` | Unidad de la caché (sin contenedor) | 3 | `MemoryPermissionCache` | Devuelve lo guardado ignorando mayúsculas del rol; otra empresa con el mismo nombre de rol no comparte la caché; `Invalidate` quita solo la empresa y el rol indicados. |
+| `Security/PlataformaSuscripcionIntegrationTests.cs` | MediatR y HTTP, base real | 10 | (`6f6b837`) Registra empresas con `RegistrarEmpresa`; marca la cuenta como operador con SQL directo sobre `Seguridad_Cuentas.Es_Admin_Plataforma` o con `CurrentUser.EsAdminPlataforma`; llama a `GetEmpresasQuery`, `ActivarSuscripcionEmpresaCommand`, `GuardarConfiguracionPagoCommand`, `GetConfiguracionPagoQuery`, al dashboard de plataforma y a los endpoints de empresas y de configuración de pago | La lista de empresas devuelve solo la propia salvo para el operador y una empresa ajena da 404 a un cliente; solo el operador cambia la suscripción de otra empresa (403 a un cliente); el inicio de sesión se rechaza con 403 si la suscripción pagada venció; el endpoint de suscripción sigue la marca de la base de datos y no el rol Admin (403 sin marca, 204 con la marca y el mismo token); la configuración de pago guardada por el operador la lee cualquier empresa y un usuario anónimo; el operador conserva inicio de sesión y token de acceso vigente aunque su empresa esté suspendida; el endpoint de empresas atiende al operador sin ningún rol (lista y detalle 200) pero edición y otros módulos dan 403; `PermissionHandler` deja pasar al operador solo cuando el requisito lo permite; el dashboard de plataforma clasifica cada empresa una vez y lista solo las que están por vencer; `GET` de la configuración de pago responde sin token. |
 | `Security/RateLimitingIntegrationTests.cs` | HTTP, base real | 6 | `POST /api/v1/auth/login` y `/auth/refresh` con IP simuladas | 429 si una misma IP excede el límite de autenticación; otra IP no se limita; el refresh no se limita al agotar la cuota de login; la partición por empresa aísla empresas con la misma IP, comparte la cuota dentro de una misma empresa y cae a la IP si el usuario no tiene empresa. |
 | `Security/TenantIsolationIntegrationTests.cs` | MediatR y `DbContext`, base real | 10 | Dos empresas; filas con y sin inquilino | `SaveChanges` asigna el inquilino actual; el filtro oculta filas de otro inquilino y las filas sin inquilino para cualquier empresa y contexto anónimo, salvo el catálogo DIGEMID, cuyas filas sin inquilino las ve toda empresa y las propias siguen privadas (`9c16f35`); el índice único de documento permite el mismo documento en inquilinos distintos; dos registros de empresa crean cada uno su rol Admin; el inicio de sesión funciona con cuenta de un inquilino en contexto anónimo; login y refresh ignoran roles enlazados de otro inquilino o sin inquilino; la caché de permisos no se comparte con un rol del mismo nombre en otra empresa; `UpdateEmpleado` rechaza una sucursal base de otro inquilino. |
 
@@ -524,6 +544,7 @@ Resumen: 32 archivos, 173 pruebas; 26 archivos usan contenedor SQL Server y 6 no
 | Archivo | Tipo | Pruebas | Flujo y datos | Qué verifica |
 |---|---|---|---|---|
 | `Ventas/AnularVentaCajaIntegrationTests.cs` | MediatR, base real | 6 | Empresa propia; ventas cobradas en una sesión de caja y sesiones de caja de otros cajeros | `AnularVenta` se rechaza sin cambiar nada si la venta estaba cobrada y el llamador no tiene caja abierta; saca el efectivo de la caja del llamador si la sesión que cobró ya está cerrada; deja la caja como antes de la venta si se anula desde la misma sesión que cobró; una venta estacionada no necesita sesión; el arqueo cuenta cada anulación en la caja de la que salió el efectivo; la FK `Sesion_Anulacion_ID` hacia `POS_Sesiones_Caja` rechaza una sesión inexistente. |
+| `Ventas/DevolucionesConsultaIntegrationTests.cs` | MediatR (queries), base real | 9 | (`0678e40`) Empresa propia; devoluciones con notas de crédito, líneas y productos sembrados | `GetDevoluciones`: la fila enriquecida con números, nombres y montos; filtra por número de nota de crédito tal como se imprime o por parte de él; oculta las devoluciones sin nota de crédito al filtrar por su número; aplica los demás filtros; pagina y cuenta las mismas filas y ordena la más nueva primero; oculta y rechaza las de una sucursal a la que quien llama no tiene acceso. `GetDevolucionById`: devuelve la cabecera y sus líneas con datos del producto; conserva la línea y el nombre del producto si este se eliminó después de la venta; NotFound si no existe. |
 | `Ventas/PosLookupsIntegrationTests.cs` | MediatR (queries), base real | 9 | Productos, lotes, stock y presentaciones sembrados | `GetLotesDisponibles`: solo lotes vendibles de la propia sucursal ordenados por vencimiento, incluye la condición de venta, busca por nombre cuando no hay id y falla sin producto o sin sucursal en el token; `GetConfiguracion`: flexible por defecto y estricta cuando se activa la bandera de la empresa en la base, estricta si la sucursal no tiene empresa, falla sin sucursal en el token; `GetPresentaciones` devuelve solo las del producto. |
 | `Dashboard/DashboardCajaDevolucionesIntegrationTests.cs` | MediatR (queries), base real | 8 | Empresa propia; sesiones de caja abiertas, ventas y devoluciones parciales y totales | Tarjeta de caja: mi sesión con el efectivo esperado del arqueo; el administrador sin empleado ve las abiertas de todas las sucursales; un no administrador sin sesión ve solo las de su sucursal; sin sucursal ni empleado devuelve vacío. Devoluciones: cuenta las del día de la propia sucursal manteniendo las ventas brutas, las de todas las sucursales para el administrador, ceros sin datos, y falla la validación si `Hoy` no está cerca del día actual. |
 | `Dashboard/DashboardInventarioIntegrationTests.cs` | MediatR (query), base real | 6 | Empresa propia; lotes con stock que caducan alrededor de cada frontera | Reparte los lotes por día de caducidad; cuenta bajo mínimo y agotados sobre el stock vendible de una sucursal; cuenta cada par sucursal-producto para el administrador; ceros sin datos o sin sucursal; falla la validación si `Hoy` no es válido. |
@@ -545,8 +566,8 @@ Resumen: 32 archivos, 173 pruebas; 26 archivos usan contenedor SQL Server y 6 no
 
 Script de solo lectura (`09a-cov.js`, en el scratchpad de la sesión; no se versiona) que cruza los inventarios con el texto de las pruebas. No mide cobertura de líneas (no se ejecutó `coverlet`): mide **si existe una prueba que nombra la clase**.
 
-1. **Universo**: `sofia-docs/_inventario/commands-queries.csv` (113 commands y 90 queries), `validadores.csv` (83 validadores) y `entidades.csv` (50 entidades). El módulo de un command, query o validador es la carpeta de primer nivel bajo `SOFIA.Application` (de la ruta del CSV). Las entidades no tienen módulo en el inventario; se asignaron a mano por afinidad (por ejemplo `VentaPago` a Ventas, `RefreshToken` a Security, `SistemaOutboxEvento` a «Transversal»).
-2. **Command o query «con prueba»**: la clase del handler (resuelta leyendo en `SOFIA.Application` la clase que implementa `…Handler<TRequest…>`; los 203 se resolvieron) aparece por nombre en algún archivo de `SOFIA.UnitTests`.
+1. **Universo**: recalculado en la versión 1.3 directamente desde `SOFIA.Application` y `SOFIA.Domain/Entities` en `0678e40`: 118 commands y 92 queries (210 handlers), 88 validadores y 51 entidades. Los inventarios `_inventario/commands-queries.csv` (113 y 90), `validadores.csv` (83) y `entidades.csv` (50) son anteriores a `6f6b837` y `0678e40`. El módulo de un command, query o validador es la carpeta de primer nivel bajo `SOFIA.Application` (de la ruta del CSV). Las entidades no tienen módulo en el inventario; se asignaron a mano por afinidad (por ejemplo `VentaPago` a Ventas, `RefreshToken` a Security, `SistemaOutboxEvento` a «Transversal»).
+2. **Command o query «con prueba»**: la clase del handler (resuelta leyendo en `SOFIA.Application` la clase que implementa `…Handler<TRequest…>`; los 210 se resolvieron) aparece por nombre en algún archivo de `SOFIA.UnitTests`.
 3. **Validador «con prueba»**: la clase del validador (nombre real de la clase leído del archivo, que a veces difiere del archivo: `CreateLoteInventarioValidator` vive en `CreateLoteInventarioCommandValidator.cs`) aparece por nombre en algún archivo de `SOFIA.UnitTests`. Los validadores que corren dentro del pipeline en una prueba de integración (por ejemplo el de `RegistrarEmpresa`) no cuentan aquí si ninguna prueba unitaria los instancia.
 4. **Entidad «con prueba»**: existe un archivo en una carpeta `Domain/` de `SOFIA.UnitTests` cuyo nombre empieza por el de la entidad (sin distinguir mayúsculas). Es una medida estricta: entidades hijas como `DetalleVenta` se ejercitan dentro de pruebas de su agregado (`VentaTests`) pero no cuentan como «con prueba dedicada».
 5. **Integración**: columna «Integración (archivos / invocados)»: número de archivos de `SOFIA.IntegrationTests` que mencionan por nombre algún command o query del módulo, y cuántos commands + queries distintos del módulo se mencionan. Una mención en un archivo que solo siembra datos con ese command cuenta igual (por ejemplo `CreateVentaCommand` en `PreciosProveedorIntegrationTests.cs`).
@@ -561,10 +582,10 @@ Formato `con prueba / total`.
 | Auditoria | 1/1 | 0/1 | 0/0 | 0/0 | 0 / 0+0 | 1 |
 | Dashboard | 0/0 | 3/3 | 0/0 | 0/5 | 4 / 0+5 | 21 |
 | Delivery | 1/4 | 0/2 | 1/1 | 0/2 | 0 / 0+0 | 10 |
-| Devoluciones | 1/1 | 1/2 | 1/2 | 0/2 | 0 / 0+0 | 28 |
+| Devoluciones | 1/1 | 2/2 | 1/2 | 0/2 | 1 / 0+2 | 42 |
 | DIGEMID | 6/6 | 2/4 | 2/4 | 0/5 | 0 / 0+0 | 31 |
 | Empleados | 3/3 | 2/3 | 1/1 | 0/2 | 2 / 2+2 | 61 |
-| Empresas | 1/2 | 1/2 | 1/1 | 0/2 | 3 / 1+0 | 57 |
+| Empresas | 5/6 | 5/6 | 1/1 | 0/2 | 4 / 2+2 | 78 |
 | FormulacionesClinicas | 3/3 | 2/2 | 1/1 | 0/3 | 1 / 1+1 | 40 |
 | IngredientesActivos | 4/4 | 1/3 | 0/1 | 0/3 | 1 / 1+0 | 11 |
 | Inventarios | 3/5 | 3/4 | 2/2 | 0/6 | 0 / 0+0 | 57 |
@@ -573,12 +594,13 @@ Formato `con prueba / total`.
 | Magistrales | 2/2 | 2/3 | 0/2 | 0/2 | 0 / 0+0 | 26 |
 | Medicamentos | 4/4 | 3/3 | 1/1 | 1/3 | 3 / 2+1 | 76 |
 | Pacientes | 4/4 | 3/3 | 1/1 | 0/3 | 3 / 2+1 | 29 |
+| Plataforma | 1/1 | 1/1 | 1/1 | 0/2 | 1 / 1+2 | 23 |
 | POS | 2/2 | 1/3 | 1/1 | 0/2 | 2 / 1+0 | 39 |
 | PresentacionesVenta | 3/3 | 2/2 | 1/1 | 0/2 | 0 / 0+0 | 34 |
 | Profesionales | 4/4 | 1/2 | 0/1 | 0/3 | 1 / 1+0 | 11 |
 | Proveedores | 5/5 | 2/3 | 1/2 | 0/4 | 2 / 2+1 | 30 |
 | Recetas | 3/3 | 3/4 | 1/3 | 0/3 | 0 / 0+0 | 31 |
-| Security | 16/20 | 2/10 | 2/8 | 0/8 | 3 / 6+2 | 103 |
+| Security | 16/20 | 2/10 | 2/8 | 0/8 | 4 / 6+2 | 107 |
 | Seguros | 0/4 | 0/1 | 0/1 | 0/3 | 0 / 0+0 | — |
 | SeriesFiscales | 3/3 | 2/2 | 2/2 | 0/2 | 0 / 0+0 | 44 |
 | Servicios | 2/6 | 1/3 | 0/2 | 0/4 | 0 / 0+0 | 18 |
@@ -588,19 +610,20 @@ Formato `con prueba / total`.
 | UnidadesMedida | 4/4 | 1/3 | 0/1 | 0/3 | 0 / 0+0 | 12 |
 | Ventas | 4/4 | 4/4 | 2/4 | 0/5 | 3 / 2+3 | 180 |
 | `Common` (sin módulo de Application) | — | — | — | — | — | 38 |
-| **Total** | **91/113** | **45/83** | **24/50** | **1/90** | — | **1 087** |
+| **Total** | **96/118** | **51/88** | **25/51** | **1/92** | — | **1 149** |
 
-Lectura rápida (versión 1.1, con `9c16f35`): los commands están bien cubiertos por pruebas de handler (81 %); los validadores un poco más de la mitad (54 %); las entidades con prueba de dominio dedicada, menos de la mitad (48 %, aunque varias de las restantes son líneas hijas que se prueban dentro de su agregado); los handlers de consulta casi nada, por convención (1.7). Catorce módulos no tienen ninguna prueba de integración que nombre sus commands o queries: Auditoria, Delivery, Devoluciones, DIGEMID, Inventarios, JerarquiasUoM, Magistrales, PresentacionesVenta, Recetas, Seguros, SeriesFiscales, Servicios, Transferencias y UnidadesMedida (ver 6).
+Lectura rápida (versión 1.3, con `0678e40`): los commands están bien cubiertos por pruebas de handler (81 %); los validadores un poco más de la mitad (58 %); las entidades con prueba de dominio dedicada, la mitad (49 %, aunque varias de las restantes son líneas hijas que se prueban dentro de su agregado); los handlers de consulta casi nada, por convención (1.7). Trece módulos no tienen ninguna prueba de integración que nombre sus commands o queries: Auditoria, Delivery, DIGEMID, Inventarios, JerarquiasUoM, Magistrales, PresentacionesVenta, Recetas, Seguros, SeriesFiscales, Servicios, Transferencias y UnidadesMedida (ver 6). Devoluciones salió de la lista con `0678e40`.
 
 Notas sobre la tabla:
 
+- La fila «Plataforma» es nueva (`GuardarConfiguracionPagoCommand`, `GetConfiguracionPagoQuery`, `GetDashboardPlataformaQuery` y la entidad `PlataformaConfiguracionPago`). Los commands de suscripción de empresas (activar, extender prueba, suspender y cancelar) cuentan en la fila «Empresas». «Empresas» queda en 5/6 commands: solo `UpdateEmpresaCommand` carece de prueba de handler.
 - El módulo Ventas figura con «4/4 commands» (`ActualizarVentaPendiente`, `AnularVenta`, `CompletarVenta`, `CreateVenta`); el módulo POS con 2/2 (`AperturarCaja`, `CerrarCaja`). `ProcesarDevolucion` es el único command de Devoluciones.
 - «Security» agrupa autenticación, cuentas y roles; sus 8 entidades incluyen `Rol`, `PermisoRol`, `RolSucursal`, `CuentaRol`, `CuentaSucursal`, `AuditoriaEventoSeguridad`, `Cuenta` y `RefreshToken`.
 - La columna de integración cuenta archivos que nombran la clase; no garantiza que el flujo del módulo se pruebe de punta a punta. Un ejemplo es Ventas, donde `CreateVentaCommand` solo se usa para sembrar una venta en un archivo de proveedores (4.4).
 
 ### 5.3 Consultas ejercidas fuera de las pruebas unitarias
 
-De las 90 queries, 1 tiene prueba de handler unitaria (`PreviewImportMedicamentosQuery`) y 18 se ejercitan en integración: `GetDashboardCajaQuery`, `GetDashboardCuarentenaQuery`, `GetDashboardDevolucionesQuery`, `GetDashboardInventarioQuery`, `GetDashboardVentasQuery`, `GetEmpleadoByIdQuery`, `GetEmpleadosWithPaginationQuery`, `GetFormulacionesClinicasWithPaginationQuery`, `GetMedicamentosQuery`, `GetPacientesQuery`, `GetPreciosProveedorQuery`, `GetCuentaByIdQuery`, `GetCuentasQuery`, `GetSucursalByIdQuery`, `GetSucursalesWithPaginationQuery`, `GetConfiguracionVentaQuery`, `GetLotesDisponiblesVentaQuery`, `GetPresentacionesProductoVentaQuery`. Las otras **71** queries no tienen ninguna prueba que las nombre (ni de handler ni de integración); además, 6 de las 18 (las de empleados, cuentas y sucursales) aparecen en una sola prueba que verifica el nombre sin hueco de un empleado sin apellido materno.
+De las 92 queries, 1 tiene prueba de handler unitaria (`PreviewImportMedicamentosQuery`) y 24 se ejercitan en integración (las 18 de la versión 1.1 más `GetDevolucionesQuery`, `GetDevolucionByIdQuery`, `GetEmpresasQuery`, `GetEmpresaByIdQuery`, `GetConfiguracionPagoQuery` y `GetDashboardPlataformaQuery`): `GetDashboardCajaQuery`, `GetDashboardCuarentenaQuery`, `GetDashboardDevolucionesQuery`, `GetDashboardInventarioQuery`, `GetDashboardVentasQuery`, `GetEmpleadoByIdQuery`, `GetEmpleadosWithPaginationQuery`, `GetFormulacionesClinicasWithPaginationQuery`, `GetMedicamentosQuery`, `GetPacientesQuery`, `GetPreciosProveedorQuery`, `GetCuentaByIdQuery`, `GetCuentasQuery`, `GetSucursalByIdQuery`, `GetSucursalesWithPaginationQuery`, `GetConfiguracionVentaQuery`, `GetLotesDisponiblesVentaQuery`, `GetPresentacionesProductoVentaQuery`. Las otras **67** queries no tienen ninguna prueba que las nombre (ni de handler ni de integración); además, 6 de las 18 originales (las de empleados, cuentas y sucursales) aparecen en una sola prueba que verifica el nombre sin hueco de un empleado sin apellido materno.
 
 ---
 
@@ -608,7 +631,7 @@ De las 90 queries, 1 tiene prueba de handler unitaria (`PreviewImportMedicamento
 
 Todo lo que sigue sale del cruce del apartado 5 y de las pruebas catalogadas en 3 y 4. «Sin prueba» significa «ninguna prueba nombra la clase»; puede haber cobertura indirecta que el método no ve (por ejemplo, una entidad ejercitada dentro de otra). Los IDs `RN-…` son los de [negocio/reglas](../../negocio/reglas/).
 
-### 6.1 Commands sin prueba de handler (22 de 113)
+### 6.1 Commands sin prueba de handler (22 de 118)
 
 | Módulo | Commands |
 |---|---|
@@ -621,14 +644,13 @@ Todo lo que sigue sale del cruce del apartado 5 y de las pruebas catalogadas en 
 | Servicios | `DeleteInmunizacionCommand`, `DeleteServicioCommand`, `UpdateInmunizacionCommand`, `UpdateServicioCommand` |
 | Transferencias | `CancelarTransferenciaCommand`, `DespacharTransferenciaCommand`, `RecibirTransferenciaCommand` (la máquina de estados sí se prueba en la entidad `Transferencia`, 23 pruebas, pero no el handler: stock, permisos de sucursal, receptor) |
 
-### 6.2 Validadores sin prueba (38 de 83)
+### 6.2 Validadores sin prueba (37 de 88)
 
 | Módulo | Validadores |
 |---|---|
 | Auditoria | `AnonimizarDatosCommandValidator` |
 | DIGEMID | `GenerarActaDestruccionCommandValidator`, `GetCuarentenaQueryValidator` |
 | Delivery | `ProgramarDeliveryCommandValidator`, `UpdateDeliveryEstadoCommandValidator` |
-| Devoluciones | `GetDevolucionesQueryValidator` |
 | Empleados | `GetEmpleadosWithPaginationQueryValidator` |
 | Empresas | `UpdateEmpresaCommandValidator` |
 | IngredientesActivos | `CreateIngredienteActivoCommandValidator`, `UpdateIngredienteActivoCommandValidator` |
@@ -649,7 +671,7 @@ Todo lo que sigue sale del cruce del apartado 5 y de las pruebas catalogadas en 
 
 Varios de estos validadores sí corren en el pipeline de una prueba de integración (por ejemplo `RegistrarEmpresaValidationIntegrationTests`), pero ninguna prueba instancia el validador y recorre sus reglas.
 
-### 6.3 Entidades sin prueba de dominio dedicada (26 de 50)
+### 6.3 Entidades sin prueba de dominio dedicada (26 de 51)
 
 `AseguradoraMedica`, `AuditoriaEventoSeguridad`, `CuentaRol`, `CuentaSucursal`, `DetalleTransferencia`, `DetalleVenta`, `DevolucionDetalle`, `DigemidActaDestruccion`, `DigemidActaDetalle`, `IngredienteActivo`, `JerarquiaUoM`, `MagistralConsumoInsumo`, `MagistralOrdenProduccion`, `PermisoRol`, `ProfesionalSalud`, `ProveedorDistribuidor`, `RecetaDigitalizadaIA`, `RegistroPrivacidadPresidio`, `Rol`, `RolSucursal`, `ServicioAgenda`, `ServicioClinicoInmunizacion`, `SistemaNotificacionInterna`, `SistemaOutboxEvento`, `UnidadMedida`, `VentaReclamoSeguro`.
 
@@ -657,7 +679,7 @@ De ellas, el script no encontró ninguna mención en pruebas unitarias ni de int
 
 ### 6.4 Handlers de consulta
 
-71 de las 90 queries no tienen ninguna prueba (5.3). Entre las que importan al negocio: `GetVentasQuery` y `GetVentaByIdQuery` (listado y detalle de ventas, RN-VEN-070 a RN-VEN-074), `GetSesionesQuery` y `GetSesionByIdQuery` (RN-CAJ-020 a RN-CAJ-023), `GetDevolucionesQuery` y `GetDevolucionByIdQuery` (RN-DEV-030, RN-DEV-031), `GetStockPorSucursalQuery`, `GetTransferenciasQuery`, `GetCuarentenaQuery`, `GetProfileQuery`, `GetPermissionsByRolQuery`, `AnalizarRecetaQuery` (solo se prueba su validador y la selección de modelo) y todas las `PreviewImport…Query` salvo la de medicamentos. Las exportaciones a Excel (RN-VEN-078, RN-CAJ-024) tampoco tienen prueba salvo las de pacientes, laboratorios y empresas en `IT/Api/ExportRequestValidationIntegrationTests.cs` y `IT/Laboratorios/LaboratoriosExportIntegrationTests.cs`.
+67 de las 92 queries no tienen ninguna prueba (5.3). Entre las que importan al negocio: `GetVentasQuery` y `GetVentaByIdQuery` (listado y detalle de ventas, RN-VEN-070 a RN-VEN-074), `GetSesionesQuery` y `GetSesionByIdQuery` (RN-CAJ-020 a RN-CAJ-023), `GetStockPorSucursalQuery`, `GetTransferenciasQuery`, `GetCuarentenaQuery`, `GetProfileQuery`, `GetPermissionsByRolQuery`, `AnalizarRecetaQuery` (solo se prueba su validador y la selección de modelo) y todas las `PreviewImport…Query` salvo la de medicamentos. Las exportaciones a Excel (RN-VEN-078, RN-CAJ-024, y la de devoluciones, `POST /api/v1/devoluciones/exportar`, de `0678e40`) tampoco tienen prueba salvo las de pacientes, laboratorios y empresas en `IT/Api/ExportRequestValidationIntegrationTests.cs` y `IT/Laboratorios/LaboratoriosExportIntegrationTests.cs`.
 
 ### 6.5 Flujos de negocio críticos sin prueba de integración
 
@@ -671,7 +693,7 @@ Estado por flujo. «Sin integración» significa que ningún archivo de `SOFIA.I
 | Cobrar una venta en espera (`CompletarVentaCommand`) | 21 + 8 pruebas unitarias | Sin integración (RN-VEN-056). |
 | Actualizar venta en espera (`ActualizarVentaPendienteCommand`) | 10 + 3 pruebas unitarias | Sin integración (RN-VEN-053 a RN-VEN-055). |
 | Anulación de venta | 11 pruebas unitarias + 6 de integración + 1 de concurrencia | Cubierta (RN-VEN-062 a RN-VEN-069, RN-CMP-012); no se prueba el rechazo por HTTP ni el permiso de anular. |
-| Devolución (`ProcesarDevolucionCommand`) | 14 + 8 pruebas unitarias del handler y el validador, 3 de las extensiones y 3 de la cabecera; concurrencia de devoluciones parciales a nivel de entidad (4.2) | **Sin prueba de integración del command ni del endpoint**: nota de crédito real contra la serie, reintegro de stock en base real, transaccionalidad todo o nada (RN-DEV-020 a RN-DEV-025, RN-DEV-028). Las dos consultas de devoluciones (RN-DEV-030, RN-DEV-031) no tienen prueba. |
+| Devolución (`ProcesarDevolucionCommand`) | 14 + 8 pruebas unitarias del handler y el validador, 3 de las extensiones y 3 de la cabecera; concurrencia de devoluciones parciales a nivel de entidad (4.2) | **Sin prueba de integración del command ni del endpoint**: nota de crédito real contra la serie, reintegro de stock en base real, transaccionalidad todo o nada (RN-DEV-020 a RN-DEV-025, RN-DEV-028). Las dos consultas de devoluciones (RN-DEV-030, RN-DEV-031) sí tienen prueba de integración desde `0678e40` (`DevolucionesConsultaIntegrationTests`, 9). |
 | Recetas: exigencia al vender | Matriz de exigencia en `VentaDetalleFactoryTests` (31) y en los handlers de venta; configuración flexible o estricta en `PosLookupsIntegrationTests` | La política `ExigirRegistroReceta` (RN-VEN-028, RN-VEN-029) no se prueba con una venta real de punta a punta. |
 | Recetas: análisis con IA | `GeminiRecetaAnalyzerTests` (2: selección de modelo) y validador de especialidad (3) | Sin prueba: formato de imagen (RN-REC-019), fallo del proveedor (RN-REC-021), límites del resultado (RN-REC-022), validación contra DIGEMID (RN-REC-023), coincidencia con el catálogo (RN-REC-024), stock por sucursal (RN-REC-026), equivalentes y sugerencias (RN-REC-027, RN-REC-028). Presidio (anonimización) solo como doble. |
 | CRUD de recetas | Handlers unitarios (Create/Update/Delete) y un 404 por HTTP | Sin integración. |
@@ -687,7 +709,8 @@ Estado por flujo. «Sin integración» significa que ningún archivo de `SOFIA.I
 
 | Regla | Estado |
 |---|---|
-| Autorización por permiso en los endpoints (RN-GEN-015, RN-GEN-020, RN-GEN-021) | La prueba de arquitectura solo verifica que cada acción declare `[HasPermission]`, `[Authorize]` o `[AllowAnonymous]` (2); no hay prueba que llame a un endpoint con un usuario sin el permiso y espere 403 (los únicos 403 que se prueban por HTTP son el de CSRF, `CsrfHeaderIntegrationTests`, y el del cambio forzado de contraseña o empresa suspendida, `AuthIntegrationTests`). Solo `PermissionHandler` se prueba por la caché entre empresas (4.3). |
+| Autorización por permiso en los endpoints (RN-GEN-015, RN-GEN-020, RN-GEN-021) | La prueba de arquitectura solo verifica que cada acción declare `[HasPermission]`, `[Authorize]` o `[AllowAnonymous]` (2); no hay prueba que llame a un endpoint con un usuario sin el permiso y espere 403 (los 403 que se prueban por HTTP son el de CSRF, `CsrfHeaderIntegrationTests`; el del cambio forzado de contraseña o empresa suspendida, `AuthIntegrationTests`; y, desde `6f6b837`, los de los endpoints de suscripción y de empresas para quien no es operador de plataforma, `PlataformaSuscripcionIntegrationTests`). Sigue sin haber una prueba por módulo de farmacia con un rol sin permiso. Solo `PermissionHandler` se prueba por la caché entre empresas y, desde `6f6b837`, por la exención del operador de plataforma (4.3). |
+| Suscripciones de plataforma (`6f6b837`) | Handlers de activar, extender prueba, suspender y cancelar (11 + 6 de validadores, 3.8), configuración de pago (5 + 6 + 12, 3.29), operador sin empresa vigente en login, refresh y recuperación (4 casos, 3.22) y 10 de integración (4.3) | El guardado de la configuración de pago solo se prueba por MediatR, no por el endpoint HTTP multipart; el `PlataformaController` completo (rutas y códigos HTTP) no se ejercita. **No verificado**: si alguna de esas rutas se ejercita en `PlataformaSuscripcionIntegrationTests` más allá de lo resumido en 4.3. |
 | Límites de peticiones (RN-GEN-025 a RN-GEN-029) | `RateLimitingIntegrationTests` cubre solo el límite de credenciales (`/api/v1/auth/login` y `/auth/refresh`) y la partición por empresa. No hay prueba del límite general, del de registro de empresas ni del de endpoints de IA. |
 | Creación y edición de roles (`CreateRol`, `UpdateRol`) y asignación de sucursales a cuentas (RN-CTA-019) | Sin handler ni validador probados. Sí están: asignar permisos, asignar y quitar rol a usuario (RN-ROL-010, RN-CTA-015, RN-CTA-016), sucursales del rol, borrar rol y revocar permiso. |
 | Validadores de autenticación (`Login`, `RefreshToken`, `RegisterAccount`, `ForgotPassword`, `ResetPassword`) | Sin prueba propia; el comportamiento sí se prueba a nivel de handler. |
@@ -698,7 +721,7 @@ Estado por flujo. «Sin integración» significa que ningún archivo de `SOFIA.I
 
 - **Esquema de integración distinto del real**: las pruebas usan `EnsureCreated` (1.5). Los scripts DbUp (fuente de verdad del esquema) no se ejercitan en ninguna prueba; un índice o restricción que exista solo en un script no se prueba.
 - **Integración fuera de CI**: ver 7.
-- **Suites que dependen de reflexión** (campos de respaldo en `CuentaFactory`; la propiedad `ExigirRegistroReceta` por nombre en `EmisorMocks`) se romperían con un renombre.
+- **Suites que dependen de reflexión** (campos de respaldo `<Sucursal_Base>`, `<Empleado>` y `<EsAdminPlataforma>` en `CuentaFactory`; la propiedad `ExigirRegistroReceta` por nombre en `EmisorMocks`) se romperían con un renombre.
 - **Sin pruebas de rendimiento, carga ni de interfaz** del lado del backend; la seguridad estática depende de SonarAnalyzer y OWASP Dependency Check en CI (7).
 
 ---
@@ -713,7 +736,7 @@ Los comandos, los requisitos de Docker y la clave del contenedor de pruebas est�
 | `SOFIA.ArchitectureTests` | `dotnet test src/SOFIA.ArchitectureTests/SOFIA.ArchitectureTests.csproj` | Nada externo |
 | `SOFIA.IntegrationTests` | `dotnet test src/SOFIA.IntegrationTests/SOFIA.IntegrationTests.csproj` | Docker, contraseña del contenedor (`SOFIA_TEST_DB_PASSWORD` o user-secret `Testing:ContainerDbPassword`) y la configuración JWT de la API, según la guía |
 
-Lo que la guía no dice y se observa en el código: (a) las pruebas de integración que no heredan de `BaseIntegrationTest` (6, ver 1.5) no necesitan Docker, pero el proyecto en conjunto sí lo exige para las otras 26; (b) cada clase de integración arranca su propio contenedor SQL Server (`IClassFixture`), así que el tiempo crece con el número de clases (26 contenedores); (c) las colecciones no corren en paralelo (`xunit.runner.json`).
+Lo que la guía no dice y se observa en el código: (a) las pruebas de integración que no heredan de `BaseIntegrationTest` (6, ver 1.5) no necesitan Docker, pero el proyecto en conjunto sí lo exige para las otras 28; (b) cada clase de integración arranca su propio contenedor SQL Server (`IClassFixture`), así que el tiempo crece con el número de clases (28 contenedores); (c) las colecciones no corren en paralelo (`xunit.runner.json`).
 
 **Dónde se ejecutan automáticamente**
 
@@ -721,9 +744,10 @@ Lo que la guía no dice y se observa en el código: (a) las pruebas de integraci
 |---|---|---|
 | Hook `pre-commit` (Husky.Net) | `detect-secrets`, `dotnet format` sobre los archivos en staging, `git add` de los formateados y **solo las pruebas de arquitectura** (`dotnet test` en `Release` con `--no-restore`) | `sofia-apis/.husky/task-runner.json:35-46`, `sofia-apis/.husky/pre-commit` |
 | Workflow `Security Scan` (job `build-analysis`) | `dotnet build` en `Release` de la solución y, en este orden, las pruebas **unitarias** (con resultado `.trx`) y las **de arquitectura**. Se dispara en `push` y `pull_request` a `master`/`main` y los lunes a las 08:00 UTC | `sofia-apis/.github/workflows/security.yml:3-10,20-54` |
-| Integración | **No se ejecuta en ningún hook ni en CI**: el workflow no tiene paso para `SOFIA.IntegrationTests`. Solo se corren a mano | `security.yml` (ningún paso la menciona); `task-runner.json` |
+| Workflow `Publish Docker Images` (jobs `publish` y `deploy`) | Construye y publica las imágenes en GHCR en cada `push` a `main` o a mano (`workflow_dispatch`) y, en el job `deploy` (`needs: publish`), despliega `sofia-api` y `sofia-presidio` a UAT en Azure Container Apps (`rg-sofia-uat`) y comprueba `/health`. **No ejecuta pruebas** | `sofia-apis/.github/workflows/docker-publish.yml` (despliegue agregado en `7091c43`; el job `deploy` está en las líneas 54-86 y comprueba `/health` en las 83-86) |
+| Integración | **No se ejecuta en ningún hook ni en CI**: ni `security.yml` ni `docker-publish.yml` tienen paso para `SOFIA.IntegrationTests`. Solo se corren a mano | `security.yml`, `docker-publish.yml` (ningún paso la menciona); `task-runner.json` |
 
-Los otros jobs del workflow (OWASP Dependency Check y gitleaks) no ejecutan pruebas. El SPA no tiene CI (ver [calidad/pruebas-automatizadas/spa.md](spa.md)).
+Los otros jobs de `security.yml` (OWASP Dependency Check y gitleaks) no ejecutan pruebas. El despliegue a UAT de `docker-publish.yml` ocurre sin que ninguna prueba haya pasado antes en ese workflow: la publicación y el despliegue no dependen del resultado de `Security Scan`. El SPA tampoco ejecuta pruebas en CI: su único workflow publica la imagen y la despliega (ver [calidad/pruebas-automatizadas/spa.md](spa.md)).
 
 ---
 
@@ -731,21 +755,21 @@ Los otros jobs del workflow (OWASP Dependency Check y gitleaks) no ejecutan prue
 
 **No verificado**
 
-1. **No se ejecutó ninguna prueba ni compilación** (prohibido en este encargo). No se sabe si hoy las 1 263 pruebas pasan; el documento describe lo que el código dice que verifican.
-2. Las cifras de pruebas son **métodos con `[Fact]`/`[Theory]`**, no casos: las 357 filas `[InlineData]` ejecutan más casos de los que cuentan.
+1. **No se ejecutó ninguna prueba ni compilación** (prohibido en este encargo). No se sabe si hoy las 1 344 pruebas pasan; el documento describe lo que el código dice que verifican.
+2. Las cifras de pruebas son **métodos con `[Fact]`/`[Theory]`**, no casos: las 421 filas `[InlineData]` ejecutan más casos de los que cuentan.
 3. La cobertura del apartado 5 es **por nombre de clase**, no de líneas ni de ramas; no se ejecutó `coverlet`. Una clase cubierta por nombre puede tener ramas sin probar, y una clase «sin prueba» puede ejercitarse indirectamente.
 4. Los recuentos de subgrupos entre paréntesis de 3 (por ejemplo «(5)») se obtuvieron leyendo los nombres de los métodos, no ejecutando; los totales por archivo sí coinciden con el CSV.
 5. El contenido interno de cada prueba de integración se resumió desde sus nombres, comentarios y cabeceras; no se leyó línea por línea el cuerpo de cada una (se leyeron completas la infraestructura, `ConcurrencyIntegrationTests`, `GeminiRecetaAnalyzerTests`, `LoggingConfigurationTests`, `TransactionRollbackIntegrationTests` y las cabeceras de los demás).
 6. No se comprobó si el contenedor de CI (`ubuntu-latest`) podría ejecutar las pruebas de integración ni si faltaría configuración (JWT, contraseña).
 7. Las reglas de negocio citadas en 6 se tomaron de los títulos de los documentos [negocio/reglas](../../negocio/reglas/) (validados por otro agente) y de la lista de IDs vista; no se contrastó cada regla contra el código de la prueba. Los IDs RN-SER se tomaron de la lista de títulos de las reglas de series fiscales (RN-SER-013).
 
-**En curso (sin commitear):** ninguno documentado; todo lo descrito se verificó contra el contenido del commit `9c16f35`.
+**En curso (sin commitear):** ninguno documentado; todo lo descrito se verificó contra el contenido del commit `0678e40` (árbol limpio al 2026-11-20).
 
 **Pendientes**
 
 - Evaluar añadir pruebas de integración a CI (Docker en el runner) o al menos un hook previo al push.
 - Cerrar los huecos de 6 empezando por los flujos que mueven dinero o stock sin integración (devolución, cobro de venta pendiente, cierre de caja, transferencias).
-- Reconciliar con [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md): sus citas a `SofiaWebAppFactory.cs` líneas 19-25 y 33-90 coinciden con el archivo actual (la fábrica ocupa las líneas 19-96; las citas de la versión 1.1 de este documento a las líneas 54-127 eran erróneas y se corrigieron). El `README.md` de `_inventario` dice «186 archivos» de prueba mientras el CSV tiene 193 y el código actual 195.
+- Reconciliar con [desarrollo/guia-del-desarrollador.md](../../desarrollo/guia-del-desarrollador.md): sus citas a `SofiaWebAppFactory.cs` líneas 19-25 y 33-90 coinciden con el archivo actual (la fábrica ocupa las líneas 19-96; las citas de la versión 1.1 de este documento a las líneas 54-127 eran erróneas y se corrigieron). El `README.md` de `_inventario` dice «186 archivos» de prueba mientras el CSV tiene 193 y el código actual 204 (más 10 de apoyo).
 
 ---
 
@@ -753,7 +777,7 @@ Los otros jobs del workflow (OWASP Dependency Check y gitleaks) no ejecutan prue
 
 ### 9.1 Archivos de `pruebas-backend.csv`
 
-Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado donde están documentados (el apartado 3.N es la sección del módulo; el 4.N, el área de integración).
+Los 204 archivos (193 del inventario CSV, los 2 de `9c16f35` y los 9 de `6f6b837` y `0678e40`), con el apartado donde están documentados (el apartado 3.N es la sección del módulo; el 4.N, el área de integración).
 
 | Archivo (`pruebas-backend.csv`) | Pruebas | Apartado |
 |---|---|---|
@@ -783,6 +807,8 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 | `SOFIA.UnitTests/Devoluciones/Commands/ProcesarDevolucion/ProcesarDevolucionCommandValidatorTests.cs` | 8 | 3.6 Devoluciones |
 | `SOFIA.UnitTests/Devoluciones/Common/CantidadesDevueltasExtensionsTests.cs` | 3 | 3.6 Devoluciones |
 | `SOFIA.UnitTests/Devoluciones/Domain/DevolucionCabeceraTests.cs` | 3 | 3.6 Devoluciones |
+| `SOFIA.UnitTests/Devoluciones/Queries/DevolucionFiltersTests.cs` | 6 | 3.6 Devoluciones |
+| `SOFIA.UnitTests/Devoluciones/Queries/GetDevolucionesQueryValidatorTests.cs` | 8 | 3.6 Devoluciones |
 | `SOFIA.UnitTests/Empleados/Commands/CreateEmpleado/CreateEmpleadoCommandHandlerTests.cs` | 8 | 3.7 Empleados |
 | `SOFIA.UnitTests/Empleados/Commands/CreateEmpleado/CreateEmpleadoCommandValidatorTests.cs` | 11 | 3.7 Empleados |
 | `SOFIA.UnitTests/Empleados/Commands/DeleteEmpleado/DeleteEmpleadoCommandHandlerTests.cs` | 3 | 3.7 Empleados |
@@ -791,7 +817,9 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 | `SOFIA.UnitTests/Empleados/Domain/EmpleadoTests.cs` | 17 | 3.7 Empleados |
 | `SOFIA.UnitTests/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandlerTests.cs` | 17 | 3.8 Empresas |
 | `SOFIA.UnitTests/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandValidatorTests.cs` | 18 | 3.8 Empresas |
-| `SOFIA.UnitTests/Empresas/Domain/EmpresaTests.cs` | 22 | 3.8 Empresas |
+| `SOFIA.UnitTests/Empresas/Commands/Suscripcion/SuscripcionEmpresaCommandHandlerTests.cs` | 11 | 3.8 Empresas |
+| `SOFIA.UnitTests/Empresas/Commands/Suscripcion/SuscripcionEmpresaCommandValidatorTests.cs` | 6 | 3.8 Empresas |
+| `SOFIA.UnitTests/Empresas/Domain/EmpresaTests.cs` | 26 | 3.8 Empresas |
 | `SOFIA.UnitTests/FormulacionesClinicas/Commands/CreateFormulacionClinica/CreateFormulacionClinicaCommandHandlerTests.cs` | 7 | 3.9 FormulacionesClinicas |
 | `SOFIA.UnitTests/FormulacionesClinicas/Commands/CreateFormulacionClinica/CreateFormulacionClinicaCommandValidatorTests.cs` | 7 | 3.9 FormulacionesClinicas |
 | `SOFIA.UnitTests/FormulacionesClinicas/Commands/DeleteFormulacionClinica/DeleteFormulacionClinicaCommandHandlerTests.cs` | 2 | 3.9 FormulacionesClinicas |
@@ -842,6 +870,9 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 | `SOFIA.UnitTests/Pacientes/Commands/UpdatePaciente/UpdatePacienteCommandHandlerTests.cs` | 5 | 3.17 Pacientes |
 | `SOFIA.UnitTests/Pacientes/Commands/UpdatePaciente/UpdatePacienteCommandValidatorTests.cs` | 3 | 3.17 Pacientes |
 | `SOFIA.UnitTests/Pacientes/Domain/PacienteClienteTests.cs` | 5 | 3.17 Pacientes |
+| `SOFIA.UnitTests/Plataforma/Commands/GuardarConfiguracionPagoCommandHandlerTests.cs` | 5 | 3.29 Plataforma |
+| `SOFIA.UnitTests/Plataforma/Commands/GuardarConfiguracionPagoCommandValidatorTests.cs` | 6 | 3.29 Plataforma |
+| `SOFIA.UnitTests/Plataforma/Domain/PlataformaConfiguracionPagoTests.cs` | 12 | 3.29 Plataforma |
 | `SOFIA.UnitTests/PresentacionesVenta/Commands/CreatePresentacionVenta/CreatePresentacionVentaCommandHandlerTests.cs` | 5 | 3.18 PresentacionesVenta |
 | `SOFIA.UnitTests/PresentacionesVenta/Commands/CreatePresentacionVenta/CreatePresentacionVentaCommandValidatorTests.cs` | 4 | 3.18 PresentacionesVenta |
 | `SOFIA.UnitTests/PresentacionesVenta/Commands/DeletePresentacionVenta/DeletePresentacionVentaCommandHandlerTests.cs` | 3 | 3.18 PresentacionesVenta |
@@ -869,10 +900,10 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 | `SOFIA.UnitTests/Security/Commands/ChangePassword/ChangePasswordCommandHandlerTests.cs` | 3 | 3.22 Security |
 | `SOFIA.UnitTests/Security/Commands/ChangePassword/ChangePasswordCommandValidatorTests.cs` | 5 | 3.22 Security |
 | `SOFIA.UnitTests/Security/Commands/Cuentas/CuentaAdminProtectionTests.cs` | 5 | 3.22 Security |
-| `SOFIA.UnitTests/Security/Commands/ForgotPassword/ForgotPasswordCommandHandlerTests.cs` | 8 | 3.22 Security |
-| `SOFIA.UnitTests/Security/Commands/Login/LoginCommandHandlerTests.cs` | 8 | 3.22 Security |
+| `SOFIA.UnitTests/Security/Commands/ForgotPassword/ForgotPasswordCommandHandlerTests.cs` | 9 | 3.22 Security |
+| `SOFIA.UnitTests/Security/Commands/Login/LoginCommandHandlerTests.cs` | 10 | 3.22 Security |
 | `SOFIA.UnitTests/Security/Commands/Logout/LogoutCommandHandlerTests.cs` | 8 | 3.22 Security |
-| `SOFIA.UnitTests/Security/Commands/RefreshToken/RefreshTokenCommandHandlerTests.cs` | 10 | 3.22 Security |
+| `SOFIA.UnitTests/Security/Commands/RefreshToken/RefreshTokenCommandHandlerTests.cs` | 11 | 3.22 Security |
 | `SOFIA.UnitTests/Security/Commands/Register/RegisterAccountCommandHandlerTests.cs` | 5 | 3.22 Security |
 | `SOFIA.UnitTests/Security/Commands/ResetPassword/ResetPasswordCommandHandlerTests.cs` | 9 | 3.22 Security |
 | `SOFIA.UnitTests/Security/Commands/Roles/AssignPermission/AssignPermissionToRolCommandHandlerTests.cs` | 6 | 3.22 Security |
@@ -947,12 +978,14 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 | `SOFIA.IntegrationTests/Security/CsrfHeaderIntegrationTests.cs` | 4 | 4.3 |
 | `SOFIA.IntegrationTests/Security/JwtOptionsTests.cs` | 3 | 4.3 |
 | `SOFIA.IntegrationTests/Security/MemoryPermissionCacheTests.cs` | 3 | 4.3 |
+| `SOFIA.IntegrationTests/Security/PlataformaSuscripcionIntegrationTests.cs` | 10 | 4.3 |
 | `SOFIA.IntegrationTests/Security/RateLimitingIntegrationTests.cs` | 6 | 4.3 |
 | `SOFIA.IntegrationTests/Security/TenantIsolationIntegrationTests.cs` | 10 | 4.3 |
 | `SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs` | 6 | 4.5 |
+| `SOFIA.IntegrationTests/Ventas/DevolucionesConsultaIntegrationTests.cs` | 9 | 4.5 |
 | `SOFIA.IntegrationTests/Ventas/PosLookupsIntegrationTests.cs` | 9 | 4.5 |
 | `SOFIA.ArchitectureTests/ArchitectureTests.cs` | 3 | 2 |
-| **Total** | **1263** (195 archivos) | |
+| **Total** | **1344** (204 archivos) | |
 
 ### 9.2 Otros elementos del encargo y del inventario
 
@@ -963,9 +996,9 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 | Herramientas y versiones de los tres `.csproj` | 1.2 |
 | Convenciones de nombres y organización | 1.3 |
 | Convención de no probar query handlers | 1.7 y 5.3 |
-| `commands-queries.csv` (203: 113 commands, 90 queries) | 5.2, 5.3, 6.1, 6.4 |
-| `validadores.csv` (83) | 5.2, 6.2 |
-| `entidades.csv` (50) | 5.2, 6.3 |
+| `commands-queries.csv` (203: 113 commands, 90 queries; recalculado desde el código: 210, 118 y 92) | 5.2, 5.3, 6.1, 6.4 |
+| `validadores.csv` (83; recalculado: 88) | 5.2, 6.2 |
+| `entidades.csv` (50; recalculado: 51) | 5.2, 6.3 |
 | Hooks y CI (`.husky/task-runner.json`, `.github/workflows/security.yml`) | 7 |
 | Reglas de negocio cruzadas (RN-CAJ, RN-DEV, RN-VEN, RN-CMP, RN-REC, RN-AUT, RN-GEN, RN-CTA, RN-ROL, RN-SER) | 6.4, 6.5, 6.6 |
 | `enums.csv`, `endpoints.csv`, `permisos.csv`, `codigos-error*.csv`, `scripts-dbup.csv`, `tablas.csv` | No aplican a este documento (no son pruebas); `endpoints.csv` se menciona en 2 como referencia de la prueba de autorización. |
@@ -974,14 +1007,14 @@ Los 195 archivos (193 del inventario CSV y los 2 de `9c16f35`), con el apartado 
 
 ## 10. Fuentes
 
-Código de `sofia-apis` (commit `9c16f35`), todo bajo `sofia-apis/`:
+Código de `sofia-apis` (commit `0678e40`), todo bajo `sofia-apis/`:
 
 - `src/SOFIA.UnitTests/SOFIA.UnitTests.csproj`, `src/SOFIA.IntegrationTests/SOFIA.IntegrationTests.csproj`, `src/SOFIA.ArchitectureTests/SOFIA.ArchitectureTests.csproj`, `src/Directory.Build.props`, `src/SOFIA.Domain/SOFIA.Domain.csproj`, `SOFIA.Solution.slnx`.
 - `src/SOFIA.ArchitectureTests/ArchitectureTests.cs`.
 - `src/SOFIA.IntegrationTests/Infrastructure/*.cs` (7 archivos) y `src/SOFIA.IntegrationTests/xunit.runner.json`.
-- Los 162 archivos de `src/SOFIA.UnitTests/` y los 32 de `src/SOFIA.IntegrationTests/` listados en 9.1 (nombres de métodos, cabeceras, constructores y, por muestreo, cuerpos: `AnularVentaCommandHandlerTests.cs`, `CuentaAdminProtectionTests.cs`, `ConcurrencyIntegrationTests.cs`, `GeminiRecetaAnalyzerTests.cs`, `LoggingConfigurationTests.cs`, `TransactionRollbackIntegrationTests.cs`, `ExportRequestValidationIntegrationTests.cs`, `DashboardVentasIntegrationTests.cs`).
+- Los 169 archivos de `src/SOFIA.UnitTests/` y los 34 de `src/SOFIA.IntegrationTests/` listados en 9.1 (nombres de métodos, cabeceras, constructores y, por muestreo, cuerpos: `AnularVentaCommandHandlerTests.cs`, `CuentaAdminProtectionTests.cs`, `ConcurrencyIntegrationTests.cs`, `GeminiRecetaAnalyzerTests.cs`, `LoggingConfigurationTests.cs`, `TransactionRollbackIntegrationTests.cs`, `ExportRequestValidationIntegrationTests.cs`, `DashboardVentasIntegrationTests.cs`).
 - Clases de `src/SOFIA.Application` (handlers y validadores, solo para resolver nombres) y `src/SOFIA.Application/DependencyInjection.cs`.
-- `.husky/pre-commit`, `.husky/commit-msg`, `.husky/task-runner.json`, `.github/workflows/security.yml`.
+- `.husky/pre-commit`, `.husky/commit-msg`, `.husky/task-runner.json`, `.github/workflows/security.yml`, `.github/workflows/docker-publish.yml`.
 
 Inventarios y documentos (carpeta `sofia-docs`):
 
