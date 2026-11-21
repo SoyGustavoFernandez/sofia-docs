@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` (más nuevo que la línea base `43f5529`; sin cambios locales al empezar) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` (más nuevo que la línea base `eeffbb6`; sin cambios locales al empezar) |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## Índice
@@ -188,6 +188,24 @@ Más adelante en el capítulo (secciones 5 y 6) el cajero abrió una caja con S/
 | Ventas de los últimos 7 días | La última barra, «Hoy», S/ 1.20 | Igual que «Vendido hoy» | Sí |
 | Productos más vendidos | Ibuprofeno Demo 400 mg pasó a 20 unidades · S/ 8.00 (17 + 3 unidades, 6.80 + 1.20) | Se vendieron 3 unidades más | Sí |
 
+### 3.9 El aviso de vencimiento de la suscripción
+
+Desde `sofia-web-spa` `558ad35` el Inicio puede mostrar, **encima de la tarjeta de cabecera**, una franja con un reloj, un texto y el botón **Cómo pagar**. Todo lo de esta sección sale del código (`sofia-web-spa/src/app/pages/dashboard/suscripcion-aviso/suscripcion-aviso.component.ts` y `sofia-web-spa/public/i18n/suscripcion/es.json`) y es **No verificado en la aplicación**: la empresa de prueba tiene su vencimiento lejos y no se probó.
+
+| Cuándo aparece | Qué dice |
+|---|---|
+| Tu empresa está vigente y su fecha de vencimiento está a 7 días o menos | «Tu periodo de prueba vence en N días (dd/MM/aaaa).» si la empresa está en «Trial Activo»; «Tu suscripción vence en N días (dd/MM/aaaa).» si está «Activo». Con un solo día: «…vence en 1 día (…).» |
+
+Reglas:
+
+- Los días se cuentan hacia arriba (un día empezado cuenta entero) y nunca se muestra menos de 1.
+- Solo lo ve quien puede leer la empresa: el rol «Admin» o un rol con `Empresa › Leer`. Un cajero con el rol «Cajero» del capítulo 3 no lo ve.
+- Si ya venció, no hay aviso: la empresa no puede iniciar sesión (capítulo 1, sección 6.5.1).
+- **Cómo pagar** abre un cuadro con el mismo recuadro de pago del inicio de sesión («Paga tu suscripción con Yape», el QR, el número de Yape, las indicaciones y el botón **Enviar captura por WhatsApp**, que esta vez lleva el nombre de tu empresa en el mensaje) y un botón **Cerrar**.
+- Si falla la lectura de la empresa, el aviso simplemente no aparece y no se muestra ningún error.
+
+El operador de plataforma ve, en lugar de las tarjetas de una botica, una sección «Suscripciones» con las cifras de todas las empresas (capítulo 12, sección 6).
+
 ## 4. Los botones de acceso directo
 
 Varias tarjetas tienen un botón que abre la pantalla correspondiente **ya filtrada**, para que no tengas que buscar. Se recorrieron así:
@@ -335,6 +353,7 @@ Esta sección reúne en un solo lugar lo que cada capítulo anterior comprobó. 
 | INVENTARIO › Stock por Sucursal | Sí | Sí, solo su sucursal | Capítulo 6 §13 |
 | PUNTO DE VENTA › Sesiones de Caja | Sí | Sí | Capítulos 8 §18 y 9 §10 |
 | PUNTO DE VENTA › Ventas | Sí | Sí | Capítulos 8 §18 y 9 §10 |
+| PUNTO DE VENTA › Devoluciones | Sí | Sí, con `Devoluciones › Leer` (No verificado en la aplicación) | Capítulo 9 §7.1 |
 | PACIENTES & ATENCIÓN › Pacientes | Sí | Sí, solo consulta | Capítulo 7 §13 |
 | PACIENTES & ATENCIÓN › Profesionales de Salud | Sí | Sí, solo consulta | Capítulo 7 §13 |
 | PACIENTES & ATENCIÓN › Recetas Médicas | Sí | Sí, con **Escanear receta** y **Nuevo** | Capítulo 7 §13 |
