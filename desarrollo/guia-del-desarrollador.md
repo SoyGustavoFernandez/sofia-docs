@@ -3,13 +3,27 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-09 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y de archivos de configuración y tooling de ambos repositorios (solo lectura). No se ejecutó ningún comando de compilación, prueba, formato ni servidor. El apartado «Entorno local observado» recoge una comprobación hecha por el orquestador con `docker ps` / `docker inspect`. |
 
 ## Historial de cambios
+
+### Versión 1.3 (2026-11-20)
+
+Revisión contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea` (ambos limpios).
+
+| Apartado | Decía | Dice ahora | Commit |
+|---|---|---|---|
+| 6.1, 6.2, 10.3 | Los workflows `docker-publish.yml` solo publican | Cada uno tiene un job `deploy` («Deploy to UAT») que actualiza Azure Container Apps (`ca-sofia-api`, `ca-sofia-presidio`, `ca-sofia-web` en `rg-sofia-uat`) tras publicar y comprueba `/health` o `/healthz` | `7091c43`, `a71f480` |
+| 2.1, 8.4, 3.4 | 28 scripts (`0001` a `0028`); siguiente libre `0029` | 29 scripts; `0029_Plataforma_Suscripciones.sql` (columna `Seguridad_Cuentas.Es_Admin_Plataforma` y tabla `Plataforma_Configuracion_Pago`); siguiente libre `0030` | `6f6b837` |
+| 2.1 | 50 entidades, 48 configuraciones EF, 31 controladores, 28 carpetas de módulo | 51, 49, 32 y 29 (`Plataforma`, `PlataformaController`, `HasPermissionOrPlataformaAttribute`) | `6f6b837` |
+| 3.5 | Límites `global`, `auth`, `signup` y `ai-endpoints` | Se suma `public-info` (30/min por IP, `GET plataforma/pago`); cita `RateLimitingExtensions.cs:17-58` | `6f6b837` |
+| 3.3, 3.5, 3.7, 7.1 | Citas de `Infrastructure/DependencyInjection.cs` (28-154, 142, 157-198...) y `PermissionAuthorizationHandler.cs` (31-36, 48-50) | Desplazadas por el soporte del operador: p. ej. `DependencyInjection.cs:149`, `172-182`, `203-213`, `PermissionAuthorizationHandler.cs:39-44,56-58` | `6f6b837` |
+| 2.2 | Tabla de rutas con `app.routes.ts` hasta el 180; 33 scopes | Líneas corregidas; se suman `devoluciones` (`37048ea`) y `configuracion-pago` (`558ad35`); 35 scopes (`devoluciones`, `suscripcion`) | `558ad35`, `37048ea` |
+| 3.7 | Primer usuario por registro de empresa | Se agrega el alta manual del operador de plataforma | `6f6b837` |
 
 ### Versión 1.2 (2026-11-09)
 
@@ -159,10 +173,10 @@ No existe una carpeta `tests/`: los tres proyectos de prueba están en `src/` (`
 | Proyecto | Propósito | Referencia a | Fuente |
 |---|---|---|---|
 | `SOFIA.SharedKernel` | Punto de extensión compartido. Hoy solo contiene `AddSharedKernel()`, que no registra nada | — | `sofia-apis/src/SOFIA.SharedKernel/DependencyInjection.cs:5-7` |
-| `SOFIA.Domain` | Entidades (50 archivos en `Entities/`), enums (12 en `Enums/`), `Result`, `Error`, `BaseEntity`, la marca `IGlobalReadEntity` (`Common/IGlobalReadEntity.cs`), el objeto de valor `Ruc`. `TreatWarningsAsErrors=true`. Expone `internal` a `SOFIA.UnitTests` y `SOFIA.Infrastructure` | SharedKernel | `sofia-apis/src/SOFIA.Domain/SOFIA.Domain.csproj:4,12-17,26` |
+| `SOFIA.Domain` | Entidades (51 archivos en `Entities/`), enums (12 en `Enums/`), `Result`, `Error`, `BaseEntity`, la marca `IGlobalReadEntity` (`Common/IGlobalReadEntity.cs`), el objeto de valor `Ruc`. `TreatWarningsAsErrors=true`. Expone `internal` a `SOFIA.UnitTests` y `SOFIA.Infrastructure` | SharedKernel | `sofia-apis/src/SOFIA.Domain/SOFIA.Domain.csproj:4,12-17,26` |
 | `SOFIA.Application` | Commands, queries, validadores y handlers por módulo; comportamientos del pipeline de MediatR; interfaces que implementa Infrastructure | Domain, SharedKernel | `sofia-apis/src/SOFIA.Application/SOFIA.Application.csproj:4-5`, `DependencyInjection.cs:13-24` |
-| `SOFIA.Infrastructure` | `ApplicationDbContext` y 48 configuraciones EF, JWT y permisos, envío de correo, lectura/generación de Excel, clientes de Presidio y Gemini, `OutboxProcessor` | Application, SharedKernel | `sofia-apis/src/SOFIA.Infrastructure/SOFIA.Infrastructure.csproj:4-5`, `DependencyInjection.cs:28-154` |
-| `SOFIA.API` | `Program.cs`, 31 controladores, middlewares, manejador global de excepciones, límites de peticiones | Application, Infrastructure, SharedKernel | `sofia-apis/src/SOFIA.API/SOFIA.API.csproj:23-25` |
+| `SOFIA.Infrastructure` | `ApplicationDbContext` y 49 configuraciones EF, JWT y permisos, envío de correo, lectura/generación de Excel, clientes de Presidio y Gemini, `OutboxProcessor` | Application, SharedKernel | `sofia-apis/src/SOFIA.Infrastructure/SOFIA.Infrastructure.csproj:4-5`, `DependencyInjection.cs:28-170` |
+| `SOFIA.API` | `Program.cs`, 32 controladores, middlewares, manejador global de excepciones, límites de peticiones | Application, Infrastructure, SharedKernel | `sofia-apis/src/SOFIA.API/SOFIA.API.csproj:23-25` |
 | `SOFIA.DbUp` | Aplicación de consola que aplica los scripts SQL embebidos de `Scripts/` | — (ninguna referencia de proyecto) | `sofia-apis/src/SOFIA.DbUp/SOFIA.DbUp.csproj:4,18-20` |
 | `SOFIA.UnitTests` | xUnit + Moq + FluentAssertions + MockQueryable | Domain, Application | `sofia-apis/src/SOFIA.UnitTests/SOFIA.UnitTests.csproj:25-26` |
 | `SOFIA.IntegrationTests` | xUnit + `WebApplicationFactory` + Testcontainers.MsSql | API, Application, Domain, Infrastructure | `sofia-apis/src/SOFIA.IntegrationTests/SOFIA.IntegrationTests.csproj:33-36` |
@@ -189,7 +203,7 @@ flowchart TD
 
 ```text
 src/SOFIA.API/
-├── Controllers/            31 controladores (uno por recurso)
+├── Controllers/            32 controladores (uno por recurso)
 ├── Extensions/             ExportExtensions, RateLimitingExtensions, RefreshTokenCookieExtensions, ResultExtensions
 ├── Infrastructure/         GlobalExceptionHandler, SecurityHeadersMiddleware, PasswordChangeRequiredMiddleware,
 │                           atributos (RequireCsrfHeader, AllowDuringPasswordChange, Export*)
@@ -211,10 +225,10 @@ src/SOFIA.Application/
 │   ├── Interfaces/         IApplicationDbContext, ICommand, IAuditableCommand, ICurrentUser, IEmailSender, IJwtProvider...
 │   ├── Models/             PaginatedList, PaginationLimits, QueryFilters, AuditEntry, EmailMessage...
 │   └── Services/           SucursalAccess
-├── <Módulo>/               28 carpetas de módulo: Auditoria, DIGEMID, Dashboard, Delivery, Devoluciones, Empleados,
+├── <Módulo>/               29 carpetas de módulo: Auditoria, DIGEMID, Dashboard, Delivery, Devoluciones, Empleados,
 │   │                       Empresas, FormulacionesClinicas, IngredientesActivos, Inventarios, JerarquiasUoM,
 │   │                       Laboratorios, Magistrales, Medicamentos, POS, Pacientes, PresentacionesVenta,
-│   │                       Profesionales, Proveedores, Recetas, Security, Seguros, SeriesFiscales, Servicios,
+│   │                       Plataforma, Profesionales, Proveedores, Recetas, Security, Seguros, SeriesFiscales, Servicios,
 │   │                       Sucursales, Transferencias, UnidadesMedida, Ventas
 │   ├── Commands/<Caso>/    <Caso>Command.cs, <Caso>CommandValidator.cs, <Caso>CommandHandler.cs
 │   ├── Queries/<Caso>/     <Caso>Query.cs, <Caso>QueryHandler.cs
@@ -225,18 +239,18 @@ src/SOFIA.Application/
 
 src/SOFIA.Domain/
 ├── Common/                 BaseEntity, Result, Error, IAuditableEntity, IGlobalReadEntity, IDomainEvent, EnumExtensions
-├── Entities/               50 archivos
+├── Entities/               51 archivos
 ├── Enums/                  12 archivos
 └── ValueObjects/           Ruc
 
 src/SOFIA.Infrastructure/
-├── Authentication/         JwtOptions, JwtProvider, HasPermissionAttribute, PermissionPolicyProvider,
+├── Authentication/         JwtOptions, JwtProvider, HasPermissionAttribute, HasPermissionOrPlataformaAttribute, PermissionPolicyProvider,
 │                           PermissionAuthorizationHandler, PermissionRequirement, MemoryPermissionCache, PasswordHasher
 ├── Email/                  EmailOptions, AppOptions, SmtpEmailSender, AzureCommunicationEmailSender, DisabledEmailSender, FrontendLinks
 ├── Excel/                  ExcelReaderService, ExcelTemplateGenerator
 ├── Persistence/
 │   ├── ApplicationDbContext.cs
-│   ├── Configurations/     48 clases IEntityTypeConfiguration
+│   ├── Configurations/     49 clases IEntityTypeConfiguration
 │   └── Converters/         EnumDescriptionConverter
 ├── Services/               GeminiRecetaAnalyzer, PresidioPrivacyService, BuscadorFuzzyService, HtmlSanitizerService, OutboxProcessor
 ├── Utils/                  StringUtils
@@ -245,7 +259,7 @@ src/SOFIA.Infrastructure/
 src/SOFIA.DbUp/
 ├── Program.cs
 ├── appsettings.json        Solo la clave ConnectionStrings:DefaultConnection, vacía
-├── Scripts/                0001_... a 0028_... (28 scripts)
+├── Scripts/                0001_... a 0029_... (29 scripts)
 └── Dockerfile
 
 src/SOFIA.PresidioAPI/
@@ -298,7 +312,7 @@ sofia-web-spa/
 │   ├── environment.js          Configuración en tiempo de ejecución (window.__env)
 │   ├── staticwebapp.config.json  Cabeceras de seguridad para Azure Static Web Apps
 │   ├── favicon.ico
-│   ├── i18n/                   es.json y en.json raíz + una carpeta por scope (33 scopes)
+│   ├── i18n/                   es.json y en.json raíz + una carpeta por scope (35 scopes)
 │   ├── icons/
 │   └── images/
 └── src/
@@ -352,35 +366,37 @@ Cada una tiene su archivo `*.routes.ts` cargado desde `sofia-web-spa/src/app/app
 
 | Carpeta | Ruta | Fuente en `app.routes.ts` |
 |---|---|---|
-| `auth/` (`login`, `forgot-password`, `reset-password`, `auth-brand-panel`) | `auth/login`, `auth/forgot-password`, `auth/reset-password` | líneas 10-31 |
-| `empresa/empresa-register` | `auth/register` | líneas 15-21 |
-| `dashboard/` | `dashboard` | líneas 39-42 |
-| `cambiar-clave/` | `cambiar-clave` | líneas 43-47 |
-| `sucursales/` | `sucursales` | líneas 49-53 |
-| `empresa/` | `empresas` | líneas 54-58 |
-| `empleados/` | `empleados` | líneas 59-63 |
-| `roles/` | `roles` | líneas 64-68 |
-| `seguridad/` | `cuentas` | líneas 69-73 |
-| `unidades-medida/` | `unidades-medida` | líneas 75-79 |
-| `jerarquias/` | `jerarquias` | líneas 80-84 |
-| `laboratorios/` | `laboratorios` | líneas 85-89 |
-| `ingredientes-activos/` | `ingredientes-activos` | líneas 90-94 |
-| `medicamentos/` | `medicamentos` | líneas 95-99 |
-| `presentaciones-venta/` | `presentaciones-venta` | líneas 100-106 |
-| `formulaciones-clinicas/` | `formulaciones-clinicas` | líneas 107-113 |
-| `proveedores/` | `proveedores` | líneas 114-118 |
-| `aseguradoras/` | `aseguradoras` | líneas 119-123 |
-| `lotes/` | `lotes` | líneas 125-128 |
-| `stock-por-sucursal/` | `stock-por-sucursal` | líneas 129-135 |
-| `sesiones-caja/` | `sesiones-caja` | líneas 137-141 |
-| `pos/` | `pos` | líneas 142-146 |
-| `pacientes/` | `pacientes` | líneas 148-152 |
-| `profesionales-salud/` | `profesionales-salud` | líneas 153-157 |
-| `recetas-medicas/` | `recetas-medicas` | líneas 158-162 |
-| `digemid-catalogo/` | `digemid-catalogo` | líneas 164-168 |
-| `series-fiscales/` | `series-fiscales` | líneas 170-174 |
+| `auth/` (`login`, `forgot-password`, `reset-password`, `auth-brand-panel`) | `auth/login`, `auth/forgot-password`, `auth/reset-password` | líneas 11-32 |
+| `empresa/empresa-register` | `auth/register` | líneas 16-22 |
+| `dashboard/` | `dashboard` | líneas 40-43 |
+| `cambiar-clave/` | `cambiar-clave` | líneas 44-48 |
+| `sucursales/` | `sucursales` | líneas 50-54 |
+| `empresa/` | `empresas` | líneas 55-59 |
+| `empleados/` | `empleados` | líneas 60-64 |
+| `roles/` | `roles` | líneas 65-69 |
+| `seguridad/` | `cuentas` | líneas 70-74 |
+| `plataforma/configuracion-pago/` | `configuracion-pago` (solo operador, `platformAdminGuard`) | líneas 75-82 |
+| `unidades-medida/` | `unidades-medida` | líneas 84-88 |
+| `jerarquias/` | `jerarquias` | líneas 89-93 |
+| `laboratorios/` | `laboratorios` | líneas 94-98 |
+| `ingredientes-activos/` | `ingredientes-activos` | líneas 99-103 |
+| `medicamentos/` | `medicamentos` | líneas 104-108 |
+| `presentaciones-venta/` | `presentaciones-venta` | líneas 109-115 |
+| `formulaciones-clinicas/` | `formulaciones-clinicas` | líneas 116-122 |
+| `proveedores/` | `proveedores` | líneas 123-127 |
+| `aseguradoras/` | `aseguradoras` | líneas 128-132 |
+| `lotes/` | `lotes` | líneas 134-137 |
+| `stock-por-sucursal/` | `stock-por-sucursal` | líneas 138-144 |
+| `sesiones-caja/` | `sesiones-caja` | líneas 146-150 |
+| `pos/` | `pos` | líneas 151-155 |
+| `devoluciones/` | `devoluciones` | líneas 156-160 |
+| `pacientes/` | `pacientes` | líneas 162-166 |
+| `profesionales-salud/` | `profesionales-salud` | líneas 167-171 |
+| `recetas-medicas/` | `recetas-medicas` | líneas 172-176 |
+| `digemid-catalogo/` | `digemid-catalogo` | líneas 178-182 |
+| `series-fiscales/` | `series-fiscales` | líneas 184-188 |
 
-Cualquier otra URL redirige a `dashboard` (`app.routes.ts:177-180`).
+Cualquier otra URL redirige a `dashboard` (`app.routes.ts:191-194`).
 
 #### Carpetas y código sin uso en el SPA
 
@@ -502,19 +518,19 @@ Solo nombres. «Arranque» significa que la aplicación no llega a iniciar; «al
 | `Jwt:SecretKey` | **Sí (arranque)** | Cadena vacía (`appsettings.json:9`) | `InvalidOperationException` «JWT SecretKey is not configured» si está vacía; «must be at least 32 bytes long» si mide menos de 32 bytes en UTF-8 | `DependencyInjection.cs:54-57`, `sofia-apis/src/SOFIA.Infrastructure/Authentication/JwtOptions.cs:8,17-25` |
 | `Jwt:Issuer`, `Jwt:Audience` | **Sí (arranque)** | `SOFIA.API`, `SOFIA.Clients` (`appsettings.json:6-7`) | «JWT Issuer and Audience must be configured» | `JwtOptions.cs:27-30` |
 | `Jwt:ExpiryMinutes` | No se valida | `15` (`appsettings.json:8`) | — | `JwtOptions.cs:13` |
-| `PresidioApi:BaseUrl` | Sí para analizar recetas con IA | **No está en ningún `appsettings`** | `InvalidOperationException` «Presidio URL (PresidioApi:BaseUrl) is not configured» cuando se crea el cliente HTTP de Presidio (al usarse, no en el arranque: la validación está dentro del delegado de `AddHttpClient`) | `DependencyInjection.cs:142,188-191` |
-| `PresidioApi:InternalKey` | No | No está | Si tiene valor, se envía como cabecera `X-Internal-Key`; debe coincidir con `PRESIDIO_INTERNAL_KEY` del servicio | `DependencyInjection.cs:193-198`, `sofia-apis/src/SOFIA.PresidioAPI/main.py:12,18-21` |
+| `PresidioApi:BaseUrl` | Sí para analizar recetas con IA | **No está en ningún `appsettings`** | `InvalidOperationException` «Presidio URL (PresidioApi:BaseUrl) is not configured» cuando se crea el cliente HTTP de Presidio (al usarse, no en el arranque: la validación está dentro del delegado de `AddHttpClient`) | `DependencyInjection.cs:149,203-206` |
+| `PresidioApi:InternalKey` | No | No está | Si tiene valor, se envía como cabecera `X-Internal-Key`; debe coincidir con `PRESIDIO_INTERNAL_KEY` del servicio | `DependencyInjection.cs:208-213`, `sofia-apis/src/SOFIA.PresidioAPI/main.py:12,18-21` |
 | `GeminiApi:ApiKey` | Sí para analizar recetas con IA | Cadena vacía (`appsettings.json:25`, `appsettings.Development.json:3`) | Sin validación de arranque. El `?? throw` solo salta si la clave no existe; con cadena vacía la llamada a Gemini se hace sin clave y falla al usarse | `sofia-apis/src/SOFIA.Infrastructure/Services/GeminiRecetaAnalyzer.cs:29,89` |
 | `GeminiApi:BaseUrl` | Sí para analizar recetas con IA | Cadena vacía (`appsettings.json:22`) | Igual que la anterior: se concatena con el modelo para formar la URL | `GeminiRecetaAnalyzer.cs:67-68,107-108` |
 | `GeminiApi:OcrModel`, `GeminiApi:ReasoningModel` | No | Cadenas vacías (`appsettings.json:23-24`) | Si están vacías se usa el modelo por defecto del código (`DefaultModel`); el de razonamiento cae primero en el de OCR | `GeminiRecetaAnalyzer.cs:21,66,106,201-202` |
-| `Email:Provider` | No en `Development` ni `Testing`; **sí (arranque)** en cualquier otro entorno | No está | En desarrollo, vacío o `None` registra `DisabledEmailSender` (los correos de recuperación se descartan). Fuera de desarrollo: «Email:Provider must be 'Smtp' or 'AzureCommunication'...». Un valor desconocido falla siempre | `DependencyInjection.cs:157-161,173-185`, `sofia-apis/src/SOFIA.Infrastructure/Email/EmailOptions.cs:16,18-28,60` |
+| `Email:Provider` | No en `Development` ni `Testing`; **sí (arranque)** en cualquier otro entorno | No está | En desarrollo, vacío o `None` registra `DisabledEmailSender` (los correos de recuperación se descartan). Fuera de desarrollo: «Email:Provider must be 'Smtp' or 'AzureCommunication'...». Un valor desconocido falla siempre | `DependencyInjection.cs:172-176,188-200`, `sofia-apis/src/SOFIA.Infrastructure/Email/EmailOptions.cs:16,18-28,60` |
 | `Email:FromAddress` | **Sí (arranque)** si hay proveedor | No está | «Email:FromAddress is not configured» | `EmailOptions.cs:30-33` |
 | `Email:FromDisplayName` | No | Por defecto `SOFIA` en la clase | — | `EmailOptions.cs:12` |
 | `Email:Smtp:Host`, `Email:Smtp:Port` | **Sí (arranque)** con proveedor `Smtp` | No están (el puerto por defecto de la clase es 587) | «Email:Smtp:Host and a valid Email:Smtp:Port are required...» | `EmailOptions.cs:35-40,67` |
 | `Email:Smtp:UseSsl` | No | Por defecto `true`; `false` solo para un receptor local como Mailpit | — | `EmailOptions.cs:68-69` |
 | `Email:Smtp:UserName`, `Email:Smtp:Password` | Deben ir **los dos o ninguno** (arranque) | No están | «Email:Smtp:UserName and Email:Smtp:Password must be set together» | `EmailOptions.cs:42-45` |
 | `Email:AzureCommunication:ConnectionString` | **Sí (arranque)** con proveedor `AzureCommunication` | No está | «Email:AzureCommunication:ConnectionString is required...» | `EmailOptions.cs:50-55` |
-| `App:FrontendBaseUrl` | **Sí (arranque)** si hay proveedor de correo o si el entorno no es `Development`/`Testing` | No está | «App:FrontendBaseUrl must be an absolute https URL of the SPA (http is only accepted in Development and Testing)» | `DependencyInjection.cs:163-167`, `sofia-apis/src/SOFIA.Infrastructure/Email/AppOptions.cs:9-16` |
+| `App:FrontendBaseUrl` | **Sí (arranque)** si hay proveedor de correo o si el entorno no es `Development`/`Testing` | No está | «App:FrontendBaseUrl must be an absolute https URL of the SPA (http is only accepted in Development and Testing)» | `DependencyInjection.cs:178-182`, `sofia-apis/src/SOFIA.Infrastructure/Email/AppOptions.cs:9-16` |
 | `AllowedOrigins` (lista) | Sí fuera de `Development` | Solo en `appsettings.Testing.json:2` | «'AllowedOrigins' is not configured for the production environment», lanzada al construir la política CORS. En `Development` se ignora | `sofia-apis/src/SOFIA.API/Program.cs:39,44-62` |
 | `ForwardedHeaders:KnownProxies` (lista de IP) | No | Lista vacía (`appsettings.json:27-29`) | Vacía = no se confía en `X-Forwarded-For` | `Program.cs:81-95` |
 | `AllowedHosts` | No | `localhost` (`appsettings.json:30`); en desarrollo `localhost;127.0.0.1;[::1]` (`appsettings.Development.json:5`) | Filtrado de cabecera `Host` del propio ASP.NET Core | — |
@@ -541,7 +557,7 @@ Todo lo siguiente sale de `sofia-apis/src/SOFIA.DbUp/Program.cs` (50 líneas) y 
 
 Atención al `appsettings.json` de DbUp: se busca en el **directorio actual** (`SetBasePath(Directory.GetCurrentDirectory())`, `Program.cs:6`), y de todos modos trae la cadena vacía (`sofia-apis/src/SOFIA.DbUp/appsettings.json:3`). En la práctica la cadena llega por user-secrets (compartidos con la API, ver [3.2](#32-dónde-se-configura-cada-cosa)), por variable de entorno o por argumento.
 
-**Convención de nombres de los scripts** (observada en los 28 archivos de `sofia-apis/src/SOFIA.DbUp/Scripts/`): `NNNN_Descripcion_Con_Guiones_Bajos.sql`, con número de cuatro dígitos consecutivo, por ejemplo `0001_Initial_Schema.sql`, `0017_Permiso_Ventas_Anular.sql`, `0028_Ventas_Sesion_Anulacion.sql`. El prefijo numérico es lo que da el orden de ejecución. Cómo agregar uno: ver [8.4](#84-agregar-un-script-de-base-de-datos).
+**Convención de nombres de los scripts** (observada en los 29 archivos de `sofia-apis/src/SOFIA.DbUp/Scripts/`): `NNNN_Descripcion_Con_Guiones_Bajos.sql`, con número de cuatro dígitos consecutivo, por ejemplo `0001_Initial_Schema.sql`, `0017_Permiso_Ventas_Anular.sql`, `0028_Ventas_Sesion_Anulacion.sql`, `0029_Plataforma_Suscripciones.sql`. El prefijo numérico es lo que da el orden de ejecución. Cómo agregar uno: ver [8.4](#84-agregar-un-script-de-base-de-datos).
 
 ### 3.5 API
 
@@ -567,8 +583,8 @@ En el contenedor la API escucha en el puerto `8080` (`sofia-apis/src/SOFIA.API/D
 **Otros comportamientos de arranque que conviene conocer:**
 
 - Logs en formato JSON compacto a consola y a `logs/sofia-.log` (relativo al directorio de trabajo), rotación diaria, 30 archivos, 50 MB por archivo (`Program.cs:19-29`).
-- Todo endpoint sin metadatos de autorización exige usuario autenticado (`DependencyInjection.cs:148-151`).
-- Límite global de 200 peticiones por minuto por IP; `auth` 10/min por IP, `signup` 5/hora por IP, `ai-endpoints` 10/min por empresa (`sofia-apis/src/SOFIA.API/Extensions/RateLimitingExtensions.cs:17-49`). Al probar el registro repetidamente en local puedes toparte con el límite de 5 por hora.
+- Todo endpoint sin metadatos de autorización exige usuario autenticado (`DependencyInjection.cs:155-160`).
+- Límite global de 200 peticiones por minuto por IP; `auth` 10/min por IP, `signup` 5/hora por IP, `public-info` 30/min por IP (`GET plataforma/pago`, anónimo), `ai-endpoints` 10/min por empresa (`sofia-apis/src/SOFIA.API/Extensions/RateLimitingExtensions.cs:17-58`). Al probar el registro repetidamente en local puedes toparte con el límite de 5 por hora.
 - `sofia-apis/src/SOFIA.API/SOFIA.API.http:1` apunta a `http://localhost:5072`, puerto que no coincide con ningún perfil de `launchSettings.json`.
 
 ### 3.6 SPA
@@ -626,12 +642,14 @@ npm start          # ng serve -o  -> http://localhost:4200
 
 No hay usuario sembrado: los scripts de DbUp no insertan ninguna cuenta (el único sembrado de seguridad es `0002_SeedBaseRoles.sql`, que inserta seis roles base sin empresa). El primer usuario se obtiene con el **registro público de empresa**:
 
-1. En el SPA abre `http://localhost:4200/auth/register` (ruta pública, `sofia-web-spa/src/app/app.routes.ts:15-21`, componente `EmpresaRegisterComponent`).
+1. En el SPA abre `http://localhost:4200/auth/register` (ruta pública, `sofia-web-spa/src/app/app.routes.ts:16-22`, componente `EmpresaRegisterComponent`).
 2. El formulario llama a `POST /api/v1/empresas/registrar`, endpoint anónimo con límite `signup` (`sofia-apis/src/SOFIA.API/Controllers/EmpresasController.cs:19-22`).
 3. El handler crea en una sola operación la empresa, su sucursal principal, el empleado administrador, su cuenta y un rol `Admin` propio de esa empresa, y devuelve un token de acceso más la cookie de refresco, de modo que quedas con la sesión iniciada (`sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs:54-72,113-114`; `EmpresasController.cs:30-31`).
 4. El RUC y el nombre de usuario deben ser únicos en todo el sistema (`RegistrarEmpresaCommandHandler.cs:31-46`).
 
-El rol `Admin` omite todas las comprobaciones de permiso (`sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:31-36`), así que con ese usuario puedes entrar a todas las pantallas y crear desde ahí más roles, empleados y cuentas. Las credenciales las eliges tú en el formulario; este documento no contiene ninguna.
+**Operador de plataforma (opcional).** Para gestionar suscripciones hay que marcar a mano una cuenta con `Seguridad_Cuentas.Es_Admin_Plataforma = 1` (columna creada por el script `0029`; ningún comando ni pantalla la otorga, `sofia-apis/src/SOFIA.Domain/Entities/Cuenta.cs:27`). Procedimiento y efectos: [despliegue-y-operacion.md](despliegue-y-operacion.md) 4.8.
+
+El rol `Admin` omite todas las comprobaciones de permiso (`sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:39-44`), así que con ese usuario puedes entrar a todas las pantallas y crear desde ahí más roles, empleados y cuentas. Las credenciales las eliges tú en el formulario; este documento no contiene ninguna.
 
 ## 4. Comandos de calidad
 
@@ -884,11 +902,11 @@ flowchart LR
 
 Los tres jobs son independientes (ninguno declara `needs`).
 
-**Workflow `docker-publish.yml` («Publish Docker Images», `d79d6fa`).** Corre en cada `push` a `main` y a mano (`workflow_dispatch`) (líneas 3-6), con permiso `packages: write` solo en el job (líneas 15-17). Una matriz construye y publica dos imágenes en `ghcr.io` con `docker/build-push-action` (líneas 18-52): `sofia-api` (contexto `.`, `src/SOFIA.API/Dockerfile`) y `sofia-presidio` (contexto `src/SOFIA.PresidioAPI`). Cada imagen recibe dos etiquetas, `:uat` y `:<sha del commit>` (líneas 48-50). No ejecuta pruebas ni análisis, no publica la imagen de DbUp (`src/SOFIA.DbUp/Dockerfile` no figura en la matriz) y no despliega. Las acciones están fijadas por hash de commit (líneas 30, 33, 36, 43).
+**Workflow `docker-publish.yml` («Publish Docker Images», `d79d6fa`).** Corre en cada `push` a `main` y a mano (`workflow_dispatch`) (líneas 3-6), con permiso `packages: write` solo en el job (líneas 15-17). Una matriz construye y publica dos imágenes en `ghcr.io` con `docker/build-push-action` (líneas 18-52): `sofia-api` (contexto `.`, `src/SOFIA.API/Dockerfile`) y `sofia-presidio` (contexto `src/SOFIA.PresidioAPI`). Cada imagen recibe dos etiquetas, `:uat` y `:<sha del commit>` (líneas 48-50). No ejecuta pruebas ni análisis y no publica la imagen de DbUp (`src/SOFIA.DbUp/Dockerfile` no figura en la matriz). Desde `7091c43` tiene un job `deploy` («Deploy to UAT», líneas 54-86) con `needs: publish`, que inicia sesión en Azure por OIDC (`vars.AZURE_*`), ejecuta `az containerapp update` con la imagen `:<sha>` para `ca-sofia-api` y `ca-sofia-presidio` en el grupo `rg-sofia-uat` y comprueba `GET /health` con reintentos; no ejecuta DbUp (los scripts nuevos se aplican a mano antes). Detalle: [despliegue-y-operacion.md](despliegue-y-operacion.md) 6.4. Las acciones están fijadas por hash de commit (líneas 30, 33, 36, 43).
 
 ### 6.2 `sofia-web-spa`: sin CI de calidad; solo publica una imagen
 
-El repositorio del SPA tiene `.github/workflows/docker-publish.yml` («Publish Docker Image», `9ad15f0`): en cada `push` a `main` y a mano construye la imagen del `Dockerfile` raíz y la publica en `ghcr.io` como `sofia-web` con las etiquetas `:uat` y `:<sha del commit>` (líneas 3-6, 32-41; acciones fijadas por hash). Ese es el único workflow: **no hay CI que ejecute `lint:ci`, `test:ci` ni `build` por separado** (el build ocurre solo dentro del `Dockerfile`); los únicos controles automáticos son los hooks locales de [5.2](#52-spa-sofia-web-spa-husky--lint-staged--commitlint). Pese a ello, `eslint.config.js:11` y los nombres de los scripts `test:ci` y `lint:ci` están pensados para un CI. Sobre la imagen: [3.6](#36-spa).
+El repositorio del SPA tiene `.github/workflows/docker-publish.yml` («Publish Docker Image», `9ad15f0`): en cada `push` a `main` y a mano construye la imagen del `Dockerfile` raíz y la publica en `ghcr.io` como `sofia-web` con las etiquetas `:uat` y `:<sha del commit>` (líneas 3-6, 32-41; acciones fijadas por hash). Desde `a71f480` el workflow también despliega la imagen a `ca-sofia-web` en UAT y comprueba `GET /healthz` (`docker-publish.yml:43-72`). Es el único workflow: **no hay CI que ejecute `lint:ci`, `test:ci` ni `build` por separado** (el build ocurre solo dentro del `Dockerfile`); los únicos controles automáticos son los hooks locales de [5.2](#52-spa-sofia-web-spa-husky--lint-staged--commitlint). Pese a ello, `eslint.config.js:11` y los nombres de los scripts `test:ci` y `lint:ci` están pensados para un CI. Sobre la imagen: [3.6](#36-spa).
 
 ## 7. Convenciones de código
 
@@ -927,7 +945,7 @@ Solo se listan convenciones que se ven en el código o que impone un analizador 
 | Convención | Ejemplo real | Quién la impone |
 |---|---|---|
 | **Componentes standalone**; no hay `NgModule` de funcionalidad. El arranque es `bootstrapApplication` | `sofia-web-spa/src/app/pages/laboratorios/laboratorios-search/laboratorios-search.component.ts:15-29`; `src/main.ts:5`. Todos los `*.component.ts` de `pages/` declaran `standalone: true` | Esquemas de `angular.json:9-19` (`standalone: true`); observado |
-| **Rutas con carga diferida**: `loadChildren` hacia `<modulo>.routes.ts`, que exporta `<MODULO>_ROUTES` y usa `loadComponent` | `src/app/app.routes.ts:85-89`; `pages/laboratorios/laboratorios.routes.ts:3-32` | Observado |
+| **Rutas con carga diferida**: `loadChildren` hacia `<modulo>.routes.ts`, que exporta `<MODULO>_ROUTES` y usa `loadComponent` | `src/app/app.routes.ts:94-98`; `pages/laboratorios/laboratorios.routes.ts:3-32` | Observado |
 | **Signals para el estado del componente** e `inject()` en lugar de inyección por constructor | `laboratorios-search.component.ts:31-43`. En `pages/` no hay ningún `constructor(private ...)` | Observado |
 | **Entradas con `input()`** en código nuevo; en la plantilla heredada y parte de `shared` siguen los decoradores `@Input()`/`@Output()` | `src/app/shared/directives/permiso.directive.ts:17` frente a `src/app/matdash/layouts/full/vertical/sidebar/sidebar.component.ts:22-24` | Observado (conviven) |
 | **Control de flujo nativo** (`@if`, `@for`, `@else`), no `*ngIf`/`*ngFor` | `laboratorios-search.component.html:69,78`; `pages/roles/roles-detail/roles-detail.component.html:9,13,15`. No hay ningún `*ngIf` ni `*ngFor` en los `.html` de `pages/` | Observado |
@@ -975,7 +993,7 @@ Guía: el caso «crear laboratorio» (`POST /api/v1/laboratorios`).
 
 Un permiso es un par de textos `Modulo` + `Accion`. **No existe una tabla ni una lista de permisos válidos**: el catálogo que muestra la pantalla de roles se calcula por reflexión a partir de los atributos `[HasPermission]` de los controladores (`sofia-apis/src/SOFIA.API/Controllers/RolesController.cs:102-116`), y lo que se guarda por rol son filas de `Seguridad_Permisos_Rol` con `Modulo_Sistema` y `Accion`.
 
-1. **Atributo en la API.** Pon `[HasPermission("<Modulo>", "<Accion>")]` en la acción que quieres proteger (modelo: `LaboratoriosController.cs:34`). Con eso el permiso aparece solo en `GET /api/v1/roles/permissions/catalog` y, por tanto, en la pantalla de permisos del rol. La comparación de nombres no distingue mayúsculas (`sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:48-50`); el rol `Admin` no necesita que se le asigne (`:31-36`).
+1. **Atributo en la API.** Pon `[HasPermission("<Modulo>", "<Accion>")]` en la acción que quieres proteger (modelo: `LaboratoriosController.cs:34`). Con eso el permiso aparece solo en `GET /api/v1/roles/permissions/catalog` y, por tanto, en la pantalla de permisos del rol. La comparación de nombres no distingue mayúsculas (`sofia-apis/src/SOFIA.Infrastructure/Authentication/PermissionAuthorizationHandler.cs:56-58`); el rol `Admin` no necesita que se le asigne (`:39-44`).
 2. **Script DbUp (solo si roles existentes deben recibirlo sin intervención manual).** Modelo real: `sofia-apis/src/SOFIA.DbUp/Scripts/0017_Permiso_Ventas_Anular.sql:1-9`, que al separar `Ventas:Anular` de `Ventas:Actualizar` insertó el permiso nuevo a cada rol que tenía el anterior, con `NOT EXISTS` para ser repetible. Si no necesitas ese reparto, no hace falta script: un administrador lo asigna desde la pantalla de roles.
 3. **SPA — etiqueta.** Añade la traducción en `sofia-web-spa/public/i18n/roles/es.json` y `en.json`, bajo `permisos.modulo.<Modulo>` y/o `permisos.accion.<Accion>` (estructura en `roles/es.json:50-60`). Si falta, la pantalla muestra el nombre técnico tal cual (`sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:194-198`). El spec `sofia-web-spa/src/app/pages/roles/roles-i18n.spec.ts:13-27` exige que todo módulo de `ROUTE_PERMISSIONS` tenga etiqueta y que `es` y `en` tengan las mismas claves.
 4. **SPA — uso.**
@@ -989,7 +1007,7 @@ Guía: el módulo `laboratorios`.
 
 1. **Carpeta** `src/app/pages/<modulo>/` con `models/`, `services/`, `<modulo>-search/`, `<modulo>-detail/` y `<modulo>.routes.ts` (modelo: `sofia-web-spa/src/app/pages/laboratorios/`).
 2. **Rutas del módulo**: exporta `<MODULO>_ROUTES` con `''` (búsqueda), `nueva` (alta), `carga-masiva` (si aplica) y `:id` (detalle), **en ese orden** para que `nueva` no se interprete como un `:id` (modelo: `laboratorios.routes.ts:3-32`). Usa los segmentos `nueva`, `nuevo` o `carga-masiva`: son los que el guard asocia a la acción `Crear` (`core/auth/route-permissions.ts:36,68-72`).
-3. **Ruta raíz**: añade un hijo con `loadChildren` dentro del bloque protegido de `sofia-web-spa/src/app/app.routes.ts:32-175` (modelo: líneas 85-89). Ese bloque ya aplica `authGuard`, `passwordChangeGuard` y `permissionGuard` (líneas 35-37).
+3. **Ruta raíz**: añade un hijo con `loadChildren` dentro del bloque protegido de `sofia-web-spa/src/app/app.routes.ts:33-189` (modelo: líneas 94-98). Ese bloque ya aplica `authGuard`, `passwordChangeGuard` y `permissionGuard` (líneas 36-38).
 4. **`route-permissions.ts`**: añade `'<ruta>': '<ModuloBackend>'` a `ROUTE_PERMISSIONS` (`core/auth/route-permissions.ts:2-26`). Sin esa entrada la ruta no tiene módulo: el guard la deja pasar a cualquier usuario autenticado (`permission.guard.ts:11-12`), el menú la muestra siempre (`sidebar.component.ts:29-33`) y `*appPermiso="'Accion'"` no renderiza nada (`permiso.directive.ts:19-25`).
 5. **Menú**: añade el elemento al grupo que corresponda en `sofia-web-spa/src/app/matdash/layouts/full/vertical/sidebar/sidebar-data.ts` con `displayName: 'nav.<clave>'`, `iconName` y `route` (modelo: líneas 63-67).
 6. **Traducciones raíz**: `nav.<clave>` y `breadcrumbs.<clave>` en `public/i18n/es.json` y `en.json` (modelo: `es.json:10,41`).
@@ -1002,7 +1020,7 @@ Guía: el módulo `laboratorios`.
 
 Deducido de `sofia-apis/src/SOFIA.DbUp/Program.cs`, `SOFIA.DbUp.csproj` y los scripts existentes.
 
-1. Crea el archivo en `sofia-apis/src/SOFIA.DbUp/Scripts/` con el siguiente número libre: `NNNN_Descripcion.sql`. El último es `0028_Ventas_Sesion_Anulacion.sql`, así que el siguiente libre en este commit es `0029`; comprueba el estado de `main` antes de crear el tuyo por si otra persona tomó ese número.
+1. Crea el archivo en `sofia-apis/src/SOFIA.DbUp/Scripts/` con el siguiente número libre: `NNNN_Descripcion.sql`. El último es `0029_Plataforma_Suscripciones.sql`, así que el siguiente libre en este commit es `0030`; comprueba el estado de `main` antes de crear el tuyo por si otra persona tomó ese número.
 
 2. No hay que tocar el `.csproj`: `Scripts\*.sql` ya se incluye como recurso embebido (`SOFIA.DbUp.csproj:18-20`). El archivo debe estar directamente en `Scripts/`, no en una subcarpeta.
 3. Escribe el script **repetible** cuando sea posible, como hacen los existentes: `IF EXISTS (... sys.columns ...)` antes de un `ALTER` (`0026_Empleados_Apellido_Materno_Opcional.sql:2-3`), `IF NOT EXISTS` antes de un `INSERT` (`0002_SeedBaseRoles.sql:5-9`), `NOT EXISTS` en inserciones masivas (`0017_Permiso_Ventas_Anular.sql:6-8`). Empieza con un comentario de una línea que explique el motivo (`0026...:1`, `0017...:1`) y separa lotes con `GO`.
@@ -1024,15 +1042,15 @@ Todos se deducen del código o de la configuración; ninguno se reprodujo ejecut
 | 5 | `docker compose` aborta con «Falta SA_PASSWORD...» o «Falta JWT_SECRET_KEY...» | No existe `.env` o faltan esas variables | Copia `.env.example` a `.env` y complétalas | `docker-compose.yml:7,46-47,97`; `.env.example:1-8` |
 | 6 | DbUp termina con «Connection string is missing!» | No recibió argumento ni encontró `ConnectionStrings:DefaultConnection` en user-secrets o variables de entorno | Pásala como primer argumento o configúrala (los user-secrets son los mismos de la API) | `SOFIA.DbUp/Program.cs:12-22` |
 | 7 | DbUp parece colgado tras un error | En compilación `DEBUG` espera una tecla después de mostrar el error | Pulsa `Enter`; corrige el script | `SOFIA.DbUp/Program.cs:41-43` |
-| 8 | La API no arranca tras configurar el correo: `Email:FromAddress is not configured`, `Email:Smtp:Host and a valid Email:Smtp:Port are required`, `UserName and Password must be set together` o `App:FrontendBaseUrl must be an absolute https URL` | Configuración de correo incompleta: en cuanto defines `Email:Provider`, el resto pasa a ser obligatorio, incluido `App:FrontendBaseUrl` | Completa todas las claves o deja `Email:Provider` vacío (en desarrollo los correos se descartan) | `EmailOptions.cs:18-60`; `AppOptions.cs:9-16`; `DependencyInjection.cs:157-167` |
-| 9 | El análisis de recetas falla con «Presidio URL (PresidioApi:BaseUrl) is not configured» | La clave no está en ningún `appsettings`; solo el compose la define | Añádela a tus user-secrets apuntando a tu contenedor de Presidio | `DependencyInjection.cs:188-191`; `docker-compose.yml:51` |
+| 8 | La API no arranca tras configurar el correo: `Email:FromAddress is not configured`, `Email:Smtp:Host and a valid Email:Smtp:Port are required`, `UserName and Password must be set together` o `App:FrontendBaseUrl must be an absolute https URL` | Configuración de correo incompleta: en cuanto defines `Email:Provider`, el resto pasa a ser obligatorio, incluido `App:FrontendBaseUrl` | Completa todas las claves o deja `Email:Provider` vacío (en desarrollo los correos se descartan) | `EmailOptions.cs:18-60`; `AppOptions.cs:9-16`; `DependencyInjection.cs:172-182` |
+| 9 | El análisis de recetas falla con «Presidio URL (PresidioApi:BaseUrl) is not configured» | La clave no está en ningún `appsettings`; solo el compose la define | Añádela a tus user-secrets apuntando a tu contenedor de Presidio | `DependencyInjection.cs:203-206`; `docker-compose.yml:51` |
 | 10 | El análisis de recetas falla con «Failed to anonymize patient text via Presidio» | Presidio apagado o inaccesible, o la clave interna no coincide (responde 401). El servicio falla de forma cerrada: no envía texto sin anonimizar | Arranca Presidio; alinea `PresidioApi:InternalKey` con `PRESIDIO_INTERNAL_KEY` (o deja ambas vacías) | `PresidioPrivacyService.cs:36-41`; `main.py:18-21` |
 | 11 | El análisis de recetas falla en la llamada a Gemini | `GeminiApi:ApiKey` y `GeminiApi:BaseUrl` vienen vacías en `appsettings.json` y no hay validación de arranque | Configúralas en user-secrets | `GeminiRecetaAnalyzer.cs:29,67-68`; `appsettings.json:21-26` |
 | 12 | `npm start` falla porque no encuentra `src/environments/environment.local.ts` | El archivo está en `.gitignore` y la configuración `development` lo usa como reemplazo | Créalo como se indica en [3.6](#36-spa) | `angular.json:87-92`; `.gitignore:53` |
 | 13 | El SPA carga pero todas las llamadas fallan por red o certificado | Apunta a `https://localhost:7300`: la API debe estar corriendo con el perfil `https` y el navegador debe confiar en el certificado de desarrollo de ASP.NET Core | Arranca con `--launch-profile https` y confía en el certificado de desarrollo (`dotnet dev-certs https --trust`, comando estándar del SDK; no hay script en el repo) | `environment.ts:7`; `launchSettings.json:13-21` |
 | 14 | El navegador bloquea las llamadas por CORS | En desarrollo solo se admiten los orígenes `http://localhost:4200` y `https://localhost:4200` | Sirve el SPA en `localhost:4200` (no en `127.0.0.1` ni en otro puerto) | `Program.cs:44-50` |
 | 15 | La sesión se pierde al recargar o el refresco de token no funciona usando la API por HTTP | La cookie `refresh_token` se emite con `Secure` y `SameSite=None` | Usa la API por HTTPS | `RefreshTokenCookieExtensions.cs:15-21` |
-| 16 | El registro de empresa responde 429 | Límite `signup`: 5 registros por hora y por IP | Espera o reinicia la API (el contador está en memoria del proceso) | `RateLimitingExtensions.cs:34-40` |
+| 16 | El registro de empresa responde 429 | Límite `signup`: 5 registros por hora y por IP | Espera o reinicia la API (el contador está en memoria del proceso) | `RateLimitingExtensions.cs:35-41` |
 | 17 | Las pruebas de integración fallan al iniciar con «No se encontró la contraseña para el contenedor de tests» | Falta `SOFIA_TEST_DB_PASSWORD` o el user-secret `Testing:ContainerDbPassword` | Configúralo (ver [4.1](#41-backend)) | `SofiaWebAppFactory.cs:33-53` |
 | 18 | Las pruebas de integración fallan al crear el contenedor | Docker no está en ejecución | Arranca Docker | `SofiaWebAppFactory.cs:14-15,55` |
 | 19 | Las pruebas de integración fallan al construir el host con el error de JWT del punto 1 | La fábrica usa el entorno `Development` y la configuración real de la API | Define `Jwt:SecretKey` en los user-secrets de `SOFIA.API` | `SofiaWebAppFactory.cs:61`; `DependencyInjection.cs:57` |
@@ -1073,7 +1091,7 @@ Ninguno. Al 2026-11-09 `git status --short` no muestra cambios locales en `sofia
 |---|---|---|
 | `sofia-web-spa/angular.json` | `build.defaultConfiguration` es `production`; los `lintFilePatterns` apuntan a `src/app/pages/**` (`8f36125`) | [4.2](#42-spa): `npm run build` y `npm run lint` |
 | `sofia-web-spa/src/index.html` | Incluye `<script src="environment.js"></script>` en la línea 18 (`8f36125`) | [3.6](#36-spa): configuración en tiempo de ejecución |
-| `sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql` | Script commiteado (`358935e`) | [2.1](#21-backend-sofia-apis), [8.4](#84-agregar-un-script-de-base-de-datos): siguiente número libre `0029` |
+| `sofia-apis/src/SOFIA.DbUp/Scripts/0028_Ventas_Sesion_Anulacion.sql` | Script commiteado (`358935e`) | [2.1](#21-backend-sofia-apis), [8.4](#84-agregar-un-script-de-base-de-datos): siguiente número libre `0030` desde `6f6b837` (que agregó el `0029`) |
 | `sofia-apis/src/SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs` | Prueba commiteada (`358935e`) | [2.1](#21-backend-sofia-apis) |
 
 Los archivos de ventas, caja, `venta-detail`, traducciones de `pos` y los dos `README.md` que también tuvieron cambios no se usan en esta guía (los `README.md` ya están commiteados; ver NV-12).
@@ -1081,8 +1099,8 @@ Los archivos de ventas, caja, `venta-detail`, traducciones de `pos` y los dos `R
 ### 10.3 Pendientes detectados (no existen en los repositorios)
 
 - No hay `global.json` que fije el SDK de .NET ni `engines`/`.nvmrc` que fije Node.
-- El SPA no tiene CI de lint ni de pruebas ni configuración de proxy de desarrollo (sí tiene `Dockerfile`, nginx y un workflow que publica la imagen desde `9ad15f0`, ver 6.2).
-- El workflow `docker-publish.yml` del backend no publica la imagen de DbUp, y ningún workflow de publicación (backend ni SPA) ejecuta pruebas antes de publicar.
+- El SPA no tiene CI de lint ni de pruebas ni configuración de proxy de desarrollo (sí tiene `Dockerfile`, nginx y un workflow que publica la imagen y la despliega a UAT, `9ad15f0` y `a71f480`, ver 6.2).
+- El workflow `docker-publish.yml` del backend no publica la imagen de DbUp, y ningún workflow de publicación (backend ni SPA) ejecuta pruebas antes de publicar ni de desplegar a UAT.
 - No hay Swagger/OpenAPI habilitado en la API.
 - No hay script ni documentación en el código para confiar en el certificado de desarrollo ni para crear `environment.local.ts` (no existe un `environment.local.ts.example`).
 - CI no ejecuta las pruebas de integración ni `dotnet format`.
@@ -1140,7 +1158,8 @@ Inventario: los archivos de configuración y tooling pedidos en el encargo, más
 | 42 | `Directory.Packages.props`, `nuget.config` | No existen (las versiones de paquetes están en cada `.csproj`) |
 | 43 | `src/SOFIA.API/SOFIA.API.csproj.user` | Archivo local de Visual Studio, no versionado (`*.user` en `.gitignore`); no se documenta |
 | 43a | `.gitattributes` | 2.1, 4.1 |
-| 43b | `.github/workflows/docker-publish.yml` | 2.1, 6.1 |
+| 43b | `.github/workflows/docker-publish.yml` (con el job `deploy`) | 2.1, 6.1 |
+| 43c | `src/SOFIA.DbUp/Scripts/0029_Plataforma_Suscripciones.sql` | 2.1, 3.7, 8.4 |
 
 ### 11.2 `sofia-web-spa`
 
@@ -1199,7 +1218,7 @@ Inventario: los archivos de configuración y tooling pedidos en el encargo, más
 
 ## 12. Fuentes
 
-Archivos leídos para esta guía (commits `9c16f35` y `7070e1a`, con el árbol de trabajo sin cambios locales según `git status`; la versión 1.2 comprobó por script cada cita `archivo:línea` (el archivo existe, la línea existe y se leyó la primera línea citada) y sumó `sofia-apis/.gitattributes`, `sofia-apis/.github/workflows/docker-publish.yml`, `sofia-web-spa/Dockerfile`, `sofia-web-spa/.dockerignore`, `sofia-web-spa/nginx/` y `sofia-web-spa/.github/workflows/docker-publish.yml`).
+Archivos leídos para esta guía (commits `0678e40` y `37048ea`, con el árbol de trabajo sin cambios locales según `git status`; la versión 1.2 comprobó por script cada cita `archivo:línea` (el archivo existe, la línea existe y se leyó la primera línea citada) y sumó `sofia-apis/.gitattributes`, `sofia-apis/.github/workflows/docker-publish.yml`, `sofia-web-spa/Dockerfile`, `sofia-web-spa/.dockerignore`, `sofia-web-spa/nginx/` y `sofia-web-spa/.github/workflows/docker-publish.yml`).
 
 **`sofia-apis` — configuración y tooling**
 
