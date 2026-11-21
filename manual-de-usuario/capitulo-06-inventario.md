@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` (más nuevo que la línea base `43f5529`; `git status --short` sin cambios locales al empezar) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` (más nuevo que la línea base `eeffbb6`; `git status --short` sin cambios locales al empezar) |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `34089ec`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
