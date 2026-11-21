@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` (recorrido); los avisos de roles, cuentas y empleados están reconciliados con `37d053d` y `7070e1a` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -273,7 +273,7 @@ Esta lista sale de cruzar lo que necesita cada pantalla del cajero (dashboard, s
 | Sesiones de Caja › Aperturar caja | Abrir la caja (desde Sesiones de Caja, el punto de venta o el dashboard) |
 | Sesiones de Caja › Cerrar caja | Cerrar su propia caja al terminar el turno |
 | Devoluciones › Procesar devolución | Usar el botón «Devolver» en el detalle de una venta |
-| Devoluciones › Leer | Mostrar el indicador de devoluciones del dashboard |
+| Devoluciones › Leer | Mostrar el indicador de devoluciones del dashboard y abrir la pantalla «Devoluciones» del menú, su detalle y la exportación (desde `sofia-web-spa` `37048ea`; capítulo 9, sección 7.1) |
 | Inventario › Leer | Mostrar el indicador de inventario del dashboard (además abre «Lotes» y «Stock por Sucursal» en el menú) |
 | DIGEMID › Leer | Mostrar el indicador de cuarentena del dashboard (además abre «Catálogo DIGEMID» en el menú) |
 | Medicamentos › Leer | Buscar productos en el punto de venta (además abre «Medicamentos» en el menú) |
@@ -298,10 +298,12 @@ El resultado se ve en la pestaña **Menú** antes de guardar: con estos 19 permi
 | ADMINISTRACIÓN | Empleados | Empresa, Sucursales, Roles & Permisos, Cuentas de Usuario |
 | CATÁLOGOS | Medicamentos, Aseguradoras | Unidades de Medida, Jerarquías de Unidades, Laboratorios, Ingredientes Activos, Presentaciones de Venta, Formulaciones Clínicas, Proveedores |
 | INVENTARIO | Lotes, Stock por Sucursal | — |
-| PUNTO DE VENTA | Sesiones de Caja, Ventas | — |
+| PUNTO DE VENTA | Sesiones de Caja, Ventas, Devoluciones | — |
 | PACIENTES & ATENCIÓN | Pacientes, Profesionales de Salud, Recetas Médicas | — |
 | DIGEMID | Catálogo DIGEMID | — |
 | SUNAT | — | Series Fiscales |
+
+(La fila «Devoluciones» del grupo PUNTO DE VENTA existe desde `sofia-web-spa` `37048ea`: cuando se recorrió este capítulo el grupo solo tenía «Sesiones de Caja» y «Ventas». No verificado en la aplicación. La pantalla «Configuración de Pago» del grupo ADMINISTRACIÓN no sale en esta vista previa porque ningún rol de empresa puede darla: es solo del operador de plataforma, capítulo 12.)
 
 ### 5.4 Pasos para marcar los permisos
 
@@ -385,8 +387,8 @@ Comprobado: el filtro «Bloqueado» = «Sí» trae solo las cuentas bloqueadas (
 
 | Campo | Qué escribir | Obligatorio | Reglas y mensaje si te equivocas |
 |---|---|---|---|
-| Empleado | Escribe al menos 2 letras del nombre y elige a la persona de la lista (en el ejemplo, «Ca» muestra «Carlos Cajero Demo») | Sí | Si no eliges a nadie: «Este campo es obligatorio». Si lo que escribes no coincide con ninguna opción, el campo se vacía al salir. **La lista también muestra empleados que ya tienen cuenta**: si eliges uno, al guardar aparece «Error al guardar la cuenta» |
-| Nombre de Usuario | El usuario con el que entrará. Ejemplo: `carlos.cajero` | Sí | Vacío: «Este campo es obligatorio». Máximo 50 caracteres. Con más de 50 aparece «La longitud máxima es de 100 caracteres» (el mensaje dice 100 pero el límite real es 50). Debe ser **único en todo SOFIA**, no solo en tu empresa: si ya existe, aparece «Error al guardar la cuenta» |
+| Empleado | Escribe al menos 2 letras del nombre y elige a la persona de la lista (en el ejemplo, «Ca» muestra «Carlos Cajero Demo») | Sí | Si no eliges a nadie: «Este campo es obligatorio». Si lo que escribes no coincide con ninguna opción, el campo se vacía al salir. **La lista también muestra empleados que ya tienen cuenta**: si eliges uno, al guardar aparece «Este empleado ya tiene una cuenta de usuario vinculada.» (con `sofia-web-spa` `eeffbb6`, cuando se recorrió este capítulo, aparecía «Error al guardar la cuenta»; ver el paso 5 de las pruebas de abajo) |
+| Nombre de Usuario | El usuario con el que entrará. Ejemplo: `carlos.cajero` | Sí | Vacío: «Este campo es obligatorio». Máximo 50 caracteres. Con más de 50 aparece «La longitud máxima es de 100 caracteres» (el mensaje dice 100 pero el límite real es 50). Debe ser **único en todo SOFIA**, no solo en tu empresa: si ya existe, aparece «Ya existe una cuenta con ese nombre de usuario.» (con `eeffbb6` aparecía «Error al guardar la cuenta») |
 | Contraseña | La contraseña inicial que le darás a la persona (la escribes tú). Mínimo 8 y máximo 128 caracteres | Sí | Vacía: «Este campo es obligatorio». **Con menos de 8 caracteres la pantalla no muestra ningún mensaje**: simplemente no guarda. El campo no tiene botón para mostrar el texto |
 
 **Antes de guardar, prueba los errores** (comprobado en la aplicación):
@@ -511,7 +513,7 @@ El cambio de contraseña también está disponible cuando quieras, sin que nadie
 | ADMINISTRACIÓN | Empleados |
 | CATÁLOGOS | Medicamentos, Aseguradoras |
 | INVENTARIO | Lotes, Stock por Sucursal |
-| PUNTO DE VENTA | Sesiones de Caja, Ventas |
+| PUNTO DE VENTA | Sesiones de Caja, Ventas, Devoluciones |
 | PACIENTES & ATENCIÓN | Pacientes, Profesionales de Salud, Recetas Médicas |
 | DIGEMID | Catálogo DIGEMID |
 
