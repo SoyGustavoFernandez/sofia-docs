@@ -19,8 +19,14 @@ Auth.EmpresaNoVigente;Forbidden;1
 Auth.InvalidCredentials;Unauthorized;5
 Auth.InvalidRefreshToken;Unauthorized;1
 Auth.InvalidToken;Validation;1
+Auth.PlataformaAdminRequerido;Forbidden;1
 Auth.Sucursal;Unauthorized|Validation;2
 Caja;NotFound;1
+ConfiguracionPago.Instrucciones;Validation;1
+ConfiguracionPago.Qr.Formato;Validation;1
+ConfiguracionPago.Qr.Tamano;Validation;1
+ConfiguracionPago.WhatsappNumero;Validation;1
+ConfiguracionPago.YapeNumero;Validation;1
 Cuenta.AdminProtegida;Forbidden;2
 Cuenta.EmpleadoId;Validation;1
 Cuenta.NotFound;NotFound;4
@@ -71,6 +77,7 @@ DigemidActaDetalle.ActaId;Validation;2
 DigemidActaDetalle.CantidadDestruida;Validation;2
 DigemidActaDetalle.RegistroCuarentenaId;Validation;2
 DigemidCatalogo.CodProd.Duplicado;Conflict;2
+DigemidCatalogo.Global.SoloLectura;Forbidden;1
 DigemidCatalogo.NotFound;NotFound;3
 DigemidInventarioCuarentena.CantidadAislada;Validation;2
 DigemidInventarioCuarentena.EmpleadoRegistraId;Validation;2
@@ -90,8 +97,11 @@ Empleado.NotFound;NotFound;8
 Empleado.Sucursal;Validation;2
 Empleado.SucursalBase.AutoAsignacion;Forbidden;1
 Empresa.Nombre;Validation;2
-Empresa.NotFound;NotFound;2
+Empresa.NotFound;NotFound;6
 Empresa.RUC.Duplicado;Conflict;2
+Empresa.Suscripcion.FechaVencimiento;Validation;1
+Empresa.Suscripcion.NoEstaEnPrueba;Conflict;1
+Empresa.Suscripcion.PropiaEmpresa;Conflict;1
 Export.TooManyRows;Validation;1
 Formulacion.Concentracion;Validation;2
 Formulacion.Ingrediente.Duplicado;Conflict;2

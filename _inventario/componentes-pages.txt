@@ -7,11 +7,15 @@ sofia-web-spa/src/app/pages/auth/login/login.component.ts
 sofia-web-spa/src/app/pages/auth/reset-password/reset-password.component.ts
 sofia-web-spa/src/app/pages/cambiar-clave/cambiar-clave.component.ts
 sofia-web-spa/src/app/pages/dashboard/dashboard.component.ts
+sofia-web-spa/src/app/pages/dashboard/suscripcion-aviso/suscripcion-aviso.component.ts
+sofia-web-spa/src/app/pages/devoluciones/devoluciones-detail/devoluciones-detail.component.ts
+sofia-web-spa/src/app/pages/devoluciones/devoluciones-search/devoluciones-search.component.ts
 sofia-web-spa/src/app/pages/digemid-catalogo/digemid-catalogo-carga-masiva/digemid-catalogo-carga-masiva.component.ts
 sofia-web-spa/src/app/pages/digemid-catalogo/digemid-catalogo-detail/digemid-catalogo-detail.component.ts
 sofia-web-spa/src/app/pages/digemid-catalogo/digemid-catalogo-search/digemid-catalogo-search.component.ts
 sofia-web-spa/src/app/pages/empleados/empleados-detail/empleados-detail.component.ts
 sofia-web-spa/src/app/pages/empleados/empleados-search/empleados-search.component.ts
+sofia-web-spa/src/app/pages/empresa/dialogs/suscripcion-fecha-dialog/suscripcion-fecha-dialog.component.ts
 sofia-web-spa/src/app/pages/empresa/empresa-detail/empresa-detail.component.ts
 sofia-web-spa/src/app/pages/empresa/empresa-maintenance/empresa-maintenance.component.ts
 sofia-web-spa/src/app/pages/empresa/empresa-register/empresa-register.component.ts
@@ -35,6 +39,7 @@ sofia-web-spa/src/app/pages/medicamentos/medicamentos-search/medicamentos-search
 sofia-web-spa/src/app/pages/pacientes/pacientes-carga-masiva/pacientes-carga-masiva.component.ts
 sofia-web-spa/src/app/pages/pacientes/pacientes-detail/pacientes-detail.component.ts
 sofia-web-spa/src/app/pages/pacientes/pacientes-search/pacientes-search.component.ts
+sofia-web-spa/src/app/pages/plataforma/configuracion-pago/configuracion-pago.component.ts
 sofia-web-spa/src/app/pages/pos/dialogs/anular-venta-dialog/anular-venta-dialog.component.ts
 sofia-web-spa/src/app/pages/pos/dialogs/aperturar-caja-dialog/aperturar-caja-dialog.component.ts
 sofia-web-spa/src/app/pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.ts

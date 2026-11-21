@@ -22,6 +22,7 @@ Magistrales_Ordenes_Produccion;0001_Initial_Schema.sql;692
 Medicamentos;0001_Initial_Schema.sql;72
 POS_Sesiones_Caja;0001_Initial_Schema.sql;314
 Pacientes_Clientes;0001_Initial_Schema.sql;267
+Plataforma_Configuracion_Pago;0029_Plataforma_Suscripciones.sql;7
 Presentaciones_Venta;0010_PresentacionesVenta.sql;5
 Profesionales_Salud;0001_Initial_Schema.sql;282
 Proveedores_Dist;0001_Initial_Schema.sql;228

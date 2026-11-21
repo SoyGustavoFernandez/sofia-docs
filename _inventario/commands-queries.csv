@@ -30,7 +30,11 @@ Command;DeleteEmpleadoCommand;sofia-apis/src/SOFIA.Application/Empleados/Command
 Command;UpdateEmpleadoCommand;sofia-apis/src/SOFIA.Application/Empleados/Commands/UpdateEmpleado/UpdateEmpleadoCommand.cs
 Query;GetEmpleadoByIdQuery;sofia-apis/src/SOFIA.Application/Empleados/Queries/GetById/GetEmpleadoByIdQuery.cs
 Query;GetEmpleadosWithPaginationQuery;sofia-apis/src/SOFIA.Application/Empleados/Queries/GetEmpleadosWithPagination/GetEmpleadosWithPaginationQuery.cs
+Command;ActivarSuscripcionEmpresaCommand;sofia-apis/src/SOFIA.Application/Empresas/Commands/ActivarSuscripcionEmpresa/ActivarSuscripcionEmpresaCommand.cs
+Command;CancelarEmpresaCommand;sofia-apis/src/SOFIA.Application/Empresas/Commands/CancelarEmpresa/CancelarEmpresaCommand.cs
+Command;ExtenderPruebaEmpresaCommand;sofia-apis/src/SOFIA.Application/Empresas/Commands/ExtenderPruebaEmpresa/ExtenderPruebaEmpresaCommand.cs
 Command;RegistrarEmpresaCommand;sofia-apis/src/SOFIA.Application/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommand.cs
+Command;SuspenderEmpresaCommand;sofia-apis/src/SOFIA.Application/Empresas/Commands/SuspenderEmpresa/SuspenderEmpresaCommand.cs
 Command;UpdateEmpresaCommand;sofia-apis/src/SOFIA.Application/Empresas/Commands/UpdateEmpresa/UpdateEmpresaCommand.cs
 Query;GetEmpresaByIdQuery;sofia-apis/src/SOFIA.Application/Empresas/Queries/GetEmpresaById/GetEmpresaByIdQuery.cs
 Query;GetEmpresasQuery;sofia-apis/src/SOFIA.Application/Empresas/Queries/GetEmpresas/GetEmpresasQuery.cs
@@ -95,6 +99,9 @@ Command;UpdatePacienteCommand;sofia-apis/src/SOFIA.Application/Pacientes/Command
 Query;GetPacienteByIdQuery;sofia-apis/src/SOFIA.Application/Pacientes/Queries/GetPacienteById/GetPacienteByIdQuery.cs
 Query;GetPacientesQuery;sofia-apis/src/SOFIA.Application/Pacientes/Queries/GetPacientes/GetPacientesQuery.cs
 Query;PreviewImportPacientesQuery;sofia-apis/src/SOFIA.Application/Pacientes/Queries/PreviewImportPacientes/PreviewImportPacientesQuery.cs
+Command;GuardarConfiguracionPagoCommand;sofia-apis/src/SOFIA.Application/Plataforma/Commands/GuardarConfiguracionPago/GuardarConfiguracionPagoCommand.cs
+Query;GetConfiguracionPagoQuery;sofia-apis/src/SOFIA.Application/Plataforma/Queries/GetConfiguracionPago/GetConfiguracionPagoQuery.cs
+Query;GetDashboardPlataformaQuery;sofia-apis/src/SOFIA.Application/Plataforma/Queries/GetDashboardPlataforma/GetDashboardPlataformaQuery.cs
 Command;CreatePresentacionVentaCommand;sofia-apis/src/SOFIA.Application/PresentacionesVenta/Commands/CreatePresentacionVenta/CreatePresentacionVentaCommand.cs
 Command;DeletePresentacionVentaCommand;sofia-apis/src/SOFIA.Application/PresentacionesVenta/Commands/DeletePresentacionVenta/DeletePresentacionVentaCommand.cs
 Command;UpdatePresentacionVentaCommand;sofia-apis/src/SOFIA.Application/PresentacionesVenta/Commands/UpdatePresentacionVenta/UpdatePresentacionVentaCommand.cs

@@ -10,8 +10,10 @@ SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/AislarLoteCuaren
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/AislarLoteCuarentena/AislarLoteCuarentenaCommandValidatorTests.cs;7
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/CargaMasivaDigemid/CargaMasivaDigemidCommandHandlerTests.cs;2
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/CreateDigemidProducto/CreateDigemidProductoCommandHandlerTests.cs;2
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/DeleteDigemidProducto/DeleteDigemidProductoCommandHandlerTests.cs;3
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/GenerarActaDestruccion/GenerarActaDestruccionCommandHandlerTests.cs;2
-SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/UpdateDigemidProducto/UpdateDigemidProductoCommandHandlerTests.cs;3
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Commands/UpdateDigemidProducto/UpdateDigemidProductoCommandHandlerTests.cs;4
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Domain/DigemidCatalogoProductoTests.cs;4
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/DIGEMID/Domain/DigemidInventarioCuarentenaTests.cs;3
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Dashboard/Common/DashboardDiasTests.cs;7
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Dashboard/Common/DashboardScopeTests.cs;4
@@ -23,6 +25,8 @@ SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Devoluciones/Commands/ProcesarDev
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Devoluciones/Commands/ProcesarDevolucion/ProcesarDevolucionCommandValidatorTests.cs;8
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Devoluciones/Common/CantidadesDevueltasExtensionsTests.cs;3
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Devoluciones/Domain/DevolucionCabeceraTests.cs;3
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Devoluciones/Queries/DevolucionFiltersTests.cs;6
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Devoluciones/Queries/GetDevolucionesQueryValidatorTests.cs;8
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empleados/Commands/CreateEmpleado/CreateEmpleadoCommandHandlerTests.cs;8
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empleados/Commands/CreateEmpleado/CreateEmpleadoCommandValidatorTests.cs;11
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empleados/Commands/DeleteEmpleado/DeleteEmpleadoCommandHandlerTests.cs;3
@@ -31,7 +35,9 @@ SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empleados/Commands/UpdateEmpleado
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empleados/Domain/EmpleadoTests.cs;17
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandlerTests.cs;17
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandValidatorTests.cs;18
-SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empresas/Domain/EmpresaTests.cs;22
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empresas/Commands/Suscripcion/SuscripcionEmpresaCommandHandlerTests.cs;11
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empresas/Commands/Suscripcion/SuscripcionEmpresaCommandValidatorTests.cs;6
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Empresas/Domain/EmpresaTests.cs;26
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/FormulacionesClinicas/Commands/CreateFormulacionClinica/CreateFormulacionClinicaCommandHandlerTests.cs;7
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/FormulacionesClinicas/Commands/CreateFormulacionClinica/CreateFormulacionClinicaCommandValidatorTests.cs;7
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/FormulacionesClinicas/Commands/DeleteFormulacionClinica/DeleteFormulacionClinicaCommandHandlerTests.cs;2
@@ -82,6 +88,9 @@ SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Pacientes/Commands/DeletePaciente
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Pacientes/Commands/UpdatePaciente/UpdatePacienteCommandHandlerTests.cs;5
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Pacientes/Commands/UpdatePaciente/UpdatePacienteCommandValidatorTests.cs;3
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Pacientes/Domain/PacienteClienteTests.cs;5
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Plataforma/Commands/GuardarConfiguracionPagoCommandHandlerTests.cs;5
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Plataforma/Commands/GuardarConfiguracionPagoCommandValidatorTests.cs;6
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Plataforma/Domain/PlataformaConfiguracionPagoTests.cs;12
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/PresentacionesVenta/Commands/CreatePresentacionVenta/CreatePresentacionVentaCommandHandlerTests.cs;5
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/PresentacionesVenta/Commands/CreatePresentacionVenta/CreatePresentacionVentaCommandValidatorTests.cs;4
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/PresentacionesVenta/Commands/DeletePresentacionVenta/DeletePresentacionVentaCommandHandlerTests.cs;3
@@ -109,10 +118,10 @@ SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Recetas/Queries/AnalizarReceta/An
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/ChangePassword/ChangePasswordCommandHandlerTests.cs;3
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/ChangePassword/ChangePasswordCommandValidatorTests.cs;5
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/Cuentas/CuentaAdminProtectionTests.cs;5
-SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/ForgotPassword/ForgotPasswordCommandHandlerTests.cs;8
-SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/Login/LoginCommandHandlerTests.cs;8
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/ForgotPassword/ForgotPasswordCommandHandlerTests.cs;9
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/Login/LoginCommandHandlerTests.cs;10
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/Logout/LogoutCommandHandlerTests.cs;8
-SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/RefreshToken/RefreshTokenCommandHandlerTests.cs;10
+SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/RefreshToken/RefreshTokenCommandHandlerTests.cs;11
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/Register/RegisterAccountCommandHandlerTests.cs;5
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/ResetPassword/ResetPasswordCommandHandlerTests.cs;9
 SOFIA.UnitTests;sofia-apis/src/SOFIA.UnitTests/Security/Commands/Roles/AssignPermission/AssignPermissionToRolCommandHandlerTests.cs;6
@@ -187,8 +196,10 @@ SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/AuthIntegr
 SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/CsrfHeaderIntegrationTests.cs;4
 SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/JwtOptionsTests.cs;3
 SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/MemoryPermissionCacheTests.cs;3
+SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/PlataformaSuscripcionIntegrationTests.cs;10
 SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/RateLimitingIntegrationTests.cs;6
-SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/TenantIsolationIntegrationTests.cs;9
+SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Security/TenantIsolationIntegrationTests.cs;10
 SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Ventas/AnularVentaCajaIntegrationTests.cs;6
+SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Ventas/DevolucionesConsultaIntegrationTests.cs;9
 SOFIA.IntegrationTests;sofia-apis/src/SOFIA.IntegrationTests/Ventas/PosLookupsIntegrationTests.cs;9
 SOFIA.ArchitectureTests;sofia-apis/src/SOFIA.ArchitectureTests/ArchitectureTests.cs;3
