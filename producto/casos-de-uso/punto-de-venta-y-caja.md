@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevos CU-DEV-09 y CU-DEV-10; CU-DEV-07 y CU-DEV-08 actualizados; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; historias de usuario `producto/historias-de-usuario/punto-de-venta-y-caja`; catálogo de códigos de error `tecnico/catalogo-de-codigos-de-error`) y comprobación puntual en el código (`VentasController`, `CreateVentaCommandHandler`, `ProcesarDevolucionCommandHandler`, `CerrarCajaCommandHandler`, `ArqueoCajaCalculator`, `ValidationBehavior`, `ResultExtensions`) y en `endpoints.csv`. `git status --short` está limpio en ambos repositorios. No se ejecutó la aplicación ni se llamó a la API: los mensajes salen de los `es.json` a través de los documentos fuente. |
@@ -1557,7 +1557,7 @@ stateDiagram-v2
 
 ## 6. Casos de uso de devoluciones (`CU-DEV`)
 
-Una devolución registra que el cliente devuelve parte o todo lo que compró en una venta **cobrada** (`Completada`): el sistema valida cuánto se puede devolver por línea, emite una nota de crédito, registra el reembolso (monto y método, que sale de la caja abierta de quien procesa), repone la mercadería al stock o la marca con destino a cuarentena y deja constancia de quién autorizó. **En el SPA solo existe el diálogo «Procesar devolución»**, que se abre desde el detalle de una venta; el listado y el detalle de devoluciones son «Solo API (sin pantalla)». El campo `comprobanteOrigenId` del request **lleva el identificador de la venta**, no el del comprobante.
+Una devolución registra que el cliente devuelve parte o todo lo que compró en una venta **cobrada** (`Completada`): el sistema valida cuánto se puede devolver por línea, emite una nota de crédito, registra el reembolso (monto y método, que sale de la caja abierta de quien procesa), repone la mercadería al stock o la marca con destino a cuarentena y deja constancia de quién autorizó. **En el SPA, procesar una devolución es el diálogo «Procesar devolución»**, que se abre desde el detalle de una venta; el listado y el detalle de devoluciones tienen pantalla propia (`/devoluciones` y `/devoluciones/:id`) desde `37048ea`. El campo `comprobanteOrigenId` del request **lleva el identificador de la venta**, no el del comprobante.
 
 ```mermaid
 flowchart TD
@@ -1870,7 +1870,7 @@ flowchart TD
 | **Precondiciones** | Token válido con `Devoluciones:Leer` |
 | **Pantalla** | `/devoluciones` y `/devoluciones/:id` ([CU-DEV-09], [CU-DEV-10]); también se consumen por API |
 | **Endpoints** | `GET /api/v1/Devoluciones`; `GET /api/v1/Devoluciones/{id}`; `POST /api/v1/Devoluciones/exportar` |
-| **Reglas** | [RN-DEV-030], [RN-DEV-031], [RN-DEV-032] (describen la versión anterior, sin pantalla) |
+| **Reglas** | [RN-DEV-030], [RN-DEV-031], [RN-DEV-032], [RN-DEV-038], [RN-DEV-039], [RN-DEV-040], [RN-DEV-041] |
 | **Historia** | [HU-DEV-008] |
 | **Estado** | Implementado |
 
@@ -1892,7 +1892,7 @@ flowchart TD
 - Éxito: sin cambios de datos.
 - Fallo: sin cambios de datos.
 
-> **Nota.** Hasta `9c16f35` ni el listado ni el detalle tenían pantalla y `GET Devoluciones/{id}` devolvía el objeto `Result` completo; desde `0678e40` ambos devuelven el valor plano. RN-DEV-030 a RN-DEV-032 y el hallazgo 8 de `negocio/reglas/caja-devoluciones-y-dashboard` describen la versión anterior (anotado para el orquestador). Fuente: [HU-DEV-008].
+> **Nota.** Hasta `9c16f35` ni el listado ni el detalle tenían pantalla y `GET Devoluciones/{id}` devolvía el objeto `Result` completo; desde `0678e40` ambos devuelven el valor plano. Las reglas RN-DEV-030 a RN-DEV-032 y RN-DEV-038 a RN-DEV-041 ya describen la versión actual. Fuente: [HU-DEV-008].
 
 
 ### CU-DEV-09 — Buscar devoluciones y exportarlas a Excel
@@ -1905,7 +1905,7 @@ flowchart TD
 | **Precondiciones** | Sesión iniciada con `Devoluciones:Leer` (el menú oculta la opción y el `permissionGuard` bloquea la ruta si falta) |
 | **Pantalla** | `/devoluciones` — «Devoluciones» |
 | **Endpoints** | `GET /api/v1/Devoluciones`; `POST /api/v1/Devoluciones/exportar`; `GET /api/v1/Empleados` (autocompletado de «Autorizó», `Empleados:Leer`) |
-| **Reglas** | [RN-DEV-030], [RN-DEV-032], [RN-GEN-008], [RN-GEN-009], [RN-GEN-023], [RN-IMP-008] (no existe un RN-DEV propio para los filtros ni la exportación) |
+| **Reglas** | [RN-DEV-030], [RN-DEV-032], [RN-GEN-008], [RN-GEN-009], [RN-GEN-023], [RN-IMP-008], [RN-DEV-038], [RN-DEV-039], [RN-DEV-041], [RN-DEV-042] |
 | **Historia** | [HU-DEV-009] |
 | **Estado** | Implementado |
 
@@ -1938,7 +1938,7 @@ flowchart TD
 - Éxito: ninguna fila cambia; el SPA guarda en memoria los filtros (incluido el empleado elegido y los límites del monto) y la página.
 - Fallo: nada cambia.
 
-> **Brecha conocida.** Las reglas RN-DEV-030 a RN-DEV-032 describen la versión sin pantalla ni exportación; no hay un RN-DEV para los filtros, el alcance ni el Excel. **No verificado en la aplicación:** el autocompletado de «Autorizó» sin `Empleados:Leer` (el SPA no captura el error) y el contenido del archivo. Fuente: [HU-DEV-009], `producto/pantallas/punto-de-venta` §9A.1.
+> **Brecha conocida.** Los filtros, el alcance y el Excel están en RN-DEV-030, RN-DEV-038, RN-DEV-039 y RN-DEV-041 y la pantalla en RN-DEV-042. **No verificado en la aplicación:** el autocompletado de «Autorizó» sin `Empleados:Leer` (el SPA no captura el error) y el contenido del archivo. Fuente: [HU-DEV-009], `producto/pantallas/punto-de-venta` §9A.1.
 
 ### CU-DEV-10 — Ver el detalle de una devolución y sus productos devueltos
 
@@ -1950,7 +1950,7 @@ flowchart TD
 | **Precondiciones** | Sesión iniciada con `Devoluciones:Leer`; la devolución existe y su venta es de una sucursal accesible |
 | **Pantalla** | `/devoluciones/:id` — «Detalle de devolución» |
 | **Endpoints** | `GET /api/v1/Devoluciones/{id}` |
-| **Reglas** | [RN-DEV-022], [RN-DEV-031], [RN-DEV-032], [RN-GEN-023] (no existe un RN-DEV propio para las líneas del detalle) |
+| **Reglas** | [RN-DEV-022], [RN-DEV-031], [RN-DEV-032], [RN-DEV-040], [RN-DEV-043], [RN-DEV-044], [RN-GEN-023] |
 | **Historia** | [HU-DEV-010] |
 | **Estado** | Implementado |
 
@@ -3485,9 +3485,9 @@ flowchart LR
 | [CU-DEV-05] Indicar el motivo SUNAT y el sustento | RN-DEV-014, RN-DEV-015, RN-DEV-033, RN-GEN-010 | `/pos/:id` — «Motivo SUNAT», «Sustento» | `POST /Devoluciones` |
 | [CU-DEV-06] Saber por qué no se puede devolver una venta | RN-DEV-002 a 008 | `/pos/:id` — «Procesar devolución» | `POST /Devoluciones` |
 | [CU-DEV-07] Ver las devoluciones de una venta | RN-DEV-022, RN-DEV-032, RN-VEN-074 | `/pos/:id` — «Devuelto»; «Devoluciones / Notas de crédito» | `GET /Ventas/{id}` |
-| [CU-DEV-08] Consultar devoluciones por API | RN-DEV-030 a 032 | `/devoluciones`, `/devoluciones/:id` (y API) | `GET /Devoluciones`; `GET /Devoluciones/{id}`; `POST /Devoluciones/exportar` |
-| [CU-DEV-09] Buscar devoluciones y exportarlas a Excel | RN-DEV-030, RN-DEV-032, RN-GEN-008, RN-GEN-009, RN-GEN-023, RN-IMP-008 | `/devoluciones` — «Devoluciones» | `GET /Devoluciones`; `POST /Devoluciones/exportar`; `GET /Empleados` |
-| [CU-DEV-10] Ver el detalle de una devolución | RN-DEV-022, RN-DEV-031, RN-DEV-032, RN-GEN-023 | `/devoluciones/:id` — «Detalle de devolución» | `GET /Devoluciones/{id}` |
+| [CU-DEV-08] Consultar devoluciones por API | RN-DEV-030 a 032, RN-DEV-038 a 041 | `/devoluciones`, `/devoluciones/:id` (y API) | `GET /Devoluciones`; `GET /Devoluciones/{id}`; `POST /Devoluciones/exportar` |
+| [CU-DEV-09] Buscar devoluciones y exportarlas a Excel | RN-DEV-030, RN-DEV-032, RN-DEV-038, RN-DEV-039, RN-DEV-041, RN-DEV-042, RN-GEN-008, RN-GEN-009, RN-GEN-023, RN-IMP-008 | `/devoluciones` — «Devoluciones» | `GET /Devoluciones`; `POST /Devoluciones/exportar`; `GET /Empleados` |
+| [CU-DEV-10] Ver el detalle de una devolución | RN-DEV-022, RN-DEV-031, RN-DEV-032, RN-DEV-040, RN-DEV-043, RN-DEV-044, RN-GEN-023 | `/devoluciones/:id` — «Detalle de devolución» | `GET /Devoluciones/{id}` |
 | [CU-DAS-01] Ver el resumen de ventas de hoy | RN-DAS-002, RN-DAS-004 a 009 | `/dashboard` — «Ventas de hoy» | `GET /Dashboard/ventas` |
 | [CU-DAS-02] Ver lo cobrado por método de pago y por sucursal | RN-DAS-003, RN-DAS-010, RN-DAS-011 | `/dashboard` — «Cobrado por método de pago», «Ventas por sucursal» | `GET /Dashboard/ventas` |
 | [CU-DAS-03] Ver la tendencia de 7 días y los productos más vendidos | RN-DAS-012, RN-DAS-013 | `/dashboard` — tendencia y más vendidos | `GET /Dashboard/ventas` |
@@ -3558,7 +3558,7 @@ Ninguno. `git status --short` en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (
 | 11 | Una sola caja abierta por empleado en toda la empresa; cualquier usuario con `POS:Leer` ve las sesiones de todos los cajeros de sus sucursales | CU-CAJ-01, 07 | `negocio/reglas/caja-devoluciones-y-dashboard` hallazgos 9 y 11 |
 | 12 | «Cuarentena DIGEMID» en una devolución no crea el registro de cuarentena ni repone stock; la serie de nota de crédito no se compara con el comprobante de origen; el motivo SUNAT no se valida contra un catálogo | CU-DEV-02, 04, 05 | `negocio/reglas/caja-devoluciones-y-dashboard` hallazgos 4 y 6 |
 | 13 | «Vendido hoy» incluye ventas `Devuelta` y **Ver ventas de hoy** no; «Cobrado por método de pago» no resta reembolsos | CU-DAS-01, 02, 10 | `negocio/reglas/caja-devoluciones-y-dashboard` hallazgo 7 |
-| 14 | `GET Pos/{id}` y `GET Devoluciones/{id}` (y los detalles de delivery, magistrales y servicios) devuelven el objeto `Result` completo | CU-CAJ-06, CU-DEV-08, CU-OPS-13, 16, 20 | `negocio/reglas/caja-devoluciones-y-dashboard` hallazgo 8; `negocio/reglas/modulos-solo-api` §2 punto 2 |
+| 14 | `GET Pos/{id}` (y los detalles de delivery, magistrales y servicios) devuelven el objeto `Result` completo; `GET Devoluciones/{id}` lo hacía hasta `9c16f35` y desde `0678e40` devuelve el valor plano | CU-CAJ-06, CU-OPS-13, 16, 20 | `negocio/reglas/caja-devoluciones-y-dashboard` hallazgo 8; `negocio/reglas/modulos-solo-api` §2 punto 2 |
 | 15 | La cuarentena solo la respeta la venta; un lote `Retenido` no se puede liberar por la API; el acta de destrucción es solo una cabecera | CU-OPS-07, 09 | `negocio/reglas/modulos-solo-api` hallazgos 1, 2 y 5 |
 | 16 | Transferencias: la diferencia de una recepción parcial desaparece, `Aprobada` es inalcanzable y `Transferencia.Forbidden` responde 400 | CU-OPS-01 a 04 | `negocio/reglas/modulos-solo-api` hallazgo 7 |
 | 17 | Transferencias y órdenes magistrales ignoran las sucursales accesibles; delivery cambia y elimina despachos sin comprobar sucursal | CU-OPS-01 a 05, 11 a 13, 19, 20 | `negocio/reglas/modulos-solo-api` hallazgo 8 |
@@ -3751,6 +3751,13 @@ Las 312 reglas del alcance (`RN-VEN` 83, `RN-CMP` 15, `RN-CAJ` 27, `RN-DEV` 37, 
 | [RN-DEV-028] | CU-DEV-01 — paso 6; brecha conocida |
 | [RN-DEV-029] | CU-DEV-01 — paso 6 |
 | [RN-DEV-030] | CU-DEV-08 — fila «Reglas»; CU-DEV-09 — fila «Reglas» |
+| [RN-DEV-038] | CU-DEV-08 — fila «Reglas»; CU-DEV-09 — fila «Reglas» |
+| [RN-DEV-039] | CU-DEV-08 — fila «Reglas»; CU-DEV-09 — fila «Reglas» |
+| [RN-DEV-040] | CU-DEV-08 — fila «Reglas»; CU-DEV-10 — fila «Reglas» |
+| [RN-DEV-041] | CU-DEV-08 — fila «Reglas»; CU-DEV-09 — fila «Reglas» |
+| [RN-DEV-042] | CU-DEV-09 — fila «Reglas» |
+| [RN-DEV-043] | CU-DEV-10 — fila «Reglas» |
+| [RN-DEV-044] | CU-DEV-10 — fila «Reglas» |
 | [RN-DEV-031] | CU-DEV-08 — paso 3; CU-DEV-10 — fila «Reglas» |
 | [RN-DEV-032] | CU-DEV-07 — paso 1; CU-DEV-08, CU-DEV-09 y CU-DEV-10 — fila «Reglas» |
 | [RN-DEV-033] | CU-DEV-04 — excepción (paso 5); CU-DEV-05 — paso 3 |
@@ -4182,14 +4189,21 @@ Definiciones de los enlaces de reglas, historias, casos de uso y documentos usad
 [RN-DEV-027]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#46-efectos-de-la-devolución
 [RN-DEV-028]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#46-efectos-de-la-devolución
 [RN-DEV-029]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#46-efectos-de-la-devolución
-[RN-DEV-030]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-solo-api-sin-pantalla
-[RN-DEV-031]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-solo-api-sin-pantalla
-[RN-DEV-032]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-solo-api-sin-pantalla
+[RN-DEV-030]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-031]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-032]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
 [RN-DEV-033]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#48-entidades-y-restricciones-de-base-de-datos
 [RN-DEV-034]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#48-entidades-y-restricciones-de-base-de-datos
 [RN-DEV-035]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#48-entidades-y-restricciones-de-base-de-datos
 [RN-DEV-036]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#48-entidades-y-restricciones-de-base-de-datos
 [RN-DEV-037]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#48-entidades-y-restricciones-de-base-de-datos
+[RN-DEV-038]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-039]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-040]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-041]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-042]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-043]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-044]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
 [RN-EMP-003]: ../../negocio/reglas/administracion-y-seguridad.md#7-empresas-y-suscripción-emp
 [RN-EMP-004]: ../../negocio/reglas/administracion-y-seguridad.md#7-empresas-y-suscripción-emp
 [RN-EMP-016]: ../../negocio/reglas/administracion-y-seguridad.md#7-empresas-y-suscripción-emp
