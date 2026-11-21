@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-14 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
 | **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` (versión 1.2: revisión contra el código y alta del script `0029` en el historial; las 23 tablas de esta Parte B no cambiaron respecto de `43f5529`) |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` (v1.3: solo la mención de las pantallas de devoluciones) |
 | **Método** | Lectura de código: scripts DbUp `0001`–`0029` leídos completos y en orden (fuente de verdad), contrastados con las configuraciones de EF Core y las entidades de dominio; historial de commits con `git log` de solo lectura. No se consultó la base de datos ni la API. |
 
 ## 1. Alcance y forma de lectura
@@ -645,7 +645,7 @@ La restricción `UNIQUE` en línea del `0001:657` (nombre autogenerado) la elimi
 
 ## 8. Devoluciones
 
-Las escribe `ProcesarDevolucionCommandHandler`. No hay ruta de listado ni detalle de devoluciones en el SPA (ninguna ruta con ese nombre en `docs/_inventario/rutas-spa.csv`).
+Las escribe `ProcesarDevolucionCommandHandler`. Desde `37048ea` el SPA tiene las rutas `/devoluciones` (búsqueda) y `/devoluciones/:id` (detalle); la consulta lee estas dos tablas, la nota de crédito y la venta sin cambiar el esquema (`0678e40` no agrega scripts).
 
 ### 8.1 `Devoluciones_Cabecera`
 
@@ -1398,7 +1398,7 @@ La guía del desarrollador ya explica cómo ejecutar DbUp y cómo agregar un scr
 - `DIGEMID_Actas_Detalle` y `Recetas_Digitalizadas_IA` **no las escribe ni las lee ningún código**. Además, `GenerarActaDestruccionCommandHandler` crea el acta sin líneas, así que una acta no registra qué se destruyó.
 - `Ventas_Reclamos_Seguro` se escribe con estado fijo `Aprobado` y un código de autorización generado localmente (`VentaSeguroProcessor.cs:18-25`); no hay integración con aseguradoras.
 - No existe el envío de comprobantes a SUNAT: todos los comprobantes quedan `NoEnviado`, y las columnas `Hash_Firma_Digital`, `Ruta_Archivo_XML`, `Ruta_Archivo_CDR` y `URL_Publica_Verificacion` no tienen quién las llene.
-- Sin pantalla enrutada: `Transferencias_Cab`/`Transferencias_Det`, `DIGEMID_Inventario_Cuarentena`, `DIGEMID_Actas_*`, `Despachos_Delivery`, `Magistrales_*`, `Servicios_Agenda`, `Servicios_Clinicos_Inmunizacion` y el listado de devoluciones.
+- Sin pantalla enrutada: `Transferencias_Cab`/`Transferencias_Det`, `DIGEMID_Inventario_Cuarentena`, `DIGEMID_Actas_*`, `Despachos_Delivery`, `Magistrales_*`, `Servicios_Agenda`, `Servicios_Clinicos_Inmunizacion`.
 - Columnas de estado sin `CHECK` en la base: `Estado_Resolucion` (cuarentena), `Estado_Reclamo`, `Estado_Cita`, `Estado_Produccion`, `Estado_Serie`, `Estado_Aceptacion` y `Metodo_Pago`; solo el dominio las restringe, y dos de ellas tienen un valor por defecto en la base que el dominio no usa (D-08).
 - `SUNAT_Series_Fiscales.Correlativo_Actual` no tiene `RowVersion`; la unicidad del número emitido la garantiza `UX_SUNAT_Comprobantes_Emitidos_Serie_Correlativo`, que no ignora las filas con borrado lógico.
 - Ocho `CHECK` de la base no están declarados en EF (D-02) y varias relaciones de la base no existen en el modelo de EF (D-06).
