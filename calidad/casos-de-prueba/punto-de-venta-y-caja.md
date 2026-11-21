@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de documentos validados y comprobación en el código (mensajes, códigos de error, rutas y permisos por script sobre todos los casos; resultados esperados de prioridad Alta contrastados con el código en lo que toca a devoluciones y a la API de devoluciones); casos no ejecutados |
@@ -5612,7 +5612,7 @@ Los casos describen el comportamiento **actual** de estos puntos (no el deseado)
 | Un efectivo esperado negativo impide cerrar la caja y solo se ve «Error al cerrar la sesión» | TC-CAJ-037, TC-DEV-027 |
 | No existe vista «solo mis ventas» ni «solo mis sesiones» | TC-VEN-193, TC-CAJ-049 |
 | Los Excel salen con fechas en UTC sin convertir | TC-VEN-207, TC-CAJ-055 |
-| `GET Pos/{id}` y `GET Devoluciones/{id}` devuelven el objeto `Result` completo | TC-CAJ-046, TC-DEV-057 |
+| `GET Pos/{id}` devuelve el objeto `Result` completo (`GET Devoluciones/{id}` lo hacía hasta `9c16f35`) | TC-CAJ-046 |
 | El reembolso no se compara con los pagos originales; el estimado puede diferir del real | TC-DEV-026, TC-DEV-030 |
 | El motivo SUNAT no se valida contra el catálogo; no hay plazo ni límite de devoluciones | TC-DEV-042, TC-DEV-051 |
 | El destino «Cuarentena DIGEMID» de una devolución no repone stock ni crea el aislamiento | TC-DEV-019, TC-OPS-047 |
