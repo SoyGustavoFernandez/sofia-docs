@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.3: solo el proceso 5, devoluciones; el resto se verificó por última vez en `6f6b837`) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y de los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y del manual de usuario (capítulos 1 a 3). Verificaciones puntuales en el código (marcadas con `archivo:línea`). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
@@ -1340,7 +1340,7 @@ Ninguno. `git status --short` está vacío en `sofia-apis` (`6f6b837`) y en `sof
 
 ### 13.2 Reglas de negocio citadas
 
-Se extrajeron con un script de lectura todos los IDs `RN-…` citados en este documento y se compararon con las filas de definición de los seis archivos del catálogo (`negocio/reglas/administracion-y-seguridad`, `negocio/reglas/catalogos`, `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes`, `negocio/reglas/caja-devoluciones-y-dashboard`, `negocio/reglas/modulos-solo-api`). Resultado: **373 IDs citados explícitamente y 475 al expandir los rangos escritos con «a»; 0 no existen en el catálogo** (el catálogo define 789 IDs distintos). Tablas con distinto número de columnas en alguna fila: 0.
+Se extrajeron con un script de lectura todos los IDs `RN-…` citados en este documento y se compararon con las filas de definición de los seis archivos del catálogo (`negocio/reglas/administracion-y-seguridad`, `negocio/reglas/catalogos`, `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes`, `negocio/reglas/caja-devoluciones-y-dashboard`, `negocio/reglas/modulos-solo-api`). Resultado: **395 IDs citados explícitamente y 497 al expandir los rangos escritos con «a»; 0 no existen en el catálogo** (el catálogo define 812 IDs distintos). Tablas con distinto número de columnas en alguna fila: 0.
 
 | Prefijos | Citados en los procesos |
 |---|---|
