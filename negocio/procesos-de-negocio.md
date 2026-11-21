@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-20 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.3: solo el proceso 5, devoluciones; el resto se verificó por última vez en `6f6b837`) |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y de los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y del manual de usuario (capítulos 1 a 3). Verificaciones puntuales en el código (marcadas con `archivo:línea`). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
 
 ## 1. Cómo leer este documento
@@ -20,7 +20,7 @@ Describe cómo fluye el trabajo real de una botica en SOFIA, de principio a fin.
 - Un permiso se escribe `Módulo:Acción` (por ejemplo `Ventas:Crear`). El rol `Admin` pasa cualquier comprobación de permiso (RN-GEN-021). Un endpoint «anónimo» no pide sesión.
 - «Mensaje que ve el usuario» es el texto del SPA. Cuando la pantalla no traduce el código de error, el usuario ve el mensaje genérico de esa pantalla, nunca el `detail` en inglés de la API (`negocio/reglas/administracion-y-seguridad` §2). Donde un código no está mapeado se indica «genérico».
 - Estados de implementación: «Solo API (sin pantalla)» y «Parcial» significan que el endpoint existe pero el SPA no lo muestra o lo muestra a medias.
-- Los módulos Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, Cuarentena y actas DIGEMID, y el listado y detalle de Devoluciones **no tienen pantalla enrutada**; el envío de comprobantes a SUNAT **no existe** (los comprobantes nacen en estado `NoEnviado`, RN-CMP-007).
+- Los módulos Transferencias, Delivery, Magistrales, Servicios e inmunizaciones, y Cuarentena y actas DIGEMID **no tienen pantalla enrutada** (el listado y el detalle de Devoluciones sí la tienen desde `37048ea`, proceso 5); el envío de comprobantes a SUNAT **no existe** (los comprobantes nacen en estado `NoEnviado`, RN-CMP-007).
 
 ## 2. Mapa general
 
@@ -543,7 +543,7 @@ flowchart TD
 
 **Actores.** Cajero o supervisor con `Ventas:Leer` (ver el detalle), `Devoluciones:ProcesarDevolucion` (devolver) o `Ventas:Anular` (anular). No hay flujo de supervisor ni PIN: «autorizar» es procesar con la propia sesión (RN-DEV-027). Para anular una venta cobrada o devolver hace falta además **tener caja propia abierta** en la sucursal de la venta (proceso 6).
 
-**Disparador.** El cliente pide cambiar o devolver, o el cajero detecta un error. Se parte siempre del detalle de la venta: `/pos` («Ventas») y clic en el código de la venta, que abre `/pos/:id` («Detalle de Venta»). El módulo de devoluciones no tiene pantalla de listado ni de detalle (RN-DEV-032).
+**Disparador.** El cliente pide cambiar o devolver, o el cajero detecta un error. Se parte siempre del detalle de la venta: `/pos` («Ventas») y clic en el código de la venta, que abre `/pos/:id` («Detalle de Venta»). Las devoluciones ya hechas también se consultan en `/devoluciones` (búsqueda con filtros y exportación a Excel) y `/devoluciones/:id` (detalle con los productos devueltos), con `Devoluciones:Leer` (RN-DEV-032, RN-DEV-042, RN-DEV-043); ver 7.3.
 
 **Precondiciones.** Solo se opera sobre ventas de **la sucursal del token**, también para el `Admin` (RN-VEN-062, RN-DEV-004). Los botones dependen del estado de la venta:
 
@@ -614,6 +614,10 @@ Detalles que conviene tener claros:
 - Con «Cuarentena DIGEMID» la devolución **no repone stock ni crea el registro de cuarentena**: el lote no aparece en «Lotes en cuarentena» del Inicio hasta que alguien lo aísle por la API (proceso 9; RN-DEV-024, RN-CUA-011).
 - Devolver **no libera la dispensación** de la receta (RN-DEV-026) y la venta con devoluciones ya no se puede anular (RN-VEN-066).
 - La nota de crédito no se imprime ni se muestra como documento: solo se ve su número (RN-DEV-022).
+
+### 7.3 Consultar devoluciones ya procesadas
+
+Desde `37048ea` el menú «Punto de Venta» tiene la opción «Devoluciones» (`/devoluciones`, permiso `Devoluciones:Leer`). El usuario filtra por nota de crédito, quién autorizó, motivo, fechas, método de reembolso, destino y rango de monto reembolsado, pulsa «Buscar» y ve la lista (RN-DEV-038, RN-DEV-039, RN-DEV-042). El número de la nota abre `/devoluciones/:id`, de solo lectura, con los datos de la devolución y la tabla «Productos devueltos» (producto, lote, presentación, cantidad, precio, subtotal y destino; RN-DEV-040, RN-DEV-043); desde ahí o desde la lista, la venta se abre solo con `Ventas:Leer`. El botón «Exportar» baja `devoluciones.xlsx` con las devoluciones que cumplen los filtros (hasta 10 000; RN-DEV-041). Este recorrido no cambia stock, caja ni la venta: solo lee. **No verificado en la aplicación.**
 
 ### 7.2 Anulación de una venta cobrada
 
