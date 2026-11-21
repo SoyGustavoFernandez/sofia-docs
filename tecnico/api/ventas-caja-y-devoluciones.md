@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
+| **Versión del documento** | 1.4 |
 | **Fecha** | 2026-11-21 |
-| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (fichas de `Devoluciones` reescritas desde el código; el resto de las fichas se verificó por última vez en `6f6b837`) |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (todas las fichas se revisaron a fondo contra controlador, validador, handler y entidades en este commit; los ejemplos reales son capturas del 2026-10-30) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y llamadas reales a la API local (`https://localhost:7300`, empresa de la referencia «Farmacia API Referencia S.A.C.») |
 
@@ -283,7 +283,7 @@ Lista paginada de sesiones de caja de las sucursales accesibles del usuario (de 
 | `fechaInicio`, `fechaFin` | fecha-hora | No | Sobre la fecha-hora de apertura, `>=` y `<=` ([RN-GEN-008]); ver 0.1, punto 6. |
 | `empleadoId` | GUID | No | No puede ser el GUID vacío. |
 | `pageNumber` | entero | No | Por defecto 1. |
-| `pageSize` | entero | No | Por defecto 10; máximo 10 000 ([RN-GEN-009]). |
+| `pageSize` | entero | No | Por defecto 10; máximo 10 000: un valor mayor se recorta a 10 000 y uno menor que 1 se toma como 1, sin error ([RN-GEN-009]). |
 
 **Respuesta correcta:** `200 OK`, `{ items, pageNumber, totalPages, totalCount, hasPreviousPage, hasNextPage }`. Cada elemento de `items`: `id`, `sucursalId`, `sucursalNombre`, `empleadoId`, `empleadoNombre` («Nombres» + primer apellido), `fechaHoraApertura`, `fechaHoraCierre` (nulo si está abierta), `montoAperturaEfectivo`, `montoCierreCalculado`, `montoCierreDeclarado`, `diferenciaArqueo` (nulos hasta el cierre) y `estadoSesion` (número).
 
@@ -433,6 +433,7 @@ Genera un Excel con las sesiones que cumplen los filtros (sin paginar; no acepta
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
+| 400 | `GetSesionesQuery.SucursalId` | `sucursalId` es el GUID vacío (la exportación reutiliza el validador del listado) | [RN-CAJ-021] |
 | 400 | `Export.TooManyRows` | Más de 10 000 sesiones | [RN-IMP-008] |
 | 400 | (`errors.DateFormat`: `Export.DateFormat.Invalid`) | `dateFormat` fuera de la lista; es un `ProblemDetails` estándar con `errors` (ver 0.5) | [RN-IMP-011] |
 
@@ -487,7 +488,7 @@ Lista paginada de las ventas **de la sucursal del token** (de todos los empleado
 | `empleadoId` | GUID | No | Empleado que vendió. |
 | `clienteId` | GUID | No | Paciente de la venta. |
 | `pageNumber` | entero | No | Por defecto 1. |
-| `pageSize` | entero | No | Por defecto 10; máximo 10 000 ([RN-GEN-009]). |
+| `pageSize` | entero | No | Por defecto 10; máximo 10 000: un valor mayor se recorta a 10 000 y uno menor que 1 se toma como 1, sin error ([RN-GEN-009]). |
 
 **Respuesta correcta:** `200 OK`, `{ items, pageNumber, totalPages, totalCount, hasPreviousPage, hasNextPage }`. Cada elemento: `id`, `codigoVenta`, `fechaHora` (UTC), `total` (con IGV incluido), `estado` (texto), `empleadoNombre`, `clienteNombre` («Público General» si no hay cliente) e `itemsCount`. El `codigoVenta` se deriva: con boleta es `{serie}-{correlativo de 8 dígitos}` (`B4E1-00000004`); una venta en espera usa los 8 primeros caracteres del identificador en mayúsculas (`4A06FC6E`) ([RN-VEN-059]).
 
@@ -541,10 +542,10 @@ Devuelve el detalle de una venta de la sucursal del token: cabecera, líneas, pa
 | `id`, `codigoVenta`, `fechaHora`, `total`, `estado`, `motivoAnulacion` | GUID, texto, fecha, decimal, texto, texto o `null` | Cabecera. |
 | `empleadoNombre` | texto | Quien registró la venta. |
 | `clienteId`, `clienteNombre`, `clienteDocumento`, `clienteTipoDocumento` | GUID o `null`, texto, texto o `null`, texto o `null` | Cliente de la venta; «Público General» y valores `null` si no hay. |
-| `detalles[]` | arreglo | `id`, `loteId`, `productoNombre`, `numeroLote`, `cantidad` (**en unidades base**), `precioUnitario`, `subtotal`, `presentacionVentaId`, `presentacionDescripcion`, `cantidadEnPresentacion`, `recetaId`, `cantidadDevuelta`, `condicionVenta` (número). |
+| `detalles[]` | arreglo | `id`, `loteId`, `productoNombre`, `numeroLote`, `cantidad` (**en unidades base**), `precioUnitario` (por unidad base: con presentación es el precio de la presentación dividido entre sus unidades base), `subtotal` (`cantidad` × `precioUnitario`), `presentacionVentaId`, `presentacionDescripcion`, `cantidadEnPresentacion`, `recetaId`, `cantidadDevuelta`, `condicionVenta` (número). |
 | `comprobante` | objeto o `null` | `tipo`, `numero`, `estadoAceptacion`, `urlVerificacion`, `urlXml`, `urlCdr`, `emisorRazonSocial`, `emisorRuc`, `sucursalDireccion`, `clienteTipoDocumento`, `clienteNumeroDocumento`, `clienteNombre`. `null` en una venta en espera. Nunca es una nota de crédito ([RN-CMP-013]). |
 | `pagos[]` | arreglo | `id`, `metodoPago` (texto), `montoPagado`, `referenciaOperacion`, `fechaPago`. El vuelto no se guarda ni se devuelve: se obtiene como suma de pagos menos total ([RN-VEN-044]). |
-| `devoluciones[]` | arreglo | `id`, `fecha`, `numeroNotaCredito`, `montoReembolsado`, `metodoReembolso`. |
+| `devoluciones[]` | arreglo | `id`, `fecha`, `numeroNotaCredito`, `montoReembolsado`, `metodoReembolso`. Se buscan por la boleta de la venta: una venta en espera (sin comprobante) siempre trae `[]`. |
 | `recetaVerificadaPor`, `recetaVerificadaEn` | texto o `null`, fecha o `null` | Quién confirmó la receta de papel y cuándo ([RN-VEN-035]). |
 
 **Errores posibles:**
@@ -644,11 +645,11 @@ Crea una venta. Con `pagos` y estado por defecto (`Completada`), cobra de inmedi
 | `detalles[].cantidad` | decimal | Sí | Mayor que 0. Sin `presentacionVentaId` está en **unidades base**; con presentación, en unidades de esa presentación (2 cajas = `2`) ([RN-VEN-010], [RN-VEN-017]). |
 | `detalles[].recetaId` | GUID | No | Receta registrada; debe existir y ser del cliente de la venta ([RN-VEN-029] a [RN-VEN-032]). |
 | `detalles[].presentacionVentaId` | GUID | No | Presentación del mismo producto del lote ([RN-VEN-018]). |
-| `pagos[]` | arreglo | Sí, salvo `estado: 3` | Al menos un pago al cobrar ([RN-VEN-039]). Con `estado: 3` y pagos presentes, **cobra de inmediato** ([RN-VEN-051]). |
+| `pagos[]` | arreglo | Sí, salvo `estado: 3` | Al menos un pago al cobrar ([RN-VEN-039]). Con `estado: 3` y pagos presentes, **cobra de inmediato** ([RN-VEN-051]). Con `estado: 3` envía `"pagos": []` como en el ejemplo 4: la propiedad no es anulable y qué responde la API si falta es No verificado (ver «No verificado» 11). |
 | `pagos[].metodoPago` | número (`MetodoPago`) | Sí | 0 a 3 ([RN-VEN-040]). |
 | `pagos[].montoPagado` | decimal | Sí | Mayor que 0 ([RN-VEN-041]). Para efectivo, lo entregado por el cliente. |
 | `pagos[].referenciaOperacion` | texto o `null` | Condicional | Obligatoria si el método no es efectivo; máximo 100 caracteres ([RN-VEN-042]). |
-| `estado` | número (`EstadoVenta`) | No | Por defecto 0 (`Completada`). Solo prosperan `Completada` con pagos y `Pendiente` ([RN-VEN-051]). |
+| `estado` | número (`EstadoVenta`) | No | Por defecto 0 (`Completada`). Solo prosperan `Completada` con pagos y `Pendiente` ([RN-VEN-051]). El valor no se valida contra el enumerado: `1` o `2` con pagos responde `Venta.Pagos`, y sin pagos el validador pide al menos un pago (`CreateVentaCommand.Pagos`). |
 | `aseguradoraId`, `montoCubiertoSeguro` | GUID, decimal | No | Cobertura de seguro; implementada en la API, sin pantalla visible ([RN-VEN-047]). |
 | `recetaVerificada` | booleano | No | Por defecto `false`. Debe ser `true` al cobrar una línea de receta simple sin receta registrada cuando la empresa no exige registro de receta ([RN-VEN-034]). |
 
@@ -670,19 +671,20 @@ Reglas de pago ([RN-VEN-043], [RN-VEN-044]): la suma de los pagos debe cubrir el
 | 400 | `Venta.Caja` | Sin `sesionId`, o la sesión no existe o no está abierta | [RN-VEN-003], [RN-VEN-004] |
 | 403 | `Venta.Caja.NoPropia` | La sesión es de otro cajero u otra sucursal | [RN-VEN-005] |
 | 404 | `Aseguradora.NotFound` | La aseguradora no existe | [RN-VEN-047] |
-| 400 | `Venta.Cuarentena` | El lote está retenido en cuarentena | [RN-VEN-012] |
-| 400 | `Venta.Lote` | El lote o su producto no existen, o el lote no tiene stock en la sucursal (HTTP 400, no 404) | [RN-VEN-011] |
+| 400 | `Venta.Cuarentena` | El lote está retenido en cuarentena (se evalúa línea por línea, en el orden de `detalles`) | [RN-VEN-012] |
+| 400 | `Venta.Lote` | El lote o su producto no existen (HTTP 400, no 404); también, más abajo en la misma línea, si el lote no tiene fila de stock en la sucursal | [RN-VEN-011] |
 | 400 | `Venta.Lote.Vencido` | El lote está vencido | [RN-VEN-013] |
-| 400 | `Venta.Receta.Requerida` | Producto de receta retenida o estupefaciente sin receta registrada; o receta simple sin receta si la empresa exige el registro | [RN-VEN-029] |
-| 400 | `Venta.Receta.NoEncontrada` / `Venta.Receta.OtroPaciente` / `Venta.Receta.NumeroRequerido` / `Venta.Receta.Agotada` | La receta no existe; es de otro paciente o la venta no tiene cliente; no tiene número (controlados); ya se dispensó el máximo de veces | [RN-VEN-030] a [RN-VEN-033], [RN-REC-031] |
-| 400 | `Venta.Stock` | La cantidad en unidades base supera lo que hay en el lote de la sucursal | [RN-VEN-014] |
+| 400 | `Venta.Receta.NoEncontrada` / `Venta.Receta.OtroPaciente` / `Venta.Receta.NumeroRequerido` | La línea trae `recetaId` y la receta no existe; es de otro paciente o la venta no tiene cliente (se comprueba aunque el producto sea de venta libre); no tiene número (solo productos controlados) | [RN-VEN-030] a [RN-VEN-033] |
+| 400 | `Venta.Receta.Requerida` | La línea no trae `recetaId` y el producto es de receta retenida o estupefaciente; o es de receta simple y la empresa exige el registro | [RN-VEN-029] |
 | 400 | `Venta.Presentacion` | La presentación no existe o es de otro producto | [RN-VEN-018] |
 | 400 | `Venta.SinPrecio` | El medicamento no tiene precio de venta base (y no se usó presentación) | [RN-VEN-019] |
+| 400 | `Venta.Stock` | La cantidad en unidades base supera lo que hay en el lote de la sucursal (descontando lo ya tomado por líneas anteriores del mismo lote) | [RN-VEN-014] |
+| 400 | `Venta.Receta.Agotada` | Se evalúa al terminar todas las líneas: la receta ya se dispensó el máximo de veces; cuentan las ventas no anuladas que la usan con productos que no son de venta libre (incluidas las que están en espera) | [RN-VEN-033], [RN-REC-031] |
 | 400 | `Venta.Receta.VerificacionRequerida` | Cobro con línea de receta simple sin receta, empresa flexible, y `recetaVerificada` en `false` | [RN-VEN-034] |
-| 400 | `Venta.Pagos` | La suma de pagos no cubre el monto a pagar; o sobra pero no hay pago en efectivo | [RN-VEN-043], [RN-VEN-044] |
+| 400 | `Venta.Pagos` | `estado` 1 (`Anulada`) o 2 (`Devuelta`) en el cuerpo junto con pagos; la suma de pagos no cubre el monto a pagar; o sobra pero no hay pago en efectivo | [RN-VEN-043], [RN-VEN-044], [RN-VEN-051] |
+| 400 | `Venta.Seguro.MontoInvalido` | La cobertura supera el total (se evalúa antes que la suma de pagos) | [RN-VEN-047] |
 | 400 | `Venta.Pagos.VueltoExcedeEfectivo` | El vuelto supera el efectivo entregado | [RN-VEN-044] |
 | 400 | `Venta.Empresa.SinRuc` / `Venta.SerieBoleta.NoConfigurada` | La empresa no tiene RUC; la sucursal no tiene serie de boleta activa | [RN-CMP-002], [RN-CMP-003] |
-| 400 | `Venta.Seguro.MontoInvalido` | La cobertura supera el total | [RN-VEN-047] |
 | 409 | `Concurrency.Conflict` | Otra operación cambió la misma fila de stock o la venta | [RN-VEN-015], [RN-GEN-035] |
 
 **Ejemplo real 1: venta sin cliente, en efectivo, con vuelto (V1).** 4 unidades de «4E-Paracetamol 500 mg» a S/ 2,50 = S/ 10,00; el cliente entrega S/ 20,00 y recibe S/ 10,00 de vuelto.
@@ -892,7 +894,7 @@ Lista los lotes que la sucursal del token puede vender de un producto (stock ven
 | Nombre | Tipo | Obligatorio | Descripción |
 |---|---|---|---|
 | `productoId` | GUID | Uno de los dos | Medicamento. |
-| `productoNombre` | texto | Uno de los dos | Texto contenido en el nombre comercial, sin distinguir mayúsculas. |
+| `productoNombre` | texto | Uno de los dos | Texto contenido en el nombre comercial, sin distinguir mayúsculas; un texto en blanco cuenta como no enviado. Si envías los dos, se aplican ambos filtros. |
 
 **Respuesta correcta:** `200 OK`, arreglo de `{ id, loteId, numeroLote, productoId, productoNombre, fechaCaducidad, cantidadFisica, precioVentaBase, condicionVenta }`. Ojo: `id` es la fila de **stock por sucursal**, no el lote; para vender se usa `loteId`. `precioVentaBase` puede ser `null` ([RN-VEN-075]).
 
@@ -1040,11 +1042,12 @@ Anula una venta `Completada` o `Pendiente`. Devuelve el stock, marca la boleta c
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `AnularVentaCommand.Motivo` | Motivo vacío, solo espacios o de más de 255 caracteres | [RN-VEN-063] |
-| 404 | `Venta.Anular` | La venta no existe | [RN-VEN-064] |
-| 400 | `Venta.Anular` | La venta ya está anulada; o es de otra sucursal | [RN-VEN-062], [RN-VEN-065] |
-| 400 | `Venta.Anular.ConDevoluciones` | La venta tiene devoluciones (también si está `Devuelta`) | [RN-VEN-066] |
-| 400 | `Venta.Anular.SinSesionAbierta` | Venta cobrada y quien anula no tiene caja abierta | [RN-VEN-067] |
-| 400 | `Auth.Sucursal` / `Auth.Empleado` | El token no trae sucursal o empleado | [RN-VEN-002] |
+| 404 | `Venta.Anular` | La venta no existe (se comprueba antes que la sucursal del token) | [RN-VEN-064] |
+| 400 | `Auth.Sucursal` | El token no trae sucursal | [RN-VEN-002] |
+| 400 | `Venta.Anular` | La venta es de otra sucursal; o ya está anulada (esta comprobación es la última: antes se evalúan las dos siguientes) | [RN-VEN-062], [RN-VEN-065] |
+| 400 | `Venta.Anular.ConDevoluciones` | La venta tiene líneas devueltas (también si está `Devuelta`) | [RN-VEN-066] |
+| 400 | `Venta.Anular.SinSesionAbierta` | Venta cobrada (`Completada`) y quien anula no tiene caja abierta en la sucursal de la venta | [RN-VEN-067] |
+| 400 | `Auth.Empleado` | Venta cobrada y el token no trae empleado (una venta en espera no lo necesita) | [RN-VEN-002] |
 | 409 | `Concurrency.Conflict` | Otra operación cambió la venta o el stock a la vez | [RN-VEN-057], [RN-VEN-068] |
 
 **Ejemplo real 1: anular una venta en espera (V5).** V5 se creó como V4 (1 unidad, `estado: 3`). Anularla devuelve la unidad reservada.
@@ -1161,11 +1164,16 @@ La caja no se envía: el servidor busca la sesión abierta del empleado del toke
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CompletarVentaCommand.VentaId` / `…Pagos` / `…Pagos[i].*` / `…Pagos.ReferenciaRequerida` | Identificador vacío; sin pagos; pagos inválidos | [RN-VEN-039] a [RN-VEN-042] |
+| 400 | `CompletarVentaCommand.MontoCubiertoSeguro` / `…AseguradoraId` | Cobertura negativa; cobertura mayor que 0 sin aseguradora | [RN-VEN-047] |
+| 400 | `Auth.Sucursal` | El token no trae sucursal (se evalúa antes de buscar la venta) | [RN-VEN-002] |
 | 404 | `Venta.Completar` | La venta no existe | [RN-VEN-056] |
 | 400 | `Venta.Completar` | La venta es de otra sucursal, o no está `Pendiente` | [RN-VEN-056] |
-| 400 | `Auth.Sucursal` / `Auth.Empleado` | El token no trae sucursal o empleado | [RN-VEN-002] |
+| 400 | `Auth.Empleado` | El token no trae empleado | [RN-VEN-002] |
 | 400 | `Venta.Caja.SinSesionAbierta` | Quien cobra no tiene caja propia abierta | [RN-VEN-006] |
-| 400 | los demás de `POST /Ventas` | Líneas reenviadas, receta, pagos, serie y RUC | ver `POST /Ventas` |
+| 404 | `Aseguradora.NotFound` | La aseguradora no existe | [RN-VEN-047] |
+| 400 | `Venta.Detalles` | Se envió `detalles` vacía (distinto de omitirla) | [RN-VEN-008] |
+| 404 | `Paciente.NotFound` | Con `detalles` reenviadas, el `clienteId` es distinto del guardado y no existe | [RN-VEN-025] |
+| 400 | los demás de `POST /Ventas` | Líneas reenviadas (o, si se omiten, la política de receta de las guardadas), receta, pagos, serie y RUC; mismo orden que en `POST /Ventas` | ver `POST /Ventas` |
 | 409 | `Concurrency.Conflict` | Dos cajeros cobran la misma venta a la vez | [RN-VEN-057] |
 
 **Ejemplo real** (V4 después de actualizar sus líneas a 5 unidades, total S/ 12,50; se paga S/ 15,00 en efectivo, vuelto S/ 2,50):
@@ -1246,10 +1254,11 @@ Reemplaza las líneas (y el cliente) de una venta en espera. Primero devuelve al
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `ActualizarVentaPendienteCommand.Detalles` / `…Detalles[i].LoteId` / `…Cantidad` / `…VentaId` | Sin líneas, lote vacío, cantidad ≤ 0, identificador vacío | [RN-VEN-054] |
+| 400 | `Auth.Sucursal` | El token no trae sucursal (se evalúa antes de buscar la venta) | [RN-VEN-002] |
 | 404 | `Venta.Actualizar` | La venta no existe | [RN-VEN-054] |
 | 400 | `Venta.Actualizar` | La venta es de otra sucursal o no está `Pendiente` | [RN-VEN-054] |
-| 404 | `Paciente.NotFound` | El cliente cambió y no existe | [RN-VEN-025] |
-| 400 | `Venta.Lote`, `Venta.Stock`, `Venta.Receta.*`, etc. | Las de las líneas de `POST /Ventas` (sin la confirmación `recetaVerificada`) | ver `POST /Ventas` |
+| 404 | `Paciente.NotFound` | El cliente cambió y no existe (si es el mismo que ya tenía la venta no se vuelve a buscar) | [RN-VEN-025] |
+| 400 | `Venta.Lote`, `Venta.Stock`, `Venta.Receta.*`, etc. | Las de las líneas de `POST /Ventas` (sin la confirmación `recetaVerificada`, que se pide al cobrar). Las recetas se comparan con el `clienteId` **de este cuerpo**: si lo omites y una línea trae `recetaId`, responde `Venta.Receta.OtroPaciente` | ver `POST /Ventas` |
 | 409 | `Concurrency.Conflict` | Otra operación cambió el stock o la venta | [RN-VEN-057] |
 
 **Ejemplo real** (V4: de 3 a 5 unidades y se asigna el paciente):
@@ -1321,6 +1330,8 @@ Genera un Excel de ventas con los mismos filtros del listado (sin paginar). Si h
 | 400 | (`errors.DateFormat`: `Export.DateFormat.Invalid`) | `dateFormat` no permitido | [RN-IMP-011] |
 | 400 | (`errors.$.estado`) | Un enumerado enviado como texto | ver 0.5 |
 | 400 | `Auth.Sucursal` | El token no trae sucursal | [RN-VEN-070] |
+
+El listado solo incluye las ventas de la sucursal del token: la exportación no acepta `sucursalId`.
 
 **Ejemplo real:**
 
@@ -1415,7 +1426,7 @@ Procesa una devolución parcial o total de una venta cobrada. Todo o nada: la ca
 | `detalles[]` | arreglo | Sí | Al menos una línea ([RN-DEV-009]). |
 | `detalles[].detalleVentaId` | GUID | Sí | Línea de la venta indicada ([RN-DEV-010], [RN-DEV-011]). |
 | `detalles[].cantidadDevuelta` | decimal | Sí | Mayor que 0, en **unidades base**; no puede superar lo vendido menos lo ya devuelto de esa línea ([RN-DEV-012]). Si la misma línea se repite, se suman para el tope ([RN-DEV-013]). |
-| `detalles[].destinoFisicoLogico` | número (`DestinoDevolucion`) | Sí | 0 `Reingreso_Venta` (suma al stock del mismo lote en la sucursal de la venta) o 1 `Cuarentena_DIGEMID` (solo queda anotado: no repone stock ni crea registro de cuarentena) ([RN-DEV-023], [RN-DEV-024]). |
+| `detalles[].destinoFisicoLogico` | número (`DestinoDevolucion`) | Sí | 0 `Reingreso_Venta` (suma al stock del mismo lote en la sucursal de la venta) o 1 `Cuarentena_DIGEMID` (solo queda anotado: no repone stock ni crea registro de cuarentena) ([RN-DEV-023], [RN-DEV-024]). Si el lote no tiene fila de stock en la sucursal de la venta, el reingreso no repone nada y tampoco falla. Si omites el campo, es de esperar que llegue como 0 (`Reingreso_Venta`) y pase el validador (No verificado con este campo; ver «No verificado» 11). |
 | `metodoReembolso` | número (`MetodoPago`) | No | Por defecto 0 (efectivo). Cualquier método, sin relación con cómo se pagó la venta ([RN-DEV-018]). |
 
 Cálculo: monto devuelto = Σ (cantidad × precio fijado en la línea), redondeado a 2 decimales con `Math.Round` (mitad hacia el par); es el importe de la nota de crédito. Monto reembolsado = monto devuelto × (total de la venta − cobertura de seguro) ÷ total de la venta ([RN-DEV-016], [RN-DEV-017], [RN-DEV-021]).
@@ -1542,11 +1553,11 @@ Lista paginada de devoluciones, de la más reciente a la más antigua (a igualda
 | `fechaInicio`, `fechaFin` | fecha-hora | Sobre la fecha de la devolución, `>=` y `<=` en UTC; ver 0.1, punto 6. |
 | `metodoReembolso` | enumerado `MetodoPago` | `Efectivo` (0), `YapePlin` (1), `Tarjeta` (2), `Transferencia` (3); en la consulta acepta nombre o número (el SPA envía el número). |
 | `destino` | enumerado `DestinoDevolucion` | `Reingreso_Venta` (0) o `Cuarentena_DIGEMID` (1). Coincide si **alguna** línea de la devolución fue a ese destino. |
-| `motivoSunatCatalogo` | texto | Exactamente 2 caracteres (se recorta); igualdad exacta (`06`, `07`). |
+| `motivoSunatCatalogo` | texto | Exactamente 2 caracteres (el validador cuenta los espacios; el filtro después recorta los extremos); igualdad exacta (`06`, `07`). |
 | `numeroNotaCredito` | texto, hasta 20 | Número impreso («BC01-00000007»), solo el prefijo de la serie («BC01», se busca contenido) o solo el correlativo («7»); las devoluciones sin nota de crédito no coinciden ([RN-DEV-039]). |
 | `montoMin`, `montoMax` | decimal | Sobre el **monto reembolsado**; `montoMin` ≥ 0 y `montoMax` ≥ `montoMin`. |
 | `pageNumber` | entero | Por defecto 1. |
-| `pageSize` | entero | Por defecto 10; máximo 10 000. |
+| `pageSize` | entero | Por defecto 10; máximo 10 000 (un valor mayor se recorta; uno menor que 1 se toma como 1). |
 
 **Respuesta correcta:** `200 OK`, `{ items, pageNumber, totalPages, totalCount, hasPreviousPage, hasNextPage }`; cada elemento tiene quince campos: `id`, `comprobanteOrigenId` (**el identificador del comprobante** —boleta o factura— de la venta, no el de la venta), `empleadoAutorizaId`, `fechaDevolucion`, `motivoSunatCatalogo`, `sustentoDescriptivo`, `ventaId`, `codigoVenta` (el número impreso del comprobante de origen, `{prefijo}-{correlativo de 8 dígitos}`), `numeroNotaCredito` (nulo si no hay), `clienteNombre` («Público General» si la venta no tiene cliente), `empleadoAutorizaNombre` («N/A» si no se encuentra), `sucursalNombre`, `montoNotaCredito`, `montoReembolsado` y `metodoReembolso` (nombre del enumerado).
 
@@ -1771,6 +1782,7 @@ La serie `B4E1` emitió `B4E1-00000001` a `B4E1-00000006` (boletas de V1, V2, V3
 | 8 | `Devolucion.Venta.EstadoInvalido` y `Devolucion.SerieNotaCredito.NoConfigurada` | Exigen una venta ya `Devuelta` o una sucursal sin serie de nota de crédito; no se provocaron. |
 | 9 | `GET /Devoluciones` (filtros nuevos y 15 campos), `GET /Devoluciones/{id}` (líneas, objeto plano, `id` que no es GUID) y `POST /Devoluciones/exportar` | Fichas escritas desde el código de `0678e40`; no se llamó a la API. Los ejemplos van marcados «Ejemplo no verificado: escrito desde el código». |
 | 10 | Que el SPA muestre los textos citados | No se abrió la aplicación (el navegador lo usa otro agente). |
+| 11 | Qué responde la API si se omite un campo no anulable: `destinoFisicoLogico` en `POST /Devoluciones` (enumerado: llegaría como 0 y el validador lo aceptaría) y `pagos` en `POST /Ventas` con `estado: 3` (lista: lo esperable es el 400 estándar «The … field is required», como el de `direccionEntrega` ausente en `POST /Delivery`, documentado en [inventario-recetas-y-operaciones](inventario-recetas-y-operaciones.md)) | Los ejemplos reales de esta parte siempre enviaron todos los campos; en la otra parte se capturó que un GUID ausente llega vacío y que una cadena ausente da el 400 estándar, pero no con estos campos. |
 
 ### En curso (sin commitear)
 
