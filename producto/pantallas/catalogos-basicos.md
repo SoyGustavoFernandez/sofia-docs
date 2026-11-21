@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40`; la pantalla del catálogo DIGEMID está reconciliada con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Solo citas desplazadas por los commits nuevos (sin cambios de contenido). Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear (ver §7). |
@@ -929,7 +929,7 @@ Lo que sigue **sin** tratamiento de dependencias en esta parte: eliminar jerarqu
 
 ## 7. Pendientes y «No verificado»
 
-**«En curso (sin commitear)»:** ninguno. Se ejecutó `git status --short` en ambos repos al empezar (`sofia-apis` `27597cd`, `sofia-web-spa` `01b8260`): el SPA tiene cambios solo en `README.md`, `angular.json` y `src/index.html`, y el backend en `README.md`, `Empresas/Commands/RegistrarEmpresa/RegistrarEmpresaCommandHandler.cs`, `Domain/Entities/Sucursal.cs` y pruebas de Empresas y Sucursales. Ningún archivo de las carpetas de esta parte (`pages/unidades-medida`, `pages/jerarquias`, `pages/laboratorios`, `pages/ingredientes-activos`, `pages/digemid-catalogo`), de los scopes i18n que usan ni de los controladores, validadores y manejadores citados está en esa lista.
+**«En curso (sin commitear)»:** ninguno. Los dos repositorios estaban limpios al revisar esta versión (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`): las citas son de esos commits.
 
 **«No verificado»** (no se ejecutó la aplicación ni se llamó a la API):
 
