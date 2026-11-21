@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea`; los mensajes de Roles, Cuentas y Empleados están reconciliados con `37d053d` y `7070e1a` |
 | **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevas HU-ADM-051 a HU-ADM-057 (operador de plataforma y suscripciones); escenarios corregidos de HU-ADM-002, 010, 013, 016 y 030; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas de negocio `negocio/reglas/administracion-y-seguridad` v1.1, inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/administracion` v1.1, matriz de permisos `tecnico/seguridad/matriz-de-permisos`, autenticación `tecnico/seguridad/autenticacion-y-controles`, manual de usuario capítulos 1 a 3, glosario) y comprobación puntual en el código. No se ejecutó la aplicación ni se llamó a la API: los mensajes exactos salen de los documentos fuente, que los comprobaron en la aplicación local. |
@@ -1160,7 +1160,7 @@ Escenario: Cuándo no está vigente
   Dado que el estado es "Suspendido" o "Cancelado", o la prueba o la suscripción venció, o la empresa no existe
   Entonces no está vigente
 
-Escenario: En estado Activo la fecha de vencimiento no se evalúa
+Escenario: En estado Activo la fecha de vencimiento también se evalúa
   Dado que la empresa está en estado "Activo" con un vencimiento pasado
   Entonces deja de estar vigente (desde `sofia-apis` `6f6b837` la suscripción pagada vence sola en su fecha, igual que la prueba; hasta `9c16f35` el estado "Activo" no evaluaba el vencimiento)
 
@@ -4129,8 +4129,8 @@ Cada regla `RN-GEN`, `RN-AUT`, `RN-ROL`, `RN-CTA`, `RN-EMP`, `RN-SUC`, `RN-EPL`,
 | RN-EMP-011 | HU-ADM-001: «El registro crea todo lo necesario en una sola operación»; «Si algo falla al registrar, no se crea nada» |
 | RN-EMP-012 | HU-ADM-001: «El registro crea todo lo necesario en una sola operación»; HU-ADM-014: «Una empresa nueva nace con 30 días de prueba» |
 | RN-EMP-013 | HU-ADM-001: «Registrar la empresa con datos válidos» |
-| RN-EMP-014 | HU-ADM-016: «Cuándo una empresa está vigente»; «Cuándo no está vigente»; «En estado Activo la fecha de vencimiento no se evalúa»; HU-ADM-014: sin escenario propio |
-| RN-EMP-015 | HU-ADM-055: todos sus escenarios; HU-ADM-016: «En estado Activo la fecha de vencimiento no se evalúa» (el título se conserva; desde `6f6b837` el cuerpo dice que sí se evalúa). Texto anterior, ya superado: «Pendiente: HU-ADM-016 (Parcial) documenta que ningún endpoint ni pantalla cambia el estado; sin escenario porque no hay comportamiento que verificar» |
+| RN-EMP-014 | HU-ADM-016: «Cuándo una empresa está vigente»; «Cuándo no está vigente»; «En estado Activo la fecha de vencimiento también se evalúa»; HU-ADM-014: sin escenario propio |
+| RN-EMP-015 | HU-ADM-055: todos sus escenarios; HU-ADM-016: «En estado Activo la fecha de vencimiento también se evalúa» (título actualizado el 2026-11-20: antes decía «no se evalúa»; desde `6f6b837` sí se evalúa). Texto anterior, ya superado: «Pendiente: HU-ADM-016 (Parcial) documenta que ningún endpoint ni pantalla cambia el estado; sin escenario porque no hay comportamiento que verificar» |
 | RN-EMP-016 | Pendiente: HU-ADM-014 (Parcial) documenta que la política solo se cambia en la base de datos; sin pantalla ni endpoint, sin escenario |
 | RN-EMP-017 | HU-ADM-014: «Solo veo mi propia empresa»; HU-ADM-015: «Otra empresa no se puede editar»; HU-ADM-013: «Buscar sin filtros»; HU-ADM-045: «Un registro de otra empresa se comporta como inexistente» |
 | RN-EMP-018 | HU-ADM-013: «Buscar sin filtros»; «Filtrar por estado»; «Filtrar por vencimiento»; «Exportar a Excel» |
