@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (fichas de `Devoluciones` reescritas desde el código; el resto de las fichas se verificó por última vez en `6f6b837`) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código y llamadas reales a la API local (`https://localhost:7300`, empresa de la referencia «Farmacia API Referencia S.A.C.») |
@@ -1875,9 +1875,9 @@ Llamadas reales a la API local (`https://localhost:7300`, 2026-10-30): las que s
 [RN-DEV-024]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#46-efectos-de-la-devolución
 [RN-DEV-025]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#46-efectos-de-la-devolución
 [RN-DEV-028]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#46-efectos-de-la-devolución
-[RN-DEV-030]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-solo-api-sin-pantalla
-[RN-DEV-031]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-solo-api-sin-pantalla
-[RN-DEV-032]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-solo-api-sin-pantalla
+[RN-DEV-030]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-031]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
+[RN-DEV-032]: ../../negocio/reglas/caja-devoluciones-y-dashboard.md#47-consultas-búsqueda-detalle-y-exportación
 [RN-GEN-008]: ../../negocio/reglas/administracion-y-seguridad.md
 [RN-GEN-009]: ../../negocio/reglas/administracion-y-seguridad.md
 [RN-GEN-010]: ../../negocio/reglas/administracion-y-seguridad.md
