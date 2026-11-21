@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-21 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevas HU-DEV-009 y HU-DEV-010 (búsqueda y detalle de devoluciones); HU-DEV-007 y HU-DEV-008 actualizadas; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas de negocio `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; glosario; manual de usuario capítulos 3 y 5) y comprobación puntual en el código y en los `es.json` del SPA. `git status --short` está limpio en ambos repositorios. No se usó el navegador ni se llamó a la API: los mensajes salen de los documentos fuente y de los archivos `es.json`. |
@@ -2769,7 +2769,7 @@ Escenario: El dashboard cuenta las devoluciones del día
 | **Pantalla** | `/devoluciones` y `/devoluciones/:id` (HU-DEV-009 y HU-DEV-010); también se consumen por API |
 | **Endpoint(s)** | `GET /api/v1/devoluciones`, `GET /api/v1/devoluciones/{id}`, `POST /api/v1/devoluciones/exportar` |
 | **Permiso** | `Devoluciones:Leer` |
-| **Reglas** | [RN-DEV-030, RN-DEV-031, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (describen la versión anterior, sin pantalla) |
+| **Reglas** | [RN-DEV-030, RN-DEV-031, RN-DEV-032, RN-DEV-038, RN-DEV-039, RN-DEV-040, RN-DEV-041](../../negocio/reglas/caja-devoluciones-y-dashboard.md) |
 | **Estado** | Implementada |
 
 **Criterios de aceptación**
@@ -2795,11 +2795,11 @@ Escenario: Consultar una devolución
 Escenario: La devolución no existe
   Entonces recibo 404 con el código "Devolucion.NotFound"
 
-Escenario: No existe exportación
-  Entonces hay un endpoint de exportación: "POST /api/v1/devoluciones/exportar" (HU-DEV-009), que antes de `0678e40` no existía
+Escenario: Exportar a Excel
+  Entonces puedo llamar a "POST /api/v1/devoluciones/exportar" con los mismos filtros (HU-DEV-009), que antes de `0678e40` no existía
 ```
 
-> **Nota.** Hasta `9c16f35` ni el listado ni el detalle tenían pantalla y `GET Devoluciones/{id}` devolvía el objeto `Result` completo; desde `0678e40` ambos devuelven el valor plano y las usan `/devoluciones` y `/devoluciones/:id`. Las reglas RN-DEV-030 a RN-DEV-032 y el hallazgo 8 de `negocio/reglas/caja-devoluciones-y-dashboard` describen la versión anterior (anotado para el orquestador).
+> **Nota.** Hasta `9c16f35` ni el listado ni el detalle tenían pantalla y `GET Devoluciones/{id}` devolvía el objeto `Result` completo; desde `0678e40` ambos devuelven el valor plano y las usan `/devoluciones` y `/devoluciones/:id`. Las reglas RN-DEV-030 a RN-DEV-032 y RN-DEV-038 a RN-DEV-041 ya describen la versión actual.
 
 ### HU-DEV-009 — Buscar devoluciones y exportarlas a Excel
 
@@ -2811,7 +2811,7 @@ Escenario: No existe exportación
 | **Pantalla** | `/devoluciones` — «Devoluciones» (migas «Inicio / Punto de Venta / Devoluciones») |
 | **Endpoint(s)** | `GET /api/v1/devoluciones`; `POST /api/v1/devoluciones/exportar`; `GET /api/v1/empleados` (autocompletado de «Autorizó») |
 | **Permiso** | `Devoluciones:Leer` |
-| **Reglas** | [RN-DEV-030, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-GEN-008, RN-GEN-009, RN-GEN-023](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-008, RN-IMP-009, RN-IMP-010, RN-IMP-017](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Reglas** | [RN-DEV-030, RN-DEV-032, RN-DEV-038, RN-DEV-039, RN-DEV-041, RN-DEV-042](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-GEN-008, RN-GEN-009, RN-GEN-023](../../negocio/reglas/administracion-y-seguridad.md), [RN-IMP-008, RN-IMP-009, RN-IMP-010, RN-IMP-017](../../negocio/reglas/administracion-y-seguridad.md) |
 | **Estado** | Implementada |
 
 **Criterios de aceptación**
@@ -2905,7 +2905,7 @@ Escenario: Sin el permiso no hay pantalla
   Y si escribo "/devoluciones" veo "No tienes permisos para acceder a esta pantalla." y vuelvo al panel
 ```
 
-> **Nota.** Pantalla y API nuevas desde `sofia-web-spa` `37048ea` y `sofia-apis` `0678e40`. Las reglas RN-DEV del catálogo todavía no describen los filtros, la exportación ni las pantallas: **no existe un RN-DEV para ellas** y no se inventó ninguno (RN-DEV-030 y RN-DEV-032 describen la versión anterior, sin pantalla). Inventario de la pantalla en `producto/pantallas/punto-de-venta` §9A. El Excel exporta el código SUNAT del motivo (`06` o `07`) y el nombre interno del método de reembolso. **No verificado en la aplicación.**
+> **Nota.** Pantalla y API nuevas desde `sofia-web-spa` `37048ea` y `sofia-apis` `0678e40`. Los filtros, la exportación y la pantalla están en RN-DEV-038, RN-DEV-039, RN-DEV-041 y RN-DEV-042. Inventario de la pantalla en `producto/pantallas/punto-de-venta` §9A. El Excel exporta el código SUNAT del motivo (`06` o `07`) y el nombre interno del método de reembolso. **No verificado en la aplicación.**
 
 ### HU-DEV-010 — Ver el detalle de una devolución y sus productos devueltos
 
@@ -2917,7 +2917,7 @@ Escenario: Sin el permiso no hay pantalla
 | **Pantalla** | `/devoluciones/:id` — «Detalle de devolución» |
 | **Endpoint(s)** | `GET /api/v1/devoluciones/{id}` |
 | **Permiso** | `Devoluciones:Leer` |
-| **Reglas** | [RN-DEV-022, RN-DEV-031, RN-DEV-032](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-GEN-023](../../negocio/reglas/administracion-y-seguridad.md) |
+| **Reglas** | [RN-DEV-022, RN-DEV-031, RN-DEV-032, RN-DEV-040, RN-DEV-043, RN-DEV-044](../../negocio/reglas/caja-devoluciones-y-dashboard.md), [RN-GEN-023](../../negocio/reglas/administracion-y-seguridad.md) |
 | **Estado** | Implementada |
 
 **Criterios de aceptación**
@@ -4471,9 +4471,9 @@ La tabla resume las filas «Reglas», «Pantalla» y «Endpoint(s)» de cada his
 | [HU-DEV-005](#hu-dev-005--indicar-el-motivo-sunat-y-el-sustento) | RN-DEV-014, RN-DEV-015, RN-DEV-033, RN-GEN-010 | `/pos/:id` — «Motivo SUNAT», «Sustento» | `POST /api/v1/devoluciones` |
 | [HU-DEV-006](#hu-dev-006--saber-por-qué-no-se-puede-devolver-una-venta) | RN-DEV-002 a RN-DEV-008 | `/pos/:id` — diálogo «Procesar devolución» | `POST /api/v1/devoluciones` |
 | [HU-DEV-007](#hu-dev-007--ver-las-devoluciones-de-una-venta) | RN-DEV-022, RN-DEV-032, RN-VEN-074 | `/pos/:id` — «Devuelto»; «Devoluciones / Notas de crédito» | `GET /api/v1/ventas/{id}` |
-| [HU-DEV-008](#hu-dev-008--consultar-devoluciones-por-api) | RN-DEV-030 a RN-DEV-032 | `/devoluciones`, `/devoluciones/:id` (y API) | `GET /api/v1/devoluciones`, `GET /api/v1/devoluciones/{id}`, `POST /api/v1/devoluciones/exportar` |
-| [HU-DEV-009](#hu-dev-009--buscar-devoluciones-y-exportarlas-a-excel) | RN-DEV-030, RN-DEV-032, RN-GEN-008, RN-GEN-009, RN-GEN-023, RN-IMP-008 a RN-IMP-010, RN-IMP-017 (sin RN-DEV propio para filtros y exportación) | `/devoluciones` — «Devoluciones» | `GET /api/v1/devoluciones`; `POST /api/v1/devoluciones/exportar`; `GET /api/v1/empleados` |
-| [HU-DEV-010](#hu-dev-010--ver-el-detalle-de-una-devolución-y-sus-productos-devueltos) | RN-DEV-022, RN-DEV-031, RN-DEV-032, RN-GEN-023 | `/devoluciones/:id` — «Detalle de devolución» | `GET /api/v1/devoluciones/{id}` |
+| [HU-DEV-008](#hu-dev-008--consultar-devoluciones-por-api) | RN-DEV-030 a RN-DEV-032, RN-DEV-038 a RN-DEV-041 | `/devoluciones`, `/devoluciones/:id` (y API) | `GET /api/v1/devoluciones`, `GET /api/v1/devoluciones/{id}`, `POST /api/v1/devoluciones/exportar` |
+| [HU-DEV-009](#hu-dev-009--buscar-devoluciones-y-exportarlas-a-excel) | RN-DEV-030, RN-DEV-032, RN-DEV-038, RN-DEV-039, RN-DEV-041, RN-DEV-042, RN-GEN-008, RN-GEN-009, RN-GEN-023, RN-IMP-008 a RN-IMP-010, RN-IMP-017 | `/devoluciones` — «Devoluciones» | `GET /api/v1/devoluciones`; `POST /api/v1/devoluciones/exportar`; `GET /api/v1/empleados` |
+| [HU-DEV-010](#hu-dev-010--ver-el-detalle-de-una-devolución-y-sus-productos-devueltos) | RN-DEV-022, RN-DEV-031, RN-DEV-032, RN-DEV-040, RN-DEV-043, RN-DEV-044, RN-GEN-023 | `/devoluciones/:id` — «Detalle de devolución» | `GET /api/v1/devoluciones/{id}` |
 | [HU-DAS-001](#hu-das-001--ver-el-resumen-de-ventas-de-hoy) | RN-DAS-002, RN-DAS-004 a RN-DAS-009 | `/dashboard` — «Ventas de hoy» | `GET /api/v1/dashboard/ventas` |
 | [HU-DAS-002](#hu-das-002--ver-lo-cobrado-por-método-de-pago-y-por-sucursal) | RN-DAS-003, RN-DAS-010, RN-DAS-011 | `/dashboard` — «Cobrado por método de pago», «Ventas por sucursal» | `GET /api/v1/dashboard/ventas` |
 | [HU-DAS-003](#hu-das-003--ver-la-tendencia-de-7-días-y-los-productos-más-vendidos) | RN-DAS-012, RN-DAS-013 | `/dashboard` — tendencia y más vendidos | `GET /api/v1/dashboard/ventas` |
@@ -4649,6 +4649,10 @@ Alcance: las reglas `RN-VEN` y `RN-CMP` de `negocio/reglas/ventas-y-comprobantes
 | RN-DEV-027 a RN-DEV-029 | HU-DEV-001 |
 | RN-DEV-030, RN-DEV-031 | HU-DEV-008, HU-DEV-009, HU-DEV-010 |
 | RN-DEV-032 | HU-DEV-007, HU-DEV-008, HU-DEV-009, HU-DEV-010 |
+| RN-DEV-038, RN-DEV-039, RN-DEV-041 | HU-DEV-008, HU-DEV-009 |
+| RN-DEV-040 | HU-DEV-008, HU-DEV-010 |
+| RN-DEV-042 | HU-DEV-009 |
+| RN-DEV-043, RN-DEV-044 | HU-DEV-010 |
 | RN-DEV-033 | HU-DEV-004, HU-DEV-005 |
 | RN-DEV-034 | HU-DEV-002 |
 | RN-DEV-035, RN-DEV-036 | HU-DEV-003, HU-DEV-004 |
