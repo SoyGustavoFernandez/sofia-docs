@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.3: solo la entrada «Devolución» y la lista de pantallas sin ruta) |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-22 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.4: revisión a fondo contra el código de todas las entradas; v1.3: entrada «Devolución» y lista de pantallas sin ruta) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
 | **Método** | Lectura de código (entidades, enums, handlers, scripts DbUp, componentes Angular y archivos `es.json`), contraste con los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y 19 búsquedas web en fuentes oficiales peruanas (SUNAT, DIGEMID, gob.pe, El Peruano). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay trabajo sin commitear que afecte a este documento. |
 
@@ -854,7 +854,7 @@ Mapa de la familia: el cajero **abre una sesión de caja** con un monto de apert
 
 **Definición.** Terminal desde el que se registran y cobran ventas. Término propio de SOFIA (no normativo).
 
-**En SOFIA.** El grupo de menú «Punto de Venta» tiene dos opciones: «Sesiones de Caja» y «Ventas». El terminal de venta es la ruta `/pos/nueva` (botón de nueva venta). El permiso de módulo `POS` se rotula «Sesiones de Caja» y el de ventas se llama `Ventas`.
+**En SOFIA.** El grupo de menú «Punto de Venta» tiene tres opciones: «Sesiones de Caja», «Ventas» y «Devoluciones» (esta última desde `37048ea`; `SPA/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:138-140`). El terminal de venta es la ruta `/pos/nueva` (botón de nueva venta). El permiso de módulo `POS` se rotula «Sesiones de Caja» y el de ventas se llama `Ventas`.
 
 **Dónde aparece.** Menú (`I18N/es.json:58`, `breadcrumbs.puntoVenta`); título del terminal «Terminal de Punto de Venta (POS)» (`I18N/pos/es.json:3`). Inventario de pantallas: [`producto/pantallas/acceso-layout-y-compartidos`](../producto/pantallas/acceso-layout-y-compartidos.md).
 
@@ -1103,7 +1103,7 @@ Mapa de la familia: un **medicamento** pertenece a un **laboratorio**, tiene una
 
 **Definición.** Traslado de stock de un lote de una sucursal a otra de la misma empresa. Término propio de SOFIA (no normativo).
 
-**En SOFIA.** **Solo API (sin pantalla).** La sucursal de origen y el emisor salen del token; el destino debe ser distinto. Pasos: crear (`Iniciada`), **despachar** (el personal del origen; descuenta el stock del origen y pasa a `En_Transito`), **recibir** (el personal del destino; solo entra lo recibido) y **cancelar** (el personal del origen). Una recepción parcial exige indicar el motivo (merma, rotura, faltante) en la pantalla prevista. Estados: ver «Estado de la transferencia». Los textos «Solicitar Transferencia entre Sedes» del POS existen en `pos/es.json`, pero ningún componente del SPA los usa (búsqueda de `transferDialog` sin resultados en `sofia-web-spa/src`).
+**En SOFIA.** **Solo API (sin pantalla).** La sucursal de origen y el emisor salen del token; el destino debe ser distinto. Pasos: crear (`Iniciada`), **despachar** (el personal del origen; descuenta el stock del origen y pasa a `En_Transito`), **recibir** (el personal del destino; solo entra lo recibido) y **cancelar** (el personal del origen). Los textos de la pantalla prevista hablan de indicar el motivo de una recepción parcial (merma, rotura, faltante), pero el backend no lo exige ni lo guarda ([RN-TRA-020](reglas/modulos-solo-api.md)). Estados: ver «Estado de la transferencia». Los textos «Solicitar Transferencia entre Sedes» del POS existen en `pos/es.json`, pero ningún componente del SPA los usa (búsqueda de `transferDialog` sin resultados en `sofia-web-spa/src`).
 
 **Dónde aparece.** Textos del POS: «Solicitar Transferencia entre Sedes», «Sucursal de Origen (Sede Proveedora)» (`I18N/pos/es.json:227-228`). Permisos del módulo «Transferencias» (`I18N/roles/es.json`, `permisos.modulo.Transferencias`). Reglas: [RN-TRA-001](reglas/modulos-solo-api.md) a [RN-TRA-030](reglas/modulos-solo-api.md).
 
@@ -1399,7 +1399,7 @@ Mapa de la familia: el único uso de IA en SOFIA es **leer una receta desde una 
 
 **Definición.** Medida de qué tan seguro está el sistema de que un medicamento detectado es correcto. Término propio de SOFIA (no normativo).
 
-**En SOFIA.** Número entre 0 y 1 calculado así: `confianza = NivelConfianza de la IA × 0,6 + parecido × 0,4`, redondeado a 2 decimales, donde `parecido` vale **0,9** si el nombre se encontró en el catálogo DIGEMID y **1,0** si no (`APP/Recetas/Queries/AnalizarReceta/AnalizarRecetaQueryHandler.cs:55`, `:63`, `:66`). Las sugerencias llevan confianza fija **0,70** (`:121`). La pantalla la rotula «Alta» desde 0,85, «Media» desde 0,65 y «Baja» por debajo (`SPA/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.ts:125-130`). Un medicamento sin coincidencia DIGEMID puntúa **más alto** en el factor de parecido que uno con coincidencia: es una característica del cálculo vigente, no una medida de calidad de la coincidencia.
+**En SOFIA.** Número normalmente entre 0 y 1 (el nivel de confianza que devuelve la IA no se acota: [RN-REC-025](reglas/inventario-y-recetas.md)), calculado así: `confianza = NivelConfianza de la IA × 0,6 + parecido × 0,4`, redondeado a 2 decimales, donde `parecido` vale **0,9** si el nombre se encontró en el catálogo DIGEMID y **1,0** si no (`APP/Recetas/Queries/AnalizarReceta/AnalizarRecetaQueryHandler.cs:55`, `:63`, `:66`). Las sugerencias llevan confianza fija **0,70** (`:121`). La pantalla la rotula «Alta» desde 0,85, «Media» desde 0,65 y «Baja» por debajo (`SPA/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.ts:125-130`). Un medicamento sin coincidencia DIGEMID puntúa **más alto** en el factor de parecido que uno con coincidencia: es una característica del cálculo vigente, no una medida de calidad de la coincidencia.
 
 **Dónde aparece.** Lector de Recetas IA: «Confianza», «Alta», «Media», «Baja» (`I18N/recetas-medicas/es.json:66`, `:77-79`). Reglas: [RN-REC-025](reglas/inventario-y-recetas.md).
 
@@ -1691,7 +1691,7 @@ Se hicieron 19 búsquedas web (el máximo permitido era 25) y un intento de abri
 6. **Estado de aceptación del comprobante:** el script deja `Pendiente` por defecto (`DBUP/0001_Initial_Schema.sql:573`) y el código siempre escribe `NoEnviado`.
 7. **Confianza del análisis de receta:** el factor de parecido da 1,0 al medicamento sin coincidencia DIGEMID y 0,9 al que la tiene (`AnalizarRecetaQueryHandler.cs:54`, `:63`), de modo que lo no validado puntúa algo más alto.
 8. **Roles base sembrados (`0002`)** tienen `TenantId` nulo y sin permisos: ningún rol «Cajero», «Farmaceutico», etc. es visible para una empresa.
-9. **«En curso (sin commitear)»:** ninguno. `git status --short` está vacío en ambos repositorios (`6f6b837` y `558ad35`).
+9. **«En curso (sin commitear)»:** ninguno. `git status --short` está vacío en ambos repositorios (`sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`).
 
 ## 11. Tabla de cobertura
 
@@ -1830,7 +1830,7 @@ Doce de doce enums de `enums.csv` cubiertos, más `EstadoEmpresa`.
 
 Términos de la lista: 108 filas, todas con entrada; uno solo («Colegiatura») no se usa en SOFIA.
 
-### 11.3 Opciones del menú lateral (`SPA/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:3-185`)
+### 11.3 Opciones del menú lateral (`SPA/matdash/layouts/full/vertical/sidebar/sidebar-data.ts:3-190`)
 
 | Grupo | Opción (`es.json`) | Entrada |
 |---|---|---|
@@ -1854,13 +1854,14 @@ Términos de la lista: 108 filas, todas con entrada; uno solo («Colegiatura») 
 | Inventario | Stock por Sucursal | [Stock por sucursal](#stock-por-sucursal) |
 | Punto de Venta | Sesiones de Caja | [Sesión de caja](#sesión-de-caja) |
 | Punto de Venta | Ventas | [Venta](#venta) |
+| Punto de Venta | Devoluciones (desde `37048ea`) | [Devolución](#devolución) |
 | Pacientes & Atención | Pacientes | [Paciente](#paciente) |
 | Pacientes & Atención | Profesionales de Salud | [Profesional de salud](#profesional-de-salud) |
 | Pacientes & Atención | Recetas Médicas | [Receta médica](#receta-médica) |
 | DIGEMID | Catálogo DIGEMID | [Catálogo DIGEMID](#catálogo-digemid) |
 | SUNAT | Series Fiscales | [Serie (prefijo)](#serie-prefijo) |
 
-25 de 25 opciones cubiertas.
+26 de 26 opciones cubiertas.
 
 ### 11.4 Resumen de cobertura
 
@@ -1868,7 +1869,7 @@ Términos de la lista: 108 filas, todas con entrada; uno solo («Colegiatura») 
 |---|---|---|
 | Enums de `enums.csv` | 12 | 12 (más `EstadoEmpresa`) |
 | Términos de la lista del encargo | 108 filas | 108 (1 marcado «No se usa en SOFIA») |
-| Opciones del menú lateral | 25 | 25 |
+| Opciones del menú lateral | 26 | 26 |
 | Secciones pedidas | 6 | 6 |
 | Entradas del glosario | 136 | 136 |
 
