@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.4 |
-| **Fecha** | 2026-11-21 |
-| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.3: solo el proceso 5, devoluciones; el resto se verificó por última vez en `6f6b837`) |
+| **Versión del documento** | 1.5 |
+| **Fecha** | 2026-11-22 |
+| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` (v1.5: revisión a fondo de todos los procesos contra el código; v1.3: proceso 5, devoluciones) |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Lectura de código y de los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y del manual de usuario (capítulos 1 a 3). Verificaciones puntuales en el código (marcadas con `archivo:línea`). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
+| **Método** | Lectura de código y de los documentos de reglas, técnicos, de desarrollo y de pantallas ya validados y del manual de usuario (capítulos 1 a 3). Verificaciones puntuales en el código (marcadas con `archivo:línea`). En la v1.5 se contrastó cada proceso con los handlers, validadores y entidades del backend (condiciones, orden de validaciones, cálculos, estados, efectos en stock, caja y comprobantes y códigos HTTP). No se ejecutó la aplicación ni se llamó a la API. `git status --short` estaba vacío en ambos repositorios al empezar: no hay afirmaciones «En curso (sin commitear)». |
 
 ## 1. Cómo leer este documento
 
@@ -116,7 +116,7 @@ sequenceDiagram
 | 2 | Visitante | Pulsa **Registrar Empresa** (el botón dice «Procesando...») | `POST /api/v1/Empresas/registrar`, anónimo, política `SignUpPolicy` | RN-GEN-015, RN-GEN-027, RN-GEN-010 | La petición llega al servidor |
 | 3 | API | Valida el request (nombre ≤ 200, RUC exacto de 11 dígitos, usuario 4 a 50, contraseña ≥ 8, dirección obligatoria ≤ 255, correo válido ≤ 254) | idem | RN-EMP-002 a RN-EMP-010, RN-AUT-026 | Un fallo devuelve 400 con código `RegistrarEmpresaCommand.<Propiedad>` |
 | 4 | API | Comprueba que el RUC y el usuario no existan | idem | RN-EMP-005, RN-CTA-007 | Si existen: 409 |
-| 5 | API | Crea en una sola transacción: empresa en `TrialActivo` con 30 días de prueba, sede principal «Sede Principal» (licencia vacía), empleado administrador con su correo, cuenta (no obligada a cambiar la clave) y rol `Admin` asignado | idem | RN-EMP-010, RN-EMP-011, RN-EMP-012, RN-GEN-012 | Todo o nada |
+| 5 | API | Crea en una sola transacción: empresa en `TrialActivo` con 30 días de prueba, sede principal «Sede Principal» (licencia vacía; la API admite además nombre de sede y licencia opcionales, que el SPA no envía: `RegistrarEmpresaCommandHandler.cs`), empleado administrador con su correo, cuenta (no obligada a cambiar la clave) y rol `Admin` asignado | idem | RN-EMP-010, RN-EMP-011, RN-EMP-012, RN-GEN-012 | Todo o nada |
 | 6 | API | Emite token de acceso y cookie `refresh_token` (7 días, `HttpOnly`) | idem | RN-EMP-013, RN-AUT-010 a RN-AUT-012 | Sesión iniciada; la API responde 201 (`EmpresasController.cs:36`) |
 | 7 | SPA | Muestra el aviso «Empresa registrada correctamente. ¡Bienvenido!» y navega a `/dashboard` | — | — | El administrador ve el Inicio con saludo «Hola, {nombre}» |
 
@@ -205,9 +205,9 @@ sequenceDiagram
 | 3 | Administrador | `/sucursales/nueva`: Nombre, Nº de Licencia, Dirección Física y Gerente (opcional); **Guardar** (también existe **Carga Masiva** en `/sucursales/carga-masiva`) | `POST /api/v1/Sucursales`, `Sucursales:Crear` | RN-SUC-002 a RN-SUC-007, RN-SUC-012 | Sucursal creada en la empresa del token |
 | 4 | Administrador | `/series-fiscales/nueva`, «Series Fiscales»: elige Sucursal, Tipo de Comprobante «Boleta», Prefijo de Serie (`B…`), Correlativo Actual (0), Estado «Activa»; **Guardar**. Repite con «Nota de Crédito» (prefijo `B…` o `F…`) para cada sucursal | `POST /api/v1/SeriesFiscales`, `SeriesFiscales:Crear` | RN-SER-003 a RN-SER-008 | Serie creada (auditoría `SERIE_CREAR`) |
 | 5 | Administrador | `/empleados/nueva`, «Empleados»: Nombres, Apellido Paterno, Apellido Materno, **Sucursal Base**, Licencia Profesional, Correo electrónico; **Guardar** | `POST /api/v1/Empleados`, `Empleados:Crear` | RN-EPL-002 a RN-EPL-010 | Empleado creado; aviso «Empleado guardado correctamente» |
-| 6 | Administrador | `/roles/nueva`, «Roles & Permisos»: Nombre del Rol, Nivel de Jerarquía (1 o más), Descripción; **Guardar** | `POST /api/v1/Roles`, `Seguridad:Crear` | RN-ROL-002 a RN-ROL-006 | Rol creado (auditoría `ROL_CREAR`); el nombre ya no se puede cambiar |
+| 6 | Administrador | `/roles/nueva`, «Roles & Permisos»: Nombre del Rol, Nivel de Jerarquía (el SPA exige 1 o más; la API acepta 0 o más), Descripción; **Guardar** | `POST /api/v1/Roles`, `Seguridad:Crear` | RN-ROL-002 a RN-ROL-006 | Rol creado (auditoría `ROL_CREAR`); el nombre ya no se puede cambiar |
 | 7 | Administrador | Abrir el rol, **Editar**, pestaña **Permisos** (27 módulos, 105 permisos): marcar casillas; pestaña **Sucursales**: marcar sucursales; **Guardar** | `PUT /api/v1/Roles/{id}` (`Seguridad:Actualizar`), `POST /api/v1/Roles/permissions` y `DELETE /api/v1/Roles/permissions/{permisoId}` (`Seguridad:GestionarPermisos`), `PUT /api/v1/Roles/{id}/sucursales` (`Seguridad:GestionarPermisos`); llamadas en `sofia-web-spa/src/app/pages/roles/roles-detail/roles-detail.component.ts:248-249` y `:299` | RN-ROL-010 a RN-ROL-017, RN-GEN-022 | Permisos y sucursales del rol guardados; los usuarios conectados ven el cambio al recargar |
-| 8 | Administrador | `/cuentas/nueva`, «Cuentas de Usuario»: elige Empleado, escribe Nombre de Usuario y Contraseña (8 a 128); **Guardar** | `POST /api/v1/Cuentas`, `Seguridad:Crear` | RN-CTA-002 a RN-CTA-008 | Cuenta activa, con 0 intentos y **obligada a cambiar la clave**; abre la ficha |
+| 8 | Administrador | `/cuentas/nueva`, «Cuentas de Usuario»: elige Empleado, escribe Nombre de Usuario y Contraseña (el SPA pide de 8 a 128; la API exige al menos 8, sin máximo; usuario hasta 50); **Guardar** | `POST /api/v1/Cuentas`, `Seguridad:Crear` | RN-CTA-002 a RN-CTA-008 | Cuenta activa, con 0 intentos y **obligada a cambiar la clave**; abre la ficha |
 | 9 | Administrador | En la ficha: **Editar**, tarjeta «Roles Asignados», «Agregar rol...», elegir el rol, **Guardar** | `POST /api/v1/Cuentas/{id}/roles/{rolId}` (y `DELETE` para quitar), `Seguridad:AsignarRoles`; llamada en `sofia-web-spa/src/app/pages/seguridad/services/cuenta.service.ts:51` | RN-CTA-014 a RN-CTA-018 | Rol asignado; el sello de seguridad cambia |
 | 10 | Administrador | Tarjeta «Sucursales Asignadas», «Agregar sucursal...» (opcional; se aplica al instante) | `POST /api/v1/Cuentas/{id}/sucursales/{sucursalId}`, `Seguridad:Actualizar` | RN-CTA-019, RN-GEN-023 | Sucursal adicional asignada; aviso «Sucursal asignada correctamente» |
 | 11 | Empleado | `/auth/login`, «Iniciar sesión»: Usuario y Contraseña inicial; **Ingresar** | `POST /api/v1/Auth/login`, anónimo, `AuthPolicy` | RN-AUT-001 a RN-AUT-011, RN-GEN-019 | Entra a `/cambiar-clave` (modo obligatorio) |
@@ -459,7 +459,7 @@ sequenceDiagram
 
 | Carrito | Receta registrada elegida | Empresa con «exigir registro de receta» | Qué ocurre |
 |---|---|---|---|
-| Solo venta libre (OTC) | cualquiera | cualquiera | Se vende sin receta (RN-VEN-029) |
+| Solo venta libre (OTC) | ninguna, o una receta del cliente (si se envía una, el servidor exige que exista y sea del cliente de la venta: `Venta.Receta.NoEncontrada` / `Venta.Receta.OtroPaciente`) | cualquiera | Se vende sin receta (RN-VEN-029) |
 | Receta simple | Ninguna | Encendida | Se bloquea «Procesar Venta»: «Hay productos que requieren una receta registrada: selecciona al cliente y su receta antes de cobrar.» |
 | Receta simple | Ninguna | Apagada (valor al registrar la empresa) | Aparece la casilla **Receta verificada** («Confirmas que revisaste la receta física del cliente. Quedará registrado a tu nombre.»); sin marcarla no se puede cobrar. Se guarda quién y cuándo, no el número de la receta de papel (RN-VEN-035) |
 | Receta retenida o estupefaciente | Ninguna | cualquiera | Bloqueado: «Hay productos de receta retenida o estupefacientes: selecciona al cliente y una receta registrada que tenga número de receta.» |
@@ -683,7 +683,7 @@ flowchart TD
 | Anular una venta con devoluciones (`Venta.Anular.ConDevoluciones`) | RN-VEN-066 | «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» (el texto remite a «Devoluciones», que no es pantalla: se devuelve desde el mismo detalle) | No anular; devolver lo que falte |
 | Anular una venta cobrada sin caja propia abierta (`Venta.Anular.SinSesionAbierta`) | RN-VEN-067 | «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» | Abrir la caja |
 | Motivo vacío | RN-VEN-063 | «El motivo es obligatorio.» (en el diálogo) | Escribirlo |
-| Motivo de solo espacios, venta de otra sucursal o ya anulada (`Venta.Anular`) | RN-VEN-062, RN-VEN-063, RN-VEN-065 | «Error al anular la venta.» | Revisar el motivo y la sucursal |
+| Motivo de solo espacios (`AnularVentaCommand.Motivo`, 400, lo rechaza el validador), venta inexistente, de otra sucursal o ya anulada (`Venta.Anular`) | RN-VEN-062, RN-VEN-063, RN-VEN-065 | «Error al anular la venta.» | Revisar el motivo y la sucursal |
 | Anulación simultánea con otra operación | RN-VEN-057, RN-VEN-068 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Recargar y repetir |
 
 ### 7.6 Postcondiciones
@@ -831,7 +831,7 @@ No existe tolerancia: una diferencia de un centavo ya deja la sesión `Cerrada` 
 | La sesión ya está `Cerrada` o `Cuadrada` | RN-CAJ-010 | Genérico: «Error al cerrar la sesión» | No hay reapertura |
 | Efectivo esperado negativo | RN-CAJ-016 | Genérico: «Error al cerrar la sesión» | Revisar devoluciones y anulaciones; sin solución en pantalla |
 | Dos cierres simultáneos (`Concurrency.Conflict`) | RN-CAJ-010 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Recargar |
-| La sesión no existe o es de una sucursal sin acceso | RN-CAJ-008, RN-CAJ-020 | Detalle: «Error al cargar la sesión de caja»; cierre: «Error al cerrar la sesión» | — |
+| La sesión no existe (el cierre responde 404 `Caja` y no comprueba el acceso a la sucursal: solo titular o `Admin`) o, en el detalle, es de una sucursal sin acceso | RN-CAJ-008, RN-CAJ-020 | Detalle: «Error al cargar la sesión de caja»; cierre: «Error al cerrar la sesión» | — |
 | Falta `POS:Leer` | RN-CAJ-001 | El terminal de venta trata la falla como «sin caja» y muestra «Debes aperturar la caja del turno antes de procesar una venta.» sin ningún aviso de error; al intentar abrir, «Ya tienes una caja abierta. Ciérrala antes de abrir otra.» (`producto/pantallas/punto-de-venta` §3.1) | Dar `POS:Leer` al rol |
 
 ### 8.7 Postcondiciones
@@ -901,7 +901,7 @@ sequenceDiagram
 |---|---|---|---|---|---|
 | 1 | Cajero | Opción A: `/recetas-medicas` › **Escanear receta** › `/recetas-medicas/escanear` («Lector de Recetas IA»). Opción B: terminal `/pos/nueva`, pestaña «Receta» (solo con `Recetas:Analizar`). **Tomar foto** o **Galería**, o arrastrar la imagen | — | RN-REC-018, RN-REC-019 | Vista previa de la imagen |
 | 2 | Cajero | **Interpretar receta** | `POST /api/v1/Recetas/analizar`, `Recetas:Analizar`, política `AiPolicy` | RN-REC-018 a RN-REC-022 | Anillo «Interpretando...» |
-| 3 | API | OCR, anonimización, interpretación, validación contra DIGEMID (hasta 5 candidatos por parecido), coincidencia con el catálogo de la empresa, stock de lotes **no vencidos** de la sucursal del token y equivalentes por formulación clínica | idem | RN-REC-021 a RN-REC-028 | Hasta 20 medicamentos y 3 sugerencias por medicamento; confianza = nivel × 0,6 + parecido × 0,4 (RN-REC-025) |
+| 3 | API | OCR, anonimización, interpretación, validación contra DIGEMID (hasta 5 candidatos por parecido), coincidencia con el catálogo de la empresa, stock de lotes **no vencidos** de la sucursal del token y equivalentes por formulación clínica | idem | RN-REC-021 a RN-REC-028 | Hasta 20 medicamentos y 3 sugerencias por medicamento; confianza = nivel × 0,6 + parecido × 0,4, donde «parecido» no se mide: vale fijo 0,9 si hubo coincidencia DIGEMID y 1,0 si no (RN-REC-025; `AnalizarRecetaQueryHandler.cs`) |
 | 4A | Cajero | En el lector: «Medicamentos de la receta (N)» con insignias «DIGEMID», «Cantidad sugerida: N», «Confianza: Alta/Media/Baja», «En stock: N unidades» o «Sin stock», «Equivalentes terapéuticos:» y «Sugerencias IA (N)» | — | RN-REC-025 a RN-REC-028 | Solo consulta |
 | 4B | Cajero | En el terminal: botón `+` de cada medicamento con stock | `GET /api/v1/Ventas/lotes-disponibles?productoNombre=…`, `Ventas:Crear` | RN-VEN-075 | Agrega al carrito el **primer lote** vendible (el que vence antes), sin presentación y al precio de catálogo, con la cantidad sugerida acotada a la existencia; los equivalentes no se muestran en el terminal |
 | 5 | Cajero | Para que la receta cuente en la venta: `/recetas-medicas/nueva` (también el enlace «Registrar receta» del terminal): Paciente, Médico, fecha de expedición, repeticiones máximas, indicaciones y número de receta; **Guardar** | `POST /api/v1/Recetas`, `Recetas:Crear` | RN-REC-002 a RN-REC-010 | Receta registrada; el número es obligatorio para vender receta retenida o estupefacientes (RN-VEN-032) |
@@ -1305,9 +1305,9 @@ stateDiagram-v2
 | # | Qué | Motivo |
 |---|---|---|
 | 1 | Todo el documento se construyó leyendo código y documentos validados: **no se ejecutó la aplicación ni se llamó a la API**. Solo los procesos 1 y 2 tienen respaldo de recorridos reales hechos en la aplicación (manual de usuario, capítulos 1 a 3). Los procesos 3 a 8 se apoyan en el inventario de pantallas (`producto/pantallas/catalogos-basicos` a `producto/pantallas/punto-de-venta`) y en el catálogo de reglas; todavía no hay capítulos del manual para ventas, caja, devoluciones ni dashboard | Alcance de la tarea |
-| 2 | Sintaxis de los 26 diagramas Mermaid: se revisó con un script de lectura (comillas pares, sin paréntesis sin comillas en nodos, sin punto y coma en secuencias) pero **no se renderizaron** | No se puede usar el navegador ni instalar herramientas |
+| 2 | Sintaxis de los 28 diagramas Mermaid: se revisó con un script de lectura (comillas pares, sin paréntesis sin comillas en nodos, sin punto y coma en secuencias) pero **no se renderizaron** | No se puede usar el navegador ni instalar herramientas |
 | 3 | Que la API no guarde la imagen de la receta escaneada en ningún almacén fuera de las tablas (RN-REC-029 solo afirma que no se escribe en tablas) | No se auditó la infraestructura de archivos |
-| 4 | Que el procesador de la bandeja de salida (`OutboxProcessor`) no ejecute efectos de negocio: RN-VEN-060 dice que ningún manejador consume `VentaCompletadaEvent` | No se abrió el procesador |
+| 4 | (Resuelto en v1.5) `OutboxProcessor` solo publica cada evento con `IPublisher`; no existe ningún `INotificationHandler` en `sofia-apis/src`, así que `VentaCompletadaEvent` no tiene efecto | Confirmado por lectura de `OutboxProcessor.cs` y búsqueda |
 | 5 | Si la base redondea o trunca los importes con más de 2 decimales y si el total guardado puede diferir de la suma de líneas (RN-VEN-020) | Requiere ejecutar la API |
 | 6 | Comportamiento de «Guardar» en el ingreso de stock sin lote elegido (excepción de JavaScript según la lectura, `producto/pantallas/inventario-y-atencion` §2.2) | No se ejecutó |
 | 7 | Si el guardado de una cita en `Servicios_Agenda` falla por columnas que el script no crea (RN-SRV-019) | En la base de desarrollo no falló (`tecnico/api/inventario-recetas-y-operaciones` §7); por qué funciona allí y qué pasa en una base creada solo con los scripts: No verificado |
@@ -1316,7 +1316,7 @@ stateDiagram-v2
 
 ### 12.3 En curso (sin commitear)
 
-Ninguno. `git status --short` está vacío en `sofia-apis` (`6f6b837`) y en `sofia-web-spa` (`558ad35`).
+Ninguno. `git status --short` está vacío en `sofia-apis` (`0678e40`) y en `sofia-web-spa` (`37048ea`).
 
 ---
 
