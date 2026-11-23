@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-21 |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-22 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Lectura de documentos validados y comprobación en el código (mensajes, códigos de error, rutas y permisos por script sobre todos los casos; resultados esperados de prioridad Alta contrastados con el código en lo que toca a devoluciones y a la API de devoluciones); casos no ejecutados |
+| **Método** | Lectura de documentos validados y comprobación en el código (mensajes, códigos de error, rutas y permisos por script sobre todos los casos; resultados esperados contrastados con el código (handlers, validadores, entidades, controladores, `es.json` y componentes del SPA) en las versiones 1.3 y 1.4: ventas, caja, devoluciones, dashboard y módulos solo API; los casos TC-VEN-209 en adelante y TC-DEV-055 a 079 solo se confirmaron rápido); casos no ejecutados |
 
 ## 1. Convenciones
 
@@ -22,7 +22,7 @@ Este documento reúne los casos de prueba funcionales de la parte C: terminal de
 - **Esquema del escenario:** un caso con la tabla de ejemplos completa (datos y resultados); no hay un caso por fila.
 - **Hallazgo:** cuando la fuente documenta un comportamiento raro (algo que el sistema no valida, un mensaje genérico), el resultado esperado es el comportamiento **actual** y el caso lo marca «Hallazgo: …» con la referencia del documento fuente. No se inventa el comportamiento deseado.
 - **No verificado:** lo que ningún documento ni el código respalda se marca «No verificado: motivo».
-- **Casos «Solo API»:** llevan la petición (método, ruta, cuerpo) y la respuesta esperada (HTTP y `code`). El token se escribe `<token>`. Los campos del cuerpo están en camelCase (por ejemplo `loteId`, `pagos[].montoPagado`, los de `CreateVentaCommand` en `sofia-apis/src/SOFIA.Application/Ventas/Commands/CreateVenta/CreateVentaCommand.cs:12-31`); el formato exacto con que se serializan los valores de los enums (texto o número) es **No verificado**, por lo que los cuerpos de ejemplo usan el nombre del enum.
+- **Casos «Solo API»:** llevan la petición (método, ruta, cuerpo) y la respuesta esperada (HTTP y `code`). El token se escribe `<token>`. Los campos del cuerpo están en camelCase (por ejemplo `loteId`, `pagos[].montoPagado`, los de `CreateVentaCommand` en `sofia-apis/src/SOFIA.Application/Ventas/Commands/CreateVenta/CreateVentaCommand.cs:12-31`); el API no registra ningún `JsonStringEnumConverter` (búsqueda en `sofia-apis/src`, sin resultados), así que los enums viajan como número (el SPA los envía así: `sofia-web-spa/src/app/pages/pos/models/venta.model.ts:8-13`) y los cuerpos de ejemplo usan el nombre del enum solo por legibilidad: con `curl` envía el número (`MetodoPago`: Efectivo 0, YapePlin 1, Tarjeta 2, Transferencia 3; `EstadoVenta`: Completada 0, Anulada 1, Devuelta 2, Pendiente 3; `DestinoDevolucion`: Reingreso_Venta 0, Cuarentena_DIGEMID 1). Una operación correcta responde HTTP 200 con el cuerpo (`POST /api/v1/ventas` también: `ToActionResult` no usa el 201 del `Result`) y las que no devuelven valor, HTTP 204 (`sofia-apis/src/SOFIA.API/Extensions/ResultExtensions.cs:7-11`).
 - **Identificadores entre corchetes:** `[HU-…]`, `[CU-…]` y `[RN-…]` se escriben entre corchetes y se resuelven con la tabla siguiente (no cada uno lleva su propio enlace, para no repetir cientos de definiciones).
 
 | Identificador | Documento |
@@ -234,7 +234,7 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 |---|---|---|
 | Positivo | Media | [HU-VEN-002] «Ver los productos más vendidos al entrar»; [CU-VEN-02] flujo básico; [RN-VEN-075] |
 
-**Precondiciones:** caja abierta; ventas de los últimos 30 días de al menos dos productos.
+**Precondiciones:** caja abierta; ventas «Completada» de los últimos 30 días, en «Sede Principal», de al menos dos productos (el ranking no cuenta las ventas anuladas, devueltas del todo ni en espera).
 **Pasos:** abre `/pos/nueva` sin escribir ni elegir chips.
 **Resultado esperado:** hasta 12 tarjetas, con los más vendidos de los últimos 30 días primero; cada tarjeta muestra el nombre comercial, «{laboratorio} · {código nacional}», el precio «S/ 0.50 c/u» y una insignia de stock.
 
@@ -245,7 +245,7 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 | Positivo | Media | [HU-VEN-002] «Buscar por nombre comercial»; [CU-VEN-02] flujo básico; [RN-VEN-075] |
 
 **Pasos:** escribe «paracetamol» en «Buscar producto...» y deja de teclear.
-**Resultado esperado:** unos 300 milisegundos después la lista se filtra por nombre comercial y solo muestra productos con stock vendible en «Sede Principal» (el producto con stock solo en «Sucursal Demo Norte» no aparece).
+**Resultado esperado:** unos 300 milisegundos después la lista se filtra por nombre comercial. La lista incluye todos los medicamentos que coinciden, tengan stock o no: la insignia cuenta solo el stock vendible de «Sede Principal», así que el producto con stock solo en «Sucursal Demo Norte» aparece con la insignia «Agotado» y su tarjeta deshabilitada (no se puede elegir).
 
 #### TC-VEN-012 — Filtrar por condición de venta
 
@@ -409,7 +409,7 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 
 **Precondiciones:** lote de un producto con precio 0 y stock 30.
 **Pasos:** escribe Cantidad 31 y haz clic en «Agregar»; corrige a 30 y agrega; corrige a 0 y agrega.
-**Resultado esperado:** primero «Stock máximo disponible alcanzado (30 un.).»; luego el aviso de precio («Este producto no tiene precio de venta configurado en el catálogo. Pide a un administrador que lo registre.»); por último «Ingresa una cantidad válida para agregar el producto.».
+**Resultado esperado:** primero «Stock máximo disponible alcanzado (30 un.).»; luego el aviso de precio («Este producto no tiene precio de venta configurado en el catálogo. Pide a un administrador que lo registre.»); con Cantidad 0 y este lote sigue saliendo el aviso de precio, porque se evalúa antes que el de cantidad. «Ingresa una cantidad válida para agregar el producto.» solo sale con un lote que tenga precio (`TC-VEN-026`). Orden en el código: stock, precio, cantidad.
 
 #### TC-VEN-028 — Repetir el mismo lote suma a la línea existente
 
@@ -507,7 +507,7 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 
 **Precondiciones:** un lote de Paracetamol con 35 unidades.
 **Pasos:** elige la presentación «Caja x10» y escribe Cantidad 4.
-**Resultado esperado:** el campo Cantidad no admite más de 3 cajas.
+**Resultado esperado:** el máximo del campo Cantidad es 3 cajas (atributo `max` = existencia dividida entre las unidades de la presentación, redondeada hacia abajo), así que las flechas del campo no suben de 3. El campo no impide teclear un valor mayor: si escribes 4 y haces clic en «Agregar», el terminal lo rechaza con «Stock máximo disponible alcanzado (35 un.).» (40 unidades base contra 35) y no agrega la línea.
 
 #### TC-VEN-038 — Los botones del carrito avanzan de a una presentación
 
@@ -534,8 +534,8 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 |---|---|---|
 | Negativo | Alta | [HU-VEN-004] «La presentación debe ser del mismo producto»; [CU-VEN-04] excepción, paso 5 (`Venta.Presentacion`); [RN-VEN-018] |
 
-**Pasos:** `POST /api/v1/ventas` (token de `carlos.cajero`, caja `S1`) con `detalles:[{"loteId":"<LOT-QA-A01>","cantidad":1,"presentacionVentaId":"<id de «Caja x10» de Paracetamol>"}]` y un pago en efectivo suficiente.
-**Resultado esperado:** HTTP 400, `code` `Venta.Presentacion`; en el SPA «Ocurrió un error al procesar la venta.». No se crea la venta. Repite con un `presentacionVentaId` inexistente: mismo resultado.
+**Pasos:** `POST /api/v1/ventas` (token de `carlos.cajero`, caja `S1`) con `detalles:[{"loteId":"<LOT-QA-P01>","cantidad":1,"presentacionVentaId":"<id de una presentación de otro producto, por ejemplo la de Amoxicilina>"}]` y un pago en efectivo suficiente. No uses `LOT-QA-A01` sin `recetaId`: en la empresa A (modo estricto) la receta se evalúa antes que la presentación y el rechazo sería `Venta.Receta.Requerida`.
+**Resultado esperado:** HTTP 400, `code` `Venta.Presentacion` (mensaje de la API: «La presentacion seleccionada no corresponde al producto del lote.»); en el SPA «Ocurrió un error al procesar la venta.». No se crea la venta. Repite con un `presentacionVentaId` inexistente: mismo `code` y HTTP 400 («La presentacion de venta {id} no existe.»).
 
 #### TC-VEN-041 — Producto sin presentaciones y fallo al cargarlas
 
@@ -761,7 +761,7 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 
 **Precondiciones:** caja `S1` abierta; otra paciente («Paciente Otra Demo») con una receta propia.
 **Pasos:** `POST /api/v1/ventas` con `clienteId` de Rosa y una línea de `LOT-QA-C01` con: (a) un `recetaId` que no existe; (b) el `recetaId` de la receta de «Paciente Otra Demo»; (c) un `recetaId` válido pero sin `clienteId`.
-**Resultado esperado:** cada intento es rechazado y la venta no se crea. Mensajes en el SPA: (a) «La receta médica seleccionada no existe o fue eliminada.»; (b) y (c) «La receta médica no pertenece al cliente de la venta.». Los códigos HTTP y `code` exactos: **No verificado** en este caso (consulta el [catálogo de errores](../../tecnico/catalogo-de-codigos-de-error.md) para los códigos `Venta.Receta…`).
+**Resultado esperado:** cada intento es rechazado y la venta no se crea. Mensajes en el SPA: (a) «La receta médica seleccionada no existe o fue eliminada.»; (b) y (c) «La receta médica no pertenece al cliente de la venta.». En los tres casos la API responde HTTP 400: (a) `code` `Venta.Receta.NoEncontrada`; (b) y (c) `Venta.Receta.OtroPaciente` (sin `clienteId` la receta también cuenta como de otro paciente) (`VentaDetalleFactory.cs:260,268`).
 
 #### TC-VEN-063 — Falta la receta o su número (servidor)
 
@@ -778,8 +778,10 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 |---|---|---|
 | Positivo | Media | [HU-VEN-008] «Dejar la venta en espera no exige receta»; [CU-VEN-08] alternativo A5; [RN-VEN-037] |
 
-**Pasos:** agrega `LOT-QA-C01`, no elijas receta y haz clic en «Guardar y Atender Siguiente».
-**Resultado esperado:** la venta se guarda en espera sin exigir receta ni número (estado `Pendiente`).
+**Precondiciones:** empresa flexible (`ExigirRegistroReceta` en falso).
+**Pasos:** 1. Agrega `LOT-QA-A01` (Amoxicilina, Receta Simple), no elijas receta ni marques «Receta verificada» y haz clic en «Guardar y Atender Siguiente». 2. Repite con `LOT-QA-C01` (Receta Retenida) sin receta. 3. En la empresa A (modo estricto) repite con `LOT-QA-A01` sin receta.
+**Resultado esperado:** paso 1: la venta se guarda en espera sin pedir la confirmación de receta (estado `Pendiente`, sin quién ni cuándo verificó). Pasos 2 y 3: el servidor rechaza también el guardado en espera, HTTP 400, `code` `Venta.Receta.Requerida` («Uno de los productos requiere receta médica. Selecciona el cliente y una de sus recetas registradas.»): el botón «Guardar y Atender Siguiente» solo exige carrito y caja, pero el servidor aplica la política de receta al guardar; lo único que no pide al guardar es la confirmación «Receta verificada» (`VentaDetalleFactory.cs:154`, `CreateVentaCommandHandler.cs:50`).
+**Hallazgo:** guardar en espera no exime de la receta registrada (producto controlado, o Receta Simple en modo estricto); solo exime de la confirmación de la receta de papel.
 
 ### HU-VEN-009 — Confirmar «Receta verificada» en empresas flexibles
 
@@ -841,7 +843,7 @@ Son 30 casos de prioridad Alta; córrelos en este orden, porque cada bloque deja
 
 **Precondiciones:** empresa en modo flexible (`ExigirRegistroReceta` en falso) pero con el terminal abierto en modo estricto (por ejemplo, porque falló la carga de la configuración, `TC-VEN-009`); caja abierta.
 **Pasos:** 1. Abre el terminal con la configuración bloqueada (modo estricto). 2. Ajusta el estado para que el servidor exija la confirmación (envía por API `POST /api/v1/ventas` con una línea de Amoxicilina, sin `recetaId` y con `"recetaVerificada":false`).
-**Resultado esperado:** HTTP 400; el SPA muestra «Marca "Receta verificada" para confirmar que revisaste la receta del cliente antes de cobrar.», pasa a modo flexible y muestra la casilla. **No verificado:** el `code` exacto y si el SPA reproduce el mensaje sin pasar por la API (`producto/pantallas/punto-de-venta` §3.5).
+**Resultado esperado:** HTTP 400, `code` `Venta.Receta.VerificacionRequerida` (`VentaRecetaVerificacion.cs:18`). Cuando la petición sale del SPA, este muestra «Marca "Receta verificada" para confirmar que revisaste la receta del cliente antes de cobrar.», pasa a modo flexible y muestra la casilla (`nueva-venta.component.ts:1146`). **No verificado en la aplicación:** que el terminal llegue a enviar esa petición; en modo estricto él mismo bloquea «Procesar Venta» con el aviso de receta pendiente, así que el camino real son los borradores antiguos con líneas sin condición de venta (`producto/pantallas/punto-de-venta` §3.5).
 
 #### TC-VEN-071 — Si ninguna línea necesita verificación el valor enviado se ignora
 
@@ -939,7 +941,7 @@ El rechazo, al pasar el máximo, es «La receta médica ya fue dispensada el má
 |---|---|---|
 | Positivo | Media | [HU-VEN-010] «Las líneas de venta libre con receta no cuentan»; [CU-VEN-10] flujo básico; [RN-VEN-033] |
 
-**Pasos:** vende solo `LOT-QA-P01` (venta libre) adjuntando por API `recetaId` de `RX-QA-002`, dos veces.
+**Pasos:** vende solo `LOT-QA-P01` (venta libre) adjuntando por API `recetaId` de `RX-QA-002` y el `clienteId` de Rosa (sin él la receta se rechaza como de otro paciente, `TC-VEN-062`), dos veces.
 **Resultado esperado:** ambas ventas se registran: esas líneas no consumen ni verifican dispensaciones; `RX-QA-002` sigue disponible.
 
 #### TC-VEN-080 — Actualizar una venta en espera no se cuenta contra sí misma
@@ -1089,7 +1091,7 @@ El rechazo, al pasar el máximo, es «La receta médica ya fue dispensada el má
 | Negativo | Alta | [HU-VEN-012] «El vuelto sale del cajón»; [CU-VEN-12] excepción (`VueltoExcedeEfectivo`); [RN-VEN-044] |
 
 **Pasos:** 1. En el SPA, con total S/ 50.00, usa pago dividido: «Tarjeta Débito/Crédito» por 60.00 con número de operación y sin efectivo (o con efectivo menor que el vuelto, ver `TC-VEN-105`). 2. Por API envía los mismos pagos.
-**Resultado esperado:** paso 1: «Procesar Venta» queda deshabilitado. Paso 2: «El vuelto no puede ser mayor que el efectivo recibido. Ajusta los montos de pago.».
+**Resultado esperado:** paso 1: «Procesar Venta» queda deshabilitado. Paso 2: con solo la tarjeta (sin efectivo) la API responde HTTP 400, `code` `Venta.Pagos` («Change can only be given when a cash payment is included.»), que el SPA no traduce («Ocurrió un error al procesar la venta.»); con efectivo menor que el vuelto (`TC-VEN-105`) el `code` es `Venta.Pagos.VueltoExcedeEfectivo` y el SPA muestra «El vuelto no puede ser mayor que el efectivo recibido. Ajusta los montos de pago.». No se crea la venta.
 
 #### TC-VEN-095 — Cada pago debe ser mayor que 0 (API)
 
@@ -1137,7 +1139,7 @@ El rechazo, al pasar el máximo, es «La receta médica ya fue dispensada el má
 | Límite | Media | [HU-VEN-013] «Límite de largo y recorte», «Un número de operación de más de 100 caracteres (el servidor)»; [CU-VEN-13] flujo básico; [RN-VEN-042], [RN-VEN-081] |
 
 **Pasos:** 1. Escribe 101 caracteres en «Nro Operación». 2. Escribe `  OP-QA-0003  ` (con espacios) y cobra; revisa el cuerpo de la petición. 3. Por API envía `referenciaOperacion` de 101 caracteres.
-**Resultado esperado:** paso 1: el campo corta en 100 caracteres. Paso 2: el terminal envía `OP-QA-0003` sin espacios. Paso 3: el servidor rechaza la petición y el SPA mostraría «Ocurrió un error al procesar la venta.» (el `code` exacto es **No verificado**).
+**Resultado esperado:** paso 1: el campo corta en 100 caracteres. Paso 2: el terminal envía `OP-QA-0003` sin espacios. Paso 3: el servidor rechaza la petición con HTTP 400, `code` `CreateVentaCommand.Pagos[0].ReferenciaOperacion` (`CreateVentaCommandValidator.cs:33`), y el SPA mostraría «Ocurrió un error al procesar la venta.».
 
 #### TC-VEN-100 — El efectivo no pide número de operación
 
@@ -1171,7 +1173,7 @@ El rechazo, al pasar el máximo, es «La receta médica ya fue dispensada el má
 | Negativo | Alta | [HU-VEN-013] «El servidor repite la exigencia»; [CU-VEN-13] excepción; [RN-VEN-042] |
 
 **Pasos:** `POST /api/v1/ventas` con `"pagos":[{"metodoPago":"Tarjeta","montoPagado":50.00}]` (sin `referenciaOperacion`).
-**Resultado esperado:** rechazo; el SPA mostraría «Ingresa el número de operación de cada pago que no sea en efectivo.». No se crea la venta. El `code` y el HTTP exactos: **No verificado** en este caso (ver [catálogo de errores](../../tecnico/catalogo-de-codigos-de-error.md)).
+**Resultado esperado:** HTTP 400, `code` `CreateVentaCommand.Pagos.ReferenciaRequerida` (el validador lo rechaza antes del handler); el SPA mostraría «Ingresa el número de operación de cada pago que no sea en efectivo.». No se crea la venta.
 
 #### TC-VEN-103 — El mismo número de operación en dos ventas
 
@@ -1299,7 +1301,7 @@ El rechazo, al pasar el máximo, es «La receta médica ya fue dispensada el má
 
 **Precondiciones:** `LOT-QA-P01` (stock 500) y `LOT-QA-P02` (stock 30).
 **Pasos:** por API, `POST /api/v1/ventas` con dos líneas: 10 unidades de `LOT-QA-P01` y 31 unidades de `LOT-QA-P02`, con pago en efectivo suficiente.
-**Resultado esperado:** HTTP 400, `code` `Venta.Stock`; no se guarda nada de la venta y el stock de `LOT-QA-P01` sigue en 500 (el descuento en memoria se descarta). El único dato que puede cambiar es el correlativo de la serie, dentro de la misma transacción (**No verificado** en ejecución).
+**Resultado esperado:** HTTP 400, `code` `Venta.Stock`; no se guarda nada de la venta y el stock de `LOT-QA-P01` sigue en 500 (el descuento en memoria se descarta porque nunca se llega a guardar). El correlativo de la serie `B001` tampoco cambia: el error de stock ocurre antes de emitir la boleta (`CreateVentaCommandHandler.cs:50,104`); el correlativo solo se consume si falla un paso posterior a la emisión (`VentaComprobanteGenerator.cs:44`).
 
 #### TC-VEN-116 — Quién registra la venta y cuándo
 
@@ -1372,7 +1374,7 @@ El rechazo, al pasar el máximo, es «La receta médica ya fue dispensada el má
 | Negativo | Alta | [HU-VEN-015] «La API acepta dos estados al crear»; [CU-VEN-15] alternativo A3; [RN-VEN-051] |
 
 **Pasos:** `POST /api/v1/ventas` con: (a) `"estado":"Completada"` y un pago suficiente; (b) `"estado":"Pendiente"` y `"pagos":[]`; (c) `"estado":"Pendiente"` con un pago suficiente; (d) `"estado":"Anulada"` con pagos; (e) `"estado":"Devuelta"` con pagos; (f) `"estado":"Completada"` sin pagos.
-**Resultado esperado:** (a) se cobra («Completada»); (b) queda en espera («Pendiente»); (c) se cobra de inmediato como «Completada»; (d) y (e) se rechazan; (f) lo rechaza el validador (`CreateVentaCommand.Pagos`). Los `code` exactos de (d) y (e): **No verificado**.
+**Resultado esperado:** (a) se cobra («Completada»); (b) queda en espera («Pendiente»); (c) se cobra de inmediato como «Completada»; (d) y (e) se rechazan con HTTP 400 y `code` `Venta.Pagos` («Cannot register payments on a cancelled or returned sale.»; el SPA lo muestra como «Ocurrió un error al procesar la venta.»), porque `RegistrarPagos` no admite ventas anuladas ni devueltas (`Venta.cs:221`); (f) lo rechaza el validador (`CreateVentaCommand.Pagos`). En ningún caso se guarda nada.
 
 ### HU-VEN-016 — Cobrar solo con RUC de la empresa y serie de boleta activa
 
@@ -1524,7 +1526,7 @@ El monto exonerado es 0.00 y base más IGV suman exactamente el total. La base e
 
 **Precondiciones:** una venta cobrada con una línea por presentación («1 × Caja x10») y otra venta al cliente eventual.
 **Pasos:** haz clic en «Imprimir Comprobante» y revisa la vista previa; repite con la venta al cliente eventual y haz clic otra vez.
-**Resultado esperado:** se abre el diálogo de impresión del navegador con un ticket de rollo de 80 mm; no se imprime solo, se repite cada vez que haces clic. El ticket muestra la razón social, «RUC:», la dirección de la sucursal, el tipo y número de la boleta y la fecha «dd/MM/yyyy HH:mm»; la tabla «Producto / Lote», «Cant.», «P. Unit.» y «Subtotal»; «Datos del Cliente:», «Documento:», «Subtotal (Op. Gravada):», «IGV (18%):» y «TOTAL A PAGAR:»; una fila por pago y «Vuelto:» solo si es mayor que 0; «Estado SUNAT:» y «Cajero:». La línea por presentación dice «1 × Caja (10)» con el precio por presentación. Con cliente eventual el ticket no imprime «Documento:».
+**Resultado esperado:** se abre el diálogo de impresión del navegador con un ticket de rollo de 80 mm; no se imprime solo, se repite cada vez que haces clic. El ticket muestra la razón social, «RUC:», la dirección de la sucursal, el tipo y número de la boleta y la fecha «dd/MM/yyyy HH:mm»; la tabla «Producto / Lote», «Cant.», «P. Unit.» y «Subtotal»; «Datos del Cliente:», «Documento:», «Subtotal (Op. Gravada):», «IGV (18%):» y «TOTAL A PAGAR:»; una fila por pago y «Vuelto:» solo si es mayor que 0; «Estado SUNAT:» y «Cajero:». La línea por presentación dice «1 × Caja x10 (10)» (cantidad en presentaciones, «×», descripción de la presentación y entre paréntesis las unidades base) con el precio por presentación. Con cliente eventual el ticket no imprime «Documento:».
 **Hallazgo:** el ticket no incluye QR, hash ni leyenda legal (`producto/pantallas/punto-de-venta` §5.2); la columna del importe se rotula «Subtotal».
 
 #### TC-VEN-138 — Reimprimir desde el detalle de la venta
@@ -1584,7 +1586,7 @@ El monto exonerado es 0.00 y base más IGV suman exactamente el total. La base e
 | Límite | Alta | [HU-VEN-019] «El monto cubierto está fuera de rango»; [CU-VEN-19] excepción; [RN-VEN-047] |
 
 **Pasos:** `POST /api/v1/ventas` por S/ 100.00 con aseguradora válida y `montoCubiertoSeguro` -1; luego 100.01; luego 100.00; luego 0.
-**Resultado esperado:** -1 y 100.01 se rechazan y el SPA mostraría «El monto cubierto por el seguro debe estar entre 0 y el total de la venta.»; 100.00 y 0 se aceptan (con 100.00 el monto a pagar es S/ 0.00; la aceptación del pago en 0 es **No verificado**).
+**Resultado esperado:** -1 y 100.01 se rechazan y el SPA mostraría «El monto cubierto por el seguro debe estar entre 0 y el total de la venta.»; 100.00 y 0 se aceptan (con 100.00 el monto a pagar es S/ 0.00, pero el validador sigue exigiendo al menos un pago mayor que 0: envía por ejemplo S/ 5.00 en efectivo, que se devuelve entero como vuelto; con `"pagos":[]` la petición se rechaza con `CreateVentaCommand.Pagos`).
 
 #### TC-VEN-144 — Monto cubierto sin aseguradora y aseguradora inexistente
 
@@ -1641,8 +1643,8 @@ El monto exonerado es 0.00 y base más IGV suman exactamente el total. La base e
 |---|---|---|
 | Positivo | Media | [HU-VEN-020] «No se pide receta, pagos ni número de operación»; [CU-VEN-20] flujo básico |
 
-**Pasos:** 1. Con `LOT-QA-C01` en el carrito, sin receta ni pagos, haz clic en «Guardar y Atender Siguiente». 2. Con el carrito vacío mira el botón.
-**Resultado esperado:** paso 1: la venta se guarda. Paso 2: el botón se deshabilita solo con el carrito vacío, sin caja o mientras se procesa.
+**Pasos:** 1. Con `LOT-QA-P01` (venta libre) en el carrito, sin receta ni pagos ni número de operación, haz clic en «Guardar y Atender Siguiente». 2. Con el carrito vacío mira el botón.
+**Resultado esperado:** paso 1: la venta se guarda. (Con un producto de receta el guardado sí exige la receta registrada: ver `TC-VEN-064`.) Paso 2: el botón se deshabilita solo con el carrito vacío, sin caja o mientras se procesa.
 
 #### TC-VEN-150 — Sin caja abierta no se puede dejar en espera
 
@@ -1692,7 +1694,7 @@ El monto exonerado es 0.00 y base más IGV suman exactamente el total. La base e
 
 **Precondiciones:** venta en espera con cliente «Rosa Quispe Demo» y una línea que usa una receta; Carlos con `Ventas:Crear` y `Ventas:Actualizar`.
 **Pasos:** abre el detalle de la venta «Pendiente» y haz clic en «Cobrar Venta».
-**Resultado esperado:** el terminal carga las líneas, el cliente y la receta de la primera línea que tenga una; aviso «Estás retomando una venta en espera: puedes agregar, quitar o modificar productos antes de cobrar.»; las líneas cargadas conservan el precio guardado y las nuevas usan el del catálogo.
+**Resultado esperado:** el terminal carga las líneas, el cliente y la receta de la primera línea que tenga una; aviso «Estás retomando una venta en espera: puedes agregar, quitar o modificar productos antes de cobrar.»; las líneas cargadas muestran el precio guardado y las nuevas el del catálogo (solo en pantalla: al cobrar el SPA reenvía todas las líneas y el servidor vuelve a tomar el precio del catálogo de cada una).
 
 #### TC-VEN-155 — La existencia incluye lo que la venta ya reservó
 
@@ -1730,8 +1732,8 @@ El monto exonerado es 0.00 y base más IGV suman exactamente el total. La base e
 | Positivo | Alta | [HU-VEN-021] «Guardar los cambios»; [CU-VEN-21] flujo básico; [RN-VEN-054], [RN-VEN-055] |
 
 **Precondiciones:** venta en espera con 100 unidades de `LOT-QA-P01` (stock actual 400).
-**Pasos:** retómala, quita esa línea, agrega 50 unidades de `LOT-QA-A01` y haz clic en «Actualizar Venta en Espera».
-**Resultado esperado:** «Venta guardada en espera. Retómala desde Ventas cuando el cliente vuelva.»; el terminal se limpia y navega a `/pos/nueva` sin `continuar`; el stock de `LOT-QA-P01` vuelve a 500 y el de `LOT-QA-A01` baja en 50; el total se recalcula; no se pidió caja abierta ni cambió la caja de la venta.
+**Pasos:** retómala, quita esa línea, agrega 20 unidades de `LOT-QA-P02` (venta libre, stock 30) y haz clic en «Actualizar Venta en Espera».
+**Resultado esperado:** «Venta guardada en espera. Retómala desde Ventas cuando el cliente vuelva.»; el terminal se limpia y navega a `/pos/nueva` sin `continuar`; el stock de `LOT-QA-P01` vuelve a 500 y el de `LOT-QA-P02` baja en 20; el total se recalcula; no se pidió caja abierta ni cambió la caja de la venta.
 
 #### TC-VEN-159 — Las líneas nuevas se validan como al crear
 
@@ -1739,7 +1741,7 @@ El monto exonerado es 0.00 y base más IGV suman exactamente el total. La base e
 |---|---|---|
 | Negativo | Alta | [HU-VEN-021] «Las líneas se validan como al crear»; [CU-VEN-21] flujo básico; [RN-VEN-054] |
 
-**Pasos:** por API, `PUT /api/v1/ventas/{id}/detalles` con una línea de `LOT-QA-P03` (vencido) y otra con `recetaId` de otro paciente.
+**Pasos:** por API, `PUT /api/v1/ventas/{id}/detalles` en dos peticiones separadas: una con una línea de `LOT-QA-P03` (vencido) y otra con `clienteId` de Rosa y `recetaId` de otro paciente (si las mandas juntas, solo se informa el error de la primera línea).
 **Resultado esperado:** el servidor rechaza con los mismos mensajes que al cobrar («Uno de los lotes está vencido y no se puede vender. Retíralo del carrito.» y «La receta médica no pertenece al cliente de la venta.»), sin pedir «Receta verificada»; la venta conserva sus líneas anteriores.
 
 #### TC-VEN-160 — La venta ya no está en espera o no se puede cargar
@@ -2804,7 +2806,7 @@ La diferencia se muestra sin rótulo de «faltante» o «sobrante»: solo el nú
 | Positivo | Media | [HU-CAJ-008] «Exportar las sesiones del filtro»; [CU-CAJ-08] flujo básico; [RN-CAJ-024], [RN-IMP-008] |
 
 **Pasos:** busca sesiones con estado y fechas y haz clic en «Exportar».
-**Resultado esperado:** se descarga `sesiones-caja.xlsx` con 9 columnas, en este orden: «Sucursal», «Cajero», «Apertura», «Cierre», «Monto Apertura», «Monto Cierre Declarado (S/)», «Monto Cierre Calculado (S/)», «Diferencia Arqueo (S/)» y «Estado»; respeta el estado y las fechas del filtro, con el mismo alcance de sucursales.
+**Resultado esperado:** se descarga `sesiones-caja.xlsx` con 9 columnas, en este orden: «Sucursal», «Cajero», «Apertura», «Cierre», «Monto Apertura», «Monto Cierre Declarado (S/)», «Monto Cierre Calculado (S/)», «Diferencia Arqueo (S/)» y «Estado»; respeta el estado y las fechas del filtro, con el mismo alcance de sucursales; las fechas de apertura y cierre salen como «dd/MM/yyyy HH:mm» en español (otro idioma «MM/dd/yyyy HH:mm»), sobre la hora UTC guardada, y «Estado» como Abierta, Cerrada o Cuadrada (`POSController.cs:66-67`, `sesiones-search.component.ts:140`).
 
 #### TC-CAJ-054 — El filtro por empleado no se aplica en la exportación
 
@@ -2813,7 +2815,7 @@ La diferencia se muestra sin rótulo de «faltante» o «sobrante»: solo el nú
 | Negativo | Baja | [HU-CAJ-008] «El filtro por empleado no se aplica»; [CU-CAJ-08] flujo básico; [RN-CAJ-024] |
 
 **Pasos:** `POST /api/v1/pos/sesiones/exportar` con un `empleadoId` y compara con el listado `GET /api/v1/pos/sesiones?empleadoId=…`.
-**Resultado esperado:** la exportación no admite el filtro de empleado: trae las sesiones de todos los cajeros del alcance, aunque el listado de la API sí lo respeta. **No verificado:** el nombre exacto del campo del cuerpo de la exportación.
+**Resultado esperado:** la exportación no admite el filtro de empleado: el cuerpo de la exportación solo tiene `headers`, `dateFormat`, `sucursalId`, `estadoSesion`, `fechaInicio` y `fechaFin` (`SesionCajaExportRequest`, `POSController.cs:80-86`), así que un `empleadoId` enviado se ignora y trae las sesiones de todos los cajeros del alcance, aunque el listado de la API sí lo respeta.
 
 #### TC-CAJ-055 — Formato de fecha del Excel de sesiones
 
@@ -2835,7 +2837,7 @@ La diferencia se muestra sin rótulo de «faltante» o «sobrante»: solo el nú
 
 ## 6. Casos del módulo Devoluciones (`TC-DEV`)
 
-Los casos de pantalla se ejecutan sobre el detalle de una venta (`/pos/{id}`): desde `37048ea` existen también la búsqueda `/devoluciones` y el detalle `/devoluciones/:id` (casos TC-DEV-060 a TC-DEV-079). El cuerpo de `POST /api/v1/devoluciones` lleva en `comprobanteOrigenId` el identificador de la **venta** (HU-DEV-001). Los nombres exactos de los demás campos del cuerpo (líneas, destino, motivo, sustento, método de reembolso) son **No verificado**: consulta `sofia-apis/src/SOFIA.Application/Devoluciones/` antes de armar la petición.
+Los casos de pantalla se ejecutan sobre el detalle de una venta (`/pos/{id}`): desde `37048ea` existen también la búsqueda `/devoluciones` y el detalle `/devoluciones/:id` (casos TC-DEV-060 a TC-DEV-079). El cuerpo de `POST /api/v1/devoluciones` lleva en `comprobanteOrigenId` el identificador de la **venta** (HU-DEV-001). El resto del cuerpo (camelCase, como lo arma el SPA en `devolver-venta-dialog.component.ts:buildRequest` y como lo declara `ProcesarDevolucionCommand`): `motivoSunatCatalogo` (2 caracteres), `sustentoDescriptivo` (hasta 255), `metodoReembolso` (opcional; por defecto Efectivo) y `detalles[]` con `detalleVentaId`, `cantidadDevuelta` y `destinoFisicoLogico` (`Reingreso_Venta` = 0, `Cuarentena_DIGEMID` = 1). Los rechazos de reglas de negocio devuelven HTTP 400, salvo la venta inexistente (404 `Venta.NotFound`) y la venta de otra sucursal (403 `Devolucion.Venta.OtraSucursal`).
 
 ### HU-DEV-001 — Devolver parte o todo lo vendido
 
@@ -3770,7 +3772,7 @@ Los casos del Inicio dependen de la fecha y de los datos del día: antes de ejec
 
 **Precondiciones:** hoy la venta A de S/ 50.00 pagada con S/ 60.00 en efectivo (vuelto S/ 10.00) y la venta B de S/ 30.00 con S/ 20.00 en tarjeta y S/ 10.00 en Yape / Plin.
 **Pasos:** abre `/dashboard`.
-**Resultado esperado:** cuatro filas en orden: «Efectivo» S/ 50.00, «Yape / Plin» S/ 10.00, «Tarjeta» S/ 20.00 y «Transferencia» S/ 0.00; cada barra es el porcentaje sobre la suma de las cuatro filas (62.5 %, 12.5 %, 25.0 % y 0.0 %); se lee «El efectivo ya descuenta el vuelto entregado.».
+**Resultado esperado:** cuatro filas en orden: «Efectivo» S/ 50.00, «Yape / Plin» S/ 10.00, «Tarjeta» S/ 20.00 y «Transferencia» S/ 0.00; el ancho de cada barra es el porcentaje de la fila sobre la suma de las cuatro (62.5 %, 12.5 %, 25.0 % y 0.0 %; es solo el ancho de la barra, el porcentaje no se imprime como número); se lee «El efectivo ya descuenta el vuelto entregado.».
 
 #### TC-DAS-009 — Las ventas anuladas no suman y los reembolsos no restan
 
@@ -4381,7 +4383,7 @@ Ninguno de estos módulos tiene pantalla (HU-OPS, sección 12 de las historias):
 
 **Precondiciones:** transferencia `Iniciada` con dos líneas del mismo lote de 300 y 300 (`TC-OPS-009`), stock 500.
 **Petición:** `PUT /api/v1/Transferencias/{id}/despachar`.
-**Resultado esperado:** HTTP 400, `code` `Transferencia.StockInsuficiente` (la suma, 600, excede el stock); la transferencia sigue `Iniciada`.
+**Resultado esperado:** HTTP 400, `code` `Transferencia.StockInsuficiente` (la suma, 600, excede el stock: la primera línea baja el stock en memoria a 200 y la segunda falla con «Disponible: 200»); la transferencia sigue `Iniciada` y el stock no cambia.
 
 #### TC-OPS-019 — Conflicto de concurrencia al despachar
 
@@ -4430,7 +4432,7 @@ Ninguno de estos módulos tiene pantalla (HU-OPS, sección 12 de las historias):
 | Límite | Media | [HU-OPS-003] «Cantidad recibida 0»; [CU-OPS-03] flujo básico; [RN-TRA-018] |
 
 **Petición:** `PUT /api/v1/Transferencias/{id}/recibir` con `cantidadRecibida` 0.
-**Resultado esperado:** es válido («no llegó nada»): la línea queda en 0 sin tocar el stock del destino.
+**Resultado esperado:** es válido («no llegó nada»): la línea queda en 0 sin tocar el stock del destino y, como 0 es menor que lo enviado, la transferencia queda `Recibida_Parcial`.
 
 #### TC-OPS-024 — Las líneas no listadas se ignoran
 
@@ -4450,7 +4452,7 @@ Ninguno de estos módulos tiene pantalla (HU-OPS, sección 12 de las historias):
 | Negativo | Alta | [HU-OPS-003] «Reglas por línea»; [CU-OPS-03] excepciones; [RN-TRA-018] |
 
 **Petición:** recibe con (1) un lote que no pertenece a la transferencia; (2) `cantidadRecibida` -1; (3) 101 (mayor que lo enviado, 100); luego (4) exactamente 100.
-**Resultado esperado:** (1), (2) y (3): HTTP 400, `code` `Transferencia.Recepcion`, sin guardar nada de la recepción (la transferencia sigue `En_Transito`); (4): válido.
+**Resultado esperado:** (1) y (3): HTTP 400, `code` `Transferencia.Recepcion`; (2): HTTP 400, `code` `RecibirTransferenciaCommand.Recepciones[0].CantidadRecibida` (lo rechaza el validador antes del handler); en los tres no se guarda nada (la transferencia sigue `En_Transito`); (4): válido.
 
 #### TC-OPS-026 — Forma del cuerpo de la recepción
 
@@ -4588,7 +4590,7 @@ Ninguno de estos módulos tiene pantalla (HU-OPS, sección 12 de las historias):
 
 ### 8.2 Cuarentena y actas de destrucción DIGEMID
 
-Los nombres de los campos de los cuerpos de este módulo se deducen de los códigos de error de las historias (`AislarLoteCuarentenaCommand.LoteId`, `.CantidadAislada`, `.MotivoAislamiento`, `.EstadoResolucion`); el nombre exacto del campo de la línea de devolución, y el formato de los estados (texto o número), son **No verificado**: consulta `sofia-apis/src/SOFIA.API/Controllers/` antes de armar la petición.
+Los nombres de los campos de los cuerpos de este módulo se deducen de los códigos de error de las historias (`AislarLoteCuarentenaCommand.LoteId`, `.CantidadAislada`, `.MotivoAislamiento`, `.EstadoResolucion`); el cuerpo de `POST /DIGEMID/cuarentena` es `loteId`, `detalleDevId` (opcional, la línea de devolución), `cantidadAislada`, `motivoAislamiento` y `estadoResolucion`; este último es un texto («Retenido», «Liberado», «Destruido» o «Devuelto»), no un enumerado (`AislarLoteCuarentenaCommand.cs`, `EstadoResolucionCuarentena.cs`).
 
 ### HU-OPS-006 — Aislar un lote en cuarentena
 
@@ -4767,7 +4769,7 @@ Los nombres de los campos de los cuerpos de este módulo se deducen de los códi
 | Positivo | Media | [HU-OPS-009] «Generar un acta»; [CU-OPS-09] flujo básico; [RN-CUA-013], [RN-CUA-014] |
 
 **Precondiciones:** token con `DIGEMID:GenerarActaDestruccion`; un empleado existente como regente.
-**Petición:** `POST /api/v1/DIGEMID/acta-destruccion` con número de resolución interna `RES-2026-001`, empresa de residuos «Residuos Demo S.A.C.», fecha de ejecución y el regente responsable (los nombres exactos de los campos son **No verificado**).
+**Petición:** `POST /api/v1/DIGEMID/acta-destruccion` con `numeroResolucionInterna` `RES-2026-001`, `empresaResiduosBiocontaminados` «Residuos Demo S.A.C.», `fechaEjecucion`, `regenteResponsableId` y, opcionales, `manifiestoTransporteDoc` y `rutaActaFirmadaPdf` (`GenerarActaDestruccionCommand`).
 **Resultado esperado:** HTTP 200 con el identificador del acta; el acta guarda solo la cabecera.
 
 #### TC-OPS-058 — Datos del acta: longitudes y fecha
@@ -4849,7 +4851,7 @@ Los nombres de los campos de los cuerpos de este módulo se deducen de los códi
 
 ### 8.3 Órdenes magistrales
 
-Los nombres de los campos de `POST /api/v1/Magistrales/iniciar` se deducen de los códigos de error: `productoResultanteId`, `cantidadProducida`, `consumos[]` con `inventarioSucursalId` y `cantidadConsumida`; el identificador de la receta es opcional y su nombre es **No verificado**.
+Los nombres de los campos de `POST /api/v1/Magistrales/iniciar` se deducen de los códigos de error: `productoResultanteId`, `cantidadProducida`, `consumos[]` con `inventarioSucursalId` y `cantidadConsumida`; el identificador de la receta es opcional y se llama `recetaId` (`IniciarOrdenMagistralCommand.cs`).
 
 ### HU-OPS-011 — Iniciar una orden magistral
 
@@ -5095,7 +5097,7 @@ La historia HU-OPS-014 advierte que la tabla `Servicios_Agenda` del script `0001
 | Positivo | Media | [HU-OPS-014] «Agendar una cita»; [CU-OPS-14] flujo básico; [RN-SRV-001], [RN-SRV-002], [RN-SRV-019] |
 
 **Precondiciones:** token con `Servicios:AgendarServicio`; «Rosa Quispe Demo» y un producto existen.
-**Petición:** `POST /api/v1/Servicios/agenda` con el paciente, el producto, la fecha y hora programada y el estado `Programada` (los nombres exactos de los campos son **No verificado**).
+**Petición:** `POST /api/v1/Servicios/agenda` con `clienteId`, `productoId`, `fechaHoraProgramada` y `estadoCita` `Programada` (`ventaId` es opcional; `AgendarServicioCommand`).
 **Resultado esperado:** HTTP 200 con el identificador de la cita. **No verificado en ejecución:** puede fallar con error 500 por columnas faltantes (nota de la sección 8.4).
 
 #### TC-OPS-091 — Paciente, producto o venta inexistentes al agendar
@@ -5105,7 +5107,7 @@ La historia HU-OPS-014 advierte que la tabla `Servicios_Agenda` del script `0001
 | Negativo | Media | [HU-OPS-014] «Paciente, producto o venta inexistentes»; [CU-OPS-14] excepciones; [RN-SRV-003], [RN-SRV-004] |
 
 **Petición:** `POST /api/v1/Servicios/agenda` con un paciente inexistente; con un producto inexistente; con una venta inexistente; y con una venta vacía (GUID vacío).
-**Resultado esperado:** HTTP 404, `code` `Paciente.NotFound`, `Medicamento.NotFound` o `Venta.NotFound`; la venta es opcional: un identificador vacío se guarda como «sin venta».
+**Resultado esperado:** HTTP 404, `code` `Paciente.NotFound`, `Medicamento.NotFound` o `Venta.NotFound`; la venta es opcional (omitida o `null` se guarda como «sin venta»), pero un GUID vacío (`00000000-0000-0000-0000-000000000000`) no cuenta como omitido: el handler lo busca como venta y responde HTTP 404 `Venta.NotFound` (`AgendarServicioCommandHandler.cs`, antes de que la entidad lo convierta en null).
 
 #### TC-OPS-092 — Sin reglas sobre estado ni fecha
 
@@ -5128,7 +5130,7 @@ La historia HU-OPS-014 advierte que la tabla `Servicios_Agenda` del script `0001
 
 ### HU-OPS-015 — Registrar una inmunización
 
-Los nombres de los campos del cuerpo de `POST /api/v1/Servicios/inmunizacion` son **No verificado**; la historia nombra: vía (`Intramuscular`), sitio anatómico (`Deltoides`), volumen (0.5), modalidad (`Corriente` o `Historica`), fecha de administración (`FechaAdmnFisica`) y la fecha de entrega de la hoja informativa (opcional).
+Los campos del cuerpo de `POST /api/v1/Servicios/inmunizacion` (`RegistrarInmunizacionCommand`) son `ventaId` (opcional), `clienteId`, `profesionalAdmnId`, `productoId`, `loteId`, `viaAdministracion`, `sitioAnatomico`, `volumenDosis`, `fechaAdmnFisica`, `fechaEntregaVis` (opcional) y `modalidadRegistro`; la historia nombra: vía (`Intramuscular`), sitio anatómico (`Deltoides`), volumen (0.5), modalidad (`Corriente` o `Historica`), fecha de administración (`FechaAdmnFisica`) y la fecha de entrega de la hoja informativa (opcional).
 
 #### TC-OPS-094 — Registrar una dosis
 
@@ -5156,7 +5158,7 @@ Los nombres de los campos del cuerpo de `POST /api/v1/Servicios/inmunizacion` so
 | Negativo | Media | [HU-OPS-015] «Inexistentes»; [CU-OPS-15] excepciones; [RN-SRV-010] |
 
 **Petición:** `POST /api/v1/Servicios/inmunizacion` con paciente, empleado (profesional), producto o venta inexistentes; con un empleado que no es profesional de salud.
-**Resultado esperado:** HTTP 404, `code` `Paciente.NotFound`, `Empleado.NotFound`, `Medicamento.NotFound` o `Venta.NotFound` (la venta es opcional); un empleado que no es profesional de salud se acepta.
+**Resultado esperado:** HTTP 404, `code` `Paciente.NotFound`, `Empleado.NotFound`, `Medicamento.NotFound` o `Venta.NotFound` (la venta es opcional, pero un GUID vacío se busca como venta y también da 404 `Venta.NotFound`); se evalúan en ese orden, con el lote entre el medicamento y la venta; un empleado que no es profesional de salud se acepta.
 
 #### TC-OPS-097 — Lote de otro producto o inexistente
 
@@ -5175,7 +5177,7 @@ Los nombres de los campos del cuerpo de `POST /api/v1/Servicios/inmunizacion` so
 
 **Precondiciones:** un lote que vencía el 30/06/2026.
 **Petición:** `POST /api/v1/Servicios/inmunizacion` con fecha de administración 15/07/2026; luego con 30/06/2026; luego con 15/06/2026 (histórica).
-**Resultado esperado:** 15/07/2026: HTTP 400, `code` `Inmunizacion.Lote.Vencido`; 15/06/2026: se acepta (una inmunización histórica puede registrarse con un lote que venció después de la dosis). **No verificado:** el comportamiento exacto del día de caducidad (30/06/2026); la regla general es que un lote se usa hasta el final de su día de caducidad.
+**Resultado esperado:** 15/07/2026: HTTP 400, `code` `Inmunizacion.Lote.Vencido`; 15/06/2026: se acepta (una inmunización histórica puede registrarse con un lote que venció después de la dosis). Con 30/06/2026 se acepta: el lote se considera vencido cuando su caducidad es menor o igual que la fecha de administración menos un día (`LoteInventario.CaducidadVencida`), así que se usa hasta el final de su día de caducidad (si la caducidad se guardó a las 00:00 del 30/06, la dosis del 30/06 pasa y la del 01/07 a las 00:00 o después se rechaza).
 
 #### TC-OPS-099 — Datos clínicos de la inmunización
 
@@ -5313,7 +5315,7 @@ Los nombres de los campos del cuerpo de `POST /api/v1/Servicios/inmunizacion` so
 | Positivo | Media | [HU-OPS-018] «Programar el delivery de una venta cobrada»; [CU-OPS-18] flujo básico; [RN-DEL-001], [RN-DEL-002], [RN-DEL-003] |
 
 **Precondiciones:** token con `Delivery:ProgramarDelivery`; venta «Completada» de una sucursal accesible.
-**Petición:** `POST /api/v1/Delivery` con la venta, plataforma `Rappi`, dirección «Av. Ficticia 123, Miraflores» y repartidor opcional (los nombres exactos de los campos son **No verificado**).
+**Petición:** `POST /api/v1/Delivery` con `ventaId`, `plataformaServicio` `Rappi`, `direccionEntrega` «Av. Ficticia 123, Miraflores» y, opcionales, `codigoRastreo`, `repartidorNombre` y `evidenciaFotograficaUrl` (`ProgramarDeliveryCommand`).
 **Resultado esperado:** HTTP 200 (no 201) con el identificador del despacho; el despacho nace en `Preparando` y no afecta la venta, el stock ni el comprobante.
 
 #### TC-OPS-113 — Venta inexistente al programar un delivery
@@ -5624,15 +5626,17 @@ Los casos describen el comportamiento **actual** de estos puntos (no el deseado)
 | Los eventos de auditoría no se pueden consultar | TC-OPS-135 |
 | «Vendido hoy» incluye las ventas «Devuelta» y los montos son brutos | TC-DAS-004, TC-DAS-048 |
 | La ruta `/pos/nueva?continuar=` no exige `Ventas:Actualizar` | TC-VEN-156 |
+| Guardar una venta en espera exige la receta registrada de los productos controlados (y de la Receta Simple en modo estricto); solo se omite la confirmación «Receta verificada» | TC-VEN-064, TC-VEN-149 |
+| Un GUID vacío como venta en servicios o delivery no cuenta como «sin venta»: responde 404 `Venta.NotFound` | TC-OPS-091, TC-OPS-096, TC-OPS-113 |
 
 ### 9.3 No verificado
 
 | Tema | Casos |
 |---|---|
-| Nombres exactos de campos y de parámetros de las peticiones de devoluciones, cuarentena, actas, servicios, delivery, exportación y listados; formato de serialización de los enumerados | TC-DEV-001 a TC-DEV-059 (cuerpo de `POST /api/v1/devoluciones`), TC-CAJ-054, TC-DEV-055, TC-OPS-040 a TC-OPS-137 |
+| Los nombres de campos de las peticiones y el formato de los enumerados se comprobaron en el código en la versión 1.4 (sin `JsonStringEnumConverter`: los enumerados viajan como número; los ejemplos con nombre son ilustrativos). Sigue **No verificado** en ejecución que el API rechace un enumerado enviado como texto | TC-OPS-040 a TC-OPS-137 (ejemplos con enumerados), TC-VEN-006 a TC-VEN-209 (ídem) |
 | Redondeo de la base de datos con más de 2 decimales (cantidades, montos) | TC-VEN-030, TC-VEN-096, TC-DEV-022, TC-DEV-028, TC-OPS-103 |
 | Comportamiento bajo concurrencia (versión de fila, índices únicos) | TC-VEN-120, TC-VEN-134, TC-VEN-170, TC-VEN-179, TC-CAJ-006, TC-CAJ-038, TC-DEV-007, TC-OPS-019, TC-OPS-029, TC-OPS-076, TC-OPS-082 |
-| Códigos HTTP y `code` exactos de algunos rechazos del cobro (receta, número de operación, estados `Anulada`/`Devuelta` al crear, base de datos) | TC-VEN-062, TC-VEN-070, TC-VEN-099, TC-VEN-102, TC-VEN-121, TC-VEN-123 |
+| Qué petición dispara cada código de la base de datos (`Db.ValorInvalido`, `Db.ReferenciaInvalida`) al cobrar; los códigos de receta, número de operación y estados `Anulada`/`Devuelta` al crear se comprobaron en el código en la versión 1.4 | TC-VEN-121 |
 | Cómo preparar una cuenta cuyo token no traiga sucursal o empleado, o un usuario con alcance vacío | TC-VEN-008, TC-CAJ-007, TC-CAJ-041, TC-DAS-012, TC-OPS-002, TC-OPS-046 |
 | Nombre de la clave del borrador en `localStorage` y de la tabla de la bandeja de salida de eventos | TC-VEN-046, TC-VEN-117 |
 | Separador decimal del Inicio según el idioma; contenido de los Excel (no se descargaron) | TC-DAS-001, TC-VEN-207, TC-CAJ-055 |
