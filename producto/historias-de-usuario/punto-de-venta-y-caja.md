@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-21 |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-22 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevas HU-DEV-009 y HU-DEV-010 (búsqueda y detalle de devoluciones); HU-DEV-007 y HU-DEV-008 actualizadas; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas de negocio `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; glosario; manual de usuario capítulos 3 y 5) y comprobación puntual en el código y en los `es.json` del SPA. `git status --short` está limpio en ambos repositorios. No se usó el navegador ni se llamó a la API: los mensajes salen de los documentos fuente y de los archivos `es.json`. |
+| **Método** | Revisión semántica a fondo 2026-11-22 (versión 1.4) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: HU-VEN-002 (el selector lista todos los productos; sin stock salen «Agotado» con la tarjeta deshabilitada), HU-VEN-008 y HU-VEN-020 (guardar en espera sí exige la receta; solo se omite «Receta verificada»), orden real de los rechazos al cobrar y al anular (HU-VEN-015 y HU-VEN-025), HU-VEN-015 (el correlativo no se revierte ante un `Result.Failure`), HU-CAJ-005 (el cierre no consulta sucursales accesibles), HU-DEV-001 (segundo intento tras una devolución total) y HU-OPS-014 y HU-OPS-015 (`ventaId` vacío responde 404 `Venta.NotFound`); HU-DEV-009 y HU-DEV-010 confirmadas. Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevas HU-DEV-009 y HU-DEV-010 (búsqueda y detalle de devoluciones); HU-DEV-007 y HU-DEV-008 actualizadas; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas de negocio `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; glosario; manual de usuario capítulos 3 y 5) y comprobación puntual en el código y en los `es.json` del SPA. `git status --short` está limpio en ambos repositorios. No se usó el navegador ni se llamó a la API: los mensajes salen de los documentos fuente y de los archivos `es.json`. |
 
 ## 1. Cómo leer este documento
 
@@ -157,7 +157,8 @@ Escenario: Ver los productos más vendidos al entrar
 Escenario: Buscar por nombre comercial
   Cuando escribo "paracetamol" en "Buscar producto..."
   Entonces, tras unos 300 milisegundos sin teclear, la lista se filtra por nombre comercial
-  Y solo se consideran productos con stock vendible en mi sucursal
+  Y la lista incluye todos los productos del catálogo que coinciden, tengan o no stock: el filtro "solo stock vendible en mi sucursal" que envía el terminal únicamente limita el stock que cuenta la insignia (lotes de mi sucursal, no vencidos, sin cuarentena), no quita productos de la lista (`GetMedicamentosQueryHandler.cs:155-158`)
+  Y un producto sin stock vendible aparece con la insignia "Agotado" y su tarjeta deshabilitada, de modo que no se puede elegir (`nueva-venta.component.html:91`)
 
 Escenario: Filtrar por condición de venta
   Cuando hago clic en el chip "Receta Retenida"
@@ -184,7 +185,7 @@ Escenario: Producto sin precio en el catálogo
   Entonces su tarjeta muestra "Sin precio" en lugar de "S/ … c/u"
 
 Escenario: Sin resultados
-  Cuando escribo un texto que no coincide con ningún producto vendible
+  Cuando escribo un texto que no coincide con ningún producto del catálogo
   Entonces veo "No se encontraron medicamentos o lotes disponibles."
 
 Escenario: Elegir un producto y ver sus lotes
@@ -624,8 +625,14 @@ Escenario: Falta la receta o su número (el servidor)
 Escenario: Dejar la venta en espera no exige receta
   Dado que el carrito tiene un producto controlado y no elegí receta
   Cuando hago clic en "Guardar y Atender Siguiente"
-  Entonces la venta se guarda en espera sin exigir receta ni número
+  Entonces el servidor no deja guardar la venta en espera: responde "Venta.Receta.Requerida" y veo "Uno de los productos requiere receta médica. Selecciona el cliente y una de sus recetas registradas."
+  Y lo mismo pasa con un producto de receta simple cuando la empresa exige registrar la receta
+  Y si la receta elegida no tiene número, el rechazo es "Venta.Receta.NumeroRequerido"
+  Y lo único que la espera omite es la confirmación "Receta verificada" (ver HU-VEN-009), que se pide al cobrar
 ```
+
+> **Nota de alcance del escenario anterior.** El título se conserva porque otros documentos lo citan por texto, pero su alcance es solo la confirmación «Receta verificada»: guardar en espera (crear con estado `Pendiente`, o reemplazar líneas de una venta en espera) construye las líneas con la misma lógica que el cobro y no distingue el estado, así que la regla de receta se exige igual (`CreateVentaCommandHandler.cs:50`, `VentaDetalleFactory.cs:152-154`). El terminal no se adelanta: «Guardar y Atender Siguiente» solo exige carrito con líneas y caja (`puedeGuardarPendiente`, `nueva-venta.component.ts:263-265`), no mira el aviso de receta; el rechazo llega del servidor, con el mensaje de `pos.messages.recetaRequerida` o `recetaNumeroRequerido` (`nueva-venta.component.ts:86-90`).
+
 
 > **Brecha conocida.** El terminal **no tiene campo para escribir el número de la receta**: el número es un dato de la receta registrada y debe agregarse en su propia pantalla. La política «exigir registro de receta» de la empresa solo se cambia directamente en la base de datos; no hay endpoint ni pantalla (RN-EMP-016, ver [HU-VEN-009](#hu-ven-009--confirmar-receta-verificada-en-empresas-flexibles)). Las líneas de un borrador antiguo sin condición de venta guardada no las bloquea el terminal; decide el servidor (`producto/pantallas/punto-de-venta` §3.5). El terminal adjunta una sola receta a todo el carrito aunque la API admite una por línea (`negocio/reglas/ventas-y-comprobantes` hallazgo 14).
 
@@ -1060,6 +1067,7 @@ Escenario: Todo se guarda en una sola operación
   Dado que cualquier paso del cobro falla (stock, receta, RUC, serie, pagos)
   Entonces no se guarda nada de la venta y el stock descontado en memoria se descarta
   # La única escritura inmediata es el aumento del correlativo de la serie, dentro de la misma transacción
+  # La transacción solo se revierte ante una excepción: un rechazo devuelto como resultado (no como excepción) después del aumento del correlativo lo dejaría consumido (`VentaComprobanteGenerator.cs:21`, `TransactionBehavior.cs:25-35`), aunque con el código actual no hay entradas que lo provoquen; el RUC y la serie se comprueban antes y no lo consumen
 
 Escenario: Quién registra y cuándo
   Entonces la venta queda en mi sucursal base, a nombre del empleado de mi sesión, con la fecha y hora del servidor en UTC
@@ -1099,6 +1107,17 @@ Escenario: La API acepta dos estados al crear
   Y con estado "Pendiente" y sin pagos queda en espera (ver HU-VEN-020)
   Y con estado "Pendiente" y con pagos se cobra de inmediato como "Completada"
   Y "Anulada" o "Devuelta" con pagos se rechazan y "Completada" sin pagos lo rechaza el validador
+
+Escenario: Orden en que el servidor evalúa los rechazos del cobro
+  Dado que una misma petición incumple varias condiciones
+  Entonces el servidor responde solo el primer rechazo, en este orden (`CreateVentaCommandHandler.cs:20-76`, `VentaDetalleFactory.cs:40-88`, `Venta.cs:219-265`)
+  Y primero el validador de la petición: sin líneas, lote vacío, cantidad 0, sin pagos (salvo estado "Pendiente"), pago de monto 0, número de operación de más de 100 caracteres o faltante en un pago no efectivo, cobertura negativa, cobertura sin aseguradora
+  Y después la sucursal y el empleado de la sesión de usuario ("Auth.Sucursal", "Auth.Empleado")
+  Y después el cliente ("Paciente.NotFound", 404) y la caja ("Venta.Caja" 400, o "Venta.Caja.NoPropia" 403)
+  Y después la aseguradora ("Aseguradora.NotFound", 404)
+  Y después cada línea, en el orden enviado: cuarentena, lote, vencimiento, receta (no existe, de otro paciente, sin número, requerida), existencia del lote en mi sucursal, presentación o precio, stock
+  Y después el máximo de dispensaciones de la receta ("Venta.Receta.Agotada")
+  Y solo si la petición trae pagos: "Receta verificada", estado, cobertura fuera de rango, suma insuficiente, vuelto sin efectivo, vuelto mayor que el efectivo, RUC y por último la serie de boletas
 ```
 
 > **Brecha conocida.** La API responde **200** (no 201) con `{ ventaId, comprobante }` al crear y cobrar (`negocio/reglas/ventas-y-comprobantes` §2). Las restricciones de la base (estado válido, monto total no negativo, claves foráneas, versión de fila) no tienen traducción en el mapa de cobro: se ven con el mensaje genérico (RN-VEN-079 a RN-VEN-081). Los índices de rendimiento de ventas, detalle y pagos no tienen efecto visible (RN-VEN-082). Los guards de la entidad `Venta` que ninguna ruta alcanza (RN-VEN-083) no producen mensajes.
@@ -1402,7 +1421,9 @@ Escenario: Qué no tiene una venta en espera
 Escenario: No se pide receta, pagos ni número de operación
   Dado que el carrito tiene un producto controlado, sin receta elegida y sin pagos
   Cuando hago clic en "Guardar y Atender Siguiente"
-  Entonces la venta se guarda; el botón solo se deshabilita con el carrito vacío, sin caja o mientras se procesa
+  Entonces el botón está habilitado (solo se deshabilita con el carrito vacío, sin caja o mientras se procesa) pero el servidor rechaza la venta con "Venta.Receta.Requerida" y veo "Uno de los productos requiere receta médica. Selecciona el cliente y una de sus recetas registradas."
+  Y con una receta elegida que tiene número, la venta se guarda sin pagos y sin número de operación
+  # El título se conserva porque otros documentos lo citan: lo que la espera no pide es la confirmación "Receta verificada", los pagos y el número de operación; la regla de receta se evalúa igual que al cobrar (`CreateVentaCommandHandler.cs:50`, `VentaDetalleFactory.cs:152-154`)
 
 Escenario: Sin caja abierta no se puede dejar en espera
   Dado que no tengo caja abierta
@@ -1722,6 +1743,17 @@ Escenario: Motivo demasiado largo
 Escenario: La venta no existe
   Dado que la venta fue eliminada o es de otra empresa
   Entonces el servidor responde 404 y veo "Error al anular la venta."
+
+Escenario: Orden en que el servidor evalúa los rechazos de la anulación
+  Dado que la anulación incumple varias condiciones
+  Entonces el servidor responde solo el primer rechazo, en este orden (`AnularVentaCommandHandler.cs:20-83`, `Venta.cs:89-111`)
+  Y primero el validador (identificador vacío, motivo vacío o de más de 255 caracteres)
+  Y después que la venta exista (404 "Venta.Anular"), antes de mirar la sesión de usuario
+  Y después la sucursal de la sesión de usuario ("Auth.Sucursal") y que la venta sea de esa sucursal ("Venta.Anular", tipo prohibido, responde 400)
+  Y después las devoluciones ("Venta.Anular.ConDevoluciones"), también para una venta "Devuelta"
+  Y después, solo si la venta está "Completada", el empleado de la sesión de usuario ("Auth.Empleado") y mi caja propia abierta ("Venta.Anular.SinSesionAbierta")
+  Y al final la entidad: venta ya anulada ("Venta.Anular"); el motivo en blanco, incluido el de solo espacios, ya lo rechazó el validador
+  Y por eso una venta ya "Anulada" no pide caja abierta y una venta con devoluciones sin caja abierta responde el aviso de devoluciones
 ```
 
 > **Brecha conocida.** Solo `Venta.Anular.ConDevoluciones`, `Venta.Anular.SinSesionAbierta` y `Concurrency.Conflict` tienen mensaje propio; todo lo demás (ya anulada, otra sucursal, motivo en blanco, sin `Auth.Empleado`) se ve como «Error al anular la venta.» (`negocio/reglas/ventas-y-comprobantes` §2 punto 5). El texto de devoluciones remite a «Devoluciones», que no es una pantalla: las devoluciones se procesan desde el mismo detalle (HU-DEV-001).
@@ -2205,6 +2237,7 @@ Escenario: Dos cierres simultáneos
 
 Escenario: La sesión no existe o no es de una sucursal accesible
   Entonces el servidor responde 404 con código "Caja" y veo "Error al cerrar la sesión"
+  # El cierre solo busca la sesión dentro de la empresa y no consulta las sucursales accesibles: una sesión de otra sucursal de la misma empresa sí se encuentra y solo la cierra su titular o un administrador (`CerrarCajaCommandHandler.cs:22-32`)
 
 Escenario: La sesión no está "Abierta"
   Entonces veo "Error al cerrar la sesión"
@@ -2399,7 +2432,7 @@ Escenario: Todo o nada
 Escenario: Repetir la misma devolución
   Dado que hago clic dos veces en "Procesar devolución" o repito la petición
   Entonces el botón se deshabilita mientras guarda
-  Y el segundo intento recibe "La cantidad supera lo que queda por devolver en alguna línea. Actualiza la pantalla e inténtalo de nuevo." si ya no queda saldo, o el aviso de conflicto de concurrencia
+  Y el segundo intento recibe "La cantidad supera lo que queda por devolver en alguna línea. Actualiza la pantalla e inténtalo de nuevo." si la venta sigue "Completada" pero ya no queda saldo para lo pedido, "Solo se pueden devolver ventas completadas." si la primera devolución dejó la venta "Devuelta" (el estado se comprueba antes que las cantidades, `Venta.cs:116-118`), o el aviso de conflicto de concurrencia
 
 Escenario: Dos devoluciones simultáneas de la misma venta
   Entonces solo se guarda una y la otra ve "Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo."
@@ -4043,7 +4076,8 @@ Escenario: Agendar una cita
 
 Escenario: Paciente, producto o venta inexistentes
   Entonces recibo 404 "Paciente.NotFound", 404 "Medicamento.NotFound" o 404 "Venta.NotFound"
-  Y la venta es opcional: un identificador vacío se guarda como "sin venta"
+  Y la venta es opcional: si se omite (nulo), la cita queda sin venta
+  Pero un identificador vacío (el GUID de ceros) no equivale a omitirlo: el handler lo busca como venta y responde 404 "Venta.NotFound" (`AgendarServicioCommandHandler.cs:23`)
 
 Escenario: Sin reglas sobre estado ni fecha
   Entonces el estado es un texto libre de hasta 20 caracteres, no vacío ni de espacios (por defecto "Programada")
@@ -4082,7 +4116,7 @@ Escenario: La fecha de administración es obligatoria
   Entonces recibo 400 "RegistrarInmunizacionCommand.FechaAdmnFisica"
 
 Escenario: Inexistentes
-  Entonces recibo 404 "Paciente.NotFound", "Empleado.NotFound", "Medicamento.NotFound" o "Venta.NotFound" (la venta es opcional)
+  Entonces recibo 404 "Paciente.NotFound", "Empleado.NotFound", "Medicamento.NotFound" o "Venta.NotFound" (la venta es opcional: omitida, el registro queda sin venta; un identificador vacío se busca como venta y responde 404 "Venta.NotFound", `RegistrarInmunizacionCommandHandler.cs:44`)
   Y el profesional puede ser cualquier empleado: no se exige que sea profesional de salud
 
 Escenario: Lote de otro producto o inexistente
