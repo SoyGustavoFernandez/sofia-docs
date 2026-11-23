@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-21 |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-22 |
 | **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevos CU-DEV-09 y CU-DEV-10; CU-DEV-07 y CU-DEV-08 actualizados; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; historias de usuario `producto/historias-de-usuario/punto-de-venta-y-caja`; catálogo de códigos de error `tecnico/catalogo-de-codigos-de-error`) y comprobación puntual en el código (`VentasController`, `CreateVentaCommandHandler`, `ProcesarDevolucionCommandHandler`, `CerrarCajaCommandHandler`, `ArqueoCajaCalculator`, `ValidationBehavior`, `ResultExtensions`) y en `endpoints.csv`. `git status --short` está limpio en ambos repositorios. No se ejecutó la aplicación ni se llamó a la API: los mensajes salen de los `es.json` a través de los documentos fuente. |
+| **Método** | Revisión semántica a fondo 2026-11-22 (versión 1.4) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: CU-VEN-02 (el selector lista todos los productos; sin stock salen «Agotado» con la tarjeta deshabilitada), CU-VEN-08 (A5) y CU-VEN-20 (guardar en espera sí exige la receta; solo se omite «Receta verificada»), orden real de los rechazos al anular (CU-VEN-23 y CU-VEN-25; el motivo en blanco lo rechaza el validador), CU-CAJ-05 (el cierre no consulta sucursales accesibles), CU-DEV-01 (segundo intento tras una devolución total) y CU-OPS-14 y CU-OPS-15 (`ventaId` vacío responde 404 `Venta.NotFound`); CU-DEV-09 y CU-DEV-10 confirmados. Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevos CU-DEV-09 y CU-DEV-10; CU-DEV-07 y CU-DEV-08 actualizados; trazabilidad y cobertura. Método anterior: Lectura de los documentos validados (reglas `negocio/reglas/inventario-y-recetas`, `negocio/reglas/ventas-y-comprobantes` v1.1, `negocio/reglas/caja-devoluciones-y-dashboard` y `negocio/reglas/modulos-solo-api`; inventario de pantallas `producto/pantallas/acceso-layout-y-compartidos` y `producto/pantallas/punto-de-venta`; matriz de permisos `tecnico/seguridad/matriz-de-permisos`; procesos de negocio 4, 5, 6, 8 y 9; historias de usuario `producto/historias-de-usuario/punto-de-venta-y-caja`; catálogo de códigos de error `tecnico/catalogo-de-codigos-de-error`) y comprobación puntual en el código (`VentasController`, `CreateVentaCommandHandler`, `ProcesarDevolucionCommandHandler`, `CerrarCajaCommandHandler`, `ArqueoCajaCalculator`, `ValidationBehavior`, `ResultExtensions`) y en `endpoints.csv`. `git status --short` está limpio en ambos repositorios. No se ejecutó la aplicación ni se llamó a la API: los mensajes salen de los `es.json` a través de los documentos fuente. |
 
 ## 1. Cómo leer este documento
 
@@ -135,9 +135,9 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 | **Estado** | Implementado |
 
 **Flujo principal**
-1. Al entrar, sin texto ni chip, el SPA pide `GET Medicamentos` (12 por página, solo con stock vendible en la sucursal propia) y muestra los productos más vendidos de los últimos 30 días primero.
+1. Al entrar, sin texto ni chip, el SPA pide `GET Medicamentos` (12 por página) y muestra los productos más vendidos de los últimos 30 días primero. La lista incluye todos los productos del catálogo que coinciden, tengan o no stock: el parámetro «solo stock vendible en mi sucursal» que envía el SPA únicamente limita el stock que cuenta la insignia (`GetMedicamentosQueryHandler.cs:155-158`).
 2. El cajero escribe en «Buscar producto...» (la búsqueda es por nombre comercial y se lanza unos 300 ms después de dejar de teclear) o hace clic en un chip: «Todos», «Venta Libre (OTC)», «Receta Simple», «Receta Retenida» o «Estupefaciente».
-3. Cada tarjeta muestra el nombre comercial, «{laboratorio} · {código nacional}», el aviso «Requiere receta» si no es de venta libre, el precio «S/ 0.50 c/u» (o «Sin precio») y una insignia de stock vendible: «Agotado» (0), «Stock bajo» (1 a 10) o «Disponible» (más de 10).
+3. Cada tarjeta muestra el nombre comercial, «{laboratorio} · {código nacional}», el aviso «Requiere receta» si no es de venta libre, el precio «S/ 0.50 c/u» (o «Sin precio») y una insignia de stock vendible: «Agotado» (0, con la tarjeta deshabilitada: no se puede elegir, `nueva-venta.component.html:91`), «Stock bajo» (1 a 10) o «Disponible» (más de 10).
 4. El cajero hace clic en una tarjeta. El SPA pide `GET Ventas/lotes-disponibles?productoId=…` ([RN-VEN-001]: permiso `Ventas:Crear`).
 5. El sistema devuelve como máximo 50 lotes **vendibles de la sucursal del token**: cantidad mayor que 0, lote no vencido y sin retención en cuarentena, ordenados por vencimiento más próximo y luego por número de lote ([RN-VEN-075], [RN-VEN-012], [RN-VEN-013]). Un lote se vende hasta el final de su día de caducidad.
 6. El SPA muestra «Lote:» y una fila por lote con el número y «Stock Disp: {cantidad}». El terminal no muestra la fecha de vencimiento.
@@ -395,7 +395,7 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 - **A2 — Receta elegida sin número** (paso 3): con un producto controlado el terminal muestra «La receta seleccionada no tiene número de receta: agrégalo en la receta para vender productos de receta retenida o estupefacientes.» y bloquea el cobro. El terminal no tiene campo para escribir el número: hay que agregarlo en la receta.
 - **A3 — Registrar una receta nueva** (paso 2): con `Recetas:Crear` el enlace **Registrar receta** abre `/recetas-medicas/nueva` en otra pestaña; al volver a la pestaña del terminal las recetas del cliente se recargan.
 - **A4 — Solo venta libre** (paso 1): no hay aviso ni se exige receta.
-- **A5 — Dejar la venta en espera** (paso 1): no exige receta ni número ([CU-VEN-20]).
+- **A5 — Dejar la venta en espera** (paso 1): el servidor sí exige la receta y su número: guardar en espera construye las líneas con la misma lógica que el cobro y responde `Venta.Receta.Requerida` (producto controlado sin receta, o receta simple con la política encendida) o `Venta.Receta.NumeroRequerido` (receta sin número) con los mismos mensajes de la tabla; el terminal no bloquea **Guardar y Atender Siguiente** (`puedeGuardarPendiente` no mira el aviso de receta). Lo único que la espera no pide es la confirmación «Receta verificada» ([CU-VEN-09], [CU-VEN-20]; `CreateVentaCommandHandler.cs:50`, `VentaDetalleFactory.cs:152-154`).
 
 **Excepciones**
 
@@ -873,7 +873,7 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 | **Estado** | Implementado |
 
 **Flujo principal**
-1. El cajero hace clic en **Guardar y Atender Siguiente**. El botón solo se deshabilita con el carrito vacío, sin caja o mientras se procesa; no pide receta, pagos ni número de operación.
+1. El cajero hace clic en **Guardar y Atender Siguiente**. El botón solo se deshabilita con el carrito vacío, sin caja o mientras se procesa: el terminal no pide pagos, número de operación ni «Receta verificada» y tampoco adelanta el aviso de receta, pero el servidor sí aplica la regla de receta (paso 3).
 2. El SPA envía `POST /api/v1/Ventas` con `estado = Pendiente`, `pagos = []`, la sesión de caja, el cliente y las líneas.
 3. El sistema valida cliente, caja ([RN-VEN-003], [RN-VEN-004]) y cada línea como en un cobro ([CU-VEN-15]), pero **no** exige «Receta verificada», RUC ni serie ([RN-VEN-052]).
 4. El sistema descuenta el stock de las líneas desde ese momento ([RN-VEN-015]), crea la venta `Pendiente` ligada a la caja con que se creó ([RN-VEN-049], [RN-VEN-051]) y responde 200.
@@ -891,6 +891,8 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 | 3 | La sesión indicada no existe o no está abierta | `Venta.Caja` | 400 | «Ocurrió un error al procesar la venta.» | No se guarda |
 | 3 | Stock insuficiente, lote en cuarentena, vencido, etc. | `Venta.Stock` · `Venta.Cuarentena` · `Venta.Lote` · `Venta.Lote.Vencido` | 400 | Los del mapa de cobro o «Ocurrió un error al procesar la venta.» | No se guarda; el carrito se conserva |
 | 3 | Carrito vacío (solo API) | `CreateVentaCommand.Detalles` | 400 | «Ocurrió un error al procesar la venta.» | No se guarda |
+| 3 | Producto controlado sin receta, o receta simple sin receta con la política de la empresa encendida (la espera no los exime: `CreateVentaCommandHandler.cs:50`, `VentaDetalleFactory.cs:152-154`) | `Venta.Receta.Requerida` | 400 | «Uno de los productos requiere receta médica. Selecciona el cliente y una de sus recetas registradas.» (`pos.messages.recetaRequerida`) | No se guarda; el carrito se conserva |
+| 3 | Receta elegida sin número en un producto controlado | `Venta.Receta.NumeroRequerido` | 400 | «La receta seleccionada no tiene número de receta. Agrégalo en la receta para vender productos de receta retenida o estupefacientes.» (`pos.messages.recetaNumeroRequerido`) | No se guarda; el carrito se conserva |
 
 **Postcondiciones**
 - Éxito: venta `Pendiente` con sus líneas, stock descontado y dispensación reservada.
@@ -1011,7 +1013,7 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 **Flujo principal**
 1. En el detalle de la venta, el actor hace clic en **Anular Venta** (visible si la venta está `Completada` o `Pendiente`, sin devoluciones y con `Ventas:Anular`). Se abre «Anular Venta»: «Esta acción revierte el stock descontado. Ingresa el motivo de la anulación.»
 2. Escribe el «Motivo de Anulación» (obligatorio, hasta 255 caracteres) y hace clic en **Anular Venta**. El SPA envía `PUT /api/v1/Ventas/{id}/anular`.
-3. El sistema comprueba que la venta exista, sea de la sucursal del token (aunque el actor sea `Admin`) y esté en un estado anulable ([RN-VEN-062], [RN-VEN-064]; no hace falta ser el cajero que la vendió), que el motivo no esté en blanco ([RN-VEN-063]) y que no tenga devoluciones ([CU-VEN-25]).
+3. El sistema evalúa en este orden y responde el primer rechazo (`AnularVentaCommandHandler.cs:20-83`, `Venta.cs:89-111`): el validador (identificador vacío, motivo en blanco o de más de 255 caracteres, [RN-VEN-063]); que la venta exista (404 `Venta.Anular`, antes de mirar el token, [RN-VEN-064]); la sucursal del token y que la venta sea de esa sucursal, aunque el actor sea `Admin` ([RN-VEN-062]; no hace falta ser el cajero que la vendió); que no tenga devoluciones, también si está `Devuelta` ([CU-VEN-25]); y solo si está `Completada`, el empleado del token y su caja propia abierta (paso 4). La comprobación de estado de la entidad (ya `Anulada`) va al final ([RN-VEN-065]).
 4. Como la venta está `Completada`, busca la caja propia abierta del actor en la sucursal de la venta y la guarda en `Sesion_Anulacion_ID` ([RN-VEN-067]).
 5. Devuelve a cada fila de stock la cantidad vendida en unidades base (si la fila ya no existe, la línea se omite sin aviso), pasa la boleta a `Anulado` ([RN-CMP-012]), deja la venta `Anulada` con su motivo y registra el evento de auditoría `VENTA_ANULAR` ([RN-VEN-068], [RN-VEN-069], [RN-VEN-061]). Los pagos y el reclamo de seguro quedan como estaban; la dispensación de la receta queda liberada. Responde 204.
 6. El SPA muestra «Venta anulada correctamente.» y recarga el detalle: «Motivo de Anulación:», estado «Anulada», sin **Reimprimir Comprobante**.
@@ -1026,7 +1028,7 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 | Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
 |---|---|---|---|---|---|
 | 2 | Motivo vacío | — (validación del diálogo) | — | «El motivo es obligatorio.» (`pos.ventasDetail.motivoRequired`) | El diálogo no se cierra |
-| 3 | Motivo de solo espacios | `Venta.MotivoAnulacion` / `AnularVentaCommand.Motivo` | 400 | «Error al anular la venta.» (`pos.ventasDetail.anularError`) | No se anula |
+| 3 | Motivo de solo espacios (lo rechaza el validador, antes de buscar la venta; `Venta.MotivoAnulacion` de la entidad es inalcanzable) | `AnularVentaCommand.Motivo` | 400 | «Error al anular la venta.» (`pos.ventasDetail.anularError`) | No se anula |
 | 3 | Venta inexistente | `Venta.Anular` | 404 | «Error al anular la venta.» | No se anula |
 | 3 | Venta de otra sucursal | `Venta.Anular` (`Forbidden`) | 400 | «Error al anular la venta.» | No se anula |
 | 4 | Sin caja propia abierta en esa sucursal | `Venta.Anular.SinSesionAbierta` | 400 | «Necesitas tener tu propia caja abierta en esta sucursal para anular una venta cobrada.» (`pos.ventasDetail.anularSinSesionAbierta`) | No se anula |
@@ -1085,7 +1087,7 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 **Flujo principal**
 1. El actor abre el detalle de una venta. El botón **Anular Venta** solo aparece si la venta está `Completada` o `Pendiente`, no tiene devoluciones y el actor tiene `Ventas:Anular`.
 2. Si el estado es `Anulada` el detalle no ofrece botones; si es `Devuelta` solo permite **Reimprimir Comprobante**.
-3. Si la petición llega al servidor, este rechaza la anulación y la pantalla muestra el mensaje según el código ([RN-VEN-065], [RN-VEN-066]): una venta con alguna línea devuelta ya no se anula, porque anular restauraría y reembolsaría dos veces las unidades ya devueltas.
+3. Si la petición llega al servidor, este rechaza la anulación y la pantalla muestra el mensaje según el código ([RN-VEN-065], [RN-VEN-066]): una venta con alguna línea devuelta ya no se anula, porque anular restauraría y reembolsaría dos veces las unidades ya devueltas. El orden de evaluación es: validador, venta inexistente (404), sucursal del token y venta de otra sucursal, devoluciones, y solo para una venta `Completada` el empleado y la caja propia abierta; el rechazo de «ya anulada» es el último, de modo que una venta `Anulada` no pide caja y una con devoluciones sin caja abierta responde el aviso de devoluciones.
 
 **Flujos alternativos**
 - **A1 — Gestionar el cambio con una devolución** (paso 3): el actor devuelve lo que falte desde el mismo detalle ([CU-DEV-01]); el texto del mensaje remite a «Devoluciones», que no es una pantalla.
@@ -1097,7 +1099,7 @@ En los casos «Solo API (sin pantalla)» no existe «mensaje que ve el usuario»
 | 3 | La venta tiene devoluciones, o está `Devuelta` | `Venta.Anular.ConDevoluciones` | 400 | «Esta venta tiene devoluciones registradas y ya no puede anularse. Gestiona los cambios desde Devoluciones.» (`pos.ventasDetail.anularConDevoluciones`) | No se anula |
 | 3 | La venta ya está `Anulada` | `Venta.Anular` | 400 | «Error al anular la venta.» | No se anula |
 | 3 | La venta es de otra sucursal (también para el `Admin`) | `Venta.Anular` | 400 | «Error al anular la venta.» | No se anula |
-| 3 | Motivo de solo espacios | `Venta.MotivoAnulacion` | 400 | «Error al anular la venta.» | No se anula |
+| 3 | Motivo de solo espacios (lo rechaza el validador, antes de buscar la venta) | `AnularVentaCommand.Motivo` | 400 | «Error al anular la venta.» | No se anula |
 | 2 | Motivo de más de 255 caracteres | — (validación del diálogo) | — | Ninguno: el botón **Anular Venta** no hace nada | El diálogo sigue abierto |
 | 3 | La venta no existe o es de otra empresa | `Venta.Anular` | 404 | «Error al anular la venta.» | No se anula |
 
@@ -1442,7 +1444,7 @@ stateDiagram-v2
 | Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
 |---|---|---|---|---|---|
 | 2 | Efectivo esperado negativo | `PosSesionCaja.MontoCierreCalculado` | 400 | «Error al cerrar la sesión» (el mensaje del servidor está en inglés y no llega al usuario) | La sesión sigue `Abierta` |
-| 2 | La sesión no existe o no es de una sucursal accesible | `Caja` | 404 | «Error al cerrar la sesión» | No se cierra |
+| 2 | La sesión no existe o no es de la empresa (el cierre no consulta las sucursales accesibles: `CerrarCajaCommandHandler.cs:22-32`) | `Caja` | 404 | «Error al cerrar la sesión» | No se cierra |
 | 2 | La sesión no está `Abierta` | `PosSesionCaja.Cerrar` | 400 | «Error al cerrar la sesión» | No se cierra |
 | 2 | Falta el empleado en el token | `Auth.Empleado` | 400 | «Error al cerrar la sesión» | No se cierra |
 | 2 | Dos cierres simultáneos | `Concurrency.Conflict` | 409 | «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» | Solo se guarda uno |
@@ -1606,7 +1608,7 @@ flowchart TD
 - **A1 — Devolución parcial** (paso 6): devolver 30 de 100 unidades; la venta sigue `Completada` y quedan 70 devolvibles.
 - **A2 — Devolución total en dos pasos** (paso 1): con **Devolver todo lo pendiente** (70 unidades) el motivo propuesto es «06 — Devolución total» y la venta pasa a `Devuelta`, que ya no admite más devoluciones ni anulación.
 - **A3 — Qué no cambia** (paso 6): los pagos, el total, la boleta y su estado no cambian; la receta médica y sus dispensaciones no se tocan ([RN-DEV-026], [CU-VEN-10]); una venta con devoluciones ya no se puede anular ([RN-VEN-066], [CU-VEN-25]).
-- **A4 — Repetir la devolución** (paso 3): el botón se deshabilita mientras guarda; un segundo intento recibe `Devolucion.Cantidad.Excedida` si ya no queda saldo, o el conflicto de concurrencia.
+- **A4 — Repetir la devolución** (paso 3): el botón se deshabilita mientras guarda; un segundo intento recibe `Devolucion.Cantidad.Excedida` si la venta sigue `Completada` y ya no queda saldo para lo pedido, `Devolucion.Venta.EstadoInvalido` si la primera devolución dejó la venta `Devuelta` (el estado se comprueba antes que las cantidades, `Venta.cs:116-118`), o el conflicto de concurrencia.
 
 **Excepciones** (las condiciones de rechazo detalladas están en [CU-DEV-06])
 
@@ -2852,7 +2854,7 @@ El módulo tiene dos registros independientes: la **agenda de servicios** (`Serv
 **Flujo principal**
 1. El integrador llama a `POST /api/v1/Servicios/agenda` con `clienteId`, `productoId`, `ventaId` (opcional), `fechaHoraProgramada` y `estadoCita` (por defecto `Programada`). El validador está vacío ([RN-SRV-002]).
 2. El sistema comprueba que el paciente, el producto y, si se envía, la venta existan en la empresa; solo existencia: el producto puede ser cualquier medicamento y la venta no se compara con el paciente ([RN-SRV-003]).
-3. La entidad exige un estado de cita no vacío ni de solo espacios, de hasta 20 caracteres; cualquier texto es válido. La fecha no tiene comprobaciones (puede ser pasada, no hay horario ni choque de citas). Un identificador de venta vacío se guarda como «sin venta» ([RN-SRV-004]).
+3. La entidad exige un estado de cita no vacío ni de solo espacios, de hasta 20 caracteres; cualquier texto es válido. La fecha no tiene comprobaciones (puede ser pasada, no hay horario ni choque de citas). Si `ventaId` se omite (nulo) la cita queda «sin venta» ([RN-SRV-004]); un identificador vacío (el GUID de ceros) no equivale a omitirlo: el handler lo busca como venta y responde 404 `Venta.NotFound` (`AgendarServicioCommandHandler.cs:23`).
 4. Guarda la cita y responde **200** con su identificador ([RN-SRV-005]). Ninguna operación posterior cambia el estado de la cita ([CU-OPS-17]).
 
 **Excepciones**
@@ -2861,7 +2863,7 @@ El módulo tiene dos registros independientes: la **agenda de servicios** (`Serv
 |---|---|---|---|---|---|
 | 2 | El paciente no existe | `Paciente.NotFound` | 404 | Sin pantalla (`code`) | No se agenda |
 | 2 | El producto no existe | `Medicamento.NotFound` | 404 | Sin pantalla (`code`) | No se agenda |
-| 2 | La venta no existe | `Venta.NotFound` | 404 | Sin pantalla (`code`) | No se agenda |
+| 2 | La venta no existe, o `ventaId` es el GUID vacío (omitirlo, nulo, sí es válido) | `Venta.NotFound` | 404 | Sin pantalla (`code`) | No se agenda |
 | 3 | Estado vacío o de más de 20 caracteres | `ServicioAgenda.EstadoCita` | 400 | Sin pantalla (`code`) | No se agenda |
 | 4 | La base rechaza una referencia | `Db.ReferenciaInvalida` | 409 | Sin pantalla (`code`) | No se agenda |
 | 4 | La tabla `Servicios_Agenda` no tiene las columnas que EF mapea (`LastModifiedAt`, `LastModifiedBy`, `DeletedAt`, `DeletedBy`) | error de base de datos sin mapear ([RN-SRV-019], [RN-GEN-040]) | 500 | Sin pantalla | **No verificado** en ejecución |
@@ -2899,7 +2901,7 @@ El módulo tiene dos registros independientes: la **agenda de servicios** (`Serv
 | Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
 |---|---|---|---|---|---|
 | 2 | Fecha de administración vacía | `RegistrarInmunizacionCommand.FechaAdmnFisica` | 400 | Sin pantalla (`code`) | No se registra |
-| 3 | El paciente, el profesional, el producto o la venta no existen | `Paciente.NotFound` · `Empleado.NotFound` · `Medicamento.NotFound` · `Venta.NotFound` | 404 | Sin pantalla (`code`) | No se registra |
+| 3 | El paciente, el profesional, el producto o la venta no existen (`ventaId` omitido, nulo, es válido; el GUID vacío se busca como venta y da `Venta.NotFound`, `RegistrarInmunizacionCommandHandler.cs:44`) | `Paciente.NotFound` · `Empleado.NotFound` · `Medicamento.NotFound` · `Venta.NotFound` | 404 | Sin pantalla (`code`) | No se registra |
 | 4 | El lote no existe o es de otro producto | `LoteInventario.NotFound` | 404 | Sin pantalla (`code`) | No se registra |
 | 4 | Lote vencido en la fecha de administración | `Inmunizacion.Lote.Vencido` | 400 | Sin pantalla (`code`) | No se registra |
 | 5 | Vía o sitio vacíos o muy largos, volumen ≤ 0 | `ServicioClinicoInmunizacion.ViaAdministracion` · `.SitioAnatomico` · `.VolumenDosis` | 400 | Sin pantalla (`code`) | No se registra |
