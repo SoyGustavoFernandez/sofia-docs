@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Revisión 2026-11-20 (versión 1.1) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Citas desplazadas y cita corregida de `GetStockPorSucursalByIdQueryHandler`. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. `git status --short` en ambos repos al empezar: sin cambios sin commitear (ver §7). |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` |
+| **Método** | Revisión a fondo (semántica) 2026-11-26 (versión 1.2) contra `sofia-apis` `b67e3ee` y `sofia-web-spa` `526bc8f`: se confirmó que el ingreso de stock sin lote falla en `stock-detail.component.ts:183`; se contrastaron con el código los validadores y entidad de lotes, el ingreso y ajuste de stock, las guardas de eliminación, la validación de pacientes, el stock del escáner de recetas y su límite de peticiones. Revisión 2026-11-20 (versión 1.1) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Citas desplazadas y cita corregida de `GetStockPorSucursalByIdQueryHandler`. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. `git status --short` en ambos repos al empezar: sin cambios sin commitear (ver §7). |
 
 Este documento es la parte E del inventario de pantallas. Cubre cinco módulos: Lotes, Stock por sucursal, Pacientes, Profesionales de salud y Recetas médicas (18 rutas). Lo compartido (guards, interceptor, `page-header`, `confirm-dialog`, carga masiva común, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); el formato de las fichas y el patrón de búsqueda y detalle están validados en la [parte C, §0](catalogos-basicos.md). Las reglas de negocio de estos módulos están en [`negocio/reglas/inventario-y-recetas`](../../negocio/reglas/inventario-y-recetas.md) (LOT, STK, REC) y [`negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md) (PAC, PRO), y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -342,13 +342,13 @@ Nota 1. Los dos controles de autocompletar no tienen validadores, así que Angul
 
 Sucursales que ofrece: solo las que devuelve `GET /api/v1/sucursales/permitidas`, que el servidor calcula con el acceso del usuario (`GetSucursalesPermitidasQueryHandler.cs:13-22`): su sucursal base, las asignadas a su cuenta y a sus roles; `Admin`, todas (RN-STK-006 de `negocio/reglas/inventario-y-recetas`). Lotes que ofrece: cualquier lote no eliminado de la empresa cuyo número contenga el texto, **sin filtrar por vigencia ni por producto** (el ingreso no comprueba que el lote esté vigente, RN-STK-007).
 
-**Qué hace «Guardar» cuando no hay lote elegido — No verificado en ejecución.** El método `saveNew()` (`stock-detail.component.ts:179-202`) hace, en este orden:
+**Qué hace «Guardar» cuando no hay lote elegido — confirmado: el ingreso sin lote falla en `stock-detail.component.ts:183`.** El método `saveNew()` (`stock-detail.component.ts:179-202`) hace, en este orden:
 1. `sucursalTouched` y `loteTouched` pasan a verdaderos (`:180-181`).
 2. Si el texto de la sucursal no coincide con `selectedSucursal()?.nombre`, deja `selectedSucursal` en `null` (`:182`).
 3. En la línea `:183` evalúa `this.loteCtrl.value !== this.loteDisplay(this.selectedLote()!)`. El operador `!` solo calla al compilador: `selectedLote()` vale `null` cuando no se eligió ningún lote, y `loteDisplay(lote)` lee `lote.numeroLoteMfr` (`:127-129`), así que la lectura lanza un `TypeError` («Cannot read properties of null (reading 'numeroLoteMfr')»).
 4. La excepción sale del manejador del clic: el método termina en ese punto, no se ejecuta `this.form.markAllAsTouched()` ni la comprobación de la línea `:185`, **no se envía ninguna petición**, `saving` queda en falso y no se muestra aviso. El error solo queda en la consola del navegador (lo registra el `ErrorHandler` de Angular).
 
-Efecto para el usuario según el código: al pulsar «Guardar» sin haber elegido un lote no ocurre nada visible (ni petición ni mensaje; los `<mat-error>` tampoco se pintan, nota 1). Si habías elegido un lote y luego cambiaste o borraste el texto, `selectedLote()` aún no es nulo en la línea `:183`, no hay excepción, la elección se descarta (`selectedLote.set(null)`) y el método vuelve en `:185` sin mensaje. Si falta solo la sucursal pero hay lote, tampoco hay mensaje. Ninguna de estas ramas se ejecutó; el componente no tiene spec.
+Efecto para el usuario según el código (el fallo del ingreso sin lote está confirmado; el resto de las ramas no se ejecutó): al pulsar «Guardar» sin haber elegido un lote no ocurre nada visible (ni petición ni mensaje; los `<mat-error>` tampoco se pintan, nota 1). Si habías elegido un lote y luego cambiaste o borraste el texto, `selectedLote()` aún no es nulo en la línea `:183`, no hay excepción, la elección se descarta (`selectedLote.set(null)`) y el método vuelve en `:185` sin mensaje. Si falta solo la sucursal pero hay lote, tampoco hay mensaje. Ninguna de estas ramas se ejecutó; el componente no tiene spec.
 
 **Botones y acciones**
 
@@ -1104,7 +1104,7 @@ Los specs `pacientes-detail.delete.spec.ts` y `profesionales-salud-detail.delete
 
 | # | Tema | Por qué no se verificó |
 |---|---|---|
-| 1 | Stock por sucursal, «Guardar» en `/stock-por-sucursal/nueva` sin lote elegido: `TypeError` en la línea `:183` de `stock-detail.component.ts`, sin petición ni aviso visible (§2.2) | Se deduce de leer `saveNew()` y `loteDisplay()`; no se ejecutó |
+| 1 | Stock por sucursal, «Guardar» en `/stock-por-sucursal/nueva` sin lote elegido: `TypeError` en la línea `:183` de `stock-detail.component.ts`, sin petición ni aviso visible (§2.2) | Resuelto: el fallo está confirmado (la ausencia de aviso visible y de petición se deduce de la lectura del código) |
 | 2 | Stock por sucursal: los textos «Debes seleccionar una sucursal» y «Debes seleccionar un lote» no se pintan porque los controles no tienen validadores (§2.2, nota 1) | Se deduce de leer la plantilla y el código de `MatFormField` (`form-field2.mjs:847`); no se ejecutó |
 | 3 | Lotes: que un duplicado devuelva 400 y por tanto muestre «Error al guardar el lote» y no el aviso de duplicado (§1.2) | Se deduce de `Result.Failure(error)` sin código de estado (400 por defecto) y de que el SPA solo mira el 409; no se llamó a la API |
 | 4 | Lotes: no poder guardar la edición de un lote ya vencido (§1.2) | Se deduce de `UpdateLoteInventarioCommandValidator.cs:21-23`; no se probó |
