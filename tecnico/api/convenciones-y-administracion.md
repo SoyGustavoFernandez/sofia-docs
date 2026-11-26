@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
-| **Método** | Lectura de código y llamadas reales a la API local (2026-10-30). Versión 1.1: revisión contra el código y alta de las fichas de suscripción y de `Plataforma`, escritas desde el código (sin llamar a la API); ver 11.5 |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` |
+| **Método** | Lectura de código y llamadas reales a la API local (2026-10-30). Versión 1.1: revisión contra el código y alta de las fichas de suscripción y de `Plataforma`, escritas desde el código (sin llamar a la API); ver 11.5. Versión 1.2: revisión semántica (condiciones, orden de evaluación, efectos y HTTP reales) contra el código de `b67e3ee`, leído con `git archive`; ver 11.6 |
 
 ## Contenido
 
@@ -38,18 +38,18 @@ Todo lo de esta sección vale para los 5 documentos de la referencia. Los ejempl
 | Tema | Regla | Fuente |
 |---|---|---|
 | URL base | `https://{host}/api/v1/{Controlador}`. En el entorno local de la referencia es `https://localhost:7300/api/v1/…` con certificado de desarrollo (en `curl`, usa `-k`). | `sofia-apis/src/SOFIA.API/Controllers/AuthController.cs:14-15` (`[Route("api/v{version:apiVersion}/[controller]")]`) |
-| Versión | Solo existe la `1.0`, y va en la ruta: no hay versión por cabecera ni por consulta. Una ruta sin `v1` (por ejemplo `/api/v2/Sucursales`) no se enruta a un controlador; sin token responde 401. | `sofia-apis/src/SOFIA.API/Program.cs:68-73`, `AuthController.cs:13` (`[ApiVersion("1.0")]`) |
+| Versión | Solo existe la `1.0`, y va en la ruta: no hay versión por cabecera ni por consulta. Una ruta sin `v1` (por ejemplo `/api/v2/Sucursales`) no se enruta a un controlador; sin token responde 401. | `sofia-apis/src/SOFIA.API/Program.cs:66-71`, `AuthController.cs:13` (`[ApiVersion("1.0")]`) |
 | Nombre del controlador | Es el nombre de la clase sin «Controller», respetando mayúsculas del código (`Sucursales`, `SeriesFiscales`). ASP.NET no distingue mayúsculas en la ruta. | `[Route(... "[controller]")]` |
 | Formato | JSON en `camelCase` en peticiones y respuestas. Los **enumerados viajan como número** (por ejemplo `estado: 0` en `Empresas`, `tipoComprobante: 2` en `SeriesFiscales`); en el cuerpo, un texto como `"Boleta"` se rechaza con 400. En parámetros de consulta (`?estado=Activo`) sí se aceptan el nombre o el número. | `Program.cs` (sin `JsonStringEnumConverter` en todo `sofia-apis/src`); ejemplos reales en 2.2 y 7.2 |
 | Nombres con guion bajo | Algunos modelos conservan guiones bajos del código y el JSON los respeta: `Empleados` usa `sucursal_Base_ID`, `apellido_Paterno`, `nombre_Completo`, `licencia_Prof`. Al recibir, el nombre no distingue mayúsculas. | `SOFIA.Application/Empleados/EmpleadoDto.cs`; ejemplo en 4.2 |
-| Salud del servicio | `GET /health` es anónimo y devuelve `{ "status": "Healthy", "timestamp": "…" }`. No lleva `/api/v1`. | `Program.cs:137-143` |
-| Cabeceras de respuesta | Toda respuesta lleva `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none';` y, bajo `/api`, `Cache-Control: no-store`. | `SOFIA.API/Infrastructure/SecurityHeadersMiddleware.cs:11-28` (regla RN-GEN-030) |
+| Salud del servicio | `GET /health` es anónimo y devuelve `{ "status": "Healthy", "timestamp": "…" }`. No lleva `/api/v1`. | `Program.cs:119-126` |
+| Cabeceras de respuesta | Toda respuesta lleva `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Permitted-Cross-Domain-Policies: none`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none';` y, bajo `/api`, `Cache-Control: no-store`. | `SOFIA.API/Infrastructure/SecurityHeadersMiddleware.cs:11-28` (regla RN-GEN-030) |
 
 ### 0.2 Cabeceras de la petición
 
 | Cabecera | Cuándo | Valor |
 |---|---|---|
-| `Authorization` | Todo endpoint, salvo los anónimos (`Auth/login`, `Auth/refresh`, `Auth/logout`, `Auth/forgot-password`, `Auth/reset-password`, `Empresas/registrar`). | `Bearer <token>`, con el `accessToken` que devuelve el inicio de sesión. Vive 15 minutos (`Jwt:ExpiryMinutes` = 15 en `appsettings.json`) y la API tolera 30 segundos de desfase de reloj (`SOFIA.Infrastructure/DependencyInjection.cs:72`). |
+| `Authorization` | Todo endpoint, salvo los anónimos (`Auth/login`, `Auth/refresh`, `Auth/logout`, `Auth/forgot-password`, `Auth/reset-password`, `Empresas/registrar`, `Plataforma/pago`). | `Bearer <token>`, con el `accessToken` que devuelve el inicio de sesión. Vive 15 minutos (`Jwt:ExpiryMinutes` = 15 en `appsettings.json`) y la API tolera 30 segundos de desfase de reloj (`SOFIA.Infrastructure/DependencyInjection.cs:72`). |
 | `Content-Type` | Peticiones con cuerpo. | `application/json` en casi todo. `multipart/form-data` (campo `file`) solo en los `previsualizar` de carga masiva. Las respuestas de error son `application/problem+json`. |
 | `X-SOFIA-CSRF` | Solo `POST /Auth/refresh` y `POST /Auth/logout` (los únicos que se autentican con cookie). | Cualquier valor no vacío. Sin la cabecera, 403 con `code` `Auth.Csrf`. |
 | `Cookie` | `POST /Auth/refresh` y `POST /Auth/logout`. | `refresh_token=<token>`. La entrega el inicio de sesión (ver 0.3). |
@@ -66,7 +66,7 @@ Content-Length: 0
 WWW-Authenticate: Bearer
 ```
 
-El 401 también se produce con un token vencido, mal firmado, con sello de seguridad obsoleto (tras cambiar la clave, cerrar sesión o cambiar los roles de la cuenta), de una cuenta inactiva o de una empresa no vigente (reglas RN-GEN-016 a RN-GEN-018).
+El 401 también se produce con un token vencido, mal firmado, con sello de seguridad obsoleto (tras cambiar la clave, cerrar sesión o cambiar los roles de la cuenta), de una cuenta inactiva o eliminada, sin los claims de cuenta o de empresa, o de una empresa no vigente (reglas RN-GEN-016 a RN-GEN-018). La vigencia de la empresa se guarda en caché 1 minuto por empresa, así que suspenderla o vencerla corta los tokens vivos dentro de ese plazo; la cuenta de un operador de plataforma no se corta por la vigencia de su propia empresa (`SOFIA.Infrastructure/DependencyInjection.cs:26,75-138`).
 
 ### 0.3 Sesión: token de acceso y cookie de refresco
 
@@ -167,11 +167,13 @@ El estado HTTP de un fallo de negocio **no sale del tipo de error** (`Validation
 
 - Un conflicto de negocio que el handler no marca con 409 sale como **400**: por ejemplo `Rol.DuplicateName`, `Rol.InUse` y `Permiso.Duplicate` (`Conflict` por tipo, 400 por estado). Las fichas indican siempre el estado real capturado.
 - Los fallos de validación (`ValidationBehavior`) y los errores de las entidades de dominio salen como 400.
-- Éxito: un `Result<T>` responde **200** con el valor; un `Result` sin valor responde **204** sin cuerpo; las creaciones responden **201** con `Location`.
+- Éxito: un `Result<T>` responde **200** con el valor; un `Result` sin valor responde **204** sin cuerpo; las creaciones responden **201** con `Location` (salvo `Empresas/registrar`, que responde 201 con `{ "token" }` y sin `Location`, `EmpresasController.cs:36`).
 
 **Validación.** `ValidationBehavior` ejecuta los validadores del request antes del handler. Si falla alguno: estado 400, `code` = `"{NombreDelRequest}.{Propiedad del PRIMER fallo}"` y `detail` = todos los mensajes unidos con `; ` (`SOFIA.Application/Common/Behaviors/ValidationBehavior.cs:27-47`, regla RN-GEN-011). En colecciones el nombre incluye el índice (`CargaMasivaRolesCommand.Rows[0].NombreRol`). Un request `IRequest<Result<T>>` de consulta usa el mismo mecanismo (por ejemplo `GetDashboardVentasQuery.Hoy`, 8.2).
 
-**Orden de comprobación de una petición** (`Program.cs:129-134`): autenticación y token → cambio de clave obligatorio → permiso → límite de peticiones → enlace del cuerpo (400 estándar) → validadores (400 con `code`) → handler dentro de una transacción (404, 409, 403 de negocio) → 2xx.
+**Sanitización previa.** Antes de validar, `SanitizationBehavior` pasa por `HtmlSanitizer` (sin etiquetas, atributos ni esquemas permitidos) **toda propiedad de texto** de cada request, comandos y consultas, salvo las que se llaman `password`, `passwordHash`, `token`, `recoveryToken`, `secretKey`, `hash`, `newPassword` o `confirmPassword` (sin distinguir mayúsculas). Solo se recorren las propiedades de texto del propio request: las de objetos anidados, como las filas (`Rows`) de la carga masiva, no se sanean. Los validadores y los handlers ven el texto ya saneado: se pierden las etiquetas HTML y los caracteres especiales pueden quedar codificados como entidades. `currentPassword` de `Auth/change-password` **no** está en la lista de exclusión y se sanea (ver 1). Fuente: `SOFIA.Application/Common/Behaviors/SanitizationBehavior.cs:10-14`, `SOFIA.Infrastructure/Services/HtmlSanitizerService.cs`, orden de registro en `SOFIA.Application/DependencyInjection.cs:16-19`. No verificado en ejecución: el texto exacto que resulta para cada carácter.
+
+**Orden de comprobación de una petición** (`Program.cs:112-115`): autenticación y token → cambio de clave obligatorio → permiso → límite de peticiones → cabecera `X-SOFIA-CSRF` (solo `refresh` y `logout`; es un filtro de MVC, así que se evalúa después del límite) → enlace del cuerpo (400 estándar) → validadores (400 con `code`) → handler dentro de una transacción (404, 409, 403 de negocio) → 2xx.
 
 ### 0.6 Ejemplos reales de error comunes
 
@@ -259,7 +261,7 @@ Los filtros de texto (`nombre`, `nombreRol`, `numeroLicencia`, …) buscan «con
 
 ### 0.8 Filtros por fecha
 
-Los filtros «desde/hasta» (por ejemplo `fechaVencimientoDesde` y `fechaVencimientoHasta` en `Empresas`) son `DateTimeOffset` en ISO 8601 (`2026-12-01T00:00:00Z`). Son **inclusivos en ambos extremos** (`>=` y `<=`), se normalizan a UTC y un valor sin zona se toma como UTC (regla RN-GEN-008). Todas las fechas de las respuestas salen con zona (por ejemplo `2026-10-30T22:31:07.2616955+00:00`).
+Los filtros «desde/hasta» (por ejemplo `fechaVencimientoDesde` y `fechaVencimientoHasta` en `Empresas`) son `DateTimeOffset` en ISO 8601 (`2026-12-01T00:00:00Z`). Son **inclusivos en ambos extremos** (`>=` y `<=`) (regla RN-GEN-008). En `Empresas` el parámetro es `DateTimeOffset` y se compara tal cual como instante (`GetEmpresasQueryHandler.cs:31-39` (`SOFIA.Application/Empresas/Queries/GetEmpresas`)): con zona el valor es exacto; **sin zona**, lo interpreta el enlace del modelo con la zona horaria del servidor, no se fuerza a UTC. La normalización a UTC de valores sin zona (`QueryableExtensions.WhereDateRange`) es la de los listados que filtran con `DateTime`, que no están en esta parte. Envía siempre la zona (`Z` o un desfase). Todas las fechas de las respuestas salen con zona (por ejemplo `2026-10-30T22:31:07.2616955+00:00`).
 
 Los endpoints del `Dashboard` reciben `hoy`, el instante en que empieza el día local del cliente con su desfase (`2026-10-30T00:00:00-05:00`); se acepta hasta ±36 horas respecto de la hora del servidor (8.1).
 
@@ -400,8 +402,8 @@ Valida usuario y contraseña y abre una sesión: devuelve el token de acceso en 
 |---|---|---|---|
 | 400 | `LoginCommand.NombreUsuario` | Usuario vacío o de más de 50 caracteres. | RN-AUT-001 |
 | 400 | `LoginCommand.Password` | Contraseña vacía. | RN-AUT-002 |
-| 401 | `Auth.InvalidCredentials` | Usuario inexistente, eliminado o inactivo; cuenta bloqueada; contraseña incorrecta (suma un intento fallido); sucursal base de otra empresa. La respuesta es la misma en todos los casos, para no revelar si el usuario existe. | RN-AUT-003 a RN-AUT-008 |
-| 403 | `Auth.EmpresaNoVigente` | Credenciales correctas, pero la empresa está suspendida, cancelada o vencida. | RN-AUT-009, RN-EMP-014 |
+| 401 | `Auth.InvalidCredentials` | Usuario inexistente, eliminado o inactivo; cuenta bloqueada; contraseña incorrecta (suma un intento fallido; al quinto se bloquea 15 minutos); cuenta sin empleado o con sucursal base de otra empresa. Un bloqueo vigente no suma intentos. Se evalúan en ese orden y la respuesta es la misma en todos los casos, para no revelar si el usuario existe. | RN-AUT-003 a RN-AUT-008 |
+| 403 | `Auth.EmpresaNoVigente` | Credenciales correctas (se comprueba después de la contraseña y de la sucursal base), pero la empresa está suspendida, cancelada, eliminada o vencida. La cuenta de un operador de plataforma queda exenta (`EmpresaVigencia.cs:13-15`). | RN-AUT-009, RN-EMP-014 |
 | 429 | — | Más de 10 peticiones por minuto desde la IP. | RN-GEN-026 |
 
 **Ejemplo real** (cuenta de prueba `4a.elena`):
@@ -462,7 +464,7 @@ Cambia el token de refresco de la cookie por un token de acceso nuevo y un token
 |---|---|---|---|
 | 403 | `Auth.Csrf` | Falta la cabecera `X-SOFIA-CSRF`. | RN-AUT-013 |
 | 401 | — (`ProblemDetails` con `type`, `title`, `status` y `traceId`) | No hay cookie. | RN-AUT-014 |
-| 401 | `Auth.InvalidRefreshToken` | Token inexistente, vencido o revocado; cuenta inactiva o eliminada; empresa no vigente; sucursal base ajena. Reusar un token ya rotado se interpreta como robo y revoca **todas** las sesiones de la cuenta. | RN-AUT-015 a RN-AUT-017 |
+| 401 | `Auth.InvalidRefreshToken` | Token inexistente, vencido o revocado; cuenta inactiva o eliminada; empresa no vigente; sucursal base ajena. Reusar un token ya rotado **más de 30 segundos después** de revocarse se interpreta como robo y revoca **todas** las sesiones de la cuenta y cambia su sello de seguridad; dentro de esos 30 segundos (dos pestañas que renuevan a la vez) solo se rechaza con 401, sin revocar más (`RefreshToken.cs:8,35`). Si falla la comprobación de sucursal base o de vigencia de la empresa, se rechaza sin revocar el token. | RN-AUT-015 a RN-AUT-017 |
 
 **Ejemplo real** (después de iniciar sesión con la cuenta de prueba; la respuesta no repite el token en el cuerpo de la cookie):
 
@@ -587,10 +589,10 @@ Cambia la contraseña de la cuenta del token (nunca otra) y cierra todas sus ses
 
 | Campo | Tipo | Obligatorio | Reglas |
 |---|---|---|---|
-| `currentPassword` | texto | Sí | No vacía; debe coincidir con la guardada (RN-AUT-025, RN-AUT-029). |
+| `currentPassword` | texto | Sí | No vacía; debe coincidir con la guardada (RN-AUT-025, RN-AUT-029). A diferencia de `password` y `newPassword`, **sí pasa por la sanitización HTML** (0.5) antes de compararse. |
 | `newPassword` | texto | Sí | No vacía, al menos 8 caracteres y distinta de la actual (comparación exacta) (RN-AUT-026, RN-AUT-027). |
 
-**Respuesta correcta:** `204 No Content`. Se guarda el nuevo hash (BCrypt), se apaga «debe cambiar la clave», se revocan los tokens de refresco, cambia el sello de seguridad y se borra la cookie: hay que iniciar sesión de nuevo (RN-AUT-030).
+**Respuesta correcta:** `204 No Content`. Se guarda el nuevo hash (BCrypt), se apaga «debe cambiar la clave», se revocan los tokens de refresco, cambia el sello de seguridad, se borra la cookie y se registra el evento de seguridad `CLAVE_CAMBIAR` (`ChangePasswordCommand.cs:8-9`): hay que iniciar sesión de nuevo (RN-AUT-030). Una contraseña actual incorrecta no suma intentos fallidos ni bloquea la cuenta.
 
 **Errores posibles:**
 
@@ -676,7 +678,7 @@ Fija una contraseña nueva con el token que llegó por correo.
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `ResetPasswordCommand.NombreUsuario` / `.Token` / `.NewPassword` | Campo vacío o contraseña de menos de 8 caracteres. | RN-AUT-037 |
-| 400 | `Auth.InvalidToken` | Usuario inexistente, o token inexistente, distinto del vigente o vencido (mismo error para no revelar la cuenta). | RN-AUT-038 |
+| 400 | `Auth.InvalidToken` | Usuario inexistente, o token inexistente, distinto del vigente o vencido (mismo error para no revelar la cuenta). No se comprueba que la cuenta esté activa ni que la empresa esté vigente. | RN-AUT-038 |
 | 429 | — | Límite `auth`. | RN-GEN-026 |
 
 **Ejemplo no verificado:** el encargo limita este endpoint a la lectura del código (el token de recuperación solo existe en el correo y el endpoint cambia la contraseña de una cuenta compartida). Petición esperada según el código:
@@ -722,8 +724,8 @@ Registro público: crea en una sola transacción la empresa, su sede principal, 
 | `adminApellidoMaterno` | texto | No | Hasta 75 caracteres. |
 | `adminEmail` | texto | Sí | Formato de correo, hasta 254 caracteres; es el correo de recuperación de contraseña (RN-EMP-009). |
 | `direccionSede` | texto | Sí | Dirección de la sede principal, hasta 255 caracteres (RN-EMP-010). |
-| `nombreSede` | texto | No | Si falta, la sede se llama «Sede Principal». |
-| `numeroLicencia` | texto | No | Si falta, la sede nace con licencia vacía y debe completarla al editarla (RN-EMP-010, RN-SUC-004). |
+| `nombreSede` | texto | No | Si falta o es solo espacios, la sede se llama «Sede Principal». El validador no limita su longitud; la columna admite 100 caracteres (`SucursalConfiguration.cs:19-21`): No verificado en ejecución qué responde la API con más de 100. |
+| `numeroLicencia` | texto | No | Si falta o es solo espacios, la sede nace con licencia vacía y debe completarla al editarla (RN-EMP-010, RN-SUC-004). Sin límite en el validador; la columna admite 50 caracteres (`SucursalConfiguration.cs:28-31`): No verificado en ejecución qué responde la API con más de 50. |
 
 **Respuesta correcta:** `201 Created` con `{ "token": "<token>" }` (el token de acceso; **la clave se llama `token`**, no `accessToken`) y la cookie `refresh_token`, como un inicio de sesión (RN-EMP-013). La empresa nace en estado `TrialActivo` con vencimiento a 30 días (RN-EMP-012) y la cuenta del administrador no exige cambio de clave.
 
@@ -731,7 +733,7 @@ Registro público: crea en una sola transacción la empresa, su sede principal, 
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `RegistrarEmpresaCommand.{Propiedad}` | Falla algún campo (por ejemplo `RegistrarEmpresaCommand.NombreEmpresa`, `.RUC`, `.Usuario`, `.DireccionSede`). | RN-EMP-002 a RN-EMP-010 |
+| 400 | `RegistrarEmpresaCommand.{Propiedad}` | Falla algún campo (por ejemplo `RegistrarEmpresaCommand.NombreEmpresa`, `.RUC`, `.Usuario`, `.DireccionSede`). Es lo primero que se evalúa; después el handler comprueba el RUC, luego el usuario y por último crea las entidades. | RN-EMP-002 a RN-EMP-010 |
 | 409 | `Empresa.RUC.Duplicado` | Ya existe una empresa con ese RUC (detalle: «Ya existe una empresa registrada con este RUC.»). | RN-EMP-005 |
 | 409 | `Auth.DuplicateUsername` | El usuario ya está en uso en cualquier empresa. | RN-EMP-006 |
 | 429 | — | Más de 5 registros por hora desde la IP. | RN-GEN-027 |
@@ -1011,7 +1013,7 @@ Deja la empresa en estado `Activo` hasta la fecha indicada; al llegar esa fecha 
 
 **Parámetros de ruta:** `id` (GUID, obligatorio). **Cuerpo:** `fechaVencimiento` (tabla anterior).
 
-**Respuesta correcta:** `204 No Content`. Se audita como `EMPRESA_ACTIVAR` con «Vence: aaaa-mm-dd» (`ActivarSuscripcionEmpresaCommand.cs:11-12`).
+**Respuesta correcta:** `204 No Content`. Se audita como `EMPRESA_ACTIVAR` con «Vence: aaaa-mm-dd» (fecha en UTC; `ActivarSuscripcionEmpresaCommand.cs:11-12`).
 
 **Errores posibles:**
 
@@ -1075,7 +1077,7 @@ Deja la empresa en `Suspendido`: pierde el acceso al iniciar sesión, al renovar
 
 **Parámetros de ruta:** `id` (GUID). **Cuerpo:** ninguno. **Respuesta correcta:** `204 No Content`; se audita como `EMPRESA_SUSPENDER`.
 
-**Errores posibles:** 400 `SuspenderEmpresaCommand.Id` (identificador vacío); 403 (igual que en `activar`); 404 `Empresa.NotFound`; **409 `Empresa.Suscripcion.PropiaEmpresa`** si el id es el de la empresa del propio operador (`EmpresaPlataformaExtensions.cs:11-12,21-22`, `SuspenderEmpresaCommandHandler.cs:23-26`).
+**Errores posibles:** 400 `SuspenderEmpresaCommand.Id` (identificador vacío); 403 (igual que en `activar`); **409 `Empresa.Suscripcion.PropiaEmpresa`** si el id es el de la empresa del propio operador (`EmpresaPlataformaExtensions.cs:11-12,21-22`, `SuspenderEmpresaCommandHandler.cs:23-26`); 404 `Empresa.NotFound`. El handler evalúa en ese orden: 403, 409 y 404 (la comprobación de empresa propia va antes de buscar la empresa). No falla si la empresa ya estaba suspendida: responde 204 igual.
 
 #### `PUT /api/v1/Empresas/{id}/suscripcion/cancelar`
 
@@ -1088,7 +1090,7 @@ Deja la empresa en `Cancelado`, con los mismos efectos de acceso que suspender (
 | **Código** | `SOFIA.API/Controllers/EmpresasController.cs:103` → `CancelarEmpresaCommand` |
 | **Pantalla del SPA** | `/empresas/:id`, botón «Cancelar suscripción» (solo operador, nunca en su propia empresa ni si ya está cancelada) |
 
-**Parámetros de ruta:** `id` (GUID). **Cuerpo:** ninguno. **Respuesta correcta:** `204 No Content`; se audita como `EMPRESA_CANCELAR`. **Errores posibles:** los mismos que `suspender` (`CancelarEmpresaCommand.Id`, 403, 404, 409 `Empresa.Suscripcion.PropiaEmpresa`).
+**Parámetros de ruta:** `id` (GUID). **Cuerpo:** ninguno. **Respuesta correcta:** `204 No Content`; se audita como `EMPRESA_CANCELAR`. **Errores posibles:** los mismos que `suspender` (`CancelarEmpresaCommand.Id`, 403, 409 `Empresa.Suscripcion.PropiaEmpresa`, 404), con el mismo orden de evaluación; tampoco falla si la empresa ya estaba cancelada, y puede cancelar una empresa suspendida.
 
 ## 3. `Sucursales`
 
@@ -1451,9 +1453,9 @@ Reemplaza los datos de una sucursal. El `id` de la ruta manda sobre cualquier `i
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `UpdateSucursalCommand.Nombre` / `.DireccionFisica` / `.NumeroLicencia` | Campo vacío o demasiado largo. | RN-SUC-002 a RN-SUC-004 |
-| 404 | `Sucursal.NotFound` | No existe o es de otra empresa. | RN-SUC-008 |
-| 404 | `Empleado.NotFound` | El gerente nuevo no es un empleado de la empresa. | RN-SUC-006 |
-| 409 | `Sucursal.NumeroLicencia.Duplicado` | Otra sucursal usa la licencia. | RN-SUC-005 |
+| 404 | `Sucursal.NotFound` | No existe o es de otra empresa (se busca primero). | RN-SUC-008 |
+| 409 | `Sucursal.NumeroLicencia.Duplicado` | Otra sucursal usa la licencia (se comprueba antes que el gerente). | RN-SUC-005 |
+| 404 | `Empleado.NotFound` | El gerente nuevo no es un empleado de la empresa. Solo se comprueba si `gerenteId` cambia respecto del actual. | RN-SUC-006 |
 
 **Ejemplo real** (asignar gerente):
 
@@ -1724,10 +1726,12 @@ Reemplaza todos los datos del empleado, incluida la huella biométrica (si no la
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `UpdateEmpleadoCommand.{Propiedad}` | Validación de campos. | RN-EPL-002 a RN-EPL-009 |
-| 403 | `Empleado.SucursalBase.AutoAsignacion` | El empleado editado es quien hace la petición y cambia su propia sucursal base. | RN-EPL-011 |
-| 404 | `Empleado.NotFound` | No existe o es de otra empresa. | RN-EPL-013 |
-| 404 | `Sucursal.NotFound` | La sucursal base nueva no existe. | RN-EPL-003 |
-| 409 | `Empleado.LicenciaProf.Duplicado` / `Empleado.Email.Duplicado` | Licencia o correo de otro empleado. | RN-EPL-008, RN-EPL-010 |
+| 404 | `Empleado.NotFound` | No existe o es de otra empresa (se busca primero). | RN-EPL-013 |
+| 403 | `Empleado.SucursalBase.AutoAsignacion` | El empleado editado es quien hace la petición y su sucursal base **cambia** (si el valor enviado es el actual, no se comprueba). | RN-EPL-011 |
+| 404 | `Sucursal.NotFound` | La sucursal base nueva no existe en la empresa (solo se comprueba cuando cambia). | RN-EPL-003 |
+| 409 | `Empleado.LicenciaProf.Duplicado` / `Empleado.Email.Duplicado` | Licencia o correo de otro empleado (la licencia se comprueba antes que el correo). | RN-EPL-008, RN-EPL-010 |
+
+Orden de evaluación del handler: 404 del empleado, 403 de autoasignación, 404 de la sucursal, 409 de licencia, 409 de correo y, al final, las reglas de la entidad (400).
 
 **Ejemplo real:**
 
@@ -2101,7 +2105,7 @@ Asigna un rol a una cuenta. Hace lo mismo que `POST /api/v1/Cuentas/{id}/roles/{
 
 **Cuerpo:** `{ "cuentaId": GUID, "rolId": GUID }`, ambos obligatorios.
 
-**Respuesta correcta:** `200 OK` **sin cuerpo** (`Ok()`). Asignar un rol que la cuenta ya tiene no cambia nada. Cambia el sello de seguridad de la cuenta: su token de acceso actual deja de servir (RN-CTA-018).
+**Respuesta correcta:** `200 OK` **sin cuerpo** (`Ok()`). Asignar un rol que la cuenta ya tiene no agrega nada, pero el handler cambia igualmente el sello de seguridad de la cuenta: su token de acceso actual deja de servir (RN-CTA-018; `AssignRolToUserCommandHandler.cs:41-44`). Se audita como `ROL_ASIGNAR_CUENTA`. La autoasignación se decide por el empleado: se rechaza si el empleado de la cuenta es el de quien llama.
 
 **Errores posibles:**
 
@@ -2147,9 +2151,9 @@ Quita un rol a una cuenta. Hace lo mismo que `DELETE /api/v1/Cuentas/{id}/roles/
 
 **Cuerpo:** `{ "cuentaId": GUID, "rolId": GUID }`, ambos obligatorios.
 
-**Respuesta correcta:** `200 OK` sin cuerpo. Quitar un rol que la cuenta no tiene también responde 200 y no cambia nada. Cambia el sello de seguridad de la cuenta.
+**Respuesta correcta:** `200 OK` sin cuerpo. Quitar un rol que la cuenta no tiene también responde 200 y no cambia nada (ni el sello de seguridad). Si la cuenta tenía el rol, se quita y cambia el sello de seguridad (`RemoveRolFromUserCommandHandler.cs:39-42`). Se audita como `ROL_QUITAR_CUENTA`.
 
-**Errores posibles:** 404 `Auth.CuentaNotFound`; 403 `Rol.AutoAsignacion`; 403 `Rol.AdminReservado` (quitar `Admin` sin ser `Admin`). Reglas RN-CTA-014 a RN-CTA-017.
+**Errores posibles:** 404 `Auth.CuentaNotFound`; 403 `Rol.AutoAsignacion`; 403 `Rol.AdminReservado` (quitar `Admin` sin ser `Admin`). Se evalúan en ese orden y la comprobación de `Rol.AdminReservado` ocurre solo si la cuenta tiene el rol: no hay `Rol.NotFound` aquí (un `rolId` inexistente responde 200). Reglas RN-CTA-014 a RN-CTA-017.
 
 **Ejemplo real:**
 
@@ -2597,6 +2601,8 @@ Lista paginada de cuentas, ordenada por nombre de usuario.
 
 **Errores posibles:** 400 estándar si un booleano no se puede convertir; 403 sin el permiso.
 
+No verificado en ejecución: la consulta navega a `Empleado` (relación requerida con filtro de borrado lógico) para mostrar `nombreEmpleado`; si el empleado de una cuenta se elimina (`DELETE /Empleados/{id}` no lo impide, 4), esa cuenta puede dejar de aparecer en el listado y en `GET /Cuentas/{id}`.
+
 **Ejemplo real:**
 
 ```http
@@ -2706,7 +2712,7 @@ Crea la cuenta de un empleado.
 | `nombreUsuario` | texto | Sí | No vacío, hasta 50 caracteres; **único en todo el sistema**, no solo en la empresa (RN-CTA-003, RN-CTA-007). |
 | `password` | texto | Sí | No vacía, al menos 8 caracteres (RN-CTA-004). Se guarda como hash BCrypt. |
 
-**Respuesta correcta:** `201 Created` con `{ "id": GUID }` y `Location` hacia `GET /api/v1/Cuentas/{id}`. La cuenta nace activa, con 0 intentos fallidos, sin roles y con cambio de clave obligatorio (RN-CTA-008).
+**Respuesta correcta:** `201 Created` con `{ "id": GUID }` y `Location` hacia `GET /api/v1/Cuentas/{id}`. La cuenta nace activa, con 0 intentos fallidos, sin roles y con cambio de clave obligatorio (RN-CTA-008). Se audita como `CUENTA_REGISTRAR`. El handler comprueba primero el empleado (404), luego la cuenta existente (409 `Auth.DuplicateAccount`) y por último el usuario (409 `Auth.DuplicateUsername`).
 
 **Errores posibles:**
 
@@ -2775,13 +2781,14 @@ Cambia el estado de la cuenta: activarla o desactivarla, **forzar el cambio de c
 | `forzarCambioClave` | booleano | No | Solo `true` hace algo: marca la cuenta con cambio de clave obligatorio. `false` no la desmarca (solo se desmarca cambiando la contraseña). |
 | `resetearIntentos` | booleano | No (`false` si falta) | `true` pone los intentos fallidos en 0 y quita el bloqueo: es el **desbloqueo** (RN-AUT-007). |
 
-**Respuesta correcta:** `204 No Content`.
+**Respuesta correcta:** `204 No Content`. Se audita como `CUENTA_ACTUALIZAR` con los tres valores enviados. Activar o desactivar no cambia el sello de seguridad, pero la comprobación de cuenta activa se hace en cada petición, así que el efecto es inmediato; «forzar cambio de clave» también se aplica a los tokens vivos (el claim se sincroniza con la base en cada petición).
 
 **Errores posibles:**
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 404 | `Cuenta.NotFound` | No existe o es de otra empresa. | RN-CTA-009 |
+| 400 | `UpdateCuentaCommand.Id` | Identificador vacío (GUID de ceros). | RN-CTA-009 |
+| 404 | `Cuenta.NotFound` | No existe o es de otra empresa (se busca primero). | RN-CTA-009 |
 | 403 | `Cuenta.AdminProtegida` | La cuenta tiene el rol `Admin` y quien llama no es `Admin`. | RN-CTA-010 |
 
 **Ejemplo real** (forzar el cambio de clave y desbloquear la cuenta de prueba):
@@ -2821,7 +2828,7 @@ Elimina (borrado lógico) una cuenta. El empleado no se elimina.
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
 
-**Respuesta correcta:** `204 No Content`. El nombre de usuario queda libre y el empleado puede recibir otra cuenta (RN-CTA-013).
+**Respuesta correcta:** `204 No Content`. El nombre de usuario queda libre y el empleado puede recibir otra cuenta (RN-CTA-013). Se audita como `CUENTA_ELIMINAR`. No hay protección contra eliminar la propia cuenta (el handler solo valida la regla del rol `Admin`).
 
 **Errores posibles:** 404 `Cuenta.NotFound` (RN-CTA-009); 403 `Cuenta.AdminProtegida` (RN-CTA-010).
 
@@ -2851,7 +2858,7 @@ Asigna un rol a la cuenta. Equivale a `POST /api/v1/Roles/assign-to-user` (5), p
 
 **Parámetros de ruta:** `id` (GUID de la cuenta), `rolId` (GUID del rol); ambos obligatorios.
 
-**Respuesta correcta:** `204 No Content` (a diferencia de la variante de `Roles`, que responde 200). Asignar un rol que ya tiene no cambia nada. Cambia el sello de seguridad de la cuenta: su token de acceso actual deja de servir y debe renovar (RN-CTA-018).
+**Respuesta correcta:** `204 No Content` (a diferencia de la variante de `Roles`, que responde 200). Asignar un rol que la cuenta ya tiene no agrega nada, pero igualmente cambia el sello de seguridad de la cuenta: su token de acceso actual deja de servir y debe renovar (RN-CTA-018). Se audita como `ROL_ASIGNAR_CUENTA`.
 
 **Errores posibles:**
 
@@ -2900,9 +2907,9 @@ Quita un rol a la cuenta. Equivale a `POST /api/v1/Roles/remove-from-user`.
 
 **Parámetros de ruta:** `id` (GUID de la cuenta), `rolId` (GUID del rol).
 
-**Respuesta correcta:** `204 No Content`. Quitar un rol que la cuenta no tiene también responde 204. Cambia el sello de seguridad de la cuenta.
+**Respuesta correcta:** `204 No Content`. Quitar un rol que la cuenta no tiene también responde 204 y no cambia nada. Si la cuenta tenía el rol, se quita y cambia el sello de seguridad de la cuenta. Se audita como `ROL_QUITAR_CUENTA`.
 
-**Errores posibles:** 404 `Auth.CuentaNotFound`; 403 `Rol.AutoAsignacion`; 403 `Rol.AdminReservado`. Reglas RN-CTA-014 a RN-CTA-018.
+**Errores posibles:** 404 `Auth.CuentaNotFound`; 403 `Rol.AutoAsignacion`; 403 `Rol.AdminReservado` (solo si la cuenta tiene el rol y es `Admin`). No hay `Rol.NotFound`: un `rolId` inexistente responde 204. Reglas RN-CTA-014 a RN-CTA-018.
 
 **Ejemplo real:**
 
@@ -3196,10 +3203,10 @@ Reemplaza los datos de una serie. El `id` de la ruta manda sobre el del cuerpo. 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `UpdateSerieFiscalCommand.{Propiedad}` | Campo no válido. | RN-SER-002 a RN-SER-006 |
-| 404 | `SerieFiscal.NotFound` | No existe. | RN-SER-009 |
+| 404 | `SerieFiscal.NotFound` | No existe (se busca primero). | RN-SER-009 |
+| 409 | `SerieFiscal.ConComprobantes` | La serie ya emitió comprobantes y el cuerpo cambia sucursal, tipo, prefijo o correlativo (se comprueba antes que la sucursal y los duplicados). | RN-SER-010 |
 | 404 | `Sucursal.NotFound` | La sucursal indicada no existe. | RN-SER-002 |
-| 409 | `SerieFiscal.ConComprobantes` | La serie ya emitió comprobantes y el cuerpo cambia sucursal, tipo, prefijo o correlativo. | RN-SER-010 |
-| 409 | `SerieFiscal.PrefijoDuplicado` / `SerieFiscal.ActivaDuplicada` | Igual que en la creación. | RN-SER-007, RN-SER-008 |
+| 409 | `SerieFiscal.PrefijoDuplicado` / `SerieFiscal.ActivaDuplicada` | Igual que en la creación (primero el prefijo y después la serie activa). | RN-SER-007, RN-SER-008 |
 
 **Ejemplo real** (subir el correlativo a 10):
 
@@ -3421,7 +3428,7 @@ Sesión de caja abierta del usuario («Mi caja», con el efectivo esperado) y ca
 | Campo | Tipo | Descripción |
 |---|---|---|
 | `miSesion` | objeto o `null` | Sesión `Abierta` más reciente del empleado del token: `{ id, sucursalNombre, fechaHoraApertura, montoAperturaEfectivo, efectivoEsperado }`. `null` si no tiene sesión abierta o el token no trae empleado (RN-DAS-015). |
-| `sesionesAbiertas` | arreglo | Sesiones abiertas del alcance, de la más reciente a la más antigua, máximo 50: `{ id, sucursalNombre, empleadoNombre, fechaHoraApertura, montoAperturaEfectivo }` (RN-DAS-016). |
+| `sesionesAbiertas` | arreglo | Sesiones abiertas del alcance, de la más reciente a la más antigua, máximo 50: `{ id, sucursalNombre, empleadoNombre, fechaHoraApertura, montoAperturaEfectivo }` (RN-DAS-016); `empleadoNombre` es «nombres + apellido paterno». `miSesion` no se limita al alcance: es la sesión abierta más reciente del empleado en cualquier sucursal. |
 
 **Errores posibles:** 403 sin el permiso.
 
@@ -3459,8 +3466,8 @@ Lotes vencidos y por vencer, productos sin stock y con stock bajo.
 |---|---|---|
 | `lotesVencidosConStock` | entero | Filas de stock con cantidad > 0 y caducidad anterior a `hoy` (RN-DAS-018). |
 | `lotesVencen30`, `lotesVencen60`, `lotesVencen90` | entero | Filas con stock que caducan en `[hoy, hoy+31 d)`, `[hoy+31 d, hoy+61 d)` y `[hoy+61 d, hoy+91 d)`; tramos disjuntos (RN-DAS-019). |
-| `productosSinStock` | entero | Pares (sucursal, producto) con filas de stock pero sin stock vendible (RN-DAS-020). |
-| `productosStockBajo` | entero | Pares con stock vendible mayor que 0 y menor o igual al umbral (RN-DAS-021). |
+| `productosSinStock` | entero | Pares (sucursal, producto) con filas de stock pero sin stock vendible (RN-DAS-020). «Vendible» es cantidad física mayor que 0, lote no vencido y lote no retenido en cuarentena (`InventarioVendibleExtensions.cs:18-24`). |
+| `productosStockBajo` | entero | Pares con stock vendible mayor que 0 y menor o igual al umbral (RN-DAS-021): la suma vendible del producto en la sucursal. |
 | `umbralStockBajo` | decimal | Constante del código: `10`. |
 
 **Errores posibles:** 400 `GetDashboardInventarioQuery.Hoy`; 403 sin el permiso.
@@ -3668,7 +3675,7 @@ Crea o actualiza la única fila de datos de pago y, si se envía, reemplaza la i
 | `whatsappNumero` | texto | Sí | De 8 a 15 dígitos, con código de país y solo dígitos (`GuardarConfiguracionPagoCommandValidator.cs:10-12`). |
 | `yapeNumero` | texto | No | Exactamente 9 dígitos; en blanco se guarda como nulo (`:14-16`). |
 | `instrucciones` | texto | No | Hasta 500 caracteres (`:18-19`); en blanco se guarda como nulo. |
-| `qr` | archivo | No | Si no se envía se conserva el QR guardado. Entre 1 byte y 1 MB (el controlador rechaza más con 400 `ConfiguracionPago.Qr.Tamano`, `:42-47`); PNG o JPEG según la firma del archivo, no según el tipo que declare el cliente (`ConfiguracionPago.Qr.Formato`). |
+| `qr` | archivo | No | Si no se envía se conserva el QR guardado. Entre 1 byte y 1 MB (el controlador rechaza más con 400 `ConfiguracionPago.Qr.Tamano`, `:42-47`); un archivo de 0 bytes se trata como si no se hubiera enviado y se conserva el QR guardado (`PlataformaController.cs:42`); PNG o JPEG según la firma del archivo, no según el tipo que declare el cliente (`ConfiguracionPago.Qr.Formato`). |
 
 **Respuesta correcta:** `204 No Content`. Se audita como `PAGO_CONFIG_GUARDAR` con «QR sin cambio» o «QR reemplazado».
 
@@ -3740,6 +3747,10 @@ La cuenta compartida de la referencia solo se usó para el inicio de sesión de 
 | `Empresa.RUC.Duplicado` en `PUT /Empresas` | Exige una segunda empresa. |
 | `SerieFiscal.ConComprobantes`, `SerieFiscal.InUse` | Exigen una serie que ya haya emitido comprobantes. |
 | `Export.TooManyRows`, `Request.TooLarge`, `CargaMasiva.Archivo.ExcedeDescompresion`, `CargaMasiva.Filas.Excedidas`, `Concurrency.Conflict`, `Db.*` | Exigen más de 10 000 filas, archivos de más de 5 MB o carreras entre peticiones; sus formas salen de `GlobalExceptionHandler.cs` y `ExportExtensions.cs`. |
+| Aislamiento entre empresas en `PUT/DELETE /Sucursales/{id}` y `PUT /Empleados/{id}` | Sus handlers buscan con `FindAsync` en lugar de una consulta; no se ejecutó la aplicación para confirmar que el filtro de empresa y el de borrado lógico se aplican en esa búsqueda (las fichas dicen 404, como el resto de los maestros). |
+| `GET /Cuentas` y `GET /Cuentas/{id}` de una cuenta cuyo empleado fue eliminado | La consulta navega a `Empleado` (relación requerida con filtro de borrado lógico) y `DELETE /Empleados/{id}` no lo impide; no se ejecutó para ver si la cuenta desaparece o falla. |
+| Texto exacto que produce la sanitización HTML (0.5) | Depende de la librería `HtmlSanitizer`; no se ejecutó. |
+| `nombreSede` (más de 100) y `numeroLicencia` (más de 50) en `Empresas/registrar` | Sin validador; la columna es más corta. No se ejecutó para ver la respuesta. |
 | Desbloqueo de una cuenta bloqueada (`resetearIntentos`) | Bloquear una cuenta exige 5 contraseñas incorrectas (prohibido). Se documentó la petición con una cuenta sin bloqueo. |
 | `GET /Dashboard/caja` con sesión abierta | Abrir una caja pertenece a la parte E; se capturó la respuesta sin cajas abiertas. |
 | Correlación de `Mailpit` con el enlace de recuperación | Se comprobó que llega un correo (remitente, asunto), pero no se leyó su contenido, que lleva el token. |
@@ -3762,9 +3773,20 @@ La cuenta compartida de la referencia solo se usó para el inicio de sesión de 
 - Los 7 endpoints nuevos (2.1 y 9b) y los ejemplos de `Empresas` y `Plataforma` están escritos desde el código: **No verificado en vivo**. Los 403 de la política `PLATAFORMA_ADMIN` salen sin cuerpo (como los de `[HasPermission]`, 0.4); `Auth.PlataformaAdminRequerido` solo aparecería si el handler se invocara sin la política.
 - Hallazgo: el catálogo de permisos de roles ya no incluye `Empresas:Leer` (ver `tecnico/seguridad/matriz-de-permisos`, apartado 2).
 
+### 11.6 Versión 1.2 (2026-11-26)
+
+Revisión semántica de la sección 0 y de las 73 fichas contra `b67e3ee`. Cambios:
+
+- Sección 0: sanitización previa de los textos (`SanitizationBehavior`, 0.5), caché de 1 minuto de la vigencia de la empresa y exención del operador en el 401 (0.2), orden real de la tubería (CSRF como filtro de MVC, 0.5), cabeceras `X-Permitted-Cross-Domain-Policies` y `Referrer-Policy` con su valor (0.1), `Plataforma/pago` como anónimo (0.2), `Empresas/registrar` sin `Location` (0.5), filtros de fecha sin zona en `Empresas` (0.8) y las líneas de `Program.cs`, que cambiaron.
+- `Auth`: orden de evaluación de `login`, ventana de 30 segundos antes de tratar un `refresh` repetido como robo, `CLAVE_CAMBIAR`, `currentPassword` sanitizada, `reset-password` sin comprobar cuenta activa ni vigencia.
+- `Empresas`: orden 403, 409 y 404 de `suspender` y `cancelar` (idempotentes), fecha de auditoría en UTC, orden de errores del registro y límites de sede no validados.
+- `Sucursales`, `Empleados`, `SeriesFiscales`: orden real de los errores de `PUT`; `Roles` y `Cuentas`: efecto real sobre el sello de seguridad al asignar y quitar roles, auditoría, y un `rolId` inexistente al quitar responde 200 o 204.
+- `Dashboard`: definición de «vendible», alcance de `miSesion`. `Plataforma`: un QR de 0 bytes se ignora.
+- Los ejemplos reales de la versión 1.0 coinciden con el código de `b67e3ee`; ninguno se marcó desactualizado.
+
 ### 11.4 En curso (sin commitear)
 
-Ninguno: al 2026-10-30, `git status --short` en `sofia-apis` (`34089ec`) y en `sofia-web-spa` (`9ad15f0`) no mostró cambios locales. El commit más nuevo que la línea base del encargo (`43f5529` / `eeffbb6`) solo cambia los scripts de base de datos del catálogo DIGEMID, flujos de GitHub y atributos de fin de línea; no toca ningún controlador de esta parte.
+Ninguno. Las capturas de la versión 1.0 se hicieron el 2026-10-30 sobre `sofia-apis` `34089ec` y `sofia-web-spa` `9ad15f0` sin cambios locales; la revisión de la versión 1.2 leyó el código solo de los commits `b67e3ee` y `526bc8f`, sin usar archivos sin commitear.
 
 ## 12. Tabla de cobertura
 
@@ -3865,7 +3887,7 @@ Cada endpoint de `_inventario/endpoints.csv` para `Auth`, `Empresas`, `Sucursale
 
 ## 13. Fuentes
 
-**Código de `sofia-apis`** (commit `6f6b837`; la versión 1.0 se capturó sobre `34089ec`): `PlataformaController.cs`, `PlataformaAdminPolicy.cs`, `EmpresaPlataformaExtensions.cs`, los comandos `ActivarSuscripcionEmpresa`, `ExtenderPruebaEmpresa`, `SuspenderEmpresa`, `CancelarEmpresa`, `GuardarConfiguracionPago` y las consultas `GetConfiguracionPago`, `GetDashboardPlataforma`, y `Domain/Entities/PlataformaConfiguracionPago.cs`.
+**Código de `sofia-apis`** (commit `b67e3ee` en la versión 1.2; la versión 1.0 se capturó sobre `34089ec`): `PlataformaController.cs`, `PlataformaAdminPolicy.cs`, `EmpresaPlataformaExtensions.cs`, los comandos `ActivarSuscripcionEmpresa`, `ExtenderPruebaEmpresa`, `SuspenderEmpresa`, `CancelarEmpresa`, `GuardarConfiguracionPago` y las consultas `GetConfiguracionPago`, `GetDashboardPlataforma`, y `Domain/Entities/PlataformaConfiguracionPago.cs`.
 
 - Controladores: `src/SOFIA.API/Controllers/AuthController.cs`, `EmpresasController.cs`, `SucursalesController.cs`, `EmpleadosController.cs`, `RolesController.cs`, `CuentasController.cs`, `SeriesFiscalesController.cs`, `DashboardController.cs`, `AuditoriaController.cs`.
 - Infraestructura de la API: `src/SOFIA.API/Program.cs`, `Extensions/ResultExtensions.cs`, `Extensions/RateLimitingExtensions.cs`, `Extensions/RefreshTokenCookieExtensions.cs`, `Extensions/ExportExtensions.cs`, `Infrastructure/GlobalExceptionHandler.cs`, `RequireCsrfHeaderAttribute.cs`, `PasswordChangeRequiredMiddleware.cs`, `AllowDuringPasswordChangeAttribute.cs`, `SecurityHeadersMiddleware.cs`, `ExportHeadersAttribute.cs`, `ExportLabelAttribute.cs`, `ExportDateFormatAttribute.cs`, `Services/CurrentUser.cs`, `appsettings.json` (solo los nombres de claves `Jwt:ExpiryMinutes`, `ForwardedHeaders:KnownProxies`).
