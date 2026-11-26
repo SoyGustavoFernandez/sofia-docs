@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec`; las notas del catálogo DIGEMID (apartado 5.1) están reconciliadas con `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` |
-| **Método** | Lectura de código y llamadas reales a la API local |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` (capturas reales del 2026-10-30); revisado a fondo contra el código del commit `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0`; revisado contra `526bc8f` |
+| **Método** | Lectura de código y llamadas reales a la API local; revisión semántica (condiciones, orden de evaluación, códigos HTTP) de cada ficha contra controlador, comando o consulta, validador, handler y entidad |
 
 ## Contenido
 
@@ -33,7 +33,7 @@ Este documento describe los 50 endpoints de cinco controladores de catálogos: `
 - El JSON usa `camelCase` en peticiones y respuestas. Los enumerados viajan como número (por ejemplo `condicionVenta`: `0` = venta libre).
 - `POST` de creación devuelve **201** con el identificador como cuerpo (un texto JSON con el GUID, por ejemplo `"1d020b74-…"`) y la cabecera `Location` hacia el `GET` por identificador. `PUT` y `DELETE` devuelven **204** sin cuerpo.
 - En los `PUT` el identificador del cuerpo se ignora: el controlador toma siempre el de la ruta (`command with { Id = id }`), por lo que la comprobación «ID mismatch» nunca se cumple (reglas RN-UDM-008, RN-JER-012, RN-LAB-008, RN-ING-007).
-- Los listados paginados devuelven `{ items, pageNumber, totalPages, totalCount, hasPreviousPage, hasNextPage }`; `pageNumber` por defecto 1 y `pageSize` por defecto 10.
+- Los listados paginados devuelven `{ items, pageNumber, totalPages, totalCount, hasPreviousPage, hasNextPage }`; `pageNumber` por defecto 1 y `pageSize` por defecto 10. Los valores fuera de rango no producen error: `pageNumber` menor que 1 se toma como 1 y `pageSize` se limita al rango de 1 a 10 000 (`PaginationLimits.cs`, `PaginatedList.cs`).
 - Las eliminaciones son lógicas: un registro eliminado deja de aparecer y responde 404 en las consultas por identificador, y su código o nombre queda libre para otro registro.
 - Los controladores de carga masiva reciben el archivo en `previsualizar` como `multipart/form-data` (campo `file`, `.xlsx`, máximo 5 MB) y las filas confirmadas en `carga-masiva` como arreglo JSON (entre 1 y 5 000 filas). Las claves de las filas de la vista previa llevan la primera letra en minúscula (`Codigo` pasa a `codigo`).
 
@@ -255,7 +255,7 @@ Actualiza el código y la descripción de una unidad. El identificador del cuerp
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
 
-**Cuerpo:** los mismos campos y reglas que en el `POST` (`codigo`, `descripcion`). Al editar, la unicidad del código excluye a la propia unidad.
+**Cuerpo:** los mismos campos y reglas que en el `POST` (`codigo`, `descripcion`). Al editar, la unicidad del código excluye a la propia unidad. Orden de evaluación: validador (400), existencia de la unidad (404) y código repetido (409).
 
 **Respuesta correcta:** `204 No Content`, sin cuerpo.
 
@@ -263,6 +263,7 @@ Actualiza el código y la descripción de una unidad. El identificador del cuerp
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
+| 400 | `UpdateUnidadMedidaCommand.Id` | El identificador de la ruta es el GUID vacío (`00000000-0000-0000-0000-000000000000`): el validador exige `ID is required.` | RN-UDM-009 |
 | 400 | `UpdateUnidadMedidaCommand.Codigo` / `.Descripcion` | Código o descripción vacíos o demasiado largos | RN-UDM-002 a RN-UDM-005 |
 | 404 | `UnidadMedida.NotFound` | La unidad no existe, está eliminada o es de otra empresa | RN-UDM-009 |
 | 409 | `UnidadMedida.Codigo.Duplicado` | Otra unidad ya usa el código | RN-UDM-006 |
@@ -380,9 +381,9 @@ Primer paso de la carga masiva: lee el `.xlsx`, valida cada fila contra los dato
 | **Código** | `SOFIA.API/Controllers/UnidadesMedidaController.cs:76` → `PreviewImportUnidadesMedidaQuery` |
 | **Pantalla del SPA** | `/unidades-medida/carga-masiva` (al elegir o arrastrar el archivo) |
 
-**Cuerpo:** `multipart/form-data` con un único campo `file` (archivo `.xlsx`). Columnas leídas: `Codigo` y `Descripcion` (la comparación de cabeceras no distingue mayúsculas; una cabecera con otro texto se lee como vacía).
+**Cuerpo:** `multipart/form-data` con un único campo `file` (archivo `.xlsx`). Columnas leídas: `Codigo` y `Descripcion` (la comparación de cabeceras no distingue mayúsculas; una cabecera con otro texto se lee como vacía). Solo se lee la primera hoja; las filas totalmente vacías se omiten y cada celda se lee como texto y se recorta (`Trim`), de modo que la vista previa devuelve los valores sin espacios en los extremos.
 
-**Respuesta correcta:** `200 OK`: `{ rows: [ { rowNumber, data: { codigo, descripcion }, errors: [ { code, field, params } ], isValid } ], totalCount, validCount, errorCount }`. Códigos de error por fila: `required`, `max-length` (`params.max`), `duplicate` (el código ya existe en la empresa) y `duplicate-in-file` (se repite en el archivo) (RN-UDM-002 a RN-UDM-005, RN-UDM-006 y RN-UDM-015).
+**Respuesta correcta:** `200 OK`: `{ rows: [ { rowNumber, data: { codigo, descripcion }, errors: [ { code, field, params } ], isValid } ], totalCount, validCount, errorCount }`. Códigos de error por fila: `required`, `max-length` (`params.max`), `duplicate` (el código ya existe en la empresa) y `duplicate-in-file` (se repite en el archivo; se marca en todas las filas que comparten el código, incluida la primera) (RN-UDM-002 a RN-UDM-005, RN-UDM-006 y RN-UDM-015).
 
 **Errores posibles:**
 
@@ -470,7 +471,7 @@ La lista debe tener entre 1 y 5 000 filas (RN-UDM-016).
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaUnidadesMedidaCommand.Rows` | Lista vacía o de más de 5 000 filas | RN-UDM-016 |
-| 400 | `CargaMasivaUnidadesMedidaCommand.Rows[i].Codigo` / `.Descripcion` | La fila `i` (desde 0) no cumple el validador: se rechaza todo el envío y solo se informa la primera falla | RN-UDM-016 |
+| 400 | `CargaMasivaUnidadesMedidaCommand.Rows[i].Codigo` / `.Descripcion` | La fila `i` (desde 0) no cumple el validador: se rechaza todo el envío. El `code` es el de la primera falla y el `detail` une los mensajes de todas las fallas con `; ` | RN-UDM-016 |
 | 413 | `Request.TooLarge` | El cuerpo supera 5 MB | [apartado 0][04A0] |
 | 401 / 403 | — | Sin token o sin `UnidadesMedida:Crear` | [apartado 0][04A0] |
 
@@ -531,7 +532,7 @@ Genera un Excel con las unidades que cumplen los filtros (mismas reglas que el l
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | — (`ProblemDetails` de validación: `errors.Headers` con `Export.Headers.Invalid`) | Falta `headers`, o hay más de 50 títulos o alguno supera 100 caracteres | RN-UDM-013, [apartado 0][04A0] |
-| 400 | `Export.TooManyRows` | El filtro devuelve más de 10 000 filas | RN-UDM-013 |
+| 400 | `Export.TooManyRows` | El filtro devuelve más de 10 000 filas (la consulta se corta en 10 000 y se compara el total con ese límite) | RN-UDM-013 |
 | 401 / 403 | — | Sin token o sin `UnidadesMedida:Leer` | [apartado 0][04A0] |
 
 **Ejemplo real:**
@@ -750,15 +751,17 @@ Crea una conversión entre dos unidades de un producto.
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `CreateJerarquiaUoMCommand.ProductoId` / `.UnidadMayorId` / `.UnidadMenorId` | Algún identificador es el GUID vacío | RN-JER-002, RN-JER-003 |
+| 400 | `CreateJerarquiaUoMCommand.ProductoId` / `.UnidadMayorId` / `.UnidadMenorId` | Algún identificador es el GUID vacío (en este orden de evaluación del validador: producto, mayor, menor, multiplicador y, al final, unidades iguales; el `code` es el de la primera falla y el `detail` une todas) | RN-JER-002, RN-JER-003 |
 | 400 | `CreateJerarquiaUoMCommand.Multiplicador` | `multiplicador` menor o igual a 0 | RN-JER-005 |
 | 400 | `CreateJerarquiaUoMCommand.` (termina en punto) | Unidad mayor y menor son la misma | RN-JER-004 |
-| 404 | `Medicamento.NotFound` | El producto no existe en la empresa | RN-JER-006 |
-| 404 | `UnidadMedida.NotFound` | Alguna de las dos unidades no existe en la empresa | RN-JER-007 |
+| 404 | `Medicamento.NotFound` | El producto no existe en la empresa o está eliminado (se evalúa antes que las unidades) | RN-JER-006 |
+| 404 | `UnidadMedida.NotFound` | Alguna de las dos unidades no existe en la empresa o está eliminada | RN-JER-007 |
 | 409 | `JerarquiaUoM.Duplicada` | El producto ya tiene una conversión con esa misma unidad mayor y menor | RN-JER-008 |
 | 409 | `JerarquiaUoM.Multiplicador.Inconsistente` | Ya hay un camino entre las dos unidades con otro valor | RN-JER-009 |
 | 409 | `Db.Duplicado` | Carrera: falla el índice único del par mayor-menor | RN-JER-008 |
 | 401 / 403 | — | Sin token o sin `JerarquiasUoM:Crear` | [apartado 0][04A0] |
+
+Orden de evaluación: validador (400), existencia del producto (404), existencia de las unidades (404, primero la mayor y luego la menor), par repetido (409 `Duplicada`) y contradicción con el camino ya calculado (409 `Inconsistente`). El multiplicador se guarda en una columna `DECIMAL(12,4)` con la restricción `Multiplicador > 0`: un valor mayor que 99 999 999,9999 o menor que 0,00005 no se prueba en el validador y su respuesta (error SQL de desbordamiento, o `Db.ValorInvalido` 400 por la restricción al redondear a 0) es «No verificado: solo se confirma ejecutando la aplicación».
 
 **Ejemplo real:**
 
@@ -818,11 +821,13 @@ Actualiza una jerarquía (producto, unidades y multiplicador). Aplica las mismas
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `UpdateJerarquiaUoMCommand.<Campo>` o `UpdateJerarquiaUoMCommand.` | Mismos casos de validación que el `POST` | RN-JER-002 a RN-JER-005 |
-| 404 | `JerarquiaUoM.NotFound` | La jerarquía no existe | RN-JER-013 |
-| 404 | `Medicamento.NotFound` / `UnidadMedida.NotFound` | El producto o una unidad nuevos no existen | RN-JER-006, RN-JER-007 |
-| 409 | `JerarquiaUoM.Duplicada` / `JerarquiaUoM.Multiplicador.Inconsistente` | Igual que el `POST` | RN-JER-008, RN-JER-009 |
+| 400 | `UpdateJerarquiaUoMCommand.<Campo>` o `UpdateJerarquiaUoMCommand.` | Mismos casos de validación que el `POST`, más `UpdateJerarquiaUoMCommand.Id` si el identificador de la ruta es el GUID vacío | RN-JER-002 a RN-JER-005 |
+| 404 | `JerarquiaUoM.NotFound` | La jerarquía no existe, está eliminada o es de otra empresa | RN-JER-013 |
+| 404 | `Medicamento.NotFound` / `UnidadMedida.NotFound` | El producto o una unidad nuevos (distintos de los que ya tenía la jerarquía) no existen | RN-JER-006, RN-JER-007 |
+| 409 | `JerarquiaUoM.Duplicada` / `JerarquiaUoM.Multiplicador.Inconsistente` | Igual que el `POST`, pero comparando contra las demás jerarquías del producto indicado en el cuerpo (se excluye la propia) | RN-JER-008, RN-JER-009 |
 | 401 / 403 | — | Sin token o sin `JerarquiasUoM:Actualizar` | [apartado 0][04A0] |
+
+Orden de evaluación: validador (400), jerarquía (404), producto nuevo (404), unidades nuevas (404), par repetido (409) y contradicción (409).
 
 **Ejemplo real** (el multiplicador Caja a Blister pasa de 10 a 12):
 
@@ -974,7 +979,7 @@ Primer paso de la carga masiva. El producto se identifica por su **nombre comerc
 | **Código** | `SOFIA.API/Controllers/JerarquiasUoMController.cs:121` → `PreviewImportJerarquiasUoMQuery` |
 | **Pantalla del SPA** | `/jerarquias/carga-masiva` (al elegir o arrastrar el archivo) |
 
-**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: `Producto`, `UnidadMayor`, `UnidadMenor`, `Multiplicador`.
+**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: `Producto`, `UnidadMayor`, `UnidadMenor`, `Multiplicador` (primera hoja, celdas leídas como texto y recortadas, filas vacías omitidas). Por fila se evalúan en este orden: `producto`, `unidadMayor`, `unidadMenor` (cada una `required`, `not-found` o `ambiguous`), `must-differ` (compara los textos sin distinguir mayúsculas) y `multiplicador` (`required`, `invalid-decimal` o `positive-number`). No se comprueban longitudes máximas en la vista previa; el producto se busca solo entre los no eliminados.
 
 **Respuesta correcta:** `200 OK` con la estructura de la vista previa (`rows`, `totalCount`, `validCount`, `errorCount`). Códigos de error por fila: `required`, `not-found` (`params.value`), `ambiguous` (el nombre coincide con varios registros), `must-differ` (`field: unidadMenor`, `params.other: unidadMayor`), `invalid-decimal` y `positive-number`.
 
@@ -1042,7 +1047,7 @@ Segundo paso. Resuelve nombres a identificadores, aplica las reglas de duplicado
 | `producto` | texto | Sí | Nombre comercial; no vacío, máximo 150 ([RN-JER-020][JER]). |
 | `unidadMayor` | texto | Sí | Descripción de la unidad; máximo 50. |
 | `unidadMenor` | texto | Sí | Descripción de la unidad; máximo 50. |
-| `multiplicador` | texto | Sí | Máximo 30 caracteres; se interpreta con cultura invariante (punto decimal) (RN-JER-019). |
+| `multiplicador` | texto | Sí | No vacío, máximo 30 caracteres; se interpreta con `NumberStyles.Number` y cultura invariante (punto decimal; la coma es separador de miles) (RN-JER-019). Una fila cuyo producto, unidad o número no se resuelve, o con multiplicador menor o igual a 0 o con unidades iguales, se omite sin error. |
 
 **Respuesta correcta:** `200 OK`: `{ "savedCount": N }`.
 
@@ -1051,7 +1056,7 @@ Segundo paso. Resuelve nombres a identificadores, aplica las reglas de duplicado
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaJerarquiasUoMCommand.Rows` | Lista vacía o de más de 5 000 filas | RN-JER-020 |
-| 400 | `CargaMasivaJerarquiasUoMCommand.Rows[i].Producto` / `.UnidadMayor` / `.UnidadMenor` / `.Multiplicador` | Falla el validador de la fila `i`: se rechaza todo el envío | RN-JER-020 |
+| 400 | `CargaMasivaJerarquiasUoMCommand.Rows[i].Producto` / `.UnidadMayor` / `.UnidadMenor` / `.Multiplicador` | Falla el validador de la fila `i` (vacío o demasiado largo): se rechaza todo el envío. El `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-JER-020 |
 | 413 | `Request.TooLarge` | Cuerpo de más de 5 MB | [apartado 0][04A0] |
 | 401 / 403 | — | Sin token o sin `JerarquiasUoM:Crear` | [apartado 0][04A0] |
 
@@ -1263,7 +1268,7 @@ Actualiza el nombre y el código de un laboratorio. La unicidad excluye al propi
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
 
-**Cuerpo:** `nombreCompania` y `codigoIdentificador`, con las reglas del `POST`.
+**Cuerpo:** `nombreCompania` y `codigoIdentificador`, con las reglas del `POST`. Orden de evaluación: validador (400), existencia (404), nombre repetido (409), código repetido (409). Un código vacío o de solo espacios se guarda como `null` y no se comprueba su unicidad.
 
 **Respuesta correcta:** `204 No Content`.
 
@@ -1271,8 +1276,9 @@ Actualiza el nombre y el código de un laboratorio. La unicidad excluye al propi
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
+| 400 | `UpdateLaboratorioCommand.Id` | El identificador de la ruta es el GUID vacío (`ID is required.`) | RN-LAB-009 |
 | 400 | `UpdateLaboratorioCommand.NombreCompania` / `.CodigoIdentificador` | Nombre vacío o largo; código largo | RN-LAB-002 a RN-LAB-004 |
-| 404 | `Laboratorio.NotFound` | No existe | RN-LAB-009 |
+| 404 | `Laboratorio.NotFound` | No existe, está eliminado o es de otra empresa | RN-LAB-009 |
 | 409 | `Laboratorio.NombreCompania.Duplicado` / `Laboratorio.CodigoIdentificador.Duplicado` | Otro laboratorio ya los usa | RN-LAB-006, RN-LAB-007 |
 | 401 / 403 | — | Sin token o sin `Laboratorios:Actualizar` | [apartado 0][04A0] |
 
@@ -1433,7 +1439,7 @@ Primer paso de la carga masiva. Marca como duplicado solo el **nombre** repetido
 | **Código** | `SOFIA.API/Controllers/LaboratoriosController.cs:106` → `PreviewImportLaboratoriosQuery` |
 | **Pantalla del SPA** | `/laboratorios/carga-masiva` (al elegir o arrastrar el archivo) |
 
-**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: `NombreCompania` y `CodigoIdentificador` (opcional).
+**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: `NombreCompania` y `CodigoIdentificador` (opcional); primera hoja, celdas leídas como texto y recortadas, filas vacías omitidas. `duplicate-in-file` se marca en todas las filas que repiten el nombre, incluida la primera.
 
 **Respuesta correcta:** `200 OK` con la estructura de la vista previa. Códigos de error por fila: `required`, `max-length` (`params.max`: 150 o 50), `duplicate` y `duplicate-in-file`.
 
@@ -1515,7 +1521,7 @@ La lista debe tener entre 1 y 5 000 filas (RN-LAB-016).
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaLaboratoriosCommand.Rows` | Lista vacía o de más de 5 000 filas | RN-LAB-016 |
-| 400 | `CargaMasivaLaboratoriosCommand.Rows[i].NombreCompania` / `.CodigoIdentificador` | Falla el validador de la fila `i`: se rechaza todo el envío | RN-LAB-016 |
+| 400 | `CargaMasivaLaboratoriosCommand.Rows[i].NombreCompania` / `.CodigoIdentificador` | Falla el validador de la fila `i`: se rechaza todo el envío. El `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-LAB-016 |
 | 413 | `Request.TooLarge` | Cuerpo de más de 5 MB | [apartado 0][04A0] |
 | 401 / 403 | — | Sin token o sin `Laboratorios:Crear` | [apartado 0][04A0] |
 
@@ -1717,7 +1723,7 @@ Actualiza la denominación y el código ATC. La unicidad de la denominación exc
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
 
-**Cuerpo:** `denominacionDci` y `codigoAtc`, con las reglas del `POST`.
+**Cuerpo:** `denominacionDci` y `codigoAtc`, con las reglas del `POST`. Orden de evaluación: validador (400), existencia (404) y denominación repetida entre los demás ingredientes (409).
 
 **Respuesta correcta:** `204 No Content`.
 
@@ -1725,8 +1731,9 @@ Actualiza la denominación y el código ATC. La unicidad de la denominación exc
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `UpdateIngredienteActivoCommand.DenominacionDci` / `.CodigoAtc` | Campos vacíos o largos | RN-ING-002 a RN-ING-005 |
-| 404 | `IngredienteActivo.NotFound` | No existe | RN-ING-008 |
+| 400 | `UpdateIngredienteActivoCommand.Id` | El identificador de la ruta es el GUID vacío (`ID is required.`) | RN-ING-008 |
+| 400 | `UpdateIngredienteActivoCommand.DenominacionDci` / `.CodigoAtc` | Campos vacíos o largos (si fallan ambos, el `code` es el del primero y el `detail` une los mensajes) | RN-ING-002 a RN-ING-005 |
+| 404 | `IngredienteActivo.NotFound` | No existe, está eliminado o es de otra empresa | RN-ING-008 |
 | 409 | `IngredienteActivo.DenominacionDci.Duplicado` | Otro ingrediente usa la denominación | RN-ING-006 |
 | 401 / 403 | — | Sin token o sin `IngredientesActivos:Actualizar` | [apartado 0][04A0] |
 
@@ -1884,7 +1891,7 @@ Primer paso de la carga masiva. La vista previa marca como duplicado el **códig
 | **Código** | `SOFIA.API/Controllers/IngredientesActivosController.cs:106` → `PreviewImportIngredientesActivosQuery` |
 | **Pantalla del SPA** | `/ingredientes-activos/carga-masiva` (al elegir o arrastrar el archivo) |
 
-**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: `DenominacionDci` y `CodigoAtc`.
+**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: `DenominacionDci` y `CodigoAtc` (primera hoja, celdas leídas como texto y recortadas, filas vacías omitidas). `duplicate-in-file` se marca en todas las filas que repiten el ATC, incluida la primera.
 
 **Respuesta correcta:** `200 OK` con la estructura de la vista previa. Códigos de error por fila: `required`, `max-length` (`params.max`: 255 o 15), `duplicate` y `duplicate-in-file` (ambos sobre `codigoAtc`).
 
@@ -1961,7 +1968,7 @@ La lista debe tener entre 1 y 5 000 filas (RN-ING-014).
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaIngredientesActivosCommand.Rows` | Lista vacía o de más de 5 000 filas | RN-ING-014 |
-| 400 | `CargaMasivaIngredientesActivosCommand.Rows[i].DenominacionDci` / `.CodigoAtc` | Falla el validador de la fila `i`: se rechaza todo el envío | RN-ING-014 |
+| 400 | `CargaMasivaIngredientesActivosCommand.Rows[i].DenominacionDci` / `.CodigoAtc` | Falla el validador de la fila `i`: se rechaza todo el envío. El `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-ING-014 |
 | 413 | `Request.TooLarge` | Cuerpo de más de 5 MB | [apartado 0][04A0] |
 | 401 / 403 | — | Sin token o sin `IngredientesActivos:Crear` | [apartado 0][04A0] |
 
@@ -2202,7 +2209,7 @@ Actualiza todos los campos de un producto. **Solo API (sin pantalla).** A difere
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
 
-**Cuerpo:** los mismos campos que el `POST` (`codProd`, `nomProd`, `estado` y los cinco opcionales). La unicidad del código excluye al propio producto.
+**Cuerpo:** los mismos campos que el `POST` (`codProd`, `nomProd`, `estado` y los cinco opcionales). La unicidad del código excluye al propio producto. Orden de evaluación: existencia (404), producto compartido (403), código repetido (409) y, al final, los guards de la entidad (400 `DIGEMID.CodProd` / `DIGEMID.NomProd`); no hay validador FluentValidation ni comprobación de longitudes, y `estado` vacío no se rechaza.
 
 **Respuesta correcta:** `204 No Content`.
 
@@ -2211,8 +2218,8 @@ Actualiza todos los campos de un producto. **Solo API (sin pantalla).** A difere
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `DIGEMID.CodProd` / `DIGEMID.NomProd` | Código o nombre vacíos | RN-DIG-002, RN-DIG-003 |
-| 403 | `DigemidCatalogo.Global.SoloLectura` | El producto es del catálogo compartido (sin empresa); desde `9c16f35`. **No verificado en vivo** | RN-DIG-008 |
-| 404 | `DigemidCatalogo.NotFound` | No existe o está eliminado | RN-DIG-007 |
+| 403 | `DigemidCatalogo.Global.SoloLectura` | El producto es del catálogo compartido (sin empresa): `Result.Failure(…, 403)` en `UpdateDigemidProductoCommandHandler.cs:21`, mensaje «The shared DIGEMID catalog cannot be modified.». Confirmado en el código; sin ejemplo real capturado | RN-DIG-008 |
+| 404 | `DigemidCatalogo.NotFound` | No existe, está eliminado o es de otra empresa | RN-DIG-007 |
 | 409 | `DigemidCatalogo.CodProd.Duplicado` | Otro producto usa el código (de la empresa o del catálogo compartido) | RN-DIG-006 |
 | 401 / 403 | — | Sin token o sin `DIGEMID:Actualizar` | [apartado 0][04A0] |
 
@@ -2262,8 +2269,8 @@ Elimina (borrado lógico) un producto del catálogo, sin validar dependencias. *
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 403 | `DigemidCatalogo.Global.SoloLectura` | El producto es del catálogo compartido (sin empresa); desde `9c16f35`. **No verificado en vivo** | RN-DIG-008 |
-| 404 | `DigemidCatalogo.NotFound` | No existe o ya está eliminado | RN-DIG-007 |
+| 403 | `DigemidCatalogo.Global.SoloLectura` | El producto es del catálogo compartido (sin empresa): `Result.Failure(…, 403)` en `DeleteDigemidProductoCommandHandler.cs:20`. Confirmado en el código; sin ejemplo real capturado | RN-DIG-008 |
+| 404 | `DigemidCatalogo.NotFound` | No existe, ya está eliminado o es de otra empresa (se evalúa antes que el 403) | RN-DIG-007 |
 | 401 / 403 | — | Sin token o sin `DIGEMID:Eliminar` | [apartado 0][04A0] |
 
 **Ejemplo real:**
@@ -2324,7 +2331,7 @@ Primer paso de la carga masiva. Solo comprueba obligatoriedad de `CodProd`, `Nom
 | **Código** | `SOFIA.API/Controllers/DIGEMIDController.cs:107` → `PreviewImportDigemidQuery` |
 | **Pantalla del SPA** | `/digemid-catalogo/carga-masiva` (al elegir o arrastrar el archivo) |
 
-**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: las ocho de la plantilla.
+**Cuerpo:** `multipart/form-data`, campo `file` (`.xlsx`). Columnas leídas: las ocho de la plantilla (primera hoja, celdas leídas como texto y recortadas, filas vacías omitidas). El duplicado se busca entre las filas de la empresa y las del catálogo compartido, y `duplicate-in-file` se marca en todas las filas que repiten el código, incluida la primera.
 
 **Respuesta correcta:** `200 OK` con la estructura de la vista previa. Códigos de error por fila: `required` (`codProd`, `nomProd`, `estado`), `duplicate` y `duplicate-in-file` (sobre `codProd`).
 
@@ -2382,7 +2389,7 @@ HTTP/1.1 400 Bad Request
 
 #### `POST /api/v1/DIGEMID/catalogo/carga-masiva`
 
-Segundo paso. Omite sin error las filas cuyo código ya existe o se repite antes en el mismo envío.
+Segundo paso. Omite sin error las filas cuyo código ya existe (en la empresa o en el catálogo compartido) o se repite antes en el mismo envío.
 
 | | |
 |---|---|
@@ -2413,7 +2420,7 @@ La lista debe tener entre 1 y 5 000 filas (RN-DIG-012). Una fila demasiado larga
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaDigemidCommand.Rows` | Lista vacía o de más de 5 000 filas | RN-DIG-012 |
-| 400 | `CargaMasivaDigemidCommand.Rows[i].<Campo>` | Falla el validador de la fila `i` (por ejemplo `.Estado` vacío): se rechaza todo el envío | RN-DIG-005, RN-DIG-012 |
+| 400 | `CargaMasivaDigemidCommand.Rows[i].<Campo>` | Falla el validador de la fila `i` (por ejemplo `.Estado` vacío): se rechaza todo el envío. El `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-DIG-005, RN-DIG-012 |
 | 413 | `Request.TooLarge` | Cuerpo de más de 5 MB | [apartado 0][04A0] |
 | 401 / 403 | — | Sin token o sin `DIGEMID:Crear` | [apartado 0][04A0] |
 
@@ -2496,7 +2503,7 @@ Content-Length: 6656
 
 ### 5.2 Cuarentena DIGEMID (solo API, sin pantalla)
 
-**Forma del registro de cuarentena en las consultas** (`CuarentenaResumenDto`, `SOFIA.Application/DIGEMID/Queries/GetCuarentena/GetCuarentenaQuery.cs:4`):
+**Forma del registro de cuarentena en las consultas** (`CuarentenaResumenDto`, `SOFIA.Application/DIGEMID/Queries/GetCuarentena/GetCuarentenaQuery.cs:9`):
 
 | Campo | Tipo | Descripción |
 |---|---|---|
@@ -2543,9 +2550,11 @@ Aísla un lote en cuarentena. La sucursal y el empleado que registran salen del 
 | 400 | `AislarLoteCuarentenaCommand.EstadoResolucion` | Estado vacío o fuera de la lista | RN-CUA-003 |
 | 400 | — (`ProblemDetails` de validación de ASP.NET: `errors.EstadoResolucion`, `errors.MotivoAislamiento`) | Esos campos de texto faltan en el JSON | [apartado 0][04A0] |
 | 400 | `Auth.Sucursal` / `Auth.Empleado` | El token no trae sucursal o empleado | RN-CUA-002 (ejemplo no verificado: el usuario de prueba los tiene) |
-| 404 | `LoteInventario.NotFound` | El lote no existe en la empresa | RN-CUA-004 |
+| 404 | `LoteInventario.NotFound` | El lote no existe en la empresa o está eliminado | RN-CUA-004 |
 | 404 | `DetalleDevolucion.NotFound` | `detalleDevId` informado y no existe | RN-CUA-004 |
 | 401 / 403 | — | Sin token o sin `DIGEMID:AislarLoteCuarentena` | [apartado 0][04A0] |
+
+Orden de evaluación: validador del comando (400), sucursal del token (`Auth.Sucursal`, 400), empleado del token (`Auth.Empleado`, 400), lote (404), línea de devolución (404) y, al final, los guards de la entidad (400 `DigemidInventarioCuarentena.*`, que repiten las reglas del validador y no llegan a ejecutarse con datos ya validados). Los `Auth.*` salen con 400 porque el handler reenvía el error sin código HTTP propio (`AislarLoteCuarentenaCommandHandler.cs`).
 
 **Ejemplo real** (lote `4B-LOTE-001`, creado antes con `POST /api/v1/LotesInventario`):
 
@@ -2582,7 +2591,7 @@ HTTP/1.1 404 Not Found
 
 #### `GET /api/v1/DIGEMID/cuarentena`
 
-Consulta los registros de cuarentena de las sucursales a las que el usuario tiene acceso (el rol `Admin` ve todas). Ordena por fecha de ingreso, de la más reciente a la más antigua.
+Consulta los registros de cuarentena de las sucursales a las que el usuario tiene acceso (el rol `Admin` ve todas; los demás, su sucursal base, las de su cuenta y las de sus roles). Ordena por fecha de ingreso, de la más reciente a la más antigua.
 
 | | |
 |---|---|
@@ -2597,7 +2606,7 @@ Consulta los registros de cuarentena de las sucursales a las que el usuario tien
 |---|---|---|---|
 | `sucursalId` | GUID | No | Solo esa sucursal; no puede ser el GUID vacío. Una sucursal no accesible o inexistente devuelve una página vacía ([RN-CUA-012][CUA1]). |
 | `estadoResolucion` | texto | No | Igualdad exacta; no se valida contra la lista de estados. |
-| `fechaInicio`, `fechaFin` | fecha | No | Rango de la fecha de ingreso, ambos extremos inclusivos (acepta `2026-10-01` o fecha y hora). |
+| `fechaInicio`, `fechaFin` | fecha | No | Rango de la fecha de ingreso, comparada como instante UTC con `>=` y `<=` (`WhereDateRange`). Un valor solo con fecha (`2026-10-01`) se toma como las 00:00 UTC de ese día: con `fechaFin` solo con fecha quedan fuera los registros de ese día posteriores a las 00:00; para incluir el día completo envía fecha y hora (por ejemplo `2026-12-31T23:59:59Z`). |
 | `pageNumber`, `pageSize` | entero | No | Por defecto 1 y 10. |
 
 **Respuesta correcta:** `200 OK`: página de `CuarentenaResumenDto`.
@@ -2636,7 +2645,7 @@ HTTP/1.1 400 Bad Request
 
 ### 5.3 Actas de destrucción DIGEMID (solo API, sin pantalla)
 
-**Forma del acta en la consulta** (`ActaResumenDto`, `SOFIA.Application/DIGEMID/Queries/GetActas/GetActasQuery.cs:4`): `id` (GUID), `numeroResolucionInterna` (texto), `fechaEjecucion` (fecha) y `empresaResiduosBiocontaminados` (texto). No incluye el regente, el manifiesto ni la ruta del PDF, y no existe consulta de una sola acta.
+**Forma del acta en la consulta** (`ActaResumenDto`, `SOFIA.Application/DIGEMID/Queries/GetActas/GetActasQuery.cs:9`): `id` (GUID), `numeroResolucionInterna` (texto), `fechaEjecucion` (fecha) y `empresaResiduosBiocontaminados` (texto). No incluye el regente, el manifiesto ni la ruta del PDF, y no existe consulta de una sola acta.
 
 #### `POST /api/v1/DIGEMID/acta-destruccion`
 
@@ -2671,7 +2680,7 @@ El validador del comando está vacío (`// TODO`): las reglas las aplican el han
 | 400 | `DigemidActaDestruccion.NumeroResolucionInterna` | Número vacío o de más de 50 caracteres | RN-CUA-015 |
 | 400 | `DigemidActaDestruccion.EmpresaResiduosBiocontaminados` / `.ManifiestoTransporteDoc` / `.RutaActaFirmadaPdf` | Vacío o fuera de longitud | RN-CUA-015 |
 | 400 | — (`ProblemDetails` de validación de ASP.NET: `errors.NumeroResolucionInterna`, `errors.EmpresaResiduosBiocontaminados`) | Esos textos faltan en el JSON | [apartado 0][04A0] |
-| 404 | `Empleado.NotFound` | `regenteResponsableId` no es un empleado de la empresa (el `detail` está en español) | RN-CUA-014 |
+| 404 | `Empleado.NotFound` | `regenteResponsableId` no es un empleado de la empresa, o falta en el JSON o es el GUID vacío (el `detail` está en español). Se evalúa **antes** que los guards de la entidad: con un regente inexistente no se llega a ver el 400 de los textos | RN-CUA-014 |
 | 409 | `Db.Duplicado` | Ya hay un acta no eliminada con el mismo número de resolución (la base lo rechaza al guardar) | RN-CUA-016 |
 | 401 / 403 | — | Sin token o sin `DIGEMID:GenerarActaDestruccion` | [apartado 0][04A0] |
 
@@ -2724,7 +2733,7 @@ Consulta las actas de destrucción de la empresa, de la más reciente a la más 
 
 | Nombre | Tipo | Obligatorio | Descripción |
 |---|---|---|---|
-| `fechaInicio`, `fechaFin` | fecha | No | Rango de la fecha de ejecución, ambos extremos inclusivos. |
+| `fechaInicio`, `fechaFin` | fecha | No | Rango de la fecha de ejecución, comparada como instante UTC con `>=` y `<=`; la fecha de ejecución se guarda sin hora, por lo que un valor solo con fecha incluye ese día. |
 | `pageNumber`, `pageSize` | entero | No | Por defecto 1 y 10. |
 
 **Respuesta correcta:** `200 OK`: página de `ActaResumenDto` ([RN-CUA-019][CUA3]).
