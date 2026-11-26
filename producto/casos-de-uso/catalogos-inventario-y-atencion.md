@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; los casos CU-CAT-42 y CU-CAT-44 (DIGEMID) están reconciliados con `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee` (revisión a fondo contra el código); el documento se escribió sobre `43f5529` y los casos CU-CAT-42 y CU-CAT-44 (DIGEMID) están reconciliados con `9c16f35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` (revisión a fondo contra el código); el documento se escribió sobre `eeffbb6` |
 | **Método** | Lectura de los documentos validados (reglas `negocio/reglas/catalogos` v1.1 y `negocio/reglas/inventario-y-recetas`, inventario de pantallas `producto/pantallas/catalogos-basicos`, `producto/pantallas/productos-proveedores-y-aseguradoras` y `producto/pantallas/inventario-y-atencion`, carga masiva `tecnico/carga-masiva-y-exportacion`, matriz de permisos `tecnico/seguridad/matriz-de-permisos`, integraciones `tecnico/integraciones`, procesos 3 y 7, manual capítulo 4, historias de usuario `producto/historias-de-usuario/catalogos-inventario-y-atencion`) y comprobación puntual en el código, en `endpoints.csv` y en los `es.json`. No se ejecutó la aplicación ni se llamó a la API: los mensajes salen de los `es.json` a través de los documentos fuente. |
 
 ## 1. Cómo leer este documento
@@ -917,7 +917,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 **Postcondiciones**
 - Éxito / Fallo: sin cambios de datos.
 
-> **Nota.** La regla no describe filtro por vencimiento ni por sucursales permitidas en este stock; la diferencia con «stock vendible» ([RN-STK-017]) **no se verificó** en el código de la consulta. Fuente: HU-CAT-020, `producto/pantallas/productos-proveedores-y-aseguradoras` §1.2.
+> **Nota.** La consulta no aplica filtro por vencimiento, cuarentena ni sucursales permitidas en este stock (suma la cantidad física de todas las filas de lote por sucursal); difiere de «stock vendible» ([RN-STK-017]). Fuente: HU-CAT-020, `producto/pantallas/productos-proveedores-y-aseguradoras` §1.2.
 
 ### CU-CAT-21 — Eliminar un medicamento
 
@@ -1014,7 +1014,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 **Flujo principal**
 1. El punto de venta pide el listado de medicamentos con las opciones `IncluirStock`, `SoloStockVendibleEnMiSucursal` y/o `OrdenarPorMasVendidos`.
 2. Con `IncluirStock` el sistema suma la cantidad física de los lotes de cada medicamento en todas las sucursales ([RN-MED-015]).
-3. Con `SoloStockVendibleEnMiSucursal` solo cuenta el stock vendible de la sucursal del usuario: cantidad mayor que 0, lote no vencido y sin retención activa en cuarentena ([RN-STK-017]).
+3. Con `SoloStockVendibleEnMiSucursal` **junto con** `IncluirStock` (sola no hace nada) el stock total solo cuenta el stock vendible de la sucursal del usuario: cantidad mayor que 0, lote no vencido y sin retención activa en cuarentena ([RN-STK-017]); la opción no excluye medicamentos de la lista, solo cambia el stock mostrado.
 4. Con `OrdenarPorMasVendidos` ordena por unidades vendidas en la sucursal del usuario en los últimos 30 días, contando solo ventas `Completada`; los no vendidos van después y a igualdad por nombre comercial ([RN-MED-016]).
 5. El sistema devuelve la página.
 
@@ -1727,13 +1727,14 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 | 2 | Código ya existente o repetido en el archivo | fila: `duplicate` · `duplicate-in-file` | 200 | «El valor 'X' del campo 'codigoIdentificadorNacional' ya existe en el sistema» / «… está duplicado en el archivo» | La fila no se guarda |
 | 3 | Un duplicado llega al guardado (el dato cambió entre la vista previa y el guardado) | `Db.Duplicado` | 409 | No está en el mapa de carga masiva: «Error al guardar los registros» | No se guarda **ninguna** fila |
 | 4 | (Solo API) lista vacía o de más de 5000 | — (no hay validador de lista) | — | No se valida en el comando | Comportamiento **No verificado** |
+| 3–4 | Archivo de más de 5 MB enviado directo a la API | — (`SegurosController` no tiene `[RequestSizeLimit]`, a diferencia de los demás controladores de carga masiva) | — | El servidor no lo rechaza con `Request.TooLarge` (413); el aviso «El archivo supera el tamaño máximo de 5 MB.» sale solo de la comprobación de la pantalla | Solo la pantalla impone los 5 MB |
 | 4 | Sin archivo (el lector se invoca sin nombre de archivo y no comprueba la extensión `.xlsx` en el servidor; sí la firma y el contenido) | — (sin el campo `file`: `ProblemDetails` con `errors.file`; con un archivo de 0 bytes: texto plano) | 400 | «Error al procesar el archivo» | No hay vista previa |
 | 1–4 | Archivo, tamaño, filas, descarga y fallos genéricos | Ver [§3.5](#35-carga-masiva-flujo-común) | — | Ver §3.5 | Ver §3.5 |
 
 **Postcondiciones**
 - Éxito: se crean todas las aseguradoras del envío. Fallo: no se crea ninguna.
 
-> **Brecha conocida.** El guardado de aseguradoras no omite duplicados (a diferencia de los demás catálogos), no tiene validador de comando y no valida el tamaño de la lista. Fuente: [RN-ASE-011], [RN-ASE-012].
+> **Brecha conocida.** El guardado de aseguradoras no omite duplicados (a diferencia de los demás catálogos), no tiene validador de comando, no valida el tamaño de la lista y el controlador no tiene `[RequestSizeLimit]` (`SegurosController.cs`). Fuente: [RN-ASE-011], [RN-ASE-012].
 
 ### 4.10 Catálogo DIGEMID
 
@@ -2048,7 +2049,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 | Paso | Situación | Código de error | HTTP | Mensaje que ve el usuario | Qué pasa después |
 |---|---|---|---|---|---|
 | 3 | Cantidad negativa o vacía | — (formulario); en servidor `RegisterInventarioCommand.Cantidad` | 400 | «La cantidad no puede ser negativa» (`stockPorSucursal.detail.cantidad-invalid`) | No se envía nada |
-| 3 | Guardar sin haber elegido un lote | — | — | Ningún mensaje: por lectura del código `saveNew()` lanza una excepción de JavaScript y no se envía la petición (**No verificado en ejecución**) | No se guarda nada |
+| 3 | Guardar sin haber elegido un lote | — | — | Ningún mensaje: `saveNew()` evalúa `loteDisplay(selectedLote()!)` con el lote nulo (`stock-detail.component.ts:183`), lanza una excepción de JavaScript y no se envía la petición (confirmado) | No se guarda nada |
 | 4 | Sucursal o lote vacíos (solo API) | `RegisterInventarioCommand.SucursalId` · `RegisterInventarioCommand.LoteId` | 400 | «Error al registrar el stock» (`stockPorSucursal.create.save-error`) | Se queda en el formulario |
 | 5 | La sucursal no existe | `Sucursal.NotFound` | 404 | «Error al registrar el stock» | Se queda en el formulario |
 | 5 | Sucursal fuera del acceso del actor | `Inventario.Sucursal.NoPermitida` | 403 | «No tienes permiso para operar el stock de esta sucursal» (`stockPorSucursal.errors.sucursal-no-permitida`) | Se queda en el formulario |
@@ -2062,7 +2063,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 - Éxito: la sucursal tiene stock del lote (nuevo o sumado); queda disponible para vender si el lote está vigente y sin retención.
 - Fallo: el stock no cambia.
 
-> **Brecha conocida.** (1) Guardar sin lote falla en silencio. (2) Los textos «Debes seleccionar una sucursal» y «Debes seleccionar un lote» están declarados pero, por lectura del código, no llegan a pintarse. (3) Se puede ingresar stock de un lote vencido o retenido en cuarentena. (4) No hay orden de compra ni recepción de proveedor: el stock se ingresa a mano ([proceso 3](../../negocio/procesos-de-negocio.md)). El manual no recorrió esta pantalla. Fuente: [`negocio/reglas/inventario-y-recetas` §4][01c1-STK], hallazgos 2 y 7.
+> **Brecha conocida.** (1) Guardar sin lote falla en silencio por una excepción en `stock-detail.component.ts:183` (confirmado). (2) Los textos «Debes seleccionar una sucursal» y «Debes seleccionar un lote» están declarados pero, por lectura del código, no llegan a pintarse. (3) Se puede ingresar stock de un lote vencido o retenido en cuarentena. (4) No hay orden de compra ni recepción de proveedor: el stock se ingresa a mano ([proceso 3](../../negocio/procesos-de-negocio.md)). El manual no recorrió esta pantalla. Fuente: [`negocio/reglas/inventario-y-recetas` §4][01c1-STK], hallazgos 2 y 7.
 
 ### CU-INV-06 — Ajustar el stock de un lote en una sucursal
 
@@ -2194,7 +2195,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 1. El actor hace clic en **Nuevo** en `/pacientes`.
 2. El SPA muestra «Tipo de Documento» (lista: «DNI», «Carné de extranjería», «RUC», «Pasaporte», guardados con los códigos SUNAT 1, 4, 6 y 7), «Documento de Identidad» (máx. 20 en el formulario), «Nombre y Apellidos» (máx. 200), «Fecha de Nacimiento» y «Contacto Primario» (opcional, máx. 150 en el formulario).
 3. El actor completa y hace clic en **Guardar**. El SPA valida obligatoriedad y el formato del número según el tipo (DNI 8 dígitos; RUC 11; carné de extranjería de 1 a 12 letras o números; pasaporte de 1 a 20); si no, no envía nada.
-4. El sistema valida tipo (1, 4, 6 o 7), número (no vacío, ≤ 50, formato de su tipo), nombre (≤ 200), fecha de nacimiento no futura y contacto (≤ 100). Los guards se evalúan en este orden y solo se informa el primero que falla: documento vacío, longitud, tipo, formato, nombre, fecha, contacto ([RN-PAC-002] a [RN-PAC-007]).
+4. El sistema valida tipo (1, 4, 6 o 7), número (no vacío, ≤ 50, formato de su tipo), nombre (≤ 200), fecha de nacimiento no futura y contacto (≤ 100). Primero corre el validador del comando (tipo, documento, nombre y contacto; el código de error es el de la primera propiedad que falla) y, si pasa, los guards de la entidad se evalúan en este orden y solo se informa el primero que falla: documento vacío, longitud, tipo, formato, nombre, fecha, contacto; la fecha de nacimiento solo la comprueba la entidad ([RN-PAC-002] a [RN-PAC-007]).
 5. El sistema comprueba que no haya otro paciente no eliminado con el mismo número de documento, **sin importar el tipo** ([RN-PAC-008]).
 6. El sistema guarda y responde **200** con el identificador (no 201).
 7. El SPA muestra «Paciente guardado correctamente» y vuelve a `/pacientes`.
@@ -2212,7 +2213,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 | 4 | Tipo fuera de 1, 4, 6, 7 | `CreatePacienteCommand.TipoDocumento` · `PacienteCliente.TipoDocumento` · `Db.ValorInvalido` | 400 | «Selecciona un tipo de documento válido.» (`pacientes.detail.tipo-documento-requerido`) | Se queda en el formulario |
 | 4 | Número vacío o de más de 50 (llega al servidor) | `CreatePacienteCommand.DocIdentidadGub` (editar: `UpdatePacienteCommand.DocIdentidadGub`) | 400 | El código está asociado al mensaje de formato (también cuando la causa es vacío o longitud) | Se queda en el formulario |
 | 4 | Nombre de solo espacios | `CreatePacienteCommand.NombreApellidos` · `PacienteCliente.NombreApellidos` | 400 | Sin traducción: «Error al guardar el paciente» (`pacientes.detail.save-error`) | Se queda en el formulario |
-| 4 | Fecha de nacimiento futura (el selector no la limita) | `PacienteCliente.FechaNacimiento` | 400 | «Error al guardar el paciente» | Se queda en el formulario |
+| 4 | Fecha de nacimiento futura (el selector no la limita; la comparación usa la fecha UTC del servidor, así que desde las 19:00 de Lima se acepta la de mañana) | `PacienteCliente.FechaNacimiento` | 400 | «Error al guardar el paciente» | Se queda en el formulario |
 | 4 | Contacto de 101 a 150 caracteres (pasa el formulario) | `CreatePacienteCommand.ContactoPrimario` | 400 | «Error al guardar el paciente» | Se queda en el formulario |
 | 5 | Documento ya registrado | `Paciente.DocIdentidadGub.Duplicado` | 409 | «Ya existe un paciente con ese documento de identidad.» (`pacientes.detail.duplicate-documento`) | Se queda en el formulario |
 | 6 | Carrera | `Db.Duplicado` | 409 | «Ya existe un registro con ese mismo valor. Revisa los datos e inténtalo de nuevo.» (**No verificado**) | Se queda en el formulario |
@@ -2525,7 +2526,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 | 3 | Fecha vacía | — (formulario) | — | «La fecha de expedición es requerida» | No se envía nada |
 | 3 | Número de receta de más de 30 caracteres | — (formulario) | — | «El número de receta admite hasta 30 caracteres» | No se envía nada |
 | 3 | Repeticiones vacías o negativas | — (formulario) | — | Ningún mensaje (sin `mat-error`) | No se envía nada |
-| 4 | Fecha posterior a hoy (UTC) | `RecetaMedica.FechaExpedicion` | 400 | «La fecha de expedición no puede ser posterior a hoy.» (`recetasMedicas.errors.fecha-futura`) | Se queda en el formulario |
+| 4 | Fecha posterior a hoy (UTC; desde las 19:00 de Lima la fecha UTC ya es la de mañana y la API acepta una receta con fecha de mañana, caso que el selector de la pantalla no permite) | `RecetaMedica.FechaExpedicion` | 400 | «La fecha de expedición no puede ser posterior a hoy.» (`recetasMedicas.errors.fecha-futura`) | Se queda en el formulario |
 | 4 | Fecha vacía, repeticiones negativas, indicaciones de más de 1 000 o número de más de 30 (llegan al servidor) | `CreateRecetaCommand.FechaExpedicion` / `.RepeticionesMax` / `.IndicacionesUso` / `.NumeroReceta` (editar: `UpdateRecetaCommand.…`) | 400 | «Revisa los datos ingresados de la receta.» (`recetasMedicas.errors.invalid-data`) | Se queda en el formulario |
 | 4 | Paciente o médico vacíos (solo API) | `CreateRecetaCommand.ClienteId` · `.MedicoId` | 400 | «Error al crear la receta» (`recetasMedicas.create.save-error`) / «Error al actualizar la receta» | Se queda en el formulario |
 | 5 | El paciente no existe | `Paciente.NotFound` | 404 | «El paciente seleccionado no existe. Vuelve a seleccionarlo.» | Se queda en el formulario |
@@ -2642,7 +2643,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 **Flujos alternativos**
 - **A1 — Limpiar**: quita la imagen, la vista previa y los resultados; al elegir otro archivo también se limpian los resultados anteriores.
 - **A2 — Sin imagen** (paso 3): el botón **Interpretar receta** no se muestra.
-- **A3 — Especialidad de contexto** (solo API): si se informa `especialidadContexto` debe tener máximo 50 caracteres y solo letras (con tildes) y espacios; si no se informa se usa «Medicina General». La pantalla nunca envía este dato ([RN-REC-020]).
+- **A3 — Especialidad de contexto** (solo API): si se informa `especialidadContexto` (parámetro de consulta en la URL, no campo del formulario con la imagen) debe tener máximo 50 caracteres y solo letras (con tildes) y espacios; si no se informa se usa «Medicina General». La pantalla nunca envía este dato ([RN-REC-020]).
 
 **Excepciones**
 
@@ -2680,7 +2681,7 @@ Sigue [§3.5](#35-carga-masiva-flujo-común) con:
 1. El sistema procesa solo los primeros 20 medicamentos devueltos por la IA y por cada uno como máximo 3 sugerencias; el resto se descarta sin aviso ([RN-REC-022]).
 2. Para cada medicamento busca su nombre en el catálogo DIGEMID local de la empresa: deben estar contenidas todas las palabras; si no hay resultado reintenta con la primera palabra; ordena hasta 50 candidatos por parecido de texto y toma los 5 mejores. Si hay alguno, la razón es «Validado por DIGEMID (nombre)»; si no, «Detectado en receta» ([RN-REC-023]).
 3. Busca el producto en el catálogo de medicamentos de la empresa con el nombre y la concentración DIGEMID (o con el texto detectado): hasta 50 medicamentos cuyo nombre contenga la primera palabra; acepta el mejor solo si su parecido es mayor a 0,4. Sin coincidencia, el resultado no trae producto ([RN-REC-024]).
-4. Calcula la confianza final = nivel de la IA × 0,6 + parecido × 0,4, redondeada a 2 decimales (parecido 0,9 con coincidencia DIGEMID, 1,0 sin ella; las sugerencias llevan 0,70) ([RN-REC-025]). La pantalla la rotula «Confianza: Alta» desde 0,85, «Media» desde 0,65 y «Baja» por debajo.
+4. Calcula la confianza final = nivel de la IA × 0,6 + parecido × 0,4, redondeada a 2 decimales (el «parecido» no se mide: es un valor fijo, 0,9 con coincidencia DIGEMID y 1,0 sin ella; las sugerencias llevan siempre 0,70) ([RN-REC-025]). La pantalla la rotula «Confianza: Alta» desde 0,85, «Media» desde 0,65 y «Baja» por debajo.
 5. Calcula el stock en la sucursal del token sumando solo lotes **no vencidos** (si el token no trae sucursal válida, 0); no descuenta lotes retenidos en cuarentena ([RN-REC-026]).
 6. Para un producto encontrado lista los equivalentes terapéuticos: demás medicamentos de la empresa con la misma formulación (ingrediente, concentración y unidad), sin repetidos, con laboratorio y stock ([RN-REC-027]).
 7. Cada sugerencia de la IA se busca en el catálogo de la empresa; las que no coinciden se descartan; las que sí se devuelven como «Recomendacion», razón «Sugerido por {medicamento}», sin DIGEMID ni equivalentes ([RN-REC-028]).
@@ -2921,7 +2922,7 @@ flowchart LR
 
 ### 8.1 En curso (sin commitear)
 
-Ninguno. `git status --short` en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (`eeffbb6`) no mostró cambios locales al empezar. Los archivos de lotes, stock y recetas no cambiaron entre los commits sobre los que se escribió `negocio/reglas/inventario-y-recetas` (`9dd1705`, `063817c`) y los vigentes (`git diff --stat` sin resultados), por lo que `negocio/reglas/inventario-y-recetas` sigue siendo válido para esos módulos.
+Ninguno. La revisión a fondo del 2026-11-26 se hizo contra los commits `b67e3ee` (`sofia-apis`) y `526bc8f` (`sofia-web-spa`), leídos con `git archive` y `git show`; no se usó ningún cambio sin commitear. Antes, `git status --short` en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (`eeffbb6`) no había mostrado cambios locales. Los archivos de lotes, stock y recetas no cambiaron entre los commits sobre los que se escribió `negocio/reglas/inventario-y-recetas` (`9dd1705`, `063817c`) y los vigentes (`git diff --stat` sin resultados), por lo que `negocio/reglas/inventario-y-recetas` sigue siendo válido para esos módulos.
 
 ### 8.2 Brechas del sistema que los casos describen tal cual
 
@@ -2930,7 +2931,7 @@ Ninguno. `git status --short` en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (
 | 1 | La vista previa de la carga masiva no anticipa lo que el guardado descarta (código identificador de laboratorio, DCI, razón social de proveedor, duplicados de jerarquías); «Se guardaron N» puede ser menor que las filas válidas, incluso 0. | CU-CAT-08, 13, 17, 35 | RN-JER-021, RN-LAB-015, RN-ING-013, RN-PRV-015 |
 | 2 | La vista previa de ingredientes valida el ATC (que a mano se puede repetir) y no la DCI (la clave real). | CU-CAT-17 | RN-ING-012, RN-ING-013 |
 | 3 | La vista previa de DIGEMID no valida longitudes y el guardado rechaza todo el envío si una fila es demasiado larga. | CU-CAT-43 | RN-DIG-005 |
-| 4 | La carga masiva de aseguradoras no controla duplicados ni el tamaño de la lista: un duplicado hace fallar todo el envío. | CU-CAT-41 | RN-ASE-011 |
+| 4 | La carga masiva de aseguradoras no controla duplicados ni el tamaño de la lista y su controlador no tiene `[RequestSizeLimit]`: un duplicado hace fallar todo el envío. | CU-CAT-41 | RN-ASE-011 |
 | 5 | Los medicamentos creados por carga masiva quedan sin precio de venta base. | CU-CAT-22 | RN-MED-021 |
 | 6 | Crear, editar y eliminar un producto DIGEMID es solo API. Los demás catálogos con recorrido por API sin pantalla: formulaciones por medicamento, lotes por producto, stock por medicamento. | CU-CAT-31, 44; CU-INV-04, 08 | RN-DIG-008, RN-FOR-013, RN-LOT-018, RN-STK-018 |
 | 7 | Eliminaciones sin validación de dependencias: jerarquías, formulaciones, aseguradoras y productos DIGEMID. La unidad de medida no consulta las presentaciones de venta; un lote usado en transferencias, cuarentena, inmunizaciones u órdenes magistrales se puede eliminar; una receta cuenta también las ventas anuladas. | CU-CAT-03, 07, 30, 40, 44; CU-INV-03, 19 | RN-UDM-010, RN-JER-014, RN-FOR-011, RN-ASE-006, RN-DIG-008, RN-LOT-014, RN-REC-013 |
@@ -2957,12 +2958,13 @@ Ninguno. `git status --short` en `sofia-apis` (`43f5529`) y en `sofia-web-spa` (
 | 8 | El contenido y la descarga de los archivos exportados y de las plantillas. | El navegador integrado no muestra las descargas; sí se comprobó el 200 del servidor. | Todos los de exportar y cargar |
 | 9 | La redirección al Inicio por falta de permiso de ruta. | El administrador tiene todos los permisos. | Todos |
 | 10 | Qué ve el usuario sin los permisos de lectura de otros módulos (sugerencias de producto, laboratorio, unidad, paciente, médico). | Las suscripciones no tienen manejador de error. | CU-CAT-05, 06, 18, 19, 24, 28; CU-INV-01, 02, 07, 17, 18 |
-| 11 | Si modificar o eliminar una jerarquía recalcula las presentaciones ya guardadas. | Por lectura del código la equivalencia se guarda al crear o editar la presentación y no se recalcula. | CU-CAT-07, 24 |
+| 11 | Si modificar o eliminar una jerarquía recalcula las presentaciones ya guardadas. | Revisados los handlers de jerarquías: no tocan las presentaciones, y la equivalencia se guarda al crear o editar la presentación; no se ejecutó. | CU-CAT-07, 24 |
 | 12 | Si dos registros simultáneos de precio dejan dos precios abiertos del mismo proveedor y producto. | No hay índice único ni prueba de concurrencia. | CU-CAT-36 |
-| 13 | El desbordamiento de `DECIMAL(12,4)` en stock; la excepción de JavaScript al guardar el ingreso sin lote; la clave sin traducir en la carga masiva de pacientes. | Lectura del código; no se ejecutó. | CU-INV-05, 06, 12 |
+| 13 | El desbordamiento de `DECIMAL(12,4)` en stock; la clave sin traducir en la carga masiva de pacientes (la excepción de JavaScript al guardar el ingreso sin lote, en `stock-detail.component.ts:183`, está confirmada). | Lectura del código; no se ejecutó. | CU-INV-05, 06, 12 |
 | 14 | El comportamiento real de Gemini y Presidio (calidad, formato de imagen admitido) y si algún registro de infraestructura conserva la imagen. | Requiere servicios externos. | CU-INV-20, 21, 22 |
 | 15 | Si el filtro de fecha de recetas coincide con el día elegido cuando el navegador está al este de UTC. | La pantalla envía un instante y el servidor toma la parte de fecha. | CU-INV-18 |
 | 16 | Los avisos de base de datos (`Db.Duplicado`, `Db.ReferenciaInvalida`, `Db.ValorInvalido`). | No se pueden provocar desde la pantalla. | Los casos de registrar y editar |
+| 17 | Si el filtro de texto «contiene» es insensible a mayúsculas en unidades, laboratorios, ingredientes, proveedores, aseguradoras, DIGEMID, pacientes y profesionales. | Esos handlers usan `Contains` sin `ToLower`: depende de la intercalación de la base (ver ítem 1); en jerarquías, medicamentos, presentaciones, formulaciones, lotes y stock el código pasa a minúsculas. | Los casos de buscar |
 
 ### 8.4 Observaciones sobre las fuentes
 
