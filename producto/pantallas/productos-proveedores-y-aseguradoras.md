@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Citas desplazadas y cita corregida de `goToNew()` de Aseguradoras. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron controladores, validadores, manejadores y entidades necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Al empezar, `git status --short` salió vacío en ambos repos (sin cambios sin commitear); `git diff --stat 01b8260..HEAD -- src/app/pages` en el SPA no muestra cambios en las carpetas de este documento (los commits `8f36125` y `eeffbb6` solo tocan README, `angular.json` e `index.html`). |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` |
+| **Método** | Revisión a fondo (semántica) 2026-11-26 (versión 1.3) contra `sofia-apis` `b67e3ee` y `sofia-web-spa` `526bc8f`: se corrigió el stock del detalle del medicamento (suma sin filtrar por vencimiento, cuarentena ni sucursales) y se aclaró que el límite de 5 MB de la carga masiva de aseguradoras sale solo de la pantalla (`SegurosController` no tiene `[RequestSizeLimit]`); se contrastaron además las guardas de eliminación y el registro de precio de proveedor. Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Citas desplazadas y cita corregida de `goToNew()` de Aseguradoras. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron controladores, validadores, manejadores y entidades necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Al empezar, `git status --short` salió vacío en ambos repos (sin cambios sin commitear); `git diff --stat 01b8260..HEAD -- src/app/pages` en el SPA no muestra cambios en las carpetas de este documento (los commits `8f36125` y `eeffbb6` solo tocan README, `angular.json` e `index.html`). |
 
 Este documento es la parte D de seis del inventario de pantallas. Cubre cinco catálogos: Medicamentos, Presentaciones de venta, Formulaciones clínicas, Proveedores (con el registro e historial de precios de compra) y Aseguradoras (18 rutas). Lo compartido (guards, interceptor, `page-header`, `confirm-dialog`, `range-slider-field`, carga masiva común, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); los comportamientos comunes de las pantallas de búsqueda y detalle de catálogo están en la [parte C, §0](catalogos-basicos.md) y aquí solo se enlazan. Las reglas de negocio están en [`negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md) (MED, PRE, FOR, PRV, ASE) y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -168,7 +168,7 @@ Detalles de los autocompletados del detalle: al escribir (300 ms) consultan `GET
 
 Campos solo de lectura: tarjeta de stock (§siguiente). No hay estado, ni vínculo DIGEMID, ni campos de auditoría en pantalla.
 
-**Tarjeta «Stock por Sucursal»** (solo en ver, `.html:200-250`): título «Stock por Sucursal» (`medicamentos.detail.stock-section`) y línea «Stock Total: **N**» (`medicamentos.detail.stock-total`; `snapshot.stockTotal ?? 0`). Si el detalle trae sucursales, tabla con «Sucursal» (`detail.stock-col-sucursal`) y «Stock» (`detail.stock-col-cantidad`, alineado a la derecha) con la cantidad física; si no, «Sin stock registrado» (`detail.sin-stock`). El dato lo calcula el servidor (RN-MED-018).
+**Tarjeta «Stock por Sucursal»** (solo en ver, `.html:200-250`): título «Stock por Sucursal» (`medicamentos.detail.stock-section`) y línea «Stock Total: **N**» (`medicamentos.detail.stock-total`; `snapshot.stockTotal ?? 0`). Si el detalle trae sucursales, tabla con «Sucursal» (`detail.stock-col-sucursal`) y «Stock» (`detail.stock-col-cantidad`, alineado a la derecha) con la cantidad física; si no, «Sin stock registrado» (`detail.sin-stock`). El dato lo calcula el servidor (RN-MED-018) y es la **suma de la cantidad física** de todas las filas de stock del medicamento en la empresa, sin filtrar por vencimiento del lote, por cuarentena ni por las sucursales permitidas del usuario (`GetMedicamentoByIdQueryHandler.cs:24-36`): incluye lotes vencidos y retenidos, y no coincide con el «stock vendible» que muestra el punto de venta. Una sucursal sin nombre se agrupa como «Unknown».
 
 **Botones y acciones**
 
@@ -1021,6 +1021,8 @@ Consecuencia: un código identificador nacional repetido (que la base rechaza co
 | `saveUrl` | `POST {api}/api/v1/seguros/carga-masiva` — `Seguros:Crear` (`:114`) |
 | `backRoute` | `/aseguradoras` |
 | Columnas de la vista previa | `nombreComercial` → «Nombre Comercial» (`fields.nombreComercial` de la raíz, obligatoria); `codigoIdentificadorNacional` → «Código Identificador Nacional» (`fields.codigoIdentificadorNacional` de la raíz, obligatoria). Después, errores y «Estado» |
+
+**Límite de tamaño:** el aviso «El archivo supera el tamaño máximo de 5 MB.» (`carga-masiva.errors.too-large` con `maxMb` = 5) sale **solo de la pantalla** (`MAX_UPLOAD_MB`, `carga-masiva-page.component.ts:13,102`). `SegurosController` no tiene `[RequestSizeLimit]` en `previsualizar` ni en `carga-masiva` (`SegurosController.cs:98-122`), a diferencia de los demás controladores con carga masiva, que usan `[RequestSizeLimit(ImportLimits.MaxRequestBytes)]` (5 MB); para estas rutas el servidor no aplica ese tope de 5 MB (rige el límite por defecto del servidor web; el SPA también traduce un 413 `Request.TooLarge` al mismo texto, `carga-masiva-page.component.ts:21,27`).
 
 **Botones, mensajes y errores:** los del componente común. Reglas en RN-ASE-009 a RN-ASE-012 de `negocio/reglas/catalogos` (incluye que el guardado no controla duplicados). Las claves de datos coinciden con `SeguroImportRow(NombreComercial, CodigoIdentificadorNacional)` (`CargaMasivaSegurosCommand.cs:5`).
 
