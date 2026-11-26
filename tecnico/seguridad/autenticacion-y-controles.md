@@ -954,7 +954,7 @@ Documentos: [tecnico/arquitectura.md](../arquitectura.md), [`tecnico/integracion
 |---|---|
 | Registro estructurado con Serilog (consola y archivo, 30 días), `traceId` en errores | apartado 12.3; `GlobalExceptionHandler.cs:29,57-60` |
 | Registro de intentos de login, bloqueos, rechazos y reutilización de tokens con IP | `LoginCommandHandler.cs:43-85`; `RefreshTokenCommandHandler.cs:104` |
-| Auditoría de seguridad de 24 tipos de evento definidos, con empleado, registro, acción e IP | apartado 10.1 |
+| Auditoría de seguridad de 29 tipos de evento definidos (`AuditEventos.cs:6-34`), con empleado, registro, acción e IP | apartado 10.1 |
 | Los logs no vuelcan valores de restricciones de base de datos | `GlobalExceptionHandler.cs:94-98`; `DependencyInjection.cs:33-38` |
 
 | Brechas verificadas | Evidencia |
