@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
+| **Versión del documento** | 1.4 |
 | **Fecha** | 2026-11-26 |
 | **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` |
-| **Método** | Revisión a fondo (semántica) 2026-11-26 (versión 1.3) contra `sofia-apis` `b67e3ee` y `sofia-web-spa` `526bc8f`: se corrigió el listado del terminal (lista todos los productos, «Agotado» si no hay stock; `soloStockVendibleEnMiSucursal` solo define el stock mostrado), lo que rechaza el servidor al «Guardar y Atender Siguiente» y se confirmó el desajuste de cantidades al repetir lote y presentación. Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevo §9A `/devoluciones` y `/devoluciones/:id`; enlace de la nota de crédito en el detalle de venta; menú; cobertura. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos, utilidades e i18n de `pages/pos` y `pages/sesiones-caja`). Del backend solo se abrieron controladores, algunos handlers y los DTO necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. `git status --short` no mostró cambios sin commitear en ninguno de los dos repos al empezar, así que no hay marcas «En curso (sin commitear)» en este documento. |
+| **Método** | Revisión a fondo completada 2026-11-26 (versión 1.4): se contrastaron además con el componente y el backend el comprobante imprimible, la búsqueda de ventas y de sesiones, las exportaciones y las claves sin uso (§12), y se actualizó la fila 8 de §10 (RN-DEV-032 y RN-DEV-038 a 044 ya existen). Revisión a fondo (semántica) 2026-11-26 (versión 1.3) contra `sofia-apis` `b67e3ee` y `sofia-web-spa` `526bc8f`: se corrigió el listado del terminal (lista todos los productos, «Agotado» si no hay stock; `soloStockVendibleEnMiSucursal` solo define el stock mostrado), lo que rechaza el servidor al «Guardar y Atender Siguiente» y se confirmó el desajuste de cantidades al repetir lote y presentación. Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Nuevo §9A `/devoluciones` y `/devoluciones/:id`; enlace de la nota de crédito en el detalle de venta; menú; cobertura. Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos, utilidades e i18n de `pages/pos` y `pages/sesiones-caja`). Del backend solo se abrieron controladores, algunos handlers y los DTO necesarios para anotar permisos y comparar validaciones. No se usó el navegador ni la API local. `git status --short` no mostró cambios sin commitear en ninguno de los dos repos al empezar, así que no hay marcas «En curso (sin commitear)» en este documento. |
 
 Este documento es la parte F del inventario de pantallas. Cubre el punto de venta completo: las **8 rutas** `/sesiones-caja`, `/sesiones-caja/nueva`, `/sesiones-caja/:id`, `/pos`, `/pos/nueva` (incluido el modo `?continuar=<id>`), `/pos/:id`, `/devoluciones` y `/devoluciones/:id` (estas dos, apartado 9A, nuevas desde `37048ea`), y los **5 diálogos** de `pages/pos/dialogs`. Es la base de los capítulos del manual sobre caja y ventas, así que cada elemento que el cajero ve o toca se describe con su texto exacto. Lo compartido (guards, `page-header`, `ErrorNotifierService`, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); las reglas de negocio están en [`negocio/reglas/ventas-y-comprobantes`](../../negocio/reglas/ventas-y-comprobantes.md) (reglas `VEN` y `CMP`) y [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (reglas `CAJ` y `DEV`), y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -176,7 +176,7 @@ La pantalla **no ofrece filtro por sucursal ni por cajero**, aunque la API los a
 | Encabezado (clave) | Dato | Formato | Enlace |
 |---|---|---|---|
 | Sucursal (`sesionesCaja.table.sucursal`) | `sucursalNombre` | Texto | Sí: `routerLink [row.id]` → `/sesiones-caja/:id` |
-| Cajero (`sesionesCaja.table.empleado`) | `empleadoNombre` | Texto | No |
+| Cajero (`sesionesCaja.table.empleado`) | `empleadoNombre` | Texto: nombres y apellido paterno (`GetSesionesQueryHandler.cs`); vacío si el empleado ya no existe | No |
 | Apertura (`sesionesCaja.table.fechaApertura`) | `fechaHoraApertura` | `dd/MM/yyyy HH:mm`, en la hora del navegador | No |
 | Cierre (`sesionesCaja.table.fechaCierre`) | `fechaHoraCierre` | `dd/MM/yyyy HH:mm`, o «—» si está abierta | No |
 | Monto Apertura (`sesionesCaja.table.montoApertura`) | `montoAperturaEfectivo` | Número con 2 decimales | No |
@@ -910,8 +910,8 @@ Estilos del ticket (`RPS.ts:11-33`): papel de rollo de 80 mm (`RECEIPT_PAPER_WID
 
 | Etiqueta (clave) | Control (`formControlName`) | Tipo | Opciones o formato | Valor inicial |
 |---|---|---|---|---|
-| Empleado (`pos.ventasSearch.fieldEmpleado`) | `empleadoNombre` | Texto con autocompletar y lupa; Enter busca | Con 300 ms de retardo busca empleados por `nombres` (20 resultados; `Empleados:Leer`); cada opción muestra el nombre completo. Si no hay resultados y hay texto: opción deshabilitada «Sin resultados» (`pos.ventasSearch.autocompleteNoResults`). **El filtro solo se aplica si se elige una opción**: texto escrito sin elegir no filtra | Vacío |
-| Cliente (`pos.ventasSearch.fieldCliente`) | `clienteNombre` | Texto con autocompletar y lupa; Enter busca | Busca pacientes: solo dígitos → por documento; si no → por nombre y apellidos (20 resultados; `Pacientes:Leer`). Opción: el nombre. «Sin resultados» igual que arriba. Solo filtra si se elige una opción | Vacío |
+| Empleado (`pos.ventasSearch.fieldEmpleado`) | `empleadoNombre` | Texto con autocompletar y lupa; Enter busca | Con 300 ms de retardo busca empleados por `nombres` (20 resultados; `Empleados:Leer`); cada opción muestra el nombre completo. Si no hay resultados y hay texto: opción deshabilitada «Sin resultados» (`pos.ventasSearch.autocompleteNoResults`). **El filtro solo se aplica si se elige una opción**: texto escrito sin elegir no filtra. Si ya habías elegido un empleado y **borras el texto por completo**, la elección anterior **sigue aplicándose** (la suscripción termina antes de limpiar el identificador cuando el texto queda vacío, `VS.ts:90-95`); solo la quita escribir otro texto o «Limpiar» | Vacío |
+| Cliente (`pos.ventasSearch.fieldCliente`) | `clienteNombre` | Texto con autocompletar y lupa; Enter busca | Busca pacientes: solo dígitos → por documento; si no → por nombre y apellidos (20 resultados; `Pacientes:Leer`). Opción: el nombre. «Sin resultados» igual que arriba. Solo filtra si se elige una opción; igual que en «Empleado», vaciar el campo no quita la elección anterior (`VS.ts:104-112`) | Vacío |
 | Fecha desde (`pos.ventasSearch.fieldFechaInicio`) | `fechaInicio` | Campo con selector de fecha | Inicio del día local en ISO | Nulo |
 | Fecha hasta (`pos.ventasSearch.fieldFechaFin`) | `fechaFin` | Campo con selector de fecha | Último instante del día local | Nulo |
 | Estado (`pos.ventasSearch.fieldEstado`) | `estado` | Select | «— Todos —» (nulo), «Completada», «Anulada», «Devuelta», «Pendiente» (`pos.estado.*`) | Nulo |
@@ -927,8 +927,8 @@ Estilos del ticket (`RPS.ts:11-33`): papel de rollo de 80 mm (`RECEIPT_PAPER_WID
 | Código de Venta (`pos.ventasTable.colCodigo`) | `codigoVenta` | Texto: «{prefijo de la serie}-{correlativo de 8 dígitos}» si tiene boleta; si no, los 8 primeros caracteres del identificador (RN-VEN-059) | Sí: `routerLink [row.id]` → `/pos/:id` |
 | Fecha (`pos.ventasTable.colFecha`) | `fechaHora` | `dd/MM/yyyy HH:mm`, hora del navegador | No |
 | Cliente (`pos.ventasTable.colCliente`) | `clienteNombre` | Texto; «—» si es nulo. La API envía «Público General» cuando no hay cliente (`GetVentasQueryHandler.cs:89`), así que el «—» no se ve | No |
-| Empleado (`pos.ventasTable.colEmpleado`) | `empleadoNombre` | Texto | No |
-| Total (S/) (`pos.ventasTable.colTotal`) | `total` | 2 decimales | No |
+| Empleado (`pos.ventasTable.colEmpleado`) | `empleadoNombre` | Texto: nombres y apellido paterno del cajero (`GetVentasQueryHandler.cs:73`); «N/A» si no hay empleado (`:88`) | No |
+| Total (S/) (`pos.ventasTable.colTotal`) | `total` | 2 decimales; es el monto bruto de la venta (`MontoTotalBruto`, `GetVentasQueryHandler.cs:86`), sin descontar la cobertura de seguro | No |
 | Estado (`pos.ventasTable.colEstado`) | `estado` | «Completada», «Anulada», «Devuelta» o «Pendiente» (`pos.estado.<estado>`) | No |
 | Ítems (`pos.ventasTable.colItems`) | `itemsCount` | Número de líneas | No |
 
@@ -1027,7 +1027,7 @@ Ninguno comprueba la sucursal de la venta: la API ya niega ver ventas de otra su
 - El estado no es un chip sino texto junto a la fecha.
 - «Cobrar Venta» no exige caja abierta: si no la hay, el terminal mostrará el aviso de abrirla (apartado 3.1).
 - El permiso `Devoluciones:ProcesarDevolucion` no lo siembra ningún rol (RN-DEV-001); el botón «Devolver» solo lo ven Admin y roles a los que se les haya dado.
-- Desde `37048ea` las devoluciones también se consultan en `/devoluciones` y `/devoluciones/:id` (apartado 9A). Con `sofia-apis` anterior a `0678e40` y `sofia-web-spa` anterior a `37048ea` no había pantalla de listado ni de detalle (RN-DEV-032 lo recoge así y está desactualizada: ver apartado 10).
+- Desde `37048ea` las devoluciones también se consultan en `/devoluciones` y `/devoluciones/:id` (apartado 9A). Con `sofia-apis` anterior a `0678e40` y `sofia-web-spa` anterior a `37048ea` no había pantalla de listado ni de detalle; RN-DEV-032 ya se reescribió y describe `/devoluciones` (reglas RN-DEV-038 a RN-DEV-044 para filtros, líneas, exportación y pantallas).
 
 ---
 
@@ -1134,7 +1134,7 @@ Cuerpo enviado (`buildRequest`, `DEV.ts:125-141`): `comprobanteOrigenId` = **id 
 
 ## 9A. Devoluciones: `/devoluciones` y `/devoluciones/:id`
 
-Carpeta `app/pages/devoluciones`, scope i18n `devoluciones` (`public/i18n/devoluciones/es.json`, 46 claves; `provideTranslocoScope('devoluciones')`). Pantallas nuevas desde `sofia-web-spa` `37048ea` («add returns search and detail screens») y `sofia-apis` `0678e40` («add returns list filters, detail lines and export»). Rutas en `devoluciones.routes.ts:3-14` (`''` → `DevolucionesSearchComponent`, `:id` → `DevolucionesDetailComponent`), cargadas con `loadChildren` desde `app.routes.ts` (`path: 'devoluciones'`). No hay ruta `nueva`: las devoluciones se crean desde el detalle de una venta (apartado 9). Reglas de negocio: [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (RN-DEV); **las reglas de devoluciones todavía no recogen estas dos pantallas** (ver apartado 10).
+Carpeta `app/pages/devoluciones`, scope i18n `devoluciones` (`public/i18n/devoluciones/es.json`, 46 claves; `provideTranslocoScope('devoluciones')`). Pantallas nuevas desde `sofia-web-spa` `37048ea` («add returns search and detail screens») y `sofia-apis` `0678e40` («add returns list filters, detail lines and export»). Rutas en `devoluciones.routes.ts:3-14` (`''` → `DevolucionesSearchComponent`, `:id` → `DevolucionesDetailComponent`), cargadas con `loadChildren` desde `app.routes.ts` (`path: 'devoluciones'`). No hay ruta `nueva`: las devoluciones se crean desde el detalle de una venta (apartado 9). Reglas de negocio: [`negocio/reglas/caja-devoluciones-y-dashboard`](../../negocio/reglas/caja-devoluciones-y-dashboard.md) (RN-DEV): RN-DEV-030 a RN-DEV-032 y RN-DEV-038 a RN-DEV-044 recogen el listado, el detalle, los filtros, las líneas, la exportación y estas dos pantallas (RN-DEV-042 y RN-DEV-043).
 
 - **Menú:** grupo «Punto de Venta» → «Devoluciones» (`nav.devoluciones`, icono `solar:undo-left-round-line-duotone`, `/devoluciones`, `sidebar-data.ts:138-142`), visible con `Devoluciones:Leer` (`route-permissions.ts:26`).
 - **Permiso de ruta:** `Devoluciones:Leer` (primer segmento `devoluciones` → módulo `Devoluciones`; el segundo segmento es un id, no `nueva`). Sin permiso: aviso y redirección a `/dashboard`.
@@ -1250,7 +1250,7 @@ No hay mapa de códigos del backend. Si el usuario no tiene `Empleados:Leer`, el
 | 5 | Código de venta y tipo del comprobante en pantalla | Se describe la forma derivada del backend (`{prefijo}-{correlativo:D8}`); no se vio un ejemplo real |
 | 6 | Rutas y estados de texto | El layout horizontal (opción «POS / Ventas») no se documenta aquí (`producto/pantallas/acceso-layout-y-compartidos` §4.7) |
 | 7 | Cambios sin commitear | Ninguno que se use como evidencia: las citas son de `sofia-apis` `b67e3ee` y `sofia-web-spa` `526bc8f`; no hay marcas «En curso (sin commitear)» |
-| 8 | Reglas de devoluciones | Las reglas RN-DEV de `negocio/reglas/caja-devoluciones-y-dashboard` todavía no describen la búsqueda, el detalle ni la exportación de devoluciones (RN-DEV-032 dice que no hay pantalla de listado ni de detalle); no hay un RN-DEV que citar para el apartado 9A y no se inventó ninguno |
+| 8 | Reglas de devoluciones | Resuelto: RN-DEV-032 ya se reescribió y describe `/devoluciones`, y existen RN-DEV-038 a RN-DEV-044 (filtros, número de nota, líneas, exportación y las pantallas de búsqueda y detalle, RN-DEV-042 y RN-DEV-043) en `negocio/reglas/caja-devoluciones-y-dashboard`; el apartado 9A las cita como referencia |
 | 9 | Apartado 9A | No verificado en la aplicación: aspecto, enlaces entre pantallas, comportamiento del autocompletado de «Autorizó» sin `Empleados:Leer` y descarga del Excel (solo lectura de código y pruebas) |
 
 ---
