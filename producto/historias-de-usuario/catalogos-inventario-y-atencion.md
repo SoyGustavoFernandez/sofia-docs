@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-04 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; las historias HU-CAT-042 y HU-CAT-044 (DIGEMID) están reconciliadas con `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee` (revisión a fondo contra el código); el documento se escribió sobre `43f5529` y las historias HU-CAT-042 y HU-CAT-044 (DIGEMID) están reconciliadas con `9c16f35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` (revisión a fondo contra el código); el documento se escribió sobre `eeffbb6` |
 | **Método** | Lectura de los documentos validados (reglas de negocio `negocio/reglas/catalogos` v1.1 y `negocio/reglas/inventario-y-recetas`, inventario de pantallas `producto/pantallas/catalogos-basicos`, `producto/pantallas/productos-proveedores-y-aseguradoras` y `producto/pantallas/inventario-y-atencion`, carga masiva `tecnico/carga-masiva-y-exportacion`, matriz de permisos `tecnico/seguridad/matriz-de-permisos`, glosario, procesos 3 y 7, manual de usuario capítulos 4 y 5) y comprobación puntual en el código y en los `es.json`. No se ejecutó la aplicación ni se llamó a la API: los mensajes exactos salen de los documentos fuente, que los comprobaron en la aplicación local o en el código. |
 
 ## 1. Cómo leer este documento
@@ -1228,7 +1228,7 @@ Escenario: El medicamento no existe
   Y veo "Error al cargar el medicamento" con la ficha vacía y deshabilitada
 ```
 
-> **Nota.** El stock del detalle lo calcula el servidor como la suma de la cantidad física de los lotes en cada sucursal ([RN-MED-018](../../negocio/reglas/catalogos.md)); la regla no describe ningún filtro por vencimiento ni por sucursales permitidas del usuario, y esa diferencia con «stock vendible» ([RN-STK-017](../../negocio/reglas/inventario-y-recetas.md)) **no se verificó** en el código de la consulta. Si la carga del registro falla, la ficha queda vacía y, con `Actualizar`, sigue visible «Editar» ([`producto/pantallas/productos-proveedores-y-aseguradoras` §1.2](../pantallas/productos-proveedores-y-aseguradoras.md)).
+> **Nota.** El stock del detalle lo calcula el servidor como la suma de la cantidad física de los lotes en cada sucursal ([RN-MED-018](../../negocio/reglas/catalogos.md)); la consulta no aplica ningún filtro por vencimiento, por cuarentena ni por sucursales permitidas del usuario (suma la cantidad física de todas las filas de lote por sucursal de la empresa; `GetMedicamentoByIdQueryHandler.cs`), a diferencia de «stock vendible» ([RN-STK-017](../../negocio/reglas/inventario-y-recetas.md)). Si la carga del registro falla, la ficha queda vacía y, con `Actualizar`, sigue visible «Editar» ([`producto/pantallas/productos-proveedores-y-aseguradoras` §1.2](../pantallas/productos-proveedores-y-aseguradoras.md)).
 
 ### HU-CAT-021 — Eliminar un medicamento
 
@@ -1316,7 +1316,7 @@ Escenario: Los medicamentos cargados quedan sin precio
 
 ### HU-CAT-023 — Ofrecer medicamentos al punto de venta con stock y los más vendidos
 
-**Como** cajero **quiero** que la lista de medicamentos del punto de venta muestre primero los más vendidos de mi sucursal y solo con stock vendible **para** cobrar más rápido.
+**Como** cajero **quiero** que la lista de medicamentos del punto de venta muestre primero los más vendidos de mi sucursal y con su stock vendible **para** cobrar más rápido.
 
 | | |
 |---|---|
@@ -1335,8 +1335,9 @@ Escenario: Incluir el stock en el listado
   Entonces el stock total de cada medicamento es la suma de la cantidad física de sus lotes en todas las sucursales de la empresa
 
 Escenario: Solo stock vendible en mi sucursal
-  Dado que se pide "SoloStockVendibleEnMiSucursal"
-  Entonces solo cuenta el stock vendible de la sucursal del usuario: cantidad mayor que 0, lote no vencido y sin retención activa en cuarentena
+  Dado que se pide "SoloStockVendibleEnMiSucursal" junto con "IncluirStock" (sin "IncluirStock" la opción no hace nada)
+  Entonces el stock total solo cuenta el stock vendible de la sucursal del usuario: cantidad mayor que 0, lote no vencido y sin retención activa en cuarentena
+  Y la opción no quita medicamentos de la lista: los que no tienen stock vendible siguen apareciendo con stock 0
 
 Escenario: Más vendidos primero
   Dado que se pide "OrdenarPorMasVendidos"
@@ -1345,7 +1346,7 @@ Escenario: Más vendidos primero
 
 Escenario: Sin sucursal en la sesión
   Dado que el usuario no tiene una sucursal en su sesión
-  Cuando pide cualquiera de las opciones que dependen de la sucursal
+  Cuando pide "OrdenarPorMasVendidos" o "IncluirStock" con "SoloStockVendibleEnMiSucursal"
   Entonces la API responde 400 "Auth.Sucursal"
 ```
 
@@ -2293,9 +2294,16 @@ Escenario: La extensión del archivo (solo la pantalla la exige)
   Dado que llamo a "POST /api/v1/Seguros/previsualizar" con un archivo que no termina en ".xlsx"
   Entonces el servidor no comprueba la extensión (sí la firma y el contenido)
   Pero la pantalla exige ".xlsx" antes de enviar
+
+Escenario: El servidor no limita el tamaño del archivo a 5 MB (solo API)
+  Dado que "SegurosController" no tiene "[RequestSizeLimit]" (los demás controladores con carga masiva sí lo tienen, con 5 MB)
+  Cuando llamo a "POST /api/v1/Seguros/previsualizar" o "POST /api/v1/Seguros/carga-masiva" con un cuerpo de más de 5 MB
+  Entonces la API no responde 413 "Request.TooLarge" por el límite de 5 MB (rige solo el límite general del servidor)
+  Y el aviso "El archivo supera el tamaño máximo de 5 MB." sale únicamente de la comprobación de la pantalla antes de enviar
+  Pero el límite de 5000 filas y los límites de contenido del lector del Excel sí se aplican en la vista previa
 ```
 
-> **Brecha conocida.** La carga de aseguradoras no tiene validador ni control de duplicados ([RN-ASE-011](../../negocio/reglas/catalogos.md)); desde la pantalla el fallo solo ocurre si el dato cambió entre la vista previa y el guardado, porque la vista previa ya filtra los duplicados. El mensaje de longitud de la vista previa dice 200 en lugar de 150 ([hallazgo 14 de `negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md#163-pendientes-y-hallazgos-del-código)). El manual no recorrió esta carga.
+> **Brecha conocida.** La carga de aseguradoras no tiene validador, ni control de duplicados, ni `[RequestSizeLimit]` en el controlador (`SegurosController.cs`) ([RN-ASE-011](../../negocio/reglas/catalogos.md)); desde la pantalla el fallo solo ocurre si el dato cambió entre la vista previa y el guardado, porque la vista previa ya filtra los duplicados. El mensaje de longitud de la vista previa dice 200 en lugar de 150 ([hallazgo 14 de `negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md#163-pendientes-y-hallazgos-del-código)). El manual no recorrió esta carga.
 
 ---
 
@@ -2783,7 +2791,7 @@ Escenario: Una sucursal tiene una sola fila por lote
   Entonces nunca hay dos filas de stock del mismo lote en una sucursal
 ```
 
-> **Brecha conocida.** (1) Si pulsas «Guardar» sin haber elegido un lote, por lectura del código `saveNew()` lanza una excepción de JavaScript: no se envía ninguna petición y no se ve ningún aviso. (2) Los textos «Debes seleccionar una sucursal» y «Debes seleccionar un lote» están declarados pero, por lectura del código, no llegan a pintarse porque los controles no tienen validadores. Ambos son **No verificado en ejecución** ([`producto/pantallas/inventario-y-atencion` §2.2 y §7](../pantallas/inventario-y-atencion.md), [`negocio/reglas/inventario-y-recetas` hallazgo 2](../../negocio/reglas/inventario-y-recetas.md#63-hallazgos-del-código)). (3) El mapa de errores es propio de la pantalla: los códigos `Db.*` y los demás caen en «Error al registrar el stock». (4) El ingreso por suma no genera evento de auditoría; el reemplazo directo (solo API) genera `STOCK_AJUSTAR`. (5) No hay orden de compra ni recepción de proveedor: el stock se ingresa a mano ([proceso 3](../../negocio/procesos-de-negocio.md)). El manual no recorrió esta pantalla.
+> **Brecha conocida.** (1) Si pulsas «Guardar» sin haber elegido un lote, `saveNew()` evalúa `this.loteDisplay(this.selectedLote()!)` con `selectedLote` nulo (`stock-detail.component.ts:183`) y lanza una excepción de JavaScript: no se envía ninguna petición y no se ve ningún aviso (confirmado). (2) Los textos «Debes seleccionar una sucursal» y «Debes seleccionar un lote» están declarados pero, por lectura del código, no llegan a pintarse porque los controles no tienen validadores y `mat-error` solo se muestra con el control en error (**No verificado en ejecución**). Si eliges lote pero no sucursal, `saveNew()` sí llega a su `return` silencioso: tampoco hay aviso ([`producto/pantallas/inventario-y-atencion` §2.2 y §7](../pantallas/inventario-y-atencion.md), [`negocio/reglas/inventario-y-recetas` hallazgo 2](../../negocio/reglas/inventario-y-recetas.md#63-hallazgos-del-código)). (3) El mapa de errores es propio de la pantalla: los códigos `Db.*` y los demás caen en «Error al registrar el stock». (4) El ingreso por suma no genera evento de auditoría; el reemplazo directo (solo API) genera `STOCK_AJUSTAR`. (5) No hay orden de compra ni recepción de proveedor: el stock se ingresa a mano ([proceso 3](../../negocio/procesos-de-negocio.md)). El manual no recorrió esta pantalla.
 
 ### HU-INV-006 — Ajustar el stock de un lote en una sucursal
 
@@ -3000,7 +3008,8 @@ Escenario: Campos obligatorios
 Escenario: Rechazo del servidor por tipo o formato
   Dado que la API recibe un tipo fuera de 1, 4, 6, 7 o un número que no cumple el formato
   Entonces responde 400 y la pantalla muestra "Selecciona un tipo de documento válido." o el mensaje de formato del número
-  Y los guards se evalúan en este orden: documento vacío, longitud, tipo, formato, nombre, fecha y contacto; solo se informa el primero que falla
+  Y primero corre el validador del comando (tipo, documento, nombre y contacto; informa el código de la primera propiedad que falla) y solo si pasa, la entidad evalúa sus guards en este orden: documento vacío, longitud, tipo, formato, nombre, fecha y contacto, e informa solo el primero que falla
+  Y la fecha de nacimiento solo la comprueba la entidad: no hay regla de fecha en el validador
 
 Escenario: Documento repetido
   Dado que existe un paciente con el documento "12345678"
@@ -3014,6 +3023,7 @@ Escenario: Fecha de nacimiento futura
   Cuando hago clic en "Guardar"
   Entonces la API responde 400 "PacienteCliente.FechaNacimiento"
   Y veo "Error al guardar el paciente"
+  Pero la comparación usa la fecha UTC del servidor: desde las 19:00 de Lima (UTC-5) se acepta una fecha de nacimiento de mañana
 
 Escenario: Contacto primario de más de 100 caracteres
   Dado que escribo 120 caracteres en "Contacto Primario" (el formulario admite hasta 150)
@@ -3383,6 +3393,8 @@ Escenario: Fecha futura rechazada por el servidor
   Dado que la API recibe una fecha posterior a la fecha UTC de hoy
   Entonces responde 400 "RecetaMedica.FechaExpedicion"
   Y veo "La fecha de expedición no puede ser posterior a hoy."
+  Y la comparación usa la fecha UTC del servidor (`DateOnly.FromDateTime(DateTime.UtcNow)`): desde las 19:00 de Lima (UTC-5) esa fecha ya es la de mañana y la API acepta una receta con fecha de mañana
+  Y el selector de la pantalla solo llega hasta la fecha de hoy del navegador, así que ese caso solo se alcanza llamando a la API
 
 Escenario: Repeticiones máximas
   Dado que dejo vacío o negativo el campo "Repeticiones Máximas"
@@ -3596,7 +3608,7 @@ Escenario: El servidor no valida el tipo de archivo
   Y el SPA solo acepta archivos de tipo imagen ("image/*")
 
 Escenario: Especialidad de contexto (solo API)
-  Dado que llamo a "POST /api/v1/Recetas/analizar" con "especialidadContexto"
+  Dado que llamo a "POST /api/v1/Recetas/analizar" con el parámetro de consulta "especialidadContexto" (va en la URL, no en el formulario con la imagen)
   Entonces debe tener como máximo 50 caracteres y solo letras (incluidas tildes) y espacios, y si no se informa se usa "Medicina General"
   Y un valor no válido responde 400 "AnalizarRecetaQuery.EspecialidadContexto"
   Y la pantalla nunca envía este dato
@@ -3653,7 +3665,8 @@ Esquema del escenario: Rótulo de confianza
 Escenario: Cómo se calcula la confianza
   Dado que la IA dio un nivel de confianza
   Entonces la confianza final es nivel × 0,6 + parecido × 0,4, redondeada a 2 decimales
-  Y "parecido" vale 0,9 si hubo coincidencia DIGEMID y 1,0 si no la hubo
+  Y "parecido" no se mide: es un valor fijo, 0,9 si hubo coincidencia DIGEMID y 1,0 si no la hubo (`AnalizarRecetaQueryHandler.cs`)
+  Y las sugerencias de la IA llevan siempre confianza 0,70
 
 Escenario: Stock en mi sucursal
   Dado que el producto tiene lotes no vencidos en mi sucursal
@@ -3816,14 +3829,14 @@ Cada historia con sus reglas, pantallas, endpoints y la sección del manual de u
 
 ### 19.1 En curso (sin commitear)
 
-Ninguno. `git status --short` no muestra cambios locales en `sofia-apis` (`43f5529`) ni en `sofia-web-spa` (`eeffbb6`) al cerrar este documento.
+Ninguno. La revisión a fondo del 2026-11-26 se hizo contra los commits `b67e3ee` (`sofia-apis`) y `526bc8f` (`sofia-web-spa`), leídos con `git archive` y `git show`; no se usó ningún cambio sin commitear.
 
 ### 19.2 Pendientes de producto y brechas del sistema que las historias describen
 
 | # | Hallazgo | Historias |
 |---|---|---|
 | 1 | Mensajes genéricos: la mayoría de los rechazos del servidor (validación, `*.NotFound`, texto de solo espacios) se ven como el aviso genérico de guardado de cada pantalla. | Casi todas las de registrar y editar |
-| 2 | Aseguradoras: ningún error se traduce; un código repetido se ve como «Error al guardar la aseguradora»; la carga masiva no controla duplicados y un solo repetido hace fallar todo el guardado; el mensaje de longitud de la vista previa dice 200 en vez de 150. | HU-CAT-038, HU-CAT-041 |
+| 2 | Aseguradoras: ningún error se traduce; un código repetido (que solo frena el índice único) se ve como «Error al guardar la aseguradora»; la carga masiva no controla duplicados y un solo repetido hace fallar todo el guardado; el mensaje de longitud de la vista previa dice 200 en vez de 150; `SegurosController` no tiene `[RequestSizeLimit]`. | HU-CAT-038, HU-CAT-041 |
 | 3 | Vista previa que no anticipa lo que el guardado descarta sin avisar: conversiones repetidas o contradictorias, código de laboratorio, DCI de ingrediente y razón social de proveedor; el aviso de éxito puede decir «Se guardaron 0 registros». | HU-CAT-008, HU-CAT-013, HU-CAT-017, HU-CAT-035 |
 | 4 | Ingredientes: la vista previa valida el código ATC (que a mano sí puede repetirse) y no la DCI (la clave real). | HU-CAT-017 |
 | 5 | DIGEMID: la vista previa no valida longitudes y el guardado rechaza todo el archivo; no hay pantalla para crear, editar o eliminar un producto. | HU-CAT-043, HU-CAT-044 |
@@ -3852,14 +3865,15 @@ Ninguno. `git status --short` no muestra cambios locales en `sofia-apis` (`43f55
 | 6 | Cómo trata la carga masiva un número con coma (`1,5`). | No se ejecutó ([`negocio/reglas/catalogos` §16.1](../../negocio/reglas/catalogos.md), No verificado 2). |
 | 7 | Respuesta de la API ante una condición de venta inválida, un precio omitido o un texto más largo que la columna en DIGEMID. | Ocurre antes del validador o en el error de SQL Server; no se llamó a la API. |
 | 8 | La selección con teclado (flechas y Enter) en los autocompletados, y lo que ve un usuario sin el permiso `Leer` del módulo consultado por un autocompletado. | Depende de Angular Material y las suscripciones no tienen manejador de error ([`producto/pantallas/productos-proveedores-y-aseguradoras` §7](../pantallas/productos-proveedores-y-aseguradoras.md), [`producto/pantallas/inventario-y-atencion` §7](../pantallas/inventario-y-atencion.md)). |
-| 9 | Stock: la excepción al guardar sin lote y los textos de sucursal y lote obligatorios que no se pintan. | Se deducen de leer `saveNew()` y el código de Angular Material. |
+| 9 | Stock: los textos de sucursal y lote obligatorios que no se pintan (la excepción al guardar sin lote en `stock-detail.component.ts:183` está confirmada). | Se deducen de leer el código de Angular Material; no se ejecutó. |
 | 10 | Recetas: que el paciente o el médico anteriores sigan enviándose si cambias el texto sin elegir otra opción; la interpretación de las fechas de búsqueda según la zona horaria. | Se deduce de leer el código; no se probó. |
 | 11 | Escáner de recetas: la calidad del análisis con Gemini y Presidio reales, el formato de imagen admitido y el límite de 10 peticiones por minuto (HTTP 429). | Requiere servicios externos; el encargo es de solo lectura. |
 | 12 | Concurrencia: si dos registros simultáneos de precio del mismo proveedor y producto pueden dejar dos precios abiertos. | No se ejecutó una prueba de concurrencia ([`negocio/reglas/catalogos` §16.1](../../negocio/reglas/catalogos.md), No verificado 9). |
 | 13 | Una cantidad de stock que desborde `DECIMAL(12,4)`. | El manejador global solo traduce los errores SQL 2601, 2627 y 547. |
-| 14 | Si modificar o eliminar una jerarquía recalcula las presentaciones ya guardadas. | Por lo leído no se recalcula ([RN-PRE-007](../../negocio/reglas/catalogos.md)); no se revisaron los handlers de jerarquías con ese fin. |
-| 15 | El stock del detalle del medicamento (si excluye lotes vencidos o sucursales no permitidas) y las opciones de listado para el punto de venta. | La regla solo dice «suma de la cantidad física de sus lotes»; no se revisó el código de la consulta. |
+| 14 | Si modificar o eliminar una jerarquía recalcula las presentaciones ya guardadas. | Revisados los handlers de crear, editar y eliminar jerarquías: no tocan las presentaciones, así que no se recalcula ([RN-PRE-007](../../negocio/reglas/catalogos.md)); no se ejecutó. |
+| 15 | Las opciones de listado del punto de venta (`IncluirStock`, `SoloStockVendibleEnMiSucursal`, `OrdenarPorMasVendidos`) en ejecución. | Revisado el código (el stock del detalle suma toda la cantidad física sin filtros; `SoloStockVendibleEnMiSucursal` solo actúa con `IncluirStock`); no se llamó a la API. |
 | 16 | La redirección al Inicio con «No tienes permisos para acceder a esta pantalla.» al escribir a mano la dirección de una pantalla sin permiso. | El navegador integrado impidió probar la navegación directa con el cajero (manual cap. 4 §10 y §12); viene de `producto/pantallas/catalogos-basicos` §0. |
+| 17 | Si el filtro de texto «contiene» es insensible a mayúsculas en unidades, laboratorios, ingredientes, proveedores, aseguradoras, DIGEMID, pacientes y profesionales. | Esos handlers usan `Contains` sin `ToLower`: depende de la intercalación de la base (ver ítem 5); en jerarquías, medicamentos, presentaciones, formulaciones, lotes y stock el código pasa a minúsculas. |
 
 ---
 
