@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-21 |
-| **Backend** | `sofia-apis`, rama `main`, commit `0678e40`; la pantalla del catálogo DIGEMID está reconciliada con `9c16f35` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `37048ea` |
-| **Método** | Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Solo citas desplazadas por los commits nuevos (sin cambios de contenido). Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear (ver §7). |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee`; la pantalla del catálogo DIGEMID está reconciliada con `9c16f35` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` |
+| **Método** | Revisión a fondo (semántica) 2026-11-26 (versión 1.4) contra `sofia-apis` `b67e3ee` y `sofia-web-spa` `526bc8f`: se contrastaron con el código las guardas de eliminación (unidades, laboratorios, ingredientes, jerarquías), los códigos 409 de duplicado y de multiplicador inconsistente; sin cambios de contenido. Revisión 2026-11-20 (versión 1.2) contra `sofia-apis` `0678e40` y `sofia-web-spa` `37048ea`: Solo citas desplazadas por los commits nuevos (sin cambios de contenido). Método anterior: Lectura de código del árbol de trabajo del SPA (componentes, plantillas, servicios, modelos e i18n). Del backend solo se abrieron los controladores, validadores y manejadores necesarios para anotar permisos, códigos de error y comparar validaciones. No se usó el navegador ni la API local. Ninguna carpeta de esta parte tiene cambios sin commitear (ver §7). |
 
 Este documento es la parte C de seis del inventario de pantallas. Cubre cinco catálogos: Unidades de medida, Jerarquías de unidades, Laboratorios, Ingredientes activos y Catálogo DIGEMID (19 rutas). Lo compartido (guards, interceptor, `page-header`, `confirm-dialog`, `range-slider-field`, carga masiva común, textos de la raíz) lo documenta la [parte A](acceso-layout-y-compartidos.md); el patrón de las pantallas de búsqueda y detalle ya validado está en la [parte B, §0](administracion.md). Aquí se enlaza a esas secciones y se repite el texto exacto de cada etiqueta, botón y mensaje que aparece en estas pantallas. Las reglas de negocio de los catálogos están en [`negocio/reglas/catalogos`](../../negocio/reglas/catalogos.md) (UDM, JER, LAB, ING, DIG) y los permisos por endpoint en [`tecnico/seguridad/matriz-de-permisos`](../../tecnico/seguridad/matriz-de-permisos.md).
 
@@ -929,7 +929,7 @@ Lo que sigue **sin** tratamiento de dependencias en esta parte: eliminar jerarqu
 
 ## 7. Pendientes y «No verificado»
 
-**«En curso (sin commitear)»:** ninguno. Los dos repositorios estaban limpios al revisar esta versión (`sofia-apis` `0678e40`, `sofia-web-spa` `37048ea`): las citas son de esos commits.
+**«En curso (sin commitear)»:** ninguno. Los dos repositorios estaban limpios al revisar esta versión (`sofia-apis` `b67e3ee`, `sofia-web-spa` `526bc8f`): las citas son de esos commits.
 
 **«No verificado»** (no se ejecutó la aplicación ni se llamó a la API):
 
