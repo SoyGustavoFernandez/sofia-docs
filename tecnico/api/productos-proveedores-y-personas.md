@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.0 |
-| **Fecha** | 2026-10-30 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0` |
-| **Método** | Lectura de código y llamadas reales a la API local |
+| **Versión del documento** | 1.1 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `34089ec` (capturas reales del 2026-10-30); revisado a fondo contra el código del commit `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0`; revisado contra `526bc8f` |
+| **Método** | Lectura de código y llamadas reales a la API local; revisión semántica (condiciones, orden de evaluación, códigos HTTP) de cada ficha contra controlador, comando o consulta, validador, handler y entidad |
 
 ## Contenido
 
@@ -34,6 +34,7 @@ Este documento describe los 61 endpoints de siete controladores: `Medicamentos` 
 - Ninguno declara una política de límite de peticiones propia: aplica solo el límite global (`rate_limit` vacío en `_inventario/endpoints.csv` para los 61 endpoints).
 - El JSON usa `camelCase` en peticiones y respuestas. Los enumerados viajan como número (`condicionVenta`: `0` venta libre, `1` receta simple, `2` receta retenida, `3` estupefaciente) y las fechas sin hora (`DateOnly`) como `yyyy-MM-dd`.
 - Cuando una validación del pipeline falla, el `code` es `{NombreDelComando}.{Propiedad}` de la **primera** falla y el `detail` une los mensajes de todas con `; ` (`ValidationBehavior.cs:30-31`). Si la validación la hace la entidad de dominio, el `code` es `{Entidad}.{Propiedad}` (por ejemplo `ProveedorDistribuidor.TasaCumplimiento`).
+- Los listados paginados no fallan con valores fuera de rango: `pageNumber` menor que 1 se toma como 1 y `pageSize` se limita al rango de 1 a 10 000 (`PaginationLimits.cs`, `PaginatedList.cs`).
 - Los `PUT` ignoran el identificador del cuerpo: el controlador siempre usa el de la ruta (`command with { Id = id }`). Por eso la comprobación «ID mismatch» de `Medicamentos` y `FormulacionesClinicas` nunca se cumple (RN-MED-011, RN-FOR-009).
 - Las eliminaciones son lógicas: un registro eliminado deja de aparecer, responde 404 en las consultas por identificador y su código o nombre queda libre.
 - Los controladores de carga masiva reciben el archivo en `previsualizar` como `multipart/form-data` (campo `file`, `.xlsx`, máximo 5 MB) y las filas confirmadas en `carga-masiva` como arreglo JSON de 1 a 5 000 filas (`ImportLimits.cs`). Las claves de las filas de la vista previa llevan la primera letra en minúscula.
@@ -103,7 +104,7 @@ Catálogo de productos de la empresa: código nacional, nombre comercial, labora
 | `condicionVenta` | entero | `0` a `3` (RN-MED-007). |
 | `precioVentaBase` | decimal o `null` | `null` solo en medicamentos anteriores a ese campo o cargados por carga masiva (RN-MED-009, RN-MED-021). |
 | `stockTotal` | decimal o `null` | Solo si se pidió (`incluirStock`) y en el detalle (RN-MED-015, RN-MED-018). |
-| `stockPorSucursal` | arreglo o `null` | Solo en el detalle: `[ { sucursalId, nombre, cantidad } ]` (RN-MED-018). |
+| `stockPorSucursal` | arreglo o `null` | Solo en el detalle: `[ { sucursalId, sucursalNombre, cantidadFisica } ]` (`StockSucursalDto`, `Inventarios/Queries/GetStockByMedicamento/StockMedicamentoDto.cs:10`; RN-MED-018). |
 
 #### `GET /api/v1/Medicamentos/condiciones-venta`
 
@@ -158,7 +159,7 @@ Lista los medicamentos de la empresa con filtros y paginación. Ordena por nombr
 | `laboratorioNombre` | texto | No | El nombre del laboratorio contiene este texto. |
 | `unidadBaseNombre` | texto | No | La descripción de la unidad base contiene este texto. |
 | `condicionVenta` | entero | No | `0` a `3`, coincidencia exacta. |
-| `incluirStock` | booleano | No | Si es `true`, llena `stockTotal` con la suma de la cantidad física de los lotes en todas las sucursales (RN-MED-015). Por defecto `false`: `stockTotal` viene `null`. |
+| `incluirStock` | booleano | No | Si es `true`, llena `stockTotal` con la suma de la cantidad física de los lotes en todas las sucursales de la empresa, sin filtrar por vencimiento ni cuarentena (RN-MED-015); un medicamento sin lotes lleva `0`. Por defecto `false`: `stockTotal` viene `null`. |
 | `soloStockVendibleEnMiSucursal` | booleano | No | Solo con `incluirStock`: cuenta únicamente el stock vendible de la sucursal del usuario (RN-MED-015, RN-MED-017). |
 | `ordenarPorMasVendidos` | booleano | No | Ordena por unidades vendidas en la sucursal del usuario en los últimos 30 días (RN-MED-016). Las dos opciones de sucursal exigen una sucursal en la sesión (RN-MED-017). |
 | `pageNumber` | entero | No | Página, por defecto 1. |
@@ -221,7 +222,7 @@ Devuelve un medicamento con su stock total y su stock por sucursal.
 
 **Parámetros de ruta:** `id` (GUID, obligatorio).
 
-**Respuesta correcta:** `200 OK`, `MedicamentoDto` con `stockTotal` (suma de la cantidad física de sus lotes) y `stockPorSucursal` (RN-MED-018).
+**Respuesta correcta:** `200 OK`, `MedicamentoDto` con `stockTotal` (suma de la cantidad física de todas sus filas de lote por sucursal) y `stockPorSucursal` (la misma suma agrupada por sucursal) (RN-MED-018). El cálculo **no aplica ningún filtro**: cuenta lotes vencidos o en cuarentena y todas las sucursales de la empresa, aunque el usuario no tenga acceso a ellas (`GetMedicamentoByIdQueryHandler.cs`, suma de `CantidadFisica` de `LotesEnSucursal` por producto). Si un nombre de sucursal no se resuelve, se informa «Unknown».
 
 **Errores posibles:**
 
@@ -299,6 +300,8 @@ Crea un medicamento.
 | 400 | `CreateMedicamentoCommand.CondicionVenta` | Valor fuera de `0`–`3` (el `detail` une también el error de precio negativo) | RN-MED-007, RN-MED-008 |
 | 400 | `CreateMedicamentoCommand.PrecioVentaBase` | Precio negativo | RN-MED-008 |
 | 409 | `Medicamento.CodigoNacional.Duplicado` | Otro medicamento no eliminado usa el código | RN-MED-010 |
+
+Orden de evaluación: validador (400), guards de la entidad (400, repiten las reglas del validador), código repetido (409), laboratorio (404) y unidad base (404). Un laboratorio o una unidad eliminados cuentan como inexistentes.
 | 404 | `Laboratorio.NotFound` | El laboratorio no existe en la empresa | RN-MED-005 |
 | 404 | `UnidadMedida.NotFound` | La unidad base no existe en la empresa | RN-MED-006 |
 
@@ -369,10 +372,12 @@ Actualiza todos los campos de un medicamento (el identificador viene de la ruta)
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `UpdateMedicamentoCommand.<Propiedad>` | Mismas validaciones que al crear | RN-MED-002 a RN-MED-008 |
+| 400 | `UpdateMedicamentoCommand.<Propiedad>` | Mismas validaciones que al crear, más `UpdateMedicamentoCommand.Id` si el identificador de la ruta es el GUID vacío | RN-MED-002 a RN-MED-008 |
 | 404 | `Medicamento.NotFound` | No existe o está eliminado | RN-MED-012 |
 | 409 | `Medicamento.CodigoNacional.Duplicado` | Otro medicamento usa el código | RN-MED-010 |
 | 404 | `Laboratorio.NotFound` / `UnidadMedida.NotFound` | El laboratorio o la unidad cambiados no existen | RN-MED-005, RN-MED-006 |
+
+Orden de evaluación: validador (400), existencia del medicamento (404), código repetido (409), laboratorio cambiado (404), unidad cambiada (404) y guards de la entidad (400).
 
 **Ejemplo real:**
 
@@ -476,7 +481,7 @@ Genera un Excel con los medicamentos que cumplen los filtros. El cuerpo lleva lo
 |---|---|---|---|
 | `headers` | arreglo de texto | Sí | Hasta 50 títulos de hasta 100 caracteres (`ExportHeadersAttribute`). Si falta o excede, `400` con `errors.Headers` (ver el ejemplo). |
 | `codigoNacional`, `nombreComercial`, `laboratorioNombre`, `unidadBaseNombre` | texto | No | Mismos filtros «contiene» del listado. |
-| `condicionVenta` | entero | No | `0` a `3`. |
+| `condicionVenta` | entero | No | `0` a `3`. El controlador convierte el número sin validarlo: un valor fuera de ese rango no produce error y no coincide con ningún medicamento (exportación vacía). |
 
 **Respuesta correcta:** `200 OK`, `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment; filename=medicamentos.xlsx`. Hoja «Data»: fila de títulos (los de `headers`) y una fila por medicamento con cinco columnas: código nacional, nombre comercial, laboratorio, unidad base y el texto de la condición de venta (RN-MED-020). Orden: nombre comercial.
 
@@ -706,7 +711,7 @@ El servidor **omite sin avisar** las filas que no puedan guardarse: laboratorio 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaMedicamentosCommand.Rows` | Arreglo vacío o con más de 5 000 filas | RN-MED-025 |
-| 400 | `CargaMasivaMedicamentosCommand.Rows[i].<Campo>` | Un campo obligatorio vacío o sobre su longitud máxima en la fila `i` (desde 0) | RN-MED-025 |
+| 400 | `CargaMasivaMedicamentosCommand.Rows[i].<Campo>` | Un campo obligatorio vacío o sobre su longitud máxima en la fila `i` (desde 0): se rechaza todo el envío. El `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-MED-025 |
 | 413 | `Request.TooLarge` | El cuerpo supera 5 MB | Ejemplo no verificado: exige más de 5 MB |
 
 **Ejemplo real** (cuatro filas: las dos válidas de la vista previa, la del código repetido y la del laboratorio inexistente):
@@ -914,6 +919,8 @@ El sistema calcula `cantidadUnidadesBase` ([RN-PRE-007][PRE], [RN-PRE-006][PRE])
 | 404 | `PresentacionVenta.UnidadVenta` | La unidad de venta no existe | RN-PRE-004 |
 | 400 | `PresentacionVenta.Jerarquia.NoResuelta` | No hay conversión registrada entre la unidad de venta y la unidad base | RN-PRE-006 |
 
+Las filas están en el orden de evaluación del handler (validador, producto, presentación repetida, unidad, conversión). El 404 `PresentacionVenta.Producto` también aplica a un producto de otra empresa; el 409 de repetida se comprueba **antes** de saber si la unidad existe, de modo que no puede salir para una unidad inexistente. El `400 NoResuelta` sale con el HTTP por defecto de `Result.Failure` (sin segundo argumento).
+
 **Ejemplo real.** Primero, sin jerarquía registrada (medicamento con unidad base «4C-Unidad», venta en «4C-Caja x 10»):
 
 ```http
@@ -967,11 +974,13 @@ Cambia la unidad de venta y el precio de una presentación. El producto no se pu
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `UpdatePresentacionVentaCommand.UnidadVentaId` / `.PrecioVenta` | GUID vacío o precio negativo | RN-PRE-004, RN-PRE-009 |
+| 400 | `UpdatePresentacionVentaCommand.Id` / `.UnidadVentaId` / `.PrecioVenta` | `Id` de la ruta igual al GUID vacío, unidad vacía o precio negativo | RN-PRE-004, RN-PRE-009 |
 | 404 | `PresentacionVenta.NotFound` | La presentación no existe | RN-PRE-011 |
 | 409 | `PresentacionVenta.UnidadVenta.Duplicada` | Otra presentación del mismo producto ya usa esa unidad | RN-PRE-005 |
 | 404 | `PresentacionVenta.Producto` / `PresentacionVenta.UnidadVenta` | El producto de la presentación o la unidad nueva no existen | RN-PRE-002, RN-PRE-004 |
 | 400 | `PresentacionVenta.Jerarquia.NoResuelta` | Sin conversión a la unidad base | RN-PRE-006 |
+
+Orden de evaluación: validador (400), presentación (404), otra presentación del mismo producto con esa unidad (409), producto (404), unidad nueva (404) y conversión (400). Se recalculan siempre `cantidadUnidadesBase` y `descripcion`, aunque la unidad no cambie.
 
 **Ejemplo real:**
 
@@ -1299,6 +1308,8 @@ Agrega un ingrediente activo a un medicamento.
 | 409 | `Formulacion.Ingrediente.Duplicado` | El medicamento ya lista ese ingrediente | RN-FOR-005 |
 | 404 | `UnidadMedida.NotFound` | La unidad no existe | RN-FOR-007 |
 
+Las filas están en el orden de evaluación del handler: validador (400), medicamento (404), ingrediente (404), ingrediente repetido en el medicamento (409) y unidad (404). El código TE Orange solo se limita a 5 caracteres: un valor vacío se guarda tal cual.
+
 **Ejemplo real:**
 
 ```http
@@ -1365,10 +1376,12 @@ Cambia el ingrediente, la concentración, la unidad o el código TE Orange de un
 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
-| 400 | `UpdateFormulacionClinicaCommand.<Propiedad>` | Mismas validaciones que al crear | RN-FOR-006 a RN-FOR-008 |
+| 400 | `UpdateFormulacionClinicaCommand.<Propiedad>` | Mismas validaciones que al crear, más `UpdateFormulacionClinicaCommand.Id` si el identificador de la ruta es el GUID vacío | RN-FOR-006 a RN-FOR-008 |
 | 404 | `Formulacion.NotFound` | No existe o está eliminada | RN-FOR-010 |
 | 404 | `IngredienteActivo.NotFound` / `UnidadMedida.NotFound` | El ingrediente o la unidad cambiados no existen | RN-FOR-004, RN-FOR-007 |
 | 409 | `Formulacion.Ingrediente.Duplicado` | Otro registro del mismo medicamento ya usa el ingrediente nuevo | RN-FOR-005 |
+
+Orden de evaluación: validador (400), formulación (404) y, solo si el ingrediente cambió, existencia del ingrediente (404) y repetición (409); luego, solo si la unidad cambió, existencia de la unidad (404). Si el ingrediente no cambia no se vuelve a comprobar su repetición ni su existencia.
 
 **Ejemplo real:**
 
@@ -1525,6 +1538,8 @@ Crea un proveedor.
 | 409 | `Proveedor.TaxId.Duplicado` | Otro proveedor no eliminado usa el identificador tributario (se comprueba antes que la razón social) | RN-PRV-007 |
 | 409 | `Proveedor.RazonSocial.Duplicado` | Otro proveedor no eliminado usa la razón social | RN-PRV-008 |
 
+Orden de evaluación: guards de la entidad (400, primera falla), identificador tributario repetido (409) y razón social repetida (409). La comparación de texto usa la intercalación de SQL Server (no distingue mayúsculas).
+
 **Ejemplo real:**
 
 ```http
@@ -1590,6 +1605,8 @@ El costo neto es `precioCompra × (1 − descuentoPorcentaje / 100)`, redondeado
 | 400 | `RegistrarPrecioProveedorCommand.<Propiedad>` | GUID vacío, precio fuera de rango o descuento fuera de 0 a 100 (el `detail` une las fallas) | RN-PRV-018 |
 | 404 | `Proveedor.NotFound` | El proveedor no existe | RN-PRV-019 |
 | 404 | `Medicamento.NotFound` | El medicamento no existe | RN-PRV-019 |
+
+Orden de evaluación: validador (400), proveedor (404) y medicamento (404); un proveedor o medicamento eliminados cuentan como inexistentes. Después, el registro nuevo se crea con los guards de la entidad (costo neto mayor o igual a 0) y se cierra **todo** registro abierto (sin fecha de fin) del mismo proveedor y medicamento con la misma marca de tiempo; si cerrar uno fallara, la respuesta sería el 400 de la entidad (`HistorialPrecioProveedor.*`).
 
 **Ejemplo real.** Primer precio (10,00 con 5 % de descuento):
 
@@ -1814,6 +1831,8 @@ Actualiza todos los campos de un proveedor.
 | 409 | `Proveedor.TaxId.Duplicado` / `Proveedor.RazonSocial.Duplicado` | Otro proveedor ya usa el valor | RN-PRV-007, RN-PRV-008 |
 | 400 | `ProveedorDistribuidor.<Propiedad>` | Campo vacío, demasiado largo o fuera de rango | RN-PRV-002 a RN-PRV-006 |
 
+Orden de evaluación: existencia (404), identificador tributario repetido (409), razón social repetida (409) y, al final, los guards de la entidad (400). No hay validador del comando: un `id` de ruta igual al GUID vacío responde `404 Proveedor.NotFound`.
+
 **Ejemplo real:**
 
 ```http
@@ -2002,7 +2021,7 @@ Valida un Excel fila por fila sin guardar nada (paso 2 de [`tecnico/carga-masiva
 | `calificacionEsg` | `invalid-decimal`, `invalid-range` (0 a 100); opcional | RN-PRV-005 |
 | `tasaCumplimiento` | `required`, `invalid-decimal`, `invalid-range` (0 a 100) | RN-PRV-006 |
 
-Los números se leen con cultura invariante (punto decimal). No verificado en vivo cómo se interpreta una coma decimal (en `4B` se documentó un caso equivalente en jerarquías).
+Los números de `calificacionEsg` y `tasaCumplimiento` se leen con `decimal.TryParse` con `NumberStyles.Any` y cultura invariante (`PreviewImportProveedoresQueryHandler.cs`): el punto es el separador decimal y, además, se aceptan separador de miles (la coma: `1,5` se lee como `15`), signos, paréntesis y símbolo de moneda; es más permisivo que la lectura de otros catálogos (`NumberStyles.Number` en jerarquías). La vista previa solo valida; la interpretación que cuenta es la del arreglo JSON que el cliente envía luego a `carga-masiva`.
 
 **Respuesta correcta:** `200 OK`: `{ rows: [ { rowNumber, data, errors, isValid } ], totalCount, validCount, errorCount }`. En `data` los números llegan como texto.
 
@@ -2097,7 +2116,7 @@ El servidor omite sin avisar las filas que la entidad rechaza o cuyo identificad
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaProveedoresCommand.Rows` | Arreglo vacío o con más de 5 000 filas | RN-PRV-016 |
-| 400 | `CargaMasivaProveedoresCommand.Rows[i].<Campo>` | `razonSocial`, `taxId` vacíos o de más largo que el máximo, o `terminosFinancieros` de más de 100, en la fila `i` | RN-PRV-016. Ejemplo propio no verificado; el mismo comportamiento se comprobó en `Medicamentos` |
+| 400 | `CargaMasivaProveedoresCommand.Rows[i].<Campo>` | `razonSocial`, `taxId` vacíos o de más largo que el máximo, o `terminosFinancieros` de más de 100, en la fila `i`: se rechaza todo el envío; el `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-PRV-016. Ejemplo propio no verificado; el mismo comportamiento se comprobó en `Medicamentos` |
 | 413 | `Request.TooLarge` | Más de 5 MB | Ejemplo no verificado |
 
 **Ejemplo real** (las cinco filas de la vista previa):
@@ -2150,7 +2169,7 @@ Crea una aseguradora.
 | **Código** | `SOFIA.API/Controllers/SegurosController.cs:19` → `CreateAseguradoraCommand` |
 | **Pantalla del SPA** | `/aseguradoras/nueva` (botón «Guardar») |
 
-**Cuerpo** (`application/json`). El validador del comando está vacío («TODO»); las reglas las aplica la entidad `AseguradoraMedica` (`SOFIA.Domain/Entities/AseguradoraMedica.cs:17-47`).
+**Cuerpo** (`application/json`). El validador del comando está vacío («TODO»); las reglas las aplica la entidad `AseguradoraMedica` (`SOFIA.Domain/Entities/AseguradoraMedica.cs:17-46`).
 
 | Campo | Tipo | Obligatorio | Reglas |
 |---|---|---|---|
@@ -2643,6 +2662,8 @@ Crea un paciente.
 | 400 | `PacienteCliente.FechaNacimiento` | Fecha futura (o no enviada) | RN-PAC-006 |
 | 409 | `Paciente.DocIdentidadGub.Duplicado` | Otro paciente no eliminado usa el número de documento | RN-PAC-008 |
 
+Orden de evaluación: validador del comando (400; el `code` es el de la primera falla y el `detail` une todas), guards de la entidad (400: documento, tipo, formato, nombre, fecha; el formato inválido que pasara el validador saldría como `PacienteCliente.DocIdentidadGub.FormatoInvalido`) y, al final, documento repetido (409). La fecha de nacimiento solo la valida la entidad, por eso `PacienteCliente.FechaNacimiento` sale después de los errores del validador.
+
 **Ejemplo real:**
 
 ```http
@@ -2824,6 +2845,8 @@ Actualiza todos los datos de un paciente.
 | 404 | `Paciente.NotFound` | No existe o está eliminado | RN-PAC-009 |
 | 409 | `Paciente.DocIdentidadGub.Duplicado` | Otro paciente usa el documento | RN-PAC-008 |
 
+Orden de evaluación: validador (400), existencia (404), documento repetido (409) y guards de la entidad (400, por ejemplo la fecha futura). Un `id` de ruta igual al GUID vacío responde `404`: el validador de `PUT` no revisa el `Id`.
+
 **Ejemplo real:**
 
 ```http
@@ -2914,7 +2937,7 @@ Genera un Excel con los pacientes que cumplen los filtros.
 | Campo | Tipo | Obligatorio | Reglas |
 |---|---|---|---|
 | `headers` | arreglo de texto | Sí | Hasta 50 títulos de hasta 100 caracteres; si no, `400` con `errors.Headers`. |
-| `dateFormat` | texto | Sí | Uno de `dd/MM/yyyy`, `MM/dd/yyyy`, `dd/MM/yyyy HH:mm`, `MM/dd/yyyy HH:mm` (`ExportDateFormatAttribute`); da formato a la fecha de nacimiento. |
+| `dateFormat` | texto | Sí | Uno de `dd/MM/yyyy`, `MM/dd/yyyy`, `dd/MM/yyyy HH:mm`, `MM/dd/yyyy HH:mm` (`ExportDateFormatAttribute`); da formato a la fecha de nacimiento. La fecha de nacimiento es un `DateOnly` y `DateOnly.ToString(formato)` no admite especificadores de hora, por lo que con los dos formatos con `HH:mm` se espera un error de formato (`500`); **No verificado: no se ejecutó**, el SPA solo envía `dd/MM/yyyy` o `MM/dd/yyyy`. |
 | `tipoDocumento`, `docIdentidadGub`, `nombreApellidos` | texto | No | Mismos filtros del listado. |
 | `fechaNacimientoDesde`, `fechaNacimientoHasta` | fecha `yyyy-MM-dd` | No | Rango de fecha de nacimiento. |
 
@@ -3127,7 +3150,7 @@ El servidor omite sin avisar las filas con fecha mal escrita, las que la entidad
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaPacientesCommand.Rows` | Arreglo vacío o con más de 5 000 filas | RN-PAC-016. Ejemplo propio no verificado; se comprobó en `Medicamentos` |
-| 400 | `CargaMasivaPacientesCommand.Rows[i].<Campo>` | Un campo obligatorio vacío o sobre su longitud máxima en la fila `i` | RN-PAC-016 |
+| 400 | `CargaMasivaPacientesCommand.Rows[i].<Campo>` | Un campo obligatorio vacío o sobre su longitud máxima en la fila `i`: se rechaza todo el envío; el `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-PAC-016 |
 | 413 | `Request.TooLarge` | Más de 5 MB | Ejemplo no verificado |
 
 **Ejemplo real** (cuatro filas: dos válidas, una con documento repetido y una con fecha `1990-01-01`):
@@ -3361,6 +3384,8 @@ Actualiza los datos de un profesional.
 | 409 | `ProfesionalSalud.NumeroRegistro.Duplicado` | Otro profesional usa el número | RN-PRO-005 |
 | 400 | `ProfesionalSalud.NumeroRegistro` / `.NombrePrescriptor` / `.DireccionClinica` | Campo vacío o más largo que el máximo | RN-PRO-002 a RN-PRO-004 |
 
+Orden de evaluación: existencia (404), número de registro repetido (409) y, al final, los guards de la entidad (400, primera falla). Un `id` de ruta igual al GUID vacío responde `404` porque no hay validador del comando. Al crear sí hay validador (`CreateProfesionalSaludCommand.<Propiedad>`), que se evalúa antes que la entidad y que el 409.
+
 **Ejemplo real:**
 
 ```http
@@ -3578,7 +3603,7 @@ El servidor omite sin avisar las filas que la entidad rechaza y las que repiten 
 | HTTP | `code` | Cuándo | Regla |
 |---|---|---|---|
 | 400 | `CargaMasivaProfesionalesSaludCommand.Rows` | Arreglo vacío o con más de 5 000 filas | RN-PRO-011. Ejemplo propio no verificado; se comprobó en `Medicamentos` |
-| 400 | `CargaMasivaProfesionalesSaludCommand.Rows[i].<Campo>` | Un campo obligatorio vacío o sobre su longitud máxima en la fila `i` | RN-PRO-011 |
+| 400 | `CargaMasivaProfesionalesSaludCommand.Rows[i].<Campo>` | Un campo obligatorio vacío o sobre su longitud máxima en la fila `i`: se rechaza todo el envío; el `code` es el de la primera falla y el `detail` une los mensajes de todas | RN-PRO-011 |
 | 413 | `Request.TooLarge` | Más de 5 MB | Ejemplo no verificado |
 
 **Ejemplo real** (las dos filas válidas y la del número repetido):
@@ -3678,7 +3703,9 @@ Todo lo que sigue se documentó desde el código y no se pudo provocar en la API
 | Errores `CargaMasiva{Modulo}Command.Rows` y `…Rows[i].<Campo>` en `Proveedores`, `Pacientes` (solo `Rows[0].TipoDocumento` sí se provocó), `ProfesionalesSalud` | Mismo comportamiento comprobado en `Medicamentos`; la ficha lo indica. |
 | Respuestas `401` y `403` | La única cuenta disponible es el administrador de la empresa de referencia, con todos los permisos; se remite a [`tecnico/api/convenciones-y-administracion`, apartado 0][04A0]. |
 | `PUT` y `DELETE` de `Pacientes` con un `id` que no es GUID | Se comprobó el `GET`; los otros dos tienen la misma definición de ruta pero no se llamaron. |
-| Lectura de decimales con coma en la vista previa de `Proveedores` | No se probó. |
+| Lectura de decimales con coma en la vista previa de `Proveedores` | No se probó en vivo. Por el código (`NumberStyles.Any`, cultura invariante) `1,5` se lee como `15` (hallazgo 12 del apartado 8.3). |
+| `POST /Pacientes/exportar` con `dateFormat` con hora (`dd/MM/yyyy HH:mm`, `MM/dd/yyyy HH:mm`) | La fecha de nacimiento es `DateOnly`; `DateOnly.ToString` con especificadores de hora debería lanzar un error de formato (`500`). No se ejecutó. |
+| Valores de `multiplicador` y de importes fuera del rango de la columna `DECIMAL` | Se deducen del esquema; no se provocaron. |
 | `stockPorSucursal` con datos en `GET /Medicamentos/{id}` | Los medicamentos de prueba no tienen lotes; solo se vio el arreglo vacío. |
 
 ### 8.2 En curso (sin commitear)
@@ -3699,6 +3726,9 @@ Ninguno. Al empezar y al terminar el trabajo, `git status --short` estaba vacío
 | 8 | La ruta `{id}` de `Pacientes` no lleva la restricción `:guid` (los demás controladores sí): un `id` inválido da `400` en vez de `404`. | `PacientesController.cs:37,45,54` |
 | 9 | La vista previa de `Proveedores` no detecta razones sociales repetidas (documentado como RN-PRV-015). | `PreviewImportProveedoresQueryHandler.cs` |
 | 10 | `tecnico/seguridad/matriz-de-permisos.md`, apartado 3.18, dice «Endpoints: 10» para `Proveedores`, pero su tabla tiene 11 filas y `endpoints.csv` también 11. Además, `tecnico/seguridad/matriz-de-permisos` cita la línea del método del controlador (por ejemplo `ProveedoresController.cs:22`) y `endpoints.csv` la del atributo `[HttpXxx]` (`:21`); este documento usa la del CSV. | `tecnico/seguridad/matriz-de-permisos.md:510-512` |
+| 11 | El stock del detalle de un medicamento (`GET /Medicamentos/{id}`, `stockTotal` y `stockPorSucursal`) suma la `CantidadFisica` de todas las filas de lote por sucursal sin ningún filtro: cuenta lotes vencidos o en cuarentena y sucursales a las que el usuario no tiene acceso. El listado con `incluirStock` hace la misma suma y solo la restringe a lo vendible de la sucursal del usuario si se pide `soloStockVendibleEnMiSucursal`. | `GetMedicamentoByIdQueryHandler.cs`, `GetMedicamentosQueryHandler.cs` |
+| 12 | La vista previa de `Proveedores` lee `calificacionEsg` y `tasaCumplimiento` con `NumberStyles.Any` (cultura invariante): acepta separador de miles, signos, paréntesis y símbolo de moneda, y `1,5` se lee como `15`. Las vistas previas de los demás catálogos usan `NumberStyles.Number` o no leen números. | `PreviewImportProveedoresQueryHandler.cs` |
+| 13 | `SegurosController` no declara `[RequestSizeLimit]` ni `[RequestFormLimits]` en `previsualizar` ni en `carga-masiva`; la aseguradora repetida la frena solo el índice único (409 `Db.Duplicado`), no el handler. | `SegurosController.cs`, `CreateAseguradoraCommandHandler.cs`, `UpdateAseguradoraCommandHandler.cs` |
 
 ### 8.4 Datos que quedaron en la empresa de prueba
 
