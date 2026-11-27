@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `37048ea` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `526bc8f` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -76,7 +76,7 @@ Por qué el sistema te pide lo que te pide (reglas `RN-VEN`, `RN-CMP` y `RN-CAJ`
 - **Los precios ya incluyen IGV** (`RN-CMP-006`): la pantalla solo **separa** el IGV (18 %) del total para mostrártelo; no se suma encima.
 - **El número de operación** (`RN-VEN-042`): todo pago que no sea en efectivo lo exige, para poder rastrearlo después.
 - **La suma de los pagos debe cubrir el total** (`RN-VEN-043`), sin tolerancia de centavos, y **el vuelto no puede superar el efectivo recibido** (`RN-VEN-044`).
-- **Receta**: la **venta libre** nunca pide receta. La **receta retenida** y el **estupefaciente** siempre piden una receta registrada y con número (`RN-VEN-029`, `RN-VEN-032`). La **receta simple** depende de una política de la empresa llamada «exigir registro de receta» (`RN-VEN-028`): con la política **apagada** basta marcar «Receta verificada»; con la política **encendida** también exige receta registrada. Cada vez que vendes con una receta se cuenta una **dispensación**, y la receta solo admite un número limitado (`RN-REC-031`, `RN-VEN-033`).
+- **Receta**: la **venta libre** nunca pide receta. La **receta retenida** y el **estupefaciente** siempre piden una receta registrada y con número (`RN-VEN-029`, `RN-VEN-032`). La **receta simple** depende de una política de la empresa llamada «exigir registro de receta» (`RN-VEN-028`): con la política **apagada** basta marcar «Receta verificada»; con la política **encendida** también exige receta registrada. Cada venta que usa una receta con algún producto que no es de venta libre cuenta como **una** dispensación (las líneas de venta libre no cuentan), y la receta solo admite un número limitado (`RN-REC-031`, `RN-VEN-033`). **Dejar la venta en espera también exige la receta** que pide el producto (el servidor la revisa al guardar); lo único que no se pide al guardar es la casilla «Receta verificada».
 - **Cobrar emite la boleta** (`RN-VEN-007`): hace falta que la empresa tenga RUC y que la sucursal tenga una serie de boleta activa. Dejar una venta en espera **no** lo necesita.
 
 **La política «exigir registro de receta»**. No se cambia desde ninguna pantalla (solo en la base de datos) y este capítulo no la cambió. En la empresa de prueba está **apagada**: lo comprobaste en el terminal porque, al vender Amoxicilina (receta simple) sin elegir receta, apareció la casilla «Receta verificada» (sección 11). Cómo se comporta el terminal con la política **encendida**: **No verificado en la aplicación** (no se pudo cambiar la política); lo que dice el inventario de pantallas está en la sección 11.
@@ -190,7 +190,7 @@ Tres detalles que conviene saber:
 
 - La caja que cuenta es **la tuya**. Con la caja del cajero abierta, el administrador entró al terminal y vio igualmente «Debes aperturar la caja del turno antes de procesar una venta.», porque la caja abierta no estaba a su nombre.
 - Si el terminal no puede consultar tus cajas (por ejemplo, falta el permiso `Sesiones de Caja › Leer`), te muestra **el mismo aviso sin ningún mensaje de error** aunque tengas una caja abierta; al pulsar **Aperturar Caja** recibirías «Ya tienes una caja abierta. Ciérrala antes de abrir otra.» (fuente: `producto/pantallas/punto-de-venta` §3.1; **No verificado en la aplicación**).
-- Si la caja se cierra mientras vendes (por ejemplo, la cierra un administrador), el cobro se rechaza con «Necesitas tener tu propia caja abierta en esta sucursal para cobrar la venta.» (fuente: `producto/pantallas/punto-de-venta` §3.12; **No verificado en la aplicación**: no se cerró la caja a mitad de una venta).
+- Si la caja se cierra mientras vendes (por ejemplo, la cierra un administrador), el cobro de una **venta nueva** se rechaza con el aviso genérico «Ocurrió un error al procesar la venta.»: el servidor responde `Venta.Caja` («la sesión de caja no está abierta o no existe») y la pantalla no lo traduce. El terminal sigue usando la caja que consultó al entrar, así que abre tu caja y recarga la página. Solo al **retomar una venta en espera** el aviso es «Necesitas tener tu propia caja abierta en esta sucursal para cobrar la venta.», porque ahí el servidor busca tu caja abierta (confirmado en el código, `CreateVentaCommandHandler.cs` y `CompletarVentaCommandHandler.cs`; **No verificado en la aplicación**: no se cerró la caja a mitad de una venta).
 
 ## 7. El terminal de venta: cómo es la pantalla
 
@@ -219,11 +219,11 @@ El terminal **no tiene atajos de teclado**, no muestra los datos de tu caja (hor
 2. O haz clic en un botón de condición para filtrar: por ejemplo **Receta Retenida** deja solo «Clonazepam Demo 2 mg». **Todos** quita el filtro.
 3. Si no hay coincidencias, el terminal dice «No se encontraron medicamentos o lotes disponibles.» (se probó con `zzz`).
 
-Sin texto ni filtro, el terminal muestra primero los **más vendidos**: antes de la primera venta salían en orden alfabético y después de ella «Paracetamol Demo 500 mg» pasó al primer lugar. Muestra como máximo 12 productos y solo los que tienen **stock vendible en tu sucursal**.
+Sin texto ni filtro, el terminal muestra primero los **más vendidos**: antes de la primera venta salían en orden alfabético y después de ella «Paracetamol Demo 500 mg» pasó al primer lugar. El orden por «más vendidos» cuenta las unidades de ventas cobradas en tu sucursal en los últimos 30 días; los productos que no se vendieron siguen por orden alfabético. Con texto o con un filtro de condición, el orden es alfabético. Muestra como máximo 12 productos. La lista trae **todos** los productos del catálogo, también los que no tienen stock vendible en tu sucursal: esos llevan la insignia «Agotado» y su tarjeta está deshabilitada, de modo que al hacer clic no pasa nada (`nueva-venta.component.ts`, `selectMedicamento`; `GetMedicamentosQueryHandler.cs`).
 
-Cada **tarjeta de producto** muestra: el nombre; «{laboratorio} · {código}» (por ejemplo «Laboratorio Demo Andino · DEMO-MED-0001»); si no es de venta libre, el icono y el aviso «Requiere receta»; el precio como «S/ 0.50 c/u» (o «Sin precio» si el catálogo no tiene precio); y una insignia de stock: «Disponible» (más de 10 unidades), «Stock bajo» (de 1 a 10) o «Agotado» (0; la tarjeta queda deshabilitada). En la prueba todas las tarjetas decían «Disponible»; «Stock bajo» y «Agotado» **no se vieron** en la aplicación (fuente: `producto/pantallas/punto-de-venta` §3.2).
+Cada **tarjeta de producto** muestra: el nombre; «{laboratorio} · {código}» (por ejemplo «Laboratorio Demo Andino · DEMO-MED-0001»); si no es de venta libre, el icono y el aviso «Requiere receta»; el precio como «S/ 0.50 c/u» (o «Sin precio» si el catálogo no tiene precio); y una insignia de stock: «Disponible» (más de 10 unidades), «Stock bajo» (de 1 a 10) o «Agotado» (0; la tarjeta queda deshabilitada). La insignia cuenta solo el stock **vendible de tu sucursal** (cantidad mayor que cero, lote no vencido y sin cuarentena), sumando todos los lotes del producto. En la prueba todas las tarjetas decían «Disponible»; «Stock bajo» y «Agotado» **no se vieron** en la aplicación (su comportamiento se confirmó en el código).
 
-El terminal **no avisa si hay stock en otra sucursal** ni permite pedir una transferencia. Si un producto no sale, no hay stock vendible en tu sucursal (capítulo 6).
+El terminal **no avisa si hay stock en otra sucursal** ni permite pedir una transferencia. Si un producto sale como «Agotado» y no puedes elegirlo, no hay stock vendible en tu sucursal (capítulo 6).
 
 ### 8.2 Elegir el lote
 
@@ -259,13 +259,13 @@ El panel «Resumen de Venta · N» (N es el número de líneas) lista cada produ
 
 | Acción | Qué hace | Comprobado |
 |---|---|---|
-| **+** | Suma 1 unidad base (en líneas por presentación suma una presentación completa) | Sí, en una línea sin presentación (10 → 11); con presentación: No verificado, dice el inventario |
+| **+** | Suma 1 unidad base (en líneas por presentación suma una presentación completa) | Sí, en una línea sin presentación (10 → 11); con presentación: confirmado en el código (`ajustarCantidadCarrito`), no ejecutado |
 | **−** | Resta lo mismo. En la cantidad mínima no hace nada y no avisa | Sí, 11 → 10 |
 | **+** por encima de la existencia | «Stock máximo disponible alcanzado ({n} un.).» y la cantidad no cambia | No verificado en la aplicación (fuente: `producto/pantallas/punto-de-venta` §3.3) |
 | **×** de una línea | Quita la línea sin pedir confirmación | Sí: al quitar una línea de Omeprazol desapareció también el aviso «Receta verificada» |
 | **Vaciar** (arriba a la derecha del panel) | Quita todas las líneas y reinicia los pagos. **No** quita al cliente ni a la receta elegida | Sí: tras **Vaciar**, el cliente y la receta seguían elegidos |
 
-Agregar de nuevo el **mismo lote y la misma presentación** suma a la línea existente; el mismo producto con otro lote, o con y sin presentación, genera líneas separadas (fuente: `producto/pantallas/punto-de-venta` §3.3; **No verificado en la aplicación**). Con el carrito vacío el panel dice «El carrito está vacío.»
+Agregar de nuevo el **mismo lote y la misma presentación** suma a la línea existente; si la suma supera la existencia del lote, sale «Stock máximo disponible alcanzado ({n} un.).» y la línea queda con la existencia máxima. El mismo producto con otro lote, o con y sin presentación, genera líneas separadas (confirmado en el código, `pushCartLine`; **No verificado en la aplicación**). Con el carrito vacío el panel dice «El carrito está vacío.»
 
 Con al menos una línea aparecen los totales. Los precios **ya incluyen IGV**: el terminal separa el IGV del total para mostrártelo.
 
@@ -308,7 +308,7 @@ Las tarjetas de los productos que no son de venta libre llevan el aviso «Requie
 | Receta Retenida | Siempre: cliente y una receta registrada **con número de receta** | Clonazepam |
 | Estupefaciente | Siempre: cliente y una receta registrada **con número de receta** | Tramadol |
 
-**Elegir la receta.** Después de elegir al cliente (sección 10), el selector «Receta médica» muestra «Sin receta» y una opción por cada receta registrada del cliente, como «30/10/2026 · Dr. Raúl Médico Demo · N.° RS-DEMO-0001» (fecha, médico y número de receta). Luis tiene dos opciones (`RS-DEMO-0001` y `RE-DEMO-0001`) y María una (`RR-DEMO-0001`). Bajo el selector dice: «Receta retenida y estupefacientes siempre exigen una receta registrada con su número.» Con el permiso `Recetas Médicas › Crear` ves además el enlace **Registrar receta**, que abre el registro de recetas en **otra pestaña** del navegador; al volver al terminal, la lista de recetas del cliente se actualiza sola. **La receta elegida se adjunta a todas las líneas del carrito**, incluso a las de venta libre.
+**Elegir la receta.** Después de elegir al cliente (sección 10), el selector «Receta médica» muestra «Sin receta» y una opción por cada receta registrada del cliente, como «30/10/2026 · Dr. Raúl Médico Demo · N.° RS-DEMO-0001» (fecha, médico y número de receta). Luis tiene dos opciones (`RS-DEMO-0001` y `RE-DEMO-0001`) y María una (`RR-DEMO-0001`). El selector trae como máximo las 50 recetas más recientes del cliente. Bajo el selector dice: «Receta retenida y estupefacientes siempre exigen una receta registrada con su número.» Con el permiso `Recetas Médicas › Crear` ves además el enlace **Registrar receta**, que abre el registro de recetas en **otra pestaña** del navegador; al volver al terminal, la lista de recetas del cliente se actualiza sola. **La receta elegida se adjunta a todas las líneas del carrito**, incluso a las de venta libre.
 
 ### 11.1 Receta simple: con la casilla «Receta verificada»
 
@@ -335,15 +335,15 @@ El terminal **no tiene un campo para escribir el número de receta**: el número
 
 - **Productos de venta libre:** se venden sin cliente ni receta.
 - **Receta simple, política apagada:** basta la casilla «Receta verificada» (sección 11.1).
-- **Receta retenida o estupefaciente:** no se puede vender. El terminal bloquea el cobro con el aviso de la sección 11.3. (Sí puedes dejar la venta **en espera** sin receta: guardar en espera no pide receta, fuente: `producto/pantallas/punto-de-venta` §3.11; **No verificado en la aplicación**.)
+- **Receta retenida o estupefaciente:** no se puede vender. El terminal bloquea el cobro con el aviso de la sección 11.3. (Tampoco puedes dejar esa venta **en espera** sin la receta: el botón **Guardar y Atender Siguiente** no se apaga, pero el servidor rechaza el guardado con «Uno de los productos requiere receta médica. Selecciona el cliente y una de sus recetas registradas.» Lo único que no se pide al guardar en espera es la casilla «Receta verificada»: una receta simple con la política apagada sí se puede dejar en espera sin receta y sin casilla. Con la política encendida, la receta simple también exige receta registrada para guardar. Si la receta elegida es de otro paciente o no tiene número en un producto controlado, el servidor también rechaza el guardado. Confirmado en el código, `CreateVentaCommandHandler.cs` y `VentaDetalleFactory.cs`; **No verificado en la aplicación**.)
 
 ### 11.5 La receta ya se usó el máximo de veces
 
-Cada venta con una receta cuenta como una dispensación. La receta `RR-DEMO-0001` tiene 0 repeticiones, así que solo admite **1** dispensación. Después de `B001-00000004`, un segundo intento de vender Clonazepam con esa receta (1 unidad, efectivo S/ 2.50) fue rechazado al confirmar con el aviso **«La receta médica ya fue dispensada el máximo de veces permitido.»**; el carrito se conservó y no se creó ninguna venta. En la receta simple, la cuenta es 1 más las repeticiones (`RS-DEMO-0001`, con 2 repeticiones, admite 3). Anular una venta devuelve su dispensación (capítulo 9; `RN-REC-031`, `RN-VEN-033`).
+Cada venta con una receta cuenta como una dispensación (las líneas de venta libre no cuentan, y una venta en espera también cuenta; una venta anulada devuelve la suya). La receta `RR-DEMO-0001` tiene 0 repeticiones, así que solo admite **1** dispensación. Después de `B001-00000004`, un segundo intento de vender Clonazepam con esa receta (1 unidad, efectivo S/ 2.50) fue rechazado al confirmar con el aviso **«La receta médica ya fue dispensada el máximo de veces permitido.»**; el carrito se conservó y no se creó ninguna venta. En la receta simple, la cuenta es 1 más las repeticiones (`RS-DEMO-0001`, con 2 repeticiones, admite 3). Anular una venta devuelve su dispensación (capítulo 9; `RN-REC-031`, `RN-VEN-033`).
 
 ### 11.6 Con la política «exigir registro de receta» encendida
 
-**No verificado en la aplicación** (la política no se puede cambiar desde ninguna pantalla). Según el inventario de pantallas (`producto/pantallas/punto-de-venta` §3.5): al llevar un producto de receta simple sin receta registrada, el carrito mostraría el aviso «Hay productos que requieren una receta registrada: selecciona al cliente y su receta antes de cobrar.» en vez de la casilla «Receta verificada», y no se podría cobrar hasta elegir cliente y receta. Si el terminal aún no conoce la política, o falla la consulta, la trata como encendida (la más estricta).
+**No verificado en la aplicación** (la política no se puede cambiar desde ninguna pantalla); el comportamiento está confirmado en el código (`nueva-venta.component.ts`, `recetaAvisoKey`; `VentaDetalleFactory.cs`, `EvaluateSinReceta`). Según el inventario de pantallas (`producto/pantallas/punto-de-venta` §3.5): al llevar un producto de receta simple sin receta registrada, el carrito mostraría el aviso «Hay productos que requieren una receta registrada: selecciona al cliente y su receta antes de cobrar.» en vez de la casilla «Receta verificada», y no se podría cobrar hasta elegir cliente y receta. Si el terminal aún no conoce la política, o falla la consulta, la trata como encendida (la más estricta).
 
 ## 12. Cobrar la venta
 
@@ -428,7 +428,7 @@ Los demás avisos están tomados del inventario de pantallas (`producto/pantalla
 | «Marca "Receta verificada" para confirmar que revisaste la receta del cliente antes de cobrar.» | El servidor exige la verificación (el terminal muestra la casilla si no la mostraba) | Marca la casilla |
 | «Ingresa el número de operación de cada pago que no sea en efectivo.» | Falta un número de operación | Escríbelo |
 | «El vuelto no puede ser mayor que el efectivo recibido. Ajusta los montos de pago.» | El vuelto no sale del efectivo | Ajusta los montos |
-| «Necesitas tener tu propia caja abierta en esta sucursal para cobrar la venta.» | No tienes caja abierta (por ejemplo, la cerraron) | Abre tu caja (sección 5) |
+| «Necesitas tener tu propia caja abierta en esta sucursal para cobrar la venta.» | Al cobrar una venta en espera retomada, no tienes caja propia abierta. En una venta nueva con la caja cerrada el aviso es el genérico «Ocurrió un error al procesar la venta.» (sección 6) | Abre tu caja (sección 5) y recarga la página |
 | «La caja seleccionada pertenece a otro cajero o sucursal. Recarga la página para usar tu propia caja abierta.» | El terminal usaba una caja que no es tuya | Recarga la página |
 | «Esta sucursal no tiene una serie de boletas activa. Configúrala en SUNAT > Series Fiscales para poder cobrar.» | No hay serie de boleta activa | Avisa al administrador (capítulo 2) |
 | «Tu empresa no tiene RUC registrado, por lo que no puede emitir comprobantes. Complétalo en Administración > Empresa para poder cobrar.» | La empresa no tiene RUC | Avisa al administrador (capítulo 2) |
@@ -454,7 +454,7 @@ Al hacer clic en **Procesar Venta** se abre el diálogo «Confirmar Procesamient
 | Total a Pagar: | «S/ 8.90» |
 | Vuelto Entregado: | «S/ 1.10». Solo aparece si hay vuelto |
 
-El diálogo **no** muestra los montos de cada pago ni el detalle de las líneas. Tiene dos botones: **Cancelar** (vuelves al terminal con el carrito intacto; se comprobó) y **Confirmar y Procesar Venta**. Con Esc o haciendo clic fuera del diálogo también se cancela (fuente: `producto/pantallas/punto-de-venta` §4; **No verificado en la aplicación**). Cuando confirmas, el diálogo se cierra al instante; no se puede pulsar dos veces para cobrar dos veces.
+El diálogo **no** muestra los montos de cada pago ni el detalle de las líneas. Tiene dos botones: **Cancelar** (vuelves al terminal con el carrito intacto; se comprobó) y **Confirmar y Procesar Venta**. Con Esc o haciendo clic fuera del diálogo también se cancela (confirmado en el código: el diálogo se cierra sin confirmar y no se cobra nada; **No verificado en la aplicación**). Cuando confirmas, el diálogo se cierra al instante; no se puede pulsar dos veces para cobrar dos veces.
 
 ### 14.2 El diálogo del comprobante
 
@@ -475,7 +475,7 @@ Tiene tres botones:
 | **Imprimir Comprobante** | Abre el cuadro de impresión de tu navegador con el ticket (sección 14.3) |
 | **Volver a Caja POS** | Cierra el diálogo y te lleva a la lista de ventas (comprobado) |
 
-Mientras este diálogo está abierto tras el cobro, solo se cierra con esos botones (fuente: `producto/pantallas/punto-de-venta` §5; **No verificado en la aplicación**: no se probó Esc ni el clic fuera).
+Mientras este diálogo está abierto tras el cobro, solo se cierra con esos botones: el código lo abre con el cierre por Esc y por clic fuera desactivado (`nueva-venta.component.ts`, `disableClose: true`; **No verificado en la aplicación**: no se probó Esc ni el clic fuera).
 
 **Qué significa «Pendiente de envío a SUNAT».** SOFIA emite la boleta y la numera, pero **no la envía a SUNAT**: el sistema no tiene esa función. Por eso **toda** boleta queda con el estado «Pendiente de envío a SUNAT», se vea donde se vea (en el diálogo, en el ticket y en el detalle de la venta). No es un error ni algo que debas corregir tú.
 
@@ -500,11 +500,11 @@ El ticket **no lleva** código QR, firma digital, enlace de verificación ni ley
 
 Una **venta en espera** sirve cuando el cliente se va un momento y quieres atender al siguiente. Queda guardada con estado «Pendiente».
 
-**Qué reserva y qué no.** Reserva el **stock** (baja del lote al guardarla; se comprobó en Stock por Sucursal: el lote de Paracetamol mostró 40, ya sin las 6 unidades de la venta en espera) y cuenta como dispensación de la receta usada. **No** tiene pagos ni boleta, y no pide la casilla «Receta verificada». Tampoco caduca ni se libera sola: solo se cobra o se anula (capítulo 9). Si se cierra la caja, la venta en espera no entra al arqueo y la puede cobrar más tarde cualquier usuario de la sucursal con su propia caja abierta.
+**Qué reserva y qué no.** Reserva el **stock** (baja del lote al guardarla; se comprobó en Stock por Sucursal: el lote de Paracetamol mostró 40, ya sin las 6 unidades de la venta en espera) y cuenta como dispensación de la receta usada. **No** tiene pagos ni boleta, y no pide la casilla «Receta verificada» (la receta que pide el producto sí se revisa al guardar, sección 11.4). Tampoco caduca ni se libera sola: solo se cobra o se anula (capítulo 9). Si se cierra la caja, la venta en espera no entra al arqueo y la puede cobrar más tarde cualquier usuario de la sucursal con su propia caja abierta.
 
 ### 15.1 Guardar la venta en espera
 
-1. Arma el carrito como siempre. **No** hace falta elegir pagos, receta ni números de operación.
+1. Arma el carrito como siempre. **No** hace falta elegir pagos ni números de operación, ni marcar «Receta verificada». La receta registrada sí hace falta si el producto la exige (sección 11.4).
 2. Haz clic en **Guardar y Atender Siguiente**.
 3. Aparece el aviso **«Venta guardada en espera. Retómala desde Ventas cuando el cliente vuelva.»** El terminal se limpia y sigue en `/pos/nueva`, listo para la siguiente venta.
 
@@ -546,7 +546,7 @@ Comprobado: se agregó 1 Caja de Paracetamol, se escribió «Recibido (S/)» `50
 | Qué se guarda | Las líneas del carrito, los pagos con sus montos y números de operación, el cliente (solo su identificador) y la receta elegida |
 | Qué **no** se guarda | La casilla «Receta verificada» (debes volver a marcarla), el texto de búsqueda, el lote seleccionado, la imagen del lector y la pestaña activa |
 | Cuánto dura | 12 horas desde el último cambio. Pasado ese tiempo, el borrador se descarta |
-| Cuándo se borra | Al cobrar con éxito (comprobado: la venta siguiente empezó vacía), al quedar el carrito vacío, al cerrar sesión y cuando otro usuario inicia sesión en el mismo navegador (**No verificado en la aplicación**) |
+| Cuándo se borra | Al cobrar con éxito (comprobado: la venta siguiente empezó vacía), al quedar el carrito vacío (si no hay cliente elegido), al cerrar sesión con el botón de salir y cuando otro usuario inicia sesión en el mismo navegador (los dos últimos confirmados en el código, `auth.service.ts` y `user-storage.ts`; **No verificado en la aplicación**). Si la sesión caduca sola, el borrador no se borra por ese motivo |
 | Dónde queda | En el navegador de **tu equipo**. No viaja a otro equipo ni lo ve otro cajero |
 | Venta en espera retomada | Cada venta en espera tiene su propio borrador; solo se recuperan los pagos que no son en efectivo. El efectivo escrito nunca se conserva |
 | Existencias | El borrador no vuelve a comprobar el stock de los lotes: las líneas conservan la existencia con que se guardaron. Si el stock cambió, el servidor lo revisa al cobrar |
@@ -585,7 +585,7 @@ Lo que la aplicación hace distinto de lo que dicen los documentos, o lo que el 
 | # | Documento y apartado | Qué dice | Qué hace la aplicación |
 |---|---|---|---|
 | 1 | `producto/pantallas/punto-de-venta` §3 («dos columnas: A y B») | El terminal tiene una columna A (búsqueda) y una columna B (cliente, carrito y pago) | En una ventana de 1280 px con el menú lateral abierto, las cuatro zonas se ven **en una sola columna**. El diseño pasa a dos columnas solo si el espacio de trabajo supera los 900 px (regla del código; no se vio) |
-| 2 | `producto/pantallas/punto-de-venta` §3.3 (Totales) | «Subtotal + IGV» puede diferir un centavo de «TOTAL A PAGAR» (**No verificado**) | No se reprodujo: en las 8 ventas y en los carritos de prueba, «Subtotal» más «IGV» sumó exactamente el total (por ejemplo, 12.20 + 2.20 = 14.40 y 7.54 + 1.36 = 8.90) |
+| 2 | `producto/pantallas/punto-de-venta` §3.3 (Totales) | «Subtotal + IGV» puede diferir un centavo de «TOTAL A PAGAR» (**No verificado**) | No se reprodujo: en las 8 ventas y en los carritos de prueba, «Subtotal» más «IGV» sumó exactamente el total (por ejemplo, 12.20 + 2.20 = 14.40 y 7.54 + 1.36 = 8.90). Por el código, el servidor guarda el subtotal redondeado a 2 decimales y deduce el IGV por diferencia (siempre suman el total), mientras que la pantalla redondea cada importe por separado, así que un centavo de diferencia visual es posible |
 | 3 | `producto/pantallas/punto-de-venta` §3.4 (Cliente) | No hay botón para quitar al cliente; vaciar el texto no lo descarta (**No verificado**) | **Confirmado**: al borrar el texto el documento y la receta siguieron elegidos; el cliente se descartó al escribir otra letra |
 | 4 | `producto/pantallas/punto-de-venta` §3.3 (Vaciar) | **Vaciar** no descarta cliente ni receta | **Confirmado** |
 | 5 | `producto/pantallas/punto-de-venta` §3.9 (Borrador) | El borrador se restaura al abrir el terminal (**No verificado** en ejecución) | **Confirmado** con una Caja de Paracetamol y el efectivo recibido `50` |
@@ -612,16 +612,16 @@ Otros dos puntos que no son diferencias, sino limitaciones del producto que conv
 1. Imprimir el ticket con **Imprimir Comprobante** (abre el cuadro de impresión del navegador, que esta prueba no maneja) y la medida y contenido exacto del papel (el contenido se leyó del propio diálogo).
 2. Que el diálogo del comprobante recién cobrado solo se cierre con sus botones (no se probó Esc ni el clic fuera) y que Esc o el clic fuera cancelen la confirmación.
 3. El comportamiento del terminal con la política «exigir registro de receta» **encendida** (no se puede cambiar desde pantalla).
-4. Receta elegida **sin número de receta** (las tres recetas de prueba tienen número), y el rechazo por receta de otro paciente o inexistente.
-5. Dejar en espera una venta con producto controlado y sin receta; el botón **Guardar y Atender Siguiente** con el carrito vacío.
-6. Insignias de stock «Stock bajo» y «Agotado», búsqueda de clientes sin resultados y el aviso de precio faltante (no hay datos de prueba que las provoquen).
+4. Receta elegida **sin número de receta** (las tres recetas de prueba tienen número), y el rechazo por receta de otro paciente o inexistente (confirmados en el código).
+5. Dejar en espera una venta con producto controlado y sin receta (el rechazo del servidor está confirmado en el código); el botón **Guardar y Atender Siguiente** con el carrito vacío (el código lo deja apagado).
+6. Insignias de stock «Stock bajo» y «Agotado» (confirmadas en el código: «Agotado» deja la tarjeta deshabilitada), búsqueda de clientes sin resultados y el aviso de precio faltante (no hay datos de prueba que las provoquen).
 7. El botón **+** del carrito por encima de la existencia, el paso de **+** y **−** en líneas por presentación y sumar el mismo lote y presentación a una línea existente.
 8. Qué pasa con permisos faltantes: sin `Sesiones de Caja › Aperturar caja`, sin `Sesiones de Caja › Leer` o sin `Medicamentos`, `Pacientes` o `Recetas Médicas › Leer` (no se quitaron permisos a un rol).
 9. Rechazos del servidor distintos de la receta agotada: lote vencido, cuarentena, stock insuficiente por competencia entre cajeros, caja cerrada a mitad de venta, vuelto mayor que el efectivo, serie de boleta o RUC faltantes, conflicto de concurrencia y error de red (no se pudieron provocar sin romper datos de prueba).
 10. Venta con la pestaña **Receta** (lector de IA): no se usó para no gastar el cupo; se documenta del inventario.
 11. «Error al cargar la venta» al retomar, «Ya tienes una caja abierta…» desde el diálogo del terminal (sí se comprobó desde la pantalla Nuevo de Sesiones de Caja), «Sesión aperturada correctamente» (la caja se abrió por el diálogo) y «No se pudo aperturar la caja».
 12. Exportar la lista de sesiones de caja (nombre del archivo y columnas) y el aviso «Error al buscar sesiones de caja»; el clic en **Abrir caja** del Dashboard.
-13. Que, al terminar la venta, el borrador se borre también al cerrar sesión o al entrar otro usuario en el mismo navegador.
+13. Que el borrador se borre al cerrar sesión o al entrar otro usuario en el mismo navegador (confirmado en el código, no ejecutado).
 14. Terminal en dos columnas (ancho mayor que 900 px).
 15. Redirección con «No tienes permisos para acceder a esta pantalla.» al escribir `/pos/nueva` sin permiso (se comprobó con otras rutas en el capítulo 7).
 16. Enter dentro de «Cantidad» como equivalente de **Agregar**.
