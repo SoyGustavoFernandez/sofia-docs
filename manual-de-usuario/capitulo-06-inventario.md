@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec`; revisado contra `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0`; revisado contra `37048ea` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `34089ec`; revisado contra `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0`; revisado contra `526bc8f` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -181,7 +181,7 @@ Si falla la búsqueda verás «Error al buscar lotes» (No verificado en la apli
 
 Errores al editar: poner a un lote el número de **otro lote del mismo producto** da el aviso rojo «Error al guardar el lote» y te quedas en el formulario (comprobado). Las demás reglas son las de la sección 5.3. Si el detalle no abre, verás «Error al cargar el lote» (No verificado en la aplicación: no se pudo provocar).
 
-(No verificado en la aplicación: según el inventario, un lote que ya venció no se puede guardar al editar, ni siquiera para corregir su número, hasta ponerle una caducidad vigente. No se pudo comprobar porque SOFIA no deja crear lotes vencidos y el único lote que vencía el día del recorrido seguía vigente.)
+Un lote que ya venció no se puede guardar al editar, ni siquiera para corregir su número, hasta ponerle una caducidad vigente: el validador de la edición exige la misma caducidad no vencida que el alta (`UpdateLoteInventarioCommandValidator.cs`, regla de `FechaCaducidad`; confirmado leyendo el código, no ejecutado en la aplicación porque SOFIA no deja crear lotes vencidos). Al editar, además, el sistema **no** compara la fabricación con la caducidad: esa comprobación solo existe al crear (`LoteInventario.cs`, método `Create`, no `Update`).
 
 ## 8. Ingresar stock
 
@@ -201,7 +201,7 @@ Un ingreso dice «de este lote hay N unidades más en esta sucursal». **Suma** 
 |---|---|---|---|
 | Sucursal | La sucursal donde está la mercadería | Sí | Debes elegir una opción de la lista (placeholder «Buscar sucursal...»; sin coincidencias, «Sin resultados») |
 | Lote | El lote que ingresa | Sí | Debes elegir una opción de la lista (placeholder «Buscar por número de lote...»). La lista muestra cualquier lote de tu empresa, **también uno ya vencido**: SOFIA no comprueba la vigencia al ingresar |
-| Cantidad Física | Número de unidades base | Sí | Vacía o negativa: «La cantidad no puede ser negativa». El 0 es válido. Los decimales se aceptan al ajustar (sección 10); al ingresar, No verificado en la aplicación |
+| Cantidad Física | Número de unidades base | Sí | Vacía o negativa: «La cantidad no puede ser negativa». El 0 es válido. Los decimales se aceptan al ajustar (sección 10); al ingresar el servidor también los acepta (la columna guarda hasta 4 decimales, `DECIMAL(12,4)`), aunque no se probó en la pantalla |
 
 ### 8.2 Qué pasa al terminar bien
 
@@ -272,11 +272,11 @@ Si falla la búsqueda verás «Error al consultar el stock» (No verificado en l
 
 ### 9.4 Ver lotes vencidos o por vencer desde el Dashboard
 
-El **Dashboard** tiene una zona «Inventario» con cuatro tarjetas de lotes: «Lotes vencidos con stock», «Lotes que vencen en 30 días o menos», «Lotes que vencen en 31 a 60 días» y «Lotes que vencen en 61 a 90 días», cada una con un número y el enlace **Ver lotes**. Con el stock de este capítulo, la tarjeta de 30 días o menos mostró **1** (el lote `LOT-PARA-CERCA`) y las demás 0. **Ver lotes** abre «Stock por Sucursal» con los filtros ya puestos: para esa tarjeta, «Caducidad Desde» = `30/10/2026` y «Caducidad Hasta» = `29/11/2026`, la casilla marcada y la tabla con la fila de `LOT-PARA-CERCA` (cantidad 15). Es la forma más rápida de revisar qué se te vence.
+El **Dashboard** tiene una zona «Inventario» con cuatro tarjetas de lotes: «Lotes vencidos con stock», «Lotes que vencen en 30 días o menos», «Lotes que vencen en 31 a 60 días» y «Lotes que vencen en 61 a 90 días», cada una con un número y el enlace **Ver lotes**. Cada número cuenta **registros de stock** (un lote en una sucursal con cantidad mayor que cero), no lotes sueltos, y solo de las sucursales a las que tienes acceso; la zona aparece si tu rol tiene `Inventario › Leer`. «30 días o menos» cuenta los que vencen desde hoy hasta dentro de 30 días, ambos incluidos. Con el stock de este capítulo, la tarjeta de 30 días o menos mostró **1** (el lote `LOT-PARA-CERCA`) y las demás 0. **Ver lotes** abre «Stock por Sucursal» con los filtros ya puestos: para esa tarjeta, «Caducidad Desde» = hoy y «Caducidad Hasta» = hoy + 30 días (con el recorrido del 30/10/2026 se anotó hasta el `29/11/2026`; el código revisado llega a hoy + 30), la casilla marcada y la tabla con la fila de `LOT-PARA-CERCA` (cantidad 15). Es la forma más rápida de revisar qué se te vence.
 
 ### 9.5 Ver el stock desde un medicamento
 
-El detalle de un medicamento (capítulo 5, sección 4.6) tiene la tarjeta «Stock por Sucursal» con «Stock Total» y una fila por sucursal. Comprobado con `DEMO-MED-0001` (Paracetamol): «Stock Total: 245», «Sede Principal 215» (200 + 15 de los dos lotes) y «Sucursal Demo Norte 30».
+El detalle de un medicamento (capítulo 5, sección 4.6) tiene la tarjeta «Stock por Sucursal» con «Stock Total» y una fila por sucursal. Comprobado con `DEMO-MED-0001` (Paracetamol): «Stock Total: 245», «Sede Principal 215» (200 + 15 de los dos lotes) y «Sucursal Demo Norte 30». Esa tarjeta suma **todos** los registros de stock del medicamento: de todas las sucursales (también las que tu usuario no puede operar), con lotes vencidos o en cuarentena incluidos; no equivale al «stock vendible» del punto de venta.
 
 ## 10. Ajustar una cantidad
 
@@ -323,9 +323,9 @@ También se eliminó el segundo lote de prueba (un `LOT-PARA-2027` del Omeprazol
 
 ### 11.2 Un lote con stock
 
-Se intentó eliminar el lote `LOT-PARA-2027` del Paracetamol, que ya tiene stock en dos sucursales: aviso rojo **«No se puede eliminar un lote con stock o ventas registradas.»** Te quedas en la ficha y el lote no se borra. Para que un lote se pueda eliminar **no debe tener ningún registro de stock en ninguna sucursal** (aunque la cantidad sea 0) **ni líneas de venta** (la parte «aunque la cantidad sea 0» viene de `RN-LOT-014` y no se comprobó en la aplicación). Como la pantalla no tiene forma de borrar un registro de stock, un lote al que ya le ingresaste stock **no se podrá eliminar desde la aplicación**: si el lote quedó mal, ajusta su stock a 0 y deja de usarlo.
+Se intentó eliminar el lote `LOT-PARA-2027` del Paracetamol, que ya tiene stock en dos sucursales: aviso rojo **«No se puede eliminar un lote con stock o ventas registradas.»** Te quedas en la ficha y el lote no se borra. Para que un lote se pueda eliminar **no debe tener ningún registro de stock en ninguna sucursal** (aunque la cantidad sea 0) **ni líneas de venta** (la parte «aunque la cantidad sea 0» está confirmada en el código: `DeleteLoteInventarioCommandHandler.cs` solo mira si existe el registro de stock, sin mirar la cantidad; no se ejecutó en la aplicación). Como la pantalla no tiene forma de borrar un registro de stock, un lote al que ya le ingresaste stock **no se podrá eliminar desde la aplicación**: si el lote quedó mal, ajusta su stock a 0 y deja de usarlo.
 
-Cualquier otro fallo al eliminar muestra «Error al eliminar el lote» (No verificado en la aplicación: no se pudo provocar). Eliminar un lote **libera su número**: puedes volver a usarlo en ese producto (No verificado en la aplicación: no se recreó el número; viene de `RN-LOT-010` y `RN-LOT-015`).
+Cualquier otro fallo al eliminar muestra «Error al eliminar el lote» (No verificado en la aplicación: no se pudo provocar). Solo se revisan el stock y las ventas; si el lote está ligado a otros registros que SOFIA no revisa (transferencias, cuarentena, inmunizaciones, órdenes magistrales), la base de datos lo impide y verás ese aviso genérico (según los scripts de la base; no verificado en la aplicación). Eliminar un lote **libera su número**: puedes volver a usarlo en ese producto (confirmado en el código: el índice único de producto y número solo cuenta los lotes no eliminados, `LoteInventarioConfiguration.cs`; no se recreó el número en la aplicación).
 
 Tras la sección 11.1, quedan los siete lotes de la sección 4.
 
@@ -366,7 +366,7 @@ Se compararon `producto/pantallas/inventario-y-atencion.md` (§0, §1, §2, §6)
 | 9 | `producto/pantallas/inventario-y-atencion` §1.1 (autocompletar) | Sin coincidencias muestra una opción deshabilitada «Sin resultados» | Confirmado, y además aparece **mientras la consulta está en curso** (un segundo o dos): se ve «Sin resultados» y luego llega el nombre. No es un error |
 | 10 | `producto/pantallas/inventario-y-atencion` §1.2 (campos) | El campo «Producto» es obligatorio | Confirmado el mensaje; en pantalla las etiquetas «Número de Lote*» y «Fecha de Caducidad*» llevan asterisco y «Producto» no |
 | 11 | `producto/pantallas/inventario-y-atencion` §6 (Lotes) y `negocio/reglas/inventario-y-recetas` `RN-LOT-014` | No se puede eliminar un lote con stock (cualquier cantidad) o ventas | Confirmado el caso con stock: «No se puede eliminar un lote con stock o ventas registradas.». El caso con ventas: No verificado (todavía no hay ventas) |
-| 12 | `producto/pantallas/inventario-y-atencion` §2.1 (dashboard) | El dashboard abre «Stock por Sucursal» con la caducidad ya filtrada | Confirmado: la tarjeta de 30 días abre la pantalla con «Caducidad Desde» = hoy y «Caducidad Hasta» = hoy + 29 días |
+| 12 | `producto/pantallas/inventario-y-atencion` §2.1 (dashboard) | El dashboard abre «Stock por Sucursal» con la caducidad ya filtrada | Confirmado: la tarjeta de 30 días abre la pantalla con «Caducidad Desde» = hoy y «Caducidad Hasta» = hoy + 30 días (el recorrido original anotó hoy + 29; el código revisado usa 30, `dashboard-links.ts`, `lotesPorVencerLink(0, 30)`) |
 
 ## 15. Pendientes y «No verificado»
 
@@ -378,12 +378,12 @@ Se compararon `producto/pantallas/inventario-y-atencion.md` (§0, §1, §2, §6)
 |---|---|---|
 | 1 | El aviso «Ya existe un lote con ese número para el producto seleccionado» (dos altas simultáneas del mismo número) | No se pudo provocar una carrera entre dos usuarios |
 | 2 | Que la fabricación posterior a la caducidad se rechace al crear (`RN-LOT-008`) | Con una caducidad vigente y una fabricación no futura, la combinación no se puede formar en pantalla |
-| 3 | Editar un lote ya vencido (el inventario dice que no se puede guardar) | SOFIA no deja crear lotes vencidos y el lote de prueba que vencía el día del recorrido seguía vigente |
+| 3 | Editar un lote ya vencido (el código lo rechaza, sección 7) | SOFIA no deja crear lotes vencidos y el lote de prueba que vencía el día del recorrido seguía vigente; solo confirmado por lectura del código |
 | 4 | Eliminar un lote con ventas registradas | Todavía no hay ventas; se comprobó solo el bloqueo por stock |
-| 5 | Que eliminar un lote libere su número de lote | No se volvió a crear un número eliminado; viene de `RN-LOT-010` y `RN-LOT-015` |
+| 5 | Que eliminar un lote libere su número de lote | No se volvió a crear un número eliminado; confirmado por lectura del código (índice único filtrado por no eliminados) |
 | 6 | Los avisos «Error al buscar lotes», «Error al cargar el lote», «Error al eliminar el lote», «Error al consultar el stock», «No se pudieron cargar tus sucursales», «Error al registrar el stock», «Error al ajustar la cantidad», «Error al cargar el registro de stock» | Son errores de servidor o de red que no se pudieron provocar |
 | 7 | «No tienes permiso para operar el stock de esta sucursal» y «Otra operación modificó estos datos al mismo tiempo. Actualiza la pantalla e inténtalo de nuevo.» al ingresar y ajustar | Se necesitaría un usuario sin acceso a una sucursal con permiso `Actualizar`, o dos usuarios a la vez; no se creó un rol de prueba (no se cambian permisos de roles) |
-| 8 | Una cantidad decimal al **ingresar** stock (al ajustar sí se comprobó) | No se probó en el formulario de ingreso |
+| 8 | Una cantidad decimal al **ingresar** stock (al ajustar sí se comprobó) | No se probó en el formulario de ingreso; el servidor la acepta según el código |
 | 9 | Elegir una sugerencia con el teclado (flechas y Enter) en los autocompletar | Se eligió siempre con clic sobre la opción |
 | 10 | El nombre del archivo descargado (`lotes.xlsx`, `stock-por-sucursal.xlsx`) | El navegador integrado no muestra las descargas; el contenido (hoja «Data», encabezados y filas) se leyó interceptando el archivo que genera la pantalla; el nombre en disco viene de las claves `lotes.search.export-filename` y `stockPorSucursal.search.export-filename` |
 | 11 | Paginación con más de 10 filas, paginadores de 25 y 50, y «Buscar» sin volver a la página 1 | Hay solo siete lotes y nueve registros de stock |
@@ -391,7 +391,7 @@ Se compararon `producto/pantallas/inventario-y-atencion.md` (§0, §1, §2, §6)
 | 13 | El selector de calendario (ventana emergente) al elegir fechas | Se escribieron las fechas a mano en el campo; no se abrió el calendario |
 | 14 | Qué pasa si falta `Medicamentos › Leer` al escribir en «Producto» | No se creó un rol de prueba |
 | 15 | Eliminar un lote con ventas o transferencias, cuarentena, inmunizaciones y órdenes magistrales | No existen datos de esos módulos (algunos no tienen pantalla) |
-| 16 | Eliminar un lote cuyo stock quedó en 0 (si queda bloqueado o no) | No se probó para no dejar un lote de prueba en 0 sin poder borrarlo; viene de `RN-LOT-014` |
+| 16 | Eliminar un lote cuyo stock quedó en 0 (si queda bloqueado o no) | No se probó para no dejar un lote de prueba en 0 sin poder borrarlo; el código confirma que queda bloqueado (sección 11.2) |
 
 **Hallazgos de la aplicación que conviene conocer** (no son errores del manual):
 
