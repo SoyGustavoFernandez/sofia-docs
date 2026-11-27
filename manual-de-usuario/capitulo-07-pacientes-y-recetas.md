@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `34089ec`; revisado contra `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0`; revisado contra `37048ea` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `34089ec`; revisado contra `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `9ad15f0`; revisado contra `526bc8f` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -64,7 +64,7 @@ Al terminar, la empresa de prueba «Botica Manual Demo S.A.C.» tendrá **pacien
 | **Paciente** | Una persona a la que atiendes, identificada por su documento (DNI, carné de extranjería, RUC o pasaporte) | Saber a quién pertenece una receta y a quién le vendes |
 | **Profesional de salud** | El médico (o prescriptor) que firma la receta. SOFIA guarda solo tres datos: **número de registro**, **nombre del prescriptor** y **dirección de la clínica** | Dejar constancia de quién recetó. No hay campos de especialidad ni de colegiatura aparte: el «Número de Registro» es su identificador |
 | **Receta médica** | La **cabecera** de la receta: paciente, médico, fecha de expedición, repeticiones máximas, número de receta e indicaciones | Es lo que eliges en la venta cuando el medicamento exige receta. El sistema **no vence recetas por fecha**: no existe un campo de vigencia |
-| **Repeticiones máximas** | Las veces **adicionales** que se puede volver a dispensar la receta | En una receta simple se puede dispensar 1 vez más las repeticiones; en una receta retenida o de estupefaciente, 1 sola vez. La cuenta se controla **al vender** (capítulo 8), no al registrar la receta (regla `RN-REC-031`; No verificado en la aplicación en este capítulo, porque aún no hay ventas) |
+| **Repeticiones máximas** | Las veces **adicionales** que se puede volver a dispensar la receta | En una receta simple se puede dispensar 1 vez más las repeticiones; en una receta retenida o de estupefaciente, 1 sola vez. La cuenta se controla **al vender** (capítulo 8), no al registrar la receta (regla `RN-REC-031`; confirmado en el código, `RecetaMedica.cs` método `PuedeDispensar`; no se recorrió en la aplicación en este capítulo, porque aún no hay ventas). Cada venta cuenta como **una** dispensación aunque lleve varias líneas, y una venta anulada devuelve la suya. Al vender, la receta debe ser del mismo paciente de la venta (`Venta.Receta.OtroPaciente`) |
 | **Número de receta** | El número que trae la receta de papel (hasta 30 caracteres) | Es **obligatorio al vender** receta retenida o estupefacientes; en las demás es opcional. Se puede repetir entre recetas distintas |
 
 Cómo se exige la receta al vender (lo verás en el capítulo 8):
@@ -126,7 +126,7 @@ La pantalla se titula «Pacientes», con las migas «Inicio / Pacientes & Atenci
 | Tipo de Documento | «DNI», «Carné de extranjería», «RUC» o «Pasaporte» | Sí | Vacío: «Este campo es obligatorio» |
 | Documento de Identidad | El número, según el tipo (tabla de abajo) | Sí | Vacío: «Este campo es obligatorio». No deja escribir más de 20 caracteres. Con formato equivocado: «El número no corresponde al tipo de documento (DNI: 8 dígitos, RUC: 11 dígitos, CE: hasta 12 y pasaporte: hasta 20 letras o números).» Si cambias el tipo después de escribir el número, la pantalla lo vuelve a revisar al instante |
 | Nombre y Apellidos | El nombre completo | Sí | Vacío: «Este campo es obligatorio». No deja escribir más de 200 caracteres |
-| Fecha de Nacimiento | El día de nacimiento, en formato `dd/MM/aaaa` | Sí | Vacía: «Este campo es obligatorio». El selector **no te impide** una fecha futura; el rechazo llega al guardar (sección 5.3) |
+| Fecha de Nacimiento | El día de nacimiento, en formato `dd/MM/aaaa` | Sí | Vacía: «Este campo es obligatorio». El selector **no te impide** una fecha futura; el rechazo llega al guardar (sección 5.3). El servidor compara con la fecha de hoy en hora UTC, así que desde las 19:00 de Lima acepta también la fecha de mañana (`PacienteCliente.cs`, método `Validate`) |
 | Contacto Primario | Un teléfono, correo u otro dato de contacto | No | La pantalla deja escribir hasta 150 caracteres, pero **más de 100 se rechazan al guardar** (sección 5.3) |
 
 Formato del número según el tipo (comprobado en la pantalla):
@@ -154,7 +154,7 @@ Crea ahora los dos primeros pacientes de la sección 4 (Luis y María). Los otro
 | «Error al guardar el paciente» con una fecha de nacimiento futura (se probó `01/01/2030`) | La fecha de nacimiento no puede ser posterior a hoy | Corrige la fecha |
 | «Error al guardar el paciente» con un contacto de 101 caracteres | El contacto admite como máximo 100 caracteres, aunque el campo deje escribir 150 | Acorta el contacto a 100 caracteres o menos |
 
-El aviso «Error al guardar el paciente» es genérico: no dice cuál es el problema. Un nombre o un documento formados solo por espacios también deberían rechazarse según la documentación técnica (`RN-PAC-003` y `RN-PAC-005`); No verificado en la aplicación.
+El aviso «Error al guardar el paciente» es genérico: no dice cuál es el problema. Un nombre o un documento formados solo por espacios también se rechazan: la pantalla los deja pasar, pero el servidor los trata como vacíos (`CreatePacienteCommandValidator.cs` y `PacienteCliente.cs`, método `Validate`) y verás el mismo aviso genérico (confirmado leyendo el código; no se ejecutó en la aplicación).
 
 Reglas de fondo: `RN-PAC-002` a `RN-PAC-008` en `negocio/reglas/catalogos.md`.
 
@@ -180,7 +180,7 @@ Encabezado «Resultados (N)». Columnas: «Doc. Identidad» (es un enlace al det
 
 Comprobado con los pacientes del capítulo: sin filtros salen todos; «Pasaporte» deja solo al paciente de ese tipo; «0002» deja solo a María; «Desde» 01/01/1988 deja a los nacidos después; «Hasta» 31/12/1989 deja a Luis; escribir un documento completo y pulsar Enter lo encuentra. Al volver desde el detalle, la pantalla recuerda tus filtros y repite la búsqueda.
 
-Si un paciente no tiene contacto, la celda de «Contacto Primario» sale vacía cuando lo registraste a mano y con un guion largo («—») cuando entró por carga masiva.
+Si un paciente no tiene contacto, la celda de «Contacto Primario» sale con un guion largo («—») cuando el contacto no tiene valor (`pacientes-search.component.html`, `row.contactoPrimario ?? '—'`) y sale vacía cuando el contacto se guardó como texto vacío. En el recorrido, un paciente registrado a mano sin contacto mostró la celda vacía y uno de carga masiva mostró «—»; por el código, el formulario deja el contacto sin valor si no lo tocas (No verificado en la aplicación: por qué salió vacía en ese caso).
 
 ### 6.3 Ver un paciente
 
@@ -198,7 +198,7 @@ Aparece «Paciente guardado correctamente» y **te quedas en la ficha**, otra ve
 
 ### 7.1 Exportar
 
-Haz una búsqueda y, bajo la tabla, haz clic en **Exportar**. Se descarga un Excel con **cinco columnas** («Doc. Identidad», «Tipo Doc.», «Nombre y Apellidos», «Fecha Nacimiento», «Contacto Primario») y una fila por paciente, con las fechas en `dd/MM/aaaa`. Se comprobó el contenido con los pacientes del capítulo. Usa los filtros que tengas escritos en ese momento. El nombre del archivo en tu disco (`pacientes.xlsx` según el inventario de pantallas): No verificado en la aplicación, porque el navegador integrado no muestra el archivo guardado. Si falla, el aviso es «Error al buscar pacientes» (No verificado: no se pudo provocar).
+Haz una búsqueda y, bajo la tabla, haz clic en **Exportar**. Se descarga un Excel con **cinco columnas** («Doc. Identidad», «Tipo Doc.», «Nombre y Apellidos», «Fecha Nacimiento», «Contacto Primario») y una fila por paciente, con las fechas en `dd/MM/aaaa`. En «Tipo Doc.» el Excel escribe la abreviatura (`DNI`, `CE`, `RUC` o `PASAPORTE`), no el nombre largo que ves en la tabla. Si la búsqueda tiene más de 10 000 pacientes, la exportación se rechaza y debes aplicar filtros. Se comprobó el contenido con los pacientes del capítulo. Usa los filtros que tengas escritos en ese momento. El nombre del archivo en tu disco (`pacientes.xlsx` según el inventario de pantallas): No verificado en la aplicación, porque el navegador integrado no muestra el archivo guardado. Si falla, el aviso es «Error al buscar pacientes» (No verificado: no se pudo provocar).
 
 ### 7.2 Cargar muchos pacientes (Carga Masiva)
 
@@ -223,7 +223,7 @@ Al guardar aparece «Se guardaron 2 registros correctamente» y vuelves a la bú
 
 Detalle que verás en la vista previa: **la primera columna se rotula con el texto crudo `fields.tipoDocumento`** en lugar de «Tipo de Documento» (error de la pantalla, sección 14).
 
-No se pudieron probar: un archivo de más de 5 MB o de más de 5000 filas, un archivo vacío, un documento repetido dentro del mismo archivo y una fecha escrita con otro formato (No verificado en la aplicación; las reglas están en `RN-PAC-014` a `RN-PAC-017`). La entrega del archivo se hizo desde el navegador integrado, que no puede abrir el selector de archivos; lo que viene después (vista previa y guardado) es el flujo normal.
+No se pudieron probar en la aplicación: un archivo de más de 5 MB o de más de 5000 filas, un archivo vacío, un documento repetido dentro del mismo archivo y una fecha escrita con otro formato. Según el código y los textos de la pantalla, pasa esto: un archivo que no termina en `.xlsx` da «El archivo no es un Excel .xlsx válido. Descarga la plantilla y vuelve a intentarlo.»; uno de más de 5 MB da «El archivo supera el tamaño máximo de 5 MB.»; uno de más de 5000 filas da «El archivo supera el máximo de 5000 filas. Divídelo en varios archivos.»; un documento repetido dentro del archivo da, en todas las filas que lo repiten, «El valor '…' del campo 'docIdentidadGub' está duplicado en el archivo»; una fecha con otro formato da «El formato de 'fechaNacimiento' no es válido (usa DD/MM/YYYY)»; una fecha futura da «'fechaNacimiento' no puede ser una fecha futura» (la vista previa compara con la fecha UTC de hoy); y un tipo que no es `1`, `4`, `6`, `7`, `DNI`, `CE`, `RUC` ni `PASAPORTE` (se aceptan en mayúsculas o minúsculas) da «'…' no es un valor válido para 'tipoDocumento'». Si una fila válida de la vista previa deja de serlo al guardar (por ejemplo, otro usuario creó ese documento mientras tanto), se omite sin avisar y el aviso cuenta solo las que se guardaron. La entrega del archivo se hizo desde el navegador integrado, que no puede abrir el selector de archivos; lo que viene después (vista previa y guardado) es el flujo normal.
 
 ## 8. Eliminar un paciente
 
@@ -240,7 +240,7 @@ Aparece «Paciente eliminado correctamente» y vuelves a la búsqueda, donde el 
 
 ### 8.2 Un paciente que tiene recetas
 
-Se probó con Luis Paciente Demo, que tiene dos recetas. Al confirmar, aparece «No puedes eliminar este paciente porque tiene recetas, ventas u otros registros asociados.» El paciente **no se elimina** y la ficha sigue en modo editar (haz clic en **Cancelar**). La API bloquea también si el paciente tiene ventas, citas de servicios o inmunizaciones (`RN-PAC-010`; solo se comprobó el caso de las recetas).
+Se probó con Luis Paciente Demo, que tiene dos recetas. Al confirmar, aparece «No puedes eliminar este paciente porque tiene recetas, ventas u otros registros asociados.» El paciente **no se elimina** y la ficha sigue en modo editar (haz clic en **Cancelar**). El servidor bloquea también si el paciente tiene ventas, citas de servicios o inmunizaciones (`DeletePacienteCommandHandler.cs`, método `IsReferencedAsync`, confirmado en el código; en la aplicación solo se comprobó el caso de las recetas).
 
 Si el aviso es «Error al eliminar el paciente», el problema fue otro (por ejemplo, ya no existe): No verificado en la aplicación.
 
@@ -262,7 +262,7 @@ La pantalla se titula «Profesionales de Salud», con las migas «Inicio / Pacie
 |---|---|---|---|
 | Número de Registro | El número de colegiatura o registro del médico (por ejemplo `CMP-DEMO-0001`) | Sí | Vacío: «Este campo es obligatorio». No deja escribir más de 50 caracteres. No tiene formato fijo. **No puede repetirse** entre profesionales de la empresa |
 | Nombre del Prescriptor | El nombre del médico | Sí | Vacío: «Este campo es obligatorio». La pantalla deja escribir hasta 200 caracteres, pero **más de 150 se rechazan al guardar** (se probó con 151) |
-| Dirección de Clínica | La dirección del consultorio o la clínica | No | La pantalla deja escribir hasta 300 caracteres; la documentación técnica dice que más de 255 se rechazan al guardar (No verificado en la aplicación) |
+| Dirección de Clínica | La dirección del consultorio o la clínica | No | La pantalla deja escribir hasta 300 caracteres, pero **más de 255 se rechazan al guardar** con el aviso genérico «Error al guardar el profesional de salud» (confirmado en el código, `ProfesionalSalud.cs`; no se ejecutó en la aplicación) |
 
 Al terminar aparece «Profesional de salud guardado correctamente» y vuelves a la búsqueda (si ya habías buscado, la tabla se repite con el nuevo registro). Crea ahora `CMP-DEMO-0001` «Dr. Raúl Médico Demo» con su dirección.
 
@@ -332,10 +332,10 @@ Antes de registrar una receta, el paciente y el médico **ya deben existir** (se
 |---|---|---|---|
 | Paciente | El paciente de la receta | Sí | Debes **elegir una opción de la lista**; escribir el nombre sin elegir no basta. Sin elegir: «Debes seleccionar un paciente». Sin coincidencias, la lista muestra la opción «Sin resultados» |
 | Médico | El profesional de salud que firmó la receta | Sí | Igual: «Debes seleccionar un médico» |
-| Fecha de Expedición | El día en que se expidió la receta | Sí | Vacía: «La fecha de expedición es requerida». **No puede ser posterior a hoy**: el selector no deja elegir días futuros y, si escribes a mano una fecha futura (se probó `01/12/2026`), sale el mismo mensaje «La fecha de expedición es requerida». Se aceptó la fecha de hoy. No hay límite hacia atrás: el sistema no vence recetas |
+| Fecha de Expedición | El día en que se expidió la receta | Sí | Vacía: «La fecha de expedición es requerida». **No puede ser posterior a hoy**: el selector no deja elegir días futuros y, si escribes a mano una fecha futura (se probó `01/12/2026`), sale el mismo mensaje «La fecha de expedición es requerida». Se aceptó la fecha de hoy. No hay límite hacia atrás: el sistema no vence recetas. Ojo: la pantalla compara con la fecha de tu equipo, pero el servidor compara con la fecha de hoy en hora UTC; por eso, desde las 19:00 de Lima la API acepta una receta con fecha de mañana, aunque la pantalla no lo permite |
 | Repeticiones Máximas | Un número entero desde 0 | Sí | Empieza en 0. Si lo dejas vacío o escribes un número negativo (se probó `-1`), **no se guarda y no aparece ningún mensaje** |
 | Número de receta | El número de la receta de papel | No (sí al vender receta retenida o estupefaciente) | No deja escribir más de 30 caracteres (por eso el mensaje «El número de receta admite hasta 30 caracteres» del inventario de pantallas no llega a verse). Bajo el campo dice «Necesario para vender receta retenida o estupefacientes.» **Se puede repetir** en otra receta (se probó con `RS-DEMO-0001`) |
-| Indicaciones de Uso | Texto libre (en el manual, el medicamento y la dosis) | No | La pantalla no limita el largo; la documentación técnica dice que más de 1000 caracteres se rechazan al guardar con «Revisa los datos ingresados de la receta.» (No verificado en la aplicación) |
+| Indicaciones de Uso | Texto libre (en el manual, el medicamento y la dosis) | No | La pantalla no limita el largo; más de 1000 caracteres se rechazan al guardar con «Revisa los datos ingresados de la receta.» (confirmado en el código, `CreateRecetaCommandValidator.cs` y su mapeo en `recetas-detail.component.ts`; no se ejecutó en la aplicación) |
 
 ### 10.2 Qué pasa al terminar bien
 
@@ -358,6 +358,9 @@ Crea ahora las tres recetas de la sección 4. Usa la fecha 30/10/2026, el médic
 | «El paciente seleccionado no existe. Vuelve a seleccionarlo.» / «El médico seleccionado no existe. Vuelve a seleccionarlo.» | Alguien eliminó al paciente o al médico mientras llenabas la receta | Elígelo de nuevo (No verificado en la aplicación: no se pudo provocar) |
 | «La fecha de expedición no puede ser posterior a hoy.» | El servidor rechazó una fecha futura (cerca de la medianoche puede discrepar del navegador) | Corrige la fecha (No verificado en la aplicación: la pantalla ya lo impide) |
 | «Revisa los datos ingresados de la receta.» | Repeticiones, número o indicaciones fuera de rango en el servidor | Revisa esos campos (No verificado en la aplicación) |
+| «La receta ya no existe.» | Al editar, alguien eliminó la receta mientras la tenías abierta | Vuelve a la búsqueda (No verificado en la aplicación: no se pudo provocar) |
+
+Cuidado al cambiar el paciente o el médico: si ya habías elegido una opción de la lista y después cambias el texto sin elegir otra, la pantalla **sigue usando la opción anterior** al guardar (en la receta no se descarta la elección, a diferencia de los filtros de búsqueda; `recetas-detail.component.ts`, `guardar` y `validateAutocompletes`). Elige siempre una opción de la lista y comprueba que el nombre del campo sea el que quieres.
 | «Error al crear la receta» | Cualquier otro fallo al crear | Vuelve a intentarlo; si sigue, avisa a soporte (No verificado en la aplicación) |
 
 ## 11. Buscar, ver, editar, eliminar y exportar recetas
@@ -371,7 +374,7 @@ Crea ahora las tres recetas de la sección 4. Usa la fecha 30/10/2026, el médic
 | Fecha desde | Una fecha | Expedidas ese día o después |
 | Fecha hasta | Una fecha | Expedidas ese día o antes |
 
-Botones **Limpiar** y **Buscar**. En estos filtros la tecla Enter no busca (según el inventario de pantallas; No verificado en la aplicación). Comprobado con las recetas del capítulo: elegir a María deja 1 receta; «Fecha desde» 31/10/2026 deja «Resultados (0)» con la fila «Sin resultados»; «Fecha desde» y «Fecha hasta» ambas 30/10/2026 dejan las tres recetas (los dos extremos cuentan).
+Botones **Limpiar** y **Buscar**. En estos filtros la tecla Enter no busca (confirmado en el código: los campos de la receta no tienen la acción de Enter que sí tienen los de pacientes y profesionales; no se ejecutó en la aplicación). Comprobado con las recetas del capítulo: elegir a María deja 1 receta; «Fecha desde» 31/10/2026 deja «Resultados (0)» con la fila «Sin resultados»; «Fecha desde» y «Fecha hasta» ambas 30/10/2026 dejan las tres recetas (los dos extremos cuentan).
 
 ### 11.2 La tabla de resultados
 
@@ -395,7 +398,7 @@ El botón **Eliminar** (permiso `Recetas Médicas › Eliminar`) aparece solo en
 
 Aparece «Receta eliminada correctamente» y vuelves a la búsqueda (comprobado con una receta de prueba, `RX-BORRAR-001`, que se creó, se editó y se eliminó).
 
-Si la receta ya se usó en una venta (incluso en una venta anulada), no se puede eliminar y aparece «No puedes eliminar esta receta porque ya se usó en ventas.» No verificado en la aplicación en este capítulo, porque todavía no hay ventas; se vuelve a mencionar en los capítulos 8 y 9. Otro fallo: «Error al eliminar la receta».
+Si la receta ya se usó en una venta (incluso en una venta anulada), no se puede eliminar y aparece «No puedes eliminar esta receta porque ya se usó en ventas.» (confirmado en el código: `DeleteRecetaCommandHandler.cs` busca cualquier línea de venta con esa receta, sin mirar el estado de la venta; no se ejecutó en la aplicación en este capítulo, porque todavía no hay ventas; se vuelve a mencionar en los capítulos 8 y 9). Otro fallo: «Error al eliminar la receta».
 
 ### 11.5 Exportar
 
@@ -433,9 +436,9 @@ La prueba del manual se hizo con **una imagen inventada** (generada para la prue
 | «Confianza: …» | Alta | Alta |
 | Stock en tu sucursal | «En stock: 100 unidades» | «En stock: 215 unidades» |
 
-La confianza se rotula «Alta» (0,85 o más), «Media» (0,65 o más) o «Baja» (menos). El stock es el de **tu sucursal** (la de tu sesión) y cuenta solo lotes no vencidos: en la prueba, la Sede Principal tenía 100 de Amoxicilina y 215 de Paracetamol (200 del lote normal más 15 del lote que vence pronto), igual que en el capítulo 6.
+La confianza se rotula «Alta» (0,85 o más), «Media» (0,65 o más) o «Baja» (menos). No es una medida de qué tan bien coincide el medicamento: es `nivel que devuelve la IA × 0,6 + un valor fijo × 0,4`, y ese valor fijo es 0,9 si el nombre se encontró en el catálogo DIGEMID y 1,0 si no (`AnalizarRecetaQueryHandler.cs`). Por eso un medicamento sin coincidencia DIGEMID puntúa un poco más alto que uno con coincidencia. «Detectado como» solo aparece cuando lo que leyó la IA es distinto del nombre oficial. El stock es el de **tu sucursal** (la sucursal base de tu sesión), se muestra redondeado a unidades enteras y cuenta solo lotes no vencidos: en la prueba, la Sede Principal tenía 100 de Amoxicilina y 215 de Paracetamol (200 del lote normal más 15 del lote que vence pronto), igual que en el capítulo 6.
 
-**Sugerencias IA (2)**: medicamentos complementarios o genéricos que propone la IA y que existen en tu catálogo. Cada tarjeta muestra el nombre, «Sugerido por Amoxicilina» (o «Sugerido por Paracetamol») y el stock. En esta prueba las sugerencias repitieron los mismos dos medicamentos de la receta.
+**Sugerencias IA (2)**: medicamentos complementarios o genéricos que propone la IA y que existen en tu catálogo. Cada tarjeta muestra el nombre, «Sugerido por Amoxicilina» (o «Sugerido por Paracetamol») y el stock. En esta prueba las sugerencias repitieron los mismos dos medicamentos de la receta. Las sugerencias no muestran confianza (el sistema les asigna siempre 0,70, que la pantalla rotularía «Media»).
 
 ### 12.4 Lo que no se pudo comprobar en la aplicación
 
@@ -443,7 +446,7 @@ Para no gastar el cupo de IA solo se hizo un análisis. Lo siguiente está tomad
 
 | Situación | Qué muestra la pantalla según el inventario |
 |---|---|
-| Cualquier error: demasiadas peticiones (la IA admite 10 análisis por minuto por empresa), archivo demasiado grande (el servidor rechaza más de 10 MB), archivo inválido, falla del servicio de IA o sin permiso | Un solo aviso: «Error al interpretar la receta. Intenta nuevamente.» La pantalla no distingue el motivo. Si es por demasiadas peticiones, espera un minuto; si es el archivo, prueba con otra imagen más liviana |
+| Cualquier error: demasiadas peticiones (el servidor admite 10 análisis por minuto por empresa y responde 429 al pasarse), archivo demasiado grande (el servidor rechaza más de 10 MB), archivo inválido, falla del servicio de IA o sin permiso | Un solo aviso: «Error al interpretar la receta. Intenta nuevamente.» La pantalla no distingue el motivo. Si es por demasiadas peticiones, espera un minuto; si es el archivo, prueba con otra imagen más liviana |
 | La IA no detecta medicamentos | Tarjeta «No se detectaron medicamentos en la imagen. Intenta con una foto más nítida.» |
 | Un medicamento sin stock | «Sin stock» en su tarjeta |
 | Medicamento sin stock pero con equivalentes (mismo ingrediente activo, concentración y unidad) con stock | Lista «Equivalentes terapéuticos:» con su laboratorio y stock, y el aviso «No hay stock del medicamento prescrito, pero hay equivalentes disponibles.» |
@@ -488,6 +491,7 @@ Lo que la aplicación hace distinto de lo que dicen los documentos, o lo que el 
 | 7 | `producto/pantallas/inventario-y-atencion` §5.2 y §6 | Eliminar paciente, profesional o receta con dependencias da el mensaje «en uso» | **Confirmado** para paciente y profesional con recetas (commit `27597cd`). Para la receta usada en una venta: No verificado (no hay ventas) |
 | 8 | `producto/pantallas/inventario-y-atencion` §5.3 | Los resultados del escáner traen «Medicamentos de la receta» y «Sugerencias IA» | Confirmado. En la prueba, las «Sugerencias IA» repitieron los mismos dos medicamentos de la receta, y el botón **Interpretar receta** sigue visible después de mostrar los resultados |
 | 9 | `producto/pantallas/inventario-y-atencion` §3.3 y §4.3 | Mensaje de éxito de la carga masiva | Sale «Se guardaron 1 registros correctamente» incluso con un solo registro (plural fijo) |
+| 10 | `producto/pantallas/inventario-y-atencion` §5.2 | Al cambiar el texto del paciente o del médico sin elegir otra opción, el anterior se sigue enviando (No verificado) | Confirmado por lectura del código: en el formulario de la receta la elección anterior no se descarta (sección 10.3) |
 
 Otro punto: puede que esperes encontrar «líneas» de medicamentos en la receta o recetas «vigentes». **No existen** en la aplicación ni en el modelo: la receta solo tiene cabecera y el sistema no vence recetas (`RN-REC-007`, `producto/pantallas/inventario-y-atencion` §5). No es una diferencia entre el documento y la aplicación, sino una limitación del producto.
 
@@ -504,16 +508,16 @@ Otro punto: puede que esperes encontrar «líneas» de medicamentos en la receta
 
 1. Escáner: errores por demasiadas peticiones, archivo de más de 10 MB, archivo inválido, falla del servicio de IA (para no gastar el cupo: solo se hizo un análisis).
 2. Escáner: «No se detectaron medicamentos…», «Sin stock», «Equivalentes terapéuticos:», «No hay stock del medicamento prescrito, pero hay equivalentes disponibles.», confianza «Media» y «Baja», arrastrar y soltar, **Tomar foto** con cámara.
-3. Nombre y documento de un paciente formados solo por espacios; dirección de clínica de más de 255 caracteres; indicaciones de más de 1000 caracteres.
+3. Nombre y documento de un paciente formados solo por espacios; dirección de clínica de más de 255 caracteres; indicaciones de más de 1000 caracteres (los tres confirmados por lectura del código, no ejecutados).
 4. Carga masiva (pacientes y profesionales): archivo de más de 5 MB o de más de 5000 filas, archivo vacío, repetidos dentro del mismo archivo, fecha con otro formato, tipo escrito como código numérico o como `RUC`/`PASAPORTE`.
 5. Nombre de los archivos descargados (`pacientes.xlsx`, `profesionales-salud.xlsx`, `recetas-medicas.xlsx`, `plantilla-pacientes.xlsx`, `plantilla-profesionales-salud.xlsx`) y avisos de error de búsqueda y exportación.
 6. Más de 10 resultados (paginación, «25» y «50» filas por página) y que **Buscar** no vuelve a la página 1.
 7. Elegir paciente o médico con el teclado (flechas y Enter) en el formulario de la receta, y que Enter busque en los filtros de la receta.
 8. Qué ocurre con un rol sin `Pacientes › Leer` o `Profesionales de Salud › Leer` al escribir en los campos de la receta; ocultar el grupo del menú cuando no hay ninguna opción visible; el botón **Escanear receta** para un rol sin `Analizar con IA`.
 9. Eliminar una receta usada en una venta, un paciente con ventas, citas o inmunizaciones (aún no hay ventas); capítulos 8 y 9.
-10. Que el paciente o el médico anteriores sigan enviándose en el formulario de la receta si cambias el texto sin elegir otra opción (`producto/pantallas/inventario-y-atencion` §5.2); en la búsqueda sí se comprobó que la elección se descarta.
+10. Que el paciente o el médico anteriores sigan enviándose en el formulario de la receta si cambias el texto sin elegir otra opción: confirmado leyendo el código (sección 10.3), no ejecutado; en la búsqueda sí se comprobó que la elección se descarta.
 11. Los avisos «El paciente seleccionado no existe…», «El médico seleccionado no existe…», «La fecha de expedición no puede ser posterior a hoy.», «Revisa los datos ingresados de la receta.», «Error al crear la receta», «Error al actualizar la receta», «Error al cargar el paciente / el profesional de salud / la receta» (no se pudieron provocar).
-12. Control de dispensaciones por repeticiones (`RN-REC-031`) y la casilla «Receta verificada»: se recorren en el capítulo 8.
+12. Control de dispensaciones por repeticiones (`RN-REC-031`, confirmado en el código) y la casilla «Receta verificada»: se recorren en el capítulo 8.
 
 **En curso (sin commitear):** ninguno (`git status --short` sin cambios en ambos repos al empezar y al cerrar).
 
