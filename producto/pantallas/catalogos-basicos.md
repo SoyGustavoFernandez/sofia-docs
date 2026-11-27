@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.5 |
+| **Versión del documento** | 1.6 |
 | **Fecha** | 2026-11-26 |
 | **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee`; la pantalla del catálogo DIGEMID está reconciliada con `9c16f35` |
 | **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` |
@@ -759,7 +759,7 @@ Si escribes `/digemid-catalogo/nueva` en la barra de direcciones: el guard exige
 ### 5.1 `/digemid-catalogo` — Catálogo DIGEMID (búsqueda)
 
 - **Componente:** `DigemidCatalogoSearchComponent` (`app/pages/digemid-catalogo/digemid-catalogo-search/digemid-catalogo-search.component.ts`, `.html`). Scope `digemidCatalogo`.
-- **Para qué sirve:** consultar el catálogo de productos DIGEMID por código y nombre, abrir un producto, exportar la lista y entrar a la carga masiva. Desde `sofia-apis` `9c16f35` la lista y el detalle incluyen también el catálogo compartido (productos sin empresa, de solo lectura para todas las empresas; `negocio/reglas/catalogos` RN-DIG-008); la pantalla no distingue visualmente entre productos propios y compartidos (la plantilla no lee ningún campo de empresa, y la API no lo devuelve: `DigemidProductoDto` no trae ningún campo de empresa, `GetDigemidCatalogoQuery.cs:9`). **No verificado en la aplicación.**
+- **Para qué sirve:** consultar el catálogo de productos DIGEMID por código y nombre, abrir un producto, exportar la lista y entrar a la carga masiva. Desde `sofia-apis` `9c16f35` la lista y el detalle incluyen también el catálogo compartido (29 698 productos sin empresa sembrados por `sofia-apis/src/SOFIA.DbUp/Scripts/0004_Seed_Digemid_Catalogo.sql:29883`, de solo lectura para todas las empresas; `negocio/reglas/catalogos` RN-DIG-008). Una empresa nueva, sin productos propios, ya ve esos 29 698 al buscar; la pantalla no distingue visualmente entre productos propios y compartidos (la plantilla no lee ningún campo de empresa, y la API no lo devuelve: `DigemidProductoDto` no trae ningún campo de empresa, `GetDigemidCatalogoQuery.cs:9`). **No verificado en la aplicación.**
 - **Cómo se llega:** menú lateral, grupo «DIGEMID» → «Catálogo DIGEMID» (`nav.catalogoDigemid`); botón volver y migas del detalle y de la carga masiva; redirección tras guardar una carga masiva.
 - **Permiso de ruta:** `DIGEMID:Leer`. Sin permiso: aviso y redirección a `/dashboard`.
 - **Migas y cabecera:** título «Catálogo DIGEMID» (`digemidCatalogo.title`); migas «Inicio» (`breadcrumbs.home`) / «DIGEMID» (`breadcrumbs.digemid`, sin enlace) / «Catálogo DIGEMID» (`breadcrumbs.digemid-catalogo`, activa); sin botón volver (`.html:4-7`, `.ts:47-51`). Tarjeta de filtros con título «Búsqueda en Catálogo DIGEMID» (`digemidCatalogo.search.title`) y el subtítulo común.
@@ -814,6 +814,7 @@ No hay botón «Nuevo».
 **Exportación**
 - Cuerpo (`.ts:113-137`): `headers` con 4 textos traducidos, en orden: «Código» (`digemidCatalogo.table.codProd`), «Nombre del Producto» (`digemidCatalogo.table.nomProd`), «Forma Farmacéutica» (`digemidCatalogo.table.formaFarmaceutica`), «Estado» (`digemidCatalogo.table.estado`); más `codProd` y `nomProd` si tienen valor. El Excel lleva esas cuatro columnas, las mismas que la tabla (`DIGEMIDController.cs:153-159`).
 - Archivo: «digemid-catalogo.xlsx» (`digemidCatalogo.search.export-filename`).
+- Tope: la API consulta como máximo 10 000 filas (`DIGEMIDController.cs:138-141`) y, si hay más, no genera el archivo y responde HTTP 400 con el código `Export.TooManyRows` (`DIGEMIDController.cs:148-151`, `ExportExtensions.cs:8-13`; el 400 viene de `Result.cs:32`). Con el catálogo compartido (29 698 productos), una exportación sin filtros se rechaza: filtra por código o nombre. La pantalla muestra el mismo error genérico de exportación de la tabla de mensajes (**No verificado en la aplicación**).
 - Carga masiva: botón «Carga Masiva» → §5.3.
 
 **Comportamientos particulares:** restauración de filtros y «Buscar» sin volver a la página 1, ver §0.
@@ -892,7 +893,7 @@ No hay otros botones: ni «Editar», ni «Guardar», ni «Eliminar», ni `*appPe
 | `backRoute` | `/digemid-catalogo` |
 | Columnas de la vista previa, en este orden (clave del dato → etiqueta de la raíz) | `codProd` → «Cód. Producto» (`fields.codProd`, obligatoria); `nomProd` → «Nombre del Producto» (`fields.nomProd`, obligatoria); `concent` → «Concentración» (`fields.concent`); `formaFarmaceutica` → «Forma Farmacéutica» (`fields.formaFarmaceutica`); `fraccion` → «Fracción» (`fields.fraccion`); `registroSanitario` → «Registro Sanitario» (`fields.registroSanitario`); `titular` → «Titular» (`fields.titular`); `estado` → «Estado» (`fields.estado`, obligatoria). Después, la columna de errores y «Estado» (`carga-masiva.row-status`) |
 
-**Botones, mensajes y errores:** los del componente común. Reglas de la carga en RN-DIG-010 a RN-DIG-013 de `negocio/reglas/catalogos`; en particular, la vista previa no valida longitudes y el validador del guardado sí (hallazgo 6 de `negocio/reglas/catalogos`). Las claves de datos coinciden con `DigemidImportRow` (`CargaMasivaDigemidCommand.cs:5-13`).
+**Botones, mensajes y errores:** los del componente común. Si un código ya existe en el catálogo compartido o en los productos de la empresa, la vista previa marca la fila con «El valor 'X' del campo 'codProd' ya existe en el sistema» (`PreviewImportDigemidQueryHandler.cs:13-16`, `:48`). Reglas de la carga en RN-DIG-010 a RN-DIG-013 de `negocio/reglas/catalogos`; en particular, la vista previa no valida longitudes y el validador del guardado sí (hallazgo 6 de `negocio/reglas/catalogos`). Las claves de datos coinciden con `DigemidImportRow` (`CargaMasivaDigemidCommand.cs:5-13`).
 
 **Observaciones:** las dos columnas de «Estado» de la vista previa (la del dato del producto, `estado`, y la de validez de la fila) llevan el mismo encabezado «Estado» (`fields.estado` y `carga-masiva.row-status`).
 
