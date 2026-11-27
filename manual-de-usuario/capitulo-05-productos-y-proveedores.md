@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado a fondo contra `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado a fondo contra `526bc8f` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -27,7 +27,7 @@ Todos los ejemplos usan los datos ficticios del manual: la empresa «Botica Manu
 
 ## 2. Antes de empezar
 
-- Haz los capítulos 1 a 4. Necesitas la sesión iniciada como administrador y estos catálogos del capítulo 4: las unidades `UND`, `CAJ`, `BLI` y `MG`; los laboratorios «Laboratorio Demo Andino» y «Laboratorio Demo Pacífico»; y los ingredientes activos Paracetamol, Amoxicilina, Clonazepam y Tramadol.
+- Haz los capítulos 1 a 4. Necesitas la sesión iniciada como administrador y estos catálogos del capítulo 4: las unidades `UND`, `CAJ`, `BLI` y `MG` (el registro de la empresa ya crea `UND` / «Unidad», `CJA` / «Caja», `BLS` / «Blíster» y `FRC` / «Frasco»; los ejemplos las nombran por su descripción («Caja», «Blíster», «Frasco»), así que puedes usar esas en lugar de `CAJ`, `BLI` y `FRA`; ver capítulo 4, sección 5.1); los laboratorios «Laboratorio Demo Andino» y «Laboratorio Demo Pacífico»; y los ingredientes activos Paracetamol, Amoxicilina, Clonazepam y Tramadol.
 - Permisos que usa este capítulo. Los nombres son los que ves en la pantalla de permisos de un rol (Administración › Roles & Permisos): primero el módulo y luego la acción.
 
 | Tarea | Módulo | Acciones |
