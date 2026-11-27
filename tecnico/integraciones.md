@@ -3,13 +3,26 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.3 |
-| **Fecha** | 2026-11-14 |
-| **Backend** | `sofia-apis`, rama `main`, commit `6f6b837` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `558ad35` |
-| **Método** | Lectura de código, scripts DbUp, archivos de configuración versionados (`appsettings*.json`, `docker-compose.yml`, `.env.example`, `angular.json`, `staticwebapp.config.json`) y archivos i18n. No se llamó a ningún servicio externo, no se usó el navegador ni la API local, y no se abrió ningún archivo `.env` real ni secretos de usuario. |
+| **Versión del documento** | 1.4 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `526bc8f` |
+| **Método** | Lectura de código (leído de los commits indicados, con revisión semántica afirmación por afirmación en la versión 1.4), scripts DbUp, archivos de configuración versionados (`appsettings*.json`, `docker-compose.yml`, `.env.example`, `angular.json`, `staticwebapp.config.json`) y archivos i18n. No se llamó a ningún servicio externo, no se usó el navegador ni la API local, y no se abrió ningún archivo `.env` real ni secretos de usuario. |
 
 ## Historial de cambios
+
+### Versión 1.4 (2026-11-26)
+
+Revisión a fondo contra `sofia-apis` `b67e3ee` y `sofia-web-spa` `526bc8f`: se comprobó el comportamiento descrito, no solo las citas. Las claves de configuración (solo nombres) no cambiaron.
+
+| Apartado | Decía | Dice ahora |
+|---|---|---|
+| 2.3 (confianza final) | La confianza final es `NivelConfianza × 0.6 + similitud × 0.4` | El segundo factor no es una similitud calculada: vale 1.0 fijo si el nombre no está en el catálogo DIGEMID local y 0.9 fijo si está; las sugerencias complementarias llevan 0.70 fijo; el stock descarta lotes vencidos |
+| 2.3, 2.5 (respuesta de Gemini) | El JSON no interpretable devuelve lista vacía | También devuelve lista vacía si no trae la propiedad `medicamentos`; la lectura no distingue mayúsculas en los nombres de propiedad |
+| 4.5, 13.6 (log del correo SMTP) | Se registra solo el tipo de excepción | Se registra el paso, el tipo y un detalle con las direcciones de correo reemplazadas por `<email>` y recortado a 500 caracteres |
+| 2.6, 3.6, 8.3, 9, 11.2 | «No hay pipeline ni archivos de despliegue en el repositorio» | Se quita la afirmación: el documento no describe el despliegue |
+| 6.1 | Citas del filtro de empresa en `ApplicationDbContext.cs:109-113` | `:110-114` |
+| Citas | Numeradas sobre `6f6b837`/`558ad35` | Corridas en `Program.cs`, `SmtpEmailSender.cs`, `app.routes.ts` y `route-permissions.ts` |
 
 ### Versión 1.3 (2026-11-14)
 
@@ -109,7 +122,7 @@ En el backend hay exactamente **dos clientes HTTP** (`sofia-apis/src/SOFIA.Infra
 - `sofia-apis/src/SOFIA.API/Properties/launchSettings.json:8`, `:17`: la API local escucha en `http://localhost:5300` y `https://localhost:7300`; el SPA en desarrollo apunta a `https://localhost:7300` (`sofia-web-spa/src/environments/environment.ts:7`).
 - `sofia-apis/src/SOFIA.API/SOFIA.API.http:1` apunta a `http://localhost:5072`, un puerto que no coincide con `launchSettings.json`. Es un archivo de pruebas manuales desactualizado.
 - `sofia-apis/src/SOFIA.API/appsettings.Testing.json:2` define `AllowedOrigins` con `http://localhost:3000` para las pruebas.
-- La API expone `GET /health` anónimo (`sofia-apis/src/SOFIA.API/Program.cs:136-143`); lo usa la comprobación de salud del contenedor (`sofia-apis/docker-compose.yml:76-81`). No comprueba el estado de Gemini, Presidio, el correo ni la base de datos.
+- La API expone `GET /health` anónimo (`sofia-apis/src/SOFIA.API/Program.cs:119-126`); lo usa la comprobación de salud del contenedor (`sofia-apis/docker-compose.yml:76-81`). No comprueba el estado de Gemini, Presidio, el correo ni la base de datos.
 - `sofia-web-spa/angular.json:28-32` lista `pdfmake` en `allowedCommonJsDependencies`, pero `pdfmake` no está en `sofia-web-spa/package.json`: es configuración sin uso, no una dependencia.
 
 ## 2. Google Gemini (lectura de recetas con IA)
@@ -134,7 +147,7 @@ Pantallas del SPA que lo invocan (las dos llaman a `analizar(imagen)` **sin** `e
 
 | Pantalla | Dónde | Fuente |
 |---|---|---|
-| «Lector de Recetas IA» (clave `scanner.title` de `sofia-web-spa/public/i18n/recetas-medicas/es.json:56`), ruta `/recetas-medicas/escanear` | Botón «Interpretar receta» (`scanner.btn-interpret`, `es.json:62`) | Ruta: `sofia-web-spa/src/app/pages/recetas-medicas/recetas-medicas.routes.ts:8`; permiso de ruta `Analizar`: `sofia-web-spa/src/app/core/auth/route-permissions.ts:30`; llamada: `sofia-web-spa/src/app/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.ts:70-87` |
+| «Lector de Recetas IA» (clave `scanner.title` de `sofia-web-spa/public/i18n/recetas-medicas/es.json:56`), ruta `/recetas-medicas/escanear` | Botón «Interpretar receta» (`scanner.btn-interpret`, `es.json:62`) | Ruta: `sofia-web-spa/src/app/pages/recetas-medicas/recetas-medicas.routes.ts:8`; permiso de ruta `Analizar`: `sofia-web-spa/src/app/core/auth/route-permissions.ts:31`; llamada: `sofia-web-spa/src/app/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.ts:70-87` |
 | Punto de venta, nueva venta (pestaña de escaneo, visible solo con `Recetas:Analizar`) | Método `interpretarReceta()` | `sofia-web-spa/src/app/pages/pos/nueva-venta/nueva-venta.component.ts:149-150` y `:749-764` |
 
 En ambos casos los `input` de archivo declaran `accept="image/*"` (`sofia-web-spa/src/app/pages/recetas-medicas/recetas-scanner/recetas-scanner.component.html:6-14`, `sofia-web-spa/src/app/pages/pos/nueva-venta/nueva-venta.component.html:242-250`) y el arrastre solo acepta archivos cuyo tipo empiece por `image/` (`recetas-scanner.component.ts:109`, `nueva-venta.component.ts:746`). Es un filtro del navegador; el backend no valida el tipo de archivo (ver 2.5).
@@ -205,16 +218,16 @@ Prompt de OCR (fragmento, `GeminiRecetaAnalyzer.cs:78`): «Eres un motor de OCR 
 | `generationConfig.temperature` | `0.2` |
 | `generationConfig.response_mime_type` | `"application/json"` |
 
-El prompt de sistema está literal en `GeminiRecetaAnalyzer.cs:110-138`. Presenta al modelo como «SOFIA, un asistente farmacéutico experto en el mercado de PERÚ» (`:111`) y le pide, en siete objetivos (`:117-123`): identificar medicamentos (nombre y concentración) por similitud fonética y marcas peruanas; ignorar las etiquetas de anonimización «`<PE_DNI>`, `<PERSON>`, `<LOCATION>` o `<DATE_TIME>`» (`:118`); corregir errores de lectura; sugerir de 1 a 3 genéricos o complementarios; asignar una confianza decimal de 0.0 a 1.0; ignorar nombres de hospitales o clínicas; y extraer la cantidad a dispensar como entero o `null`. Exige responder «ESTRICTAMENTE en formato JSON» con la forma `{ "medicamentos": [ { "NombreDetectado", "ConcentracionDetectada", "CantidadSugerida", "Sugerencias", "NivelConfianza" } ] }` (`:125-138`).
+El prompt de sistema está literal en `GeminiRecetaAnalyzer.cs:110-138`. Presenta al modelo como «SOFIA, un asistente farmacéutico experto en el mercado de PERÚ» (`:111`) y le pide, en siete objetivos (`:117-123`): identificar medicamentos (nombre y concentración) por similitud fonética y marcas peruanas; ignorar las etiquetas de anonimización «`<PE_DNI>`, `<PERSON>`, `<LOCATION>` o `<DATE_TIME>`» cuando aparecen dentro de lo que parece el nombre de un producto (`:118`); corregir errores de lectura; sugerir de 1 a 3 genéricos o complementarios; asignar una confianza decimal de 0.0 a 1.0; ignorar nombres de hospitales o clínicas; y extraer la cantidad a dispensar como entero o `null`. Exige responder «ESTRICTAMENTE en formato JSON» con la forma `{ "medicamentos": [ { "NombreDetectado", "ConcentracionDetectada", "CantidadSugerida", "Sugerencias", "NivelConfianza" } ] }` (`:125-138`).
 
 El prompt de usuario (`GeminiRecetaAnalyzer.cs:140-142`) contiene dos datos:
 
 - `Contexto adicional`: la especialidad recibida o, si viene vacía, el texto fijo `Medicina General`. Como el SPA nunca envía la especialidad (ver 2.1), hoy siempre sale «Medicina General».
 - `Texto OCR Sucio`: el texto anonimizado por Presidio.
 
-**Qué se recibe.** De la llamada 1, el texto de `candidates[0].content.parts[0].text` (`GeminiRecetaAnalyzer.cs:94-101`). De la llamada 2, el mismo campo, que se interpreta como JSON y del que se lee la propiedad `medicamentos` hacia `List<MedicamentoInterpretadoDto>` (`:170-190`): `NombreDetectado`, `ConcentracionDetectada`, `CantidadSugerida`, `Sugerencias`, `NivelConfianza` (`IRecetaAnalyzer.cs:5-12`).
+**Qué se recibe.** De la llamada 1, el texto de `candidates[0].content.parts[0].text` (`GeminiRecetaAnalyzer.cs:94-101`). De la llamada 2, el mismo campo, que se interpreta como JSON y del que se lee la propiedad `medicamentos` hacia `List<MedicamentoInterpretadoDto>`, sin distinguir mayúsculas en los nombres de propiedad (`:170-190`): `NombreDetectado`, `ConcentracionDetectada`, `CantidadSugerida`, `Sugerencias`, `NivelConfianza` (`IRecetaAnalyzer.cs:5-12`).
 
-**Qué hace SOFIA con la respuesta** (todo local, sin más salidas): toma como máximo 20 medicamentos y 3 sugerencias por medicamento (`AnalizarRecetaQueryHandler.cs:16-17`, `:32`, `:107`), los busca en el catálogo DIGEMID cargado en la base y en el maestro de medicamentos con `IBuscadorService` (`:51`, `:68-72`; implementación sobre `IApplicationDbContext` en `sofia-apis/src/SOFIA.Infrastructure/Services/BuscadorFuzzyService.cs:8`), calcula la confianza final como `NivelConfianza × 0.6 + similitud × 0.4` (`:66`), y agrega stock de la sucursal del usuario y equivalentes terapéuticos (`:74-75`, `:132-205`). Devuelve `List<ItemSugeridoDto>` (`AnalizarRecetaQuery.cs:17-30`).
+**Qué hace SOFIA con la respuesta** (todo local, sin más salidas): toma como máximo 20 medicamentos y 3 sugerencias por medicamento (`AnalizarRecetaQueryHandler.cs:16-17`, `:32`, `:107`), los busca en el catálogo DIGEMID cargado en la base y en el maestro de medicamentos con `IBuscadorService` (`:51`, `:68-72`; implementación sobre `IApplicationDbContext` en `sofia-apis/src/SOFIA.Infrastructure/Services/BuscadorFuzzyService.cs:8`), calcula la confianza final como `NivelConfianza × 0.6 + puntaje × 0.4` (`:66`), y agrega stock de la sucursal del usuario, sin contar lotes vencidos (`:145`), y equivalentes terapéuticos (`:74-75`, `:132-205`). **El «puntaje» no es una similitud calculada**: vale 1.0 fijo cuando el nombre no aparece en el catálogo DIGEMID local (`:55`) y 0.9 fijo cuando el mejor candidato del catálogo existe (`:63`, se usa el primero de hasta 5 candidatos, `:51`, `:59`). Las sugerencias complementarias de la IA que se encuentran en el maestro de medicamentos salen con una confianza fija de 0.70 (`:121`). Devuelve `List<ItemSugeridoDto>` (`AnalizarRecetaQuery.cs:17-30`).
 
 **Qué se guarda en base de datos: nada.** El handler y el analizador no hacen ninguna escritura:
 
@@ -275,7 +288,7 @@ sequenceDiagram
 | Gemini responde con error HTTP (clave inválida, cuota, modelo inexistente, etc.) | `EnsureSuccessOrThrowAsync` registra el error y lanza `HttpRequestException`; `InterpretarRecetaAsync` la envuelve en `InvalidOperationException("Failed to analyze prescription image.")`. Nadie la captura: el manejador global responde `500` con título `Error del Servidor` y el `traceId`. **No hay un código de error de negocio para «IA no disponible»** | `GeminiRecetaAnalyzer.cs:58-61`, `:204-222`; `GlobalExceptionHandler.cs:56-79` |
 | Gemini no responde | No hay `Timeout` configurado en el cliente ni reintentos ni circuit breaker (no existe ningún uso de Polly ni de `Microsoft.Extensions.Http.Resilience` en `sofia-apis/src`). Aplica el tiempo de espera por defecto de `HttpClient` de .NET (100 segundos; valor de la plataforma, no fijado en el código). El resultado es el mismo `500` | `DependencyInjection.cs:150`; `SOFIA.Infrastructure.csproj:8-21` |
 | La respuesta de Gemini no trae `candidates[0].content.parts[0].text` | `GetProperty` lanza y se convierte en el mismo `500` | `GeminiRecetaAnalyzer.cs:95-99`, `:171-175`, `:58-61` |
-| El JSON de la llamada 2 no se puede interpretar | Se registra el error y se devuelve lista vacía (respuesta `200` sin medicamentos) | `GeminiRecetaAnalyzer.cs:182-197` |
+| El JSON de la llamada 2 no se puede interpretar, o no trae la propiedad `medicamentos` | Si no se puede interpretar se registra el error; en ambos casos se devuelve lista vacía (respuesta `200` sin medicamentos) | `GeminiRecetaAnalyzer.cs:182-197` |
 | Falla Presidio | Se aborta antes de la llamada 2 (ver 3.5); resultado `500` | `sofia-apis/src/SOFIA.Infrastructure/Services/PresidioPrivacyService.cs:36-41` |
 
 Lo que ve el usuario ante cualquier error: «Error al interpretar la receta. Intenta nuevamente.» (clave `scanner.error`, `sofia-web-spa/public/i18n/recetas-medicas/es.json:76`; usada en `recetas-scanner.component.ts:82-85` y `nueva-venta.component.ts:759-762`). Si la lista llega vacía: «No se detectaron medicamentos en la imagen. Intenta con una foto más nítida.» (`scanner.no-results`, `es.json:75`).
@@ -284,7 +297,7 @@ Lo que ve el usuario ante cualquier error: «Error al interpretar la receta. Int
 
 - **Con `docker-compose.yml`**: el contenedor `sofia-api` recibe las cuatro claves `GeminiApi__*` desde variables de entorno con los valores por defecto indicados en 2.2 (`docker-compose.yml:53-56`). Sin `GEMINI_API_KEY` el servicio arranca igual (la variable admite vacío) y el análisis falla en tiempo de ejecución.
 - **Ejecutando la API fuera de Docker**: `appsettings.json` y `appsettings.Development.json` dejan las cuatro claves vacías; los valores reales deben venir de secretos de usuario (el proyecto declara `UserSecretsId` en `sofia-apis/src/SOFIA.API/SOFIA.API.csproj:12`) o de variables de entorno. **No verificado** qué valores hay en los secretos de usuario (las reglas prohíben listarlos).
-- **Producción**: no hay en el repositorio ningún archivo de despliegue del backend (ni `appsettings.Production.json`, ni infraestructura como código, ni pipeline de despliegue). El código no distingue entornos para Gemini: no existe simulador ni modo sin conexión; siempre llama al servicio real. En las pruebas automatizadas el analizador se ejercita con un `HttpMessageHandler` falso (`RecordingHandler`) y un `IPrivacyService` que no anonimiza (`PassThroughPrivacyService`), sin salir a Internet (`sofia-apis/src/SOFIA.IntegrationTests/Recetas/GeminiRecetaAnalyzerTests.cs:15-32`, `:43-45`).
+- **Producción**: este documento no describe el despliegue del backend (no hay `appsettings.Production.json`). El código no distingue entornos para Gemini: no existe simulador ni modo sin conexión; siempre llama al servicio real. En las pruebas automatizadas el analizador se ejercita con un `HttpMessageHandler` falso (`RecordingHandler`) y un `IPrivacyService` que no anonimiza (`PassThroughPrivacyService`), sin salir a Internet (`sofia-apis/src/SOFIA.IntegrationTests/Recetas/GeminiRecetaAnalyzerTests.cs:15-32`, `:43-45`).
 
 ## 3. Presidio (microservicio interno de anonimización)
 
@@ -396,7 +409,7 @@ Alcance real de la protección: el comportamiento cerrado protege **solo la segu
 
 - **Local con compose**: la API usa `PresidioApi__BaseUrl=http://presidio-api:8000` (`docker-compose.yml:51`).
 - **Local con la API fuera de Docker**: `PresidioApi:BaseUrl` debe aportarse por secretos de usuario o variable de entorno; el contenedor queda accesible en `http://localhost:8001` según el mapeo de puertos. **No verificado** qué valor hay configurado en los secretos de usuario.
-- **Producción**: no hay en el repositorio definición de despliegue del microservicio fuera del `docker-compose.yml` (que fija `ASPNETCORE_ENVIRONMENT=Development` para la API, `docker-compose.yml:45`). **No verificado** dónde ni cómo se despliega Presidio en un entorno productivo.
+- **Producción**: este documento no describe el despliegue del microservicio (el `docker-compose.yml` fija `ASPNETCORE_ENVIRONMENT=Development` para la API, `docker-compose.yml:45`). **No verificado** dónde ni cómo se despliega Presidio en un entorno productivo.
 
 ### 3.7 Secuencia
 
@@ -459,7 +472,7 @@ El texto del correo indica que «El enlace es válido por 1 hora y solo puede us
 | Interfaz | `IEmailSender.SendAsync(EmailMessage, CancellationToken)` devuelve `Result` | `sofia-apis/src/SOFIA.Application/Common/Interfaces/IEmailSender.cs:6-9` |
 | Mensaje | `EmailMessage(string To, string Subject, string HtmlBody, string TextBody)` | `sofia-apis/src/SOFIA.Application/Common/Models/EmailMessage.cs:3` |
 | Enlaces al SPA | `IFrontendLinks.PasswordReset(token, nombreUsuario)`, implementado en `FrontendLinks` | `sofia-apis/src/SOFIA.Application/Common/Interfaces/IFrontendLinks.cs:3-7`; `sofia-apis/src/SOFIA.Infrastructure/Email/FrontendLinks.cs:6-10` |
-| Proveedor `Smtp` | `SmtpEmailSender`, con MailKit 4.18.1 | `sofia-apis/src/SOFIA.Infrastructure/Email/SmtpEmailSender.cs:12-67`; `sofia-apis/src/SOFIA.Infrastructure/SOFIA.Infrastructure.csproj:13` |
+| Proveedor `Smtp` | `SmtpEmailSender`, con MailKit 4.18.1 | `sofia-apis/src/SOFIA.Infrastructure/Email/SmtpEmailSender.cs:13-86`; `sofia-apis/src/SOFIA.Infrastructure/SOFIA.Infrastructure.csproj:13` |
 | Proveedor `AzureCommunication` | `AzureCommunicationEmailSender`, con `Azure.Communication.Email` 1.1.0 y un `EmailClient` singleton | `sofia-apis/src/SOFIA.Infrastructure/Email/AzureCommunicationEmailSender.cs:12-45`; `sofia-apis/src/SOFIA.Infrastructure/SOFIA.Infrastructure.csproj:9`; `sofia-apis/src/SOFIA.Infrastructure/DependencyInjection.cs:198-199` |
 | Proveedor `None` | `DisabledEmailSender`: descarta el mensaje y devuelve el error `Email.Disabled` | `sofia-apis/src/SOFIA.Infrastructure/Email/DisabledEmailSender.cs:9-16` |
 | Registro en DI | Método `AddEmail` | `sofia-apis/src/SOFIA.Infrastructure/DependencyInjection.cs:153`, `:172-201` |
@@ -476,11 +489,11 @@ Opciones (`EmailOptions`, sección `Email`, y `AppOptions`, sección `App`). Nin
 |---|---|---|---|
 | `Email:Provider` | cadena vacía (equivale a `None`) | `None`, `Smtp` o `AzureCommunication` | `sofia-apis/src/SOFIA.Infrastructure/Email/EmailOptions.cs:5-10`, `:16` |
 | `Email:FromAddress` | cadena vacía | Dirección remitente | `EmailOptions.cs:11` |
-| `Email:FromDisplayName` | `SOFIA` | Nombre visible del remitente (solo lo usa SMTP; en Azure el nombre lo define el dominio de correo de ACS) | `EmailOptions.cs:12`; `SmtpEmailSender.cs:53`; `AzureCommunicationEmailSender.cs:39-44` |
+| `Email:FromDisplayName` | `SOFIA` | Nombre visible del remitente (solo lo usa SMTP; en Azure el nombre lo define el dominio de correo de ACS) | `EmailOptions.cs:12`; `SmtpEmailSender.cs:59`; `AzureCommunicationEmailSender.cs:39-44` |
 | `Email:Smtp:Host` | cadena vacía | Servidor SMTP | `EmailOptions.cs:66` |
 | `Email:Smtp:Port` | `587` | Puerto | `EmailOptions.cs:67` |
-| `Email:Smtp:UseSsl` | `true` | Con `false` no hay cifrado; con `true`, TLS implícito en el puerto 465 y STARTTLS en el resto | `EmailOptions.cs:68-69`; `SmtpEmailSender.cs:61-66` |
-| `Email:Smtp:UserName` | nulo | Usuario SMTP (opcional; solo se autentica si tiene valor) | `EmailOptions.cs:70`; `SmtpEmailSender.cs:26-29` |
+| `Email:Smtp:UseSsl` | `true` | Con `false` no hay cifrado; con `true`, TLS implícito en el puerto 465 y STARTTLS en el resto | `EmailOptions.cs:68-69`; `SmtpEmailSender.cs:67-72` |
+| `Email:Smtp:UserName` | nulo | Usuario SMTP (opcional; solo se autentica si tiene valor) | `EmailOptions.cs:70`; `SmtpEmailSender.cs:30-34` |
 | `Email:Smtp:Password` | nulo | Contraseña SMTP (secreto) | `EmailOptions.cs:71` |
 | `Email:AzureCommunication:ConnectionString` | cadena vacía | Cadena de conexión de Azure Communication Services (secreto) | `EmailOptions.cs:74-77` |
 | `App:FrontendBaseUrl` | cadena vacía | URL base del SPA para armar el enlace | `sofia-apis/src/SOFIA.Infrastructure/Email/AppOptions.cs:5-7` |
@@ -511,7 +524,7 @@ Datos que salen hacia el servidor SMTP o hacia Azure Communication Services, en 
 | Enlace | `{App:FrontendBaseUrl}/auth/reset-password#token=<token>&usuario=<usuario>`; el token en claro y el usuario van en el **fragmento** de la URL | Sí: credencial de un solo uso |
 | Cabecera `Message-Id` (solo SMTP) | Generada con el dominio de la dirección remitente | No |
 
-Fuentes: `FrontendLinks.cs:8-9`; `SmtpEmailSender.cs:50-59`; `AzureCommunicationEmailSender.cs:40-44`. No se envían datos de salud ni de pacientes.
+Fuentes: `FrontendLinks.cs:8-9`; `SmtpEmailSender.cs:56-65`; `AzureCommunicationEmailSender.cs:40-44`. No se envían datos de salud ni de pacientes.
 
 Qué se recibe: de SMTP nada que se use; de Azure, el identificador de la operación, que solo se escribe en el log (`AzureCommunicationEmailSender.cs:35`). El envío por Azure usa `WaitUntil.Started`: la API no espera a la entrega (`AzureCommunicationEmailSender.cs:20-21`).
 
@@ -562,15 +575,15 @@ sequenceDiagram
 
 | Situación | Qué ocurre | Fuente |
 |---|---|---|
-| El envío falla (SMTP o Azure) | El remitente devuelve `Result.Failure` con el código `Email.SendFailed`. El handler solo escribe una advertencia en el log con el identificador de la cuenta y el código, y **responde éxito igualmente**. El token queda válido durante su hora; el usuario puede pedir otro | `SmtpEmailSender.cs:14`, `:34-44`; `AzureCommunicationEmailSender.cs:23-33`; `ForgotPasswordCommandHandler.cs:32-37`, `:41` |
+| El envío falla (SMTP o Azure) | El remitente devuelve `Result.Failure` con el código `Email.SendFailed`. El handler solo escribe una advertencia en el log con el identificador de la cuenta y el código, y **responde éxito igualmente**. El token queda válido durante su hora; el usuario puede pedir otro | `SmtpEmailSender.cs:17`, `:41-50`; `AzureCommunicationEmailSender.cs:23-33`; `ForgotPasswordCommandHandler.cs:32-37`, `:41` |
 | Proveedor `None` (solo desarrollo y pruebas) | `DisabledEmailSender` registra una advertencia, descarta el mensaje y devuelve `Email.Disabled`; mismo tratamiento que el caso anterior | `DisabledEmailSender.cs:11-15` |
 | Respuesta al cliente | Siempre `200` con `{ Message = "If the account exists, a recovery link will be sent to the registered contact." }`, exista o no la cuenta y se haya enviado o no el correo. Los códigos `Email.SendFailed` y `Email.Disabled` **nunca llegan al SPA** | `AuthController.cs:107-111` |
 | Lo que ve el usuario | «Si el usuario existe y tiene un correo registrado, recibirás un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada: el enlace es válido por 1 hora.» (`forgotPage.sent`) | `sofia-web-spa/public/i18n/auth/es.json:32` |
 | Más de 10 solicitudes por minuto desde la misma IP | `429`. El SPA muestra «Demasiados intentos. Espera un minuto e inténtalo de nuevo.» (`recovery.tooManyRequests`); ante otro error, «No se pudo procesar la solicitud. Inténtalo de nuevo.» (`forgotPage.error`) | `sofia-apis/src/SOFIA.API/Extensions/RateLimitingExtensions.cs:15`, `:27-33`; `forgot-password.component.ts:59-63`; `auth/es.json:33`, `:52` |
 | Reintentos y colas | No existen: un intento por solicitud, en línea, dentro de la misma petición HTTP. No hay cola de correos ni reenvío automático | `ForgotPasswordCommandHandler.cs:31-32` |
-| Tiempo de espera | No se fija ninguno en el código; aplica el de MailKit o el del SDK de Azure. **No verificado** su valor | `SmtpEmailSender.cs:24-32`; `AzureCommunicationEmailSender.cs:21` |
-| Cancelación de la petición | En SMTP, `OperationCanceledException` no se captura y se propaga | `SmtpEmailSender.cs:34` |
-| Qué queda en los logs | SMTP: `MessageId` y solo el nombre del tipo de excepción. Azure: estado, código de error e identificador de operación. No se registra la dirección del destinatario ni el token | `SmtpEmailSender.cs:36-46`; `AzureCommunicationEmailSender.cs:25-35` |
+| Tiempo de espera | No se fija ninguno en el código; aplica el de MailKit o el del SDK de Azure. **No verificado** su valor | `SmtpEmailSender.cs:28-39`; `AzureCommunicationEmailSender.cs:21` |
+| Cancelación de la petición | En SMTP, `OperationCanceledException` no se captura y se propaga | `SmtpEmailSender.cs:41` |
+| Qué queda en los logs | SMTP: `MessageId`, el paso que falló (`Connect`, `Authenticate` o `Send`), el tipo de excepción y un detalle con tipo, código SMTP y mensaje de cada excepción de la cadena, con toda dirección de correo reemplazada por `<email>` y recortado a 500 caracteres. Azure: estado, código de error e identificador de operación. No se registra la dirección del destinatario ni el token | `SmtpEmailSender.cs:41-50`, `:74-86`; `AzureCommunicationEmailSender.cs:25-35` |
 
 Nota de comportamiento, deducida del código: `ForgotPasswordCommand` es un `ICommand`, por lo que `TransactionBehavior` lo envuelve en una transacción (`sofia-apis/src/SOFIA.Application/Common/Behaviors/TransactionBehavior.cs:16-37`); el correo se envía después de `SaveChangesAsync` (`ForgotPasswordCommandHandler.cs:29`) pero antes de confirmar la transacción.
 
@@ -597,14 +610,14 @@ Al cobrar una venta (`POST` de creación o de completar venta) se emite una **bo
 | Requisitos | La empresa debe tener RUC (error `Venta.Empresa.SinRuc`) y la sucursal una serie de boleta activa (error `Venta.SerieBoleta.NoConfigurada`) | `sofia-apis/src/SOFIA.Application/Ventas/Common/VentaComprobanteGenerator.cs:15-29` |
 | Numeración | `UPDATE SUNAT_Series_Fiscales SET Correlativo_Actual = Correlativo_Actual + 1 OUTPUT INSERTED.Correlativo_Actual` (correlativo local, atómico) | `sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:187-195`; `VentaComprobanteGenerator.cs:44` |
 | Montos | Precios con IGV incluido: gravado = total / 1.18 redondeado a 2 decimales; IGV = total − gravado; exonerado = 0 | `VentaComprobanteGenerator.cs:46-47`, `:53`, `:93-98` |
-| Cliente | Datos del paciente o, si no hay, tipo `-`, número `00000000` y nombre `CLIENTE EVENTUAL` | `VentaComprobanteGenerator.cs:11-12`, `:81-91` |
+| Cliente | Datos del paciente o, si no hay (o si el documento del paciente supera 20 caracteres), tipo `-`, número `00000000` y nombre `CLIENTE EVENTUAL` | `VentaComprobanteGenerator.cs:11-12`, `:81-91` |
 | Registro | `SunatComprobanteEmitido.Create(...)` con hash `null`, estado `NoEnviado`, ruta XML `null`, ruta CDR `null` y URL de verificación `null` | `VentaComprobanteGenerator.cs:49-58`, `:65` |
 
 El propio código lo dice en un comentario (`VentaComprobanteGenerator.cs:49`): «Not sent to SUNAT yet: hash, XML, CDR and verification URL stay empty until an OSE/PSE is integrated».
 
 Al procesar una devolución se emite una **nota de crédito** interna con la misma mecánica: correlativo local, mismos datos de cliente que el comprobante de origen, hash y rutas en `null` y estado `NoEnviado` (`sofia-apis/src/SOFIA.Application/Devoluciones/Commands/ProcesarDevolucion/ProcesarDevolucionCommandHandler.cs:196-216`).
 
-Al anular una venta, sus comprobantes no anulados pasan a estado `Anulado` con `SunatComprobanteEmitido.Anular()` (`sofia-apis/src/SOFIA.Domain/Entities/SunatComprobanteEmitido.cs:155-162`; `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs:68-76`). La anulación es solo un cambio de estado local: no se comunica una baja a SUNAT.
+Al anular una venta, sus boletas y facturas no anuladas pasan a estado `Anulado` (las notas de crédito no se tocan) con `SunatComprobanteEmitido.Anular()` (`sofia-apis/src/SOFIA.Domain/Entities/SunatComprobanteEmitido.cs:155-162`; `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs:66-81`). La anulación es solo un cambio de estado local: no se comunica una baja a SUNAT.
 
 Tabla `SUNAT_Comprobantes_Emitidos` (`sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql:559-586`):
 
@@ -645,7 +658,7 @@ El prefijo `SUNAT_` de las tablas `SUNAT_Series_Fiscales` y `SUNAT_Comprobantes_
 
 ### 5.3 Qué muestra el SPA
 
-Textos exactos de `sofia-web-spa/public/i18n/pos/es.json` en el commit `eeffbb6`.
+Textos exactos de `sofia-web-spa/public/i18n/pos/es.json` en el commit `526bc8f`.
 
 | Clave | Texto | Línea |
 |---|---|---|
@@ -660,7 +673,7 @@ Textos exactos de `sofia-web-spa/public/i18n/pos/es.json` en el commit `eeffbb6`
 | `messages.serieBoletaNoConfigurada` | «Esta sucursal no tiene una serie de boletas activa. Configúrala en SUNAT > Series Fiscales para poder cobrar.» | 345 |
 | `devolucion.motivoLabel` | «Motivo SUNAT» | 119 |
 
-Dónde se muestran: el diálogo de comprobante tras la venta (`sofia-web-spa/src/app/pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.html:5`, `:15-20`, `:142-147`) y el detalle de venta (`sofia-web-spa/src/app/pages/pos/venta-detail/venta-detail.component.html:113`). El menú lateral tiene un grupo «SUNAT» con la opción «Series Fiscales» (`sofia-web-spa/public/i18n/es.json:63-64`; ruta `series-fiscales` en `sofia-web-spa/src/app/app.routes.ts:180-182`), que es un mantenimiento local de series.
+Dónde se muestran: el diálogo de comprobante tras la venta (`sofia-web-spa/src/app/pages/pos/dialogs/comprobante-dialog/comprobante-dialog.component.html:5`, `:15-20`, `:142-147`) y el detalle de venta (`sofia-web-spa/src/app/pages/pos/venta-detail/venta-detail.component.html:113`). El menú lateral tiene un grupo «SUNAT» con la opción «Series Fiscales» (`sofia-web-spa/public/i18n/es.json:63-64`; ruta `series-fiscales` en `sofia-web-spa/src/app/app.routes.ts:185-187`), que es un mantenimiento local de series.
 
 Como el backend solo asigna `NoEnviado` y `Anulado`, los textos «Aceptado por SUNAT» y «Rechazado por SUNAT» no pueden aparecer hoy con datos generados por la aplicación. La impresión del comprobante se hace en el navegador (`sofia-web-spa/src/app/pages/pos/services/receipt-print.service.ts:72`), sin servicio externo.
 
@@ -696,10 +709,10 @@ sequenceDiagram
 | Aspecto | Detalle | Fuente |
 |---|---|---|
 | Tabla | `DIGEMID_Catalogo_Productos` (`Cod_Prod`, `Nom_Prod`, `Concent`, `Forma_Farmaceutica`, `Fraccion`, `Registro_Sanitario`, `Titular`, `Estado` y columnas de auditoría) | `sofia-apis/src/SOFIA.DbUp/Scripts/0003_Digemid_Catalogo.sql:1-23` |
-| Carga inicial (seed) | Desde `sofia-apis` `34089ec`, `0004_Seed_Digemid_Catalogo.sql` inserta dentro del propio script 29 698 filas del catálogo oficial (código, nombre, concentración, forma farmacéutica y su versión simplificada, presentación, fracción, registro sanitario y su vencimiento, titular), con `Estado = 'Activo'` y `CreatedBy = 'System'`, en una sola transacción que verifica el conteo antes de confirmar. Ya no lee otra base de datos (la versión anterior copiaba desde `[SofiaDb].[dbo].[DigemidCatalogo]`). Las filas quedan sin empresa y, desde `9c16f35`, son un catálogo compartido de solo lectura para todas las empresas | `sofia-apis/src/SOFIA.DbUp/Scripts/0004_Seed_Digemid_Catalogo.sql:2-5`, `:29883-29885`; `sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:109-113` |
+| Carga inicial (seed) | Desde `sofia-apis` `34089ec`, `0004_Seed_Digemid_Catalogo.sql` inserta dentro del propio script 29 698 filas del catálogo oficial (código, nombre, concentración, forma farmacéutica y su versión simplificada, presentación, fracción, registro sanitario y su vencimiento, titular), con `Estado = 'Activo'` y `CreatedBy = 'System'`, en una sola transacción que verifica el conteo antes de confirmar. Ya no lee otra base de datos (la versión anterior copiaba desde `[SofiaDb].[dbo].[DigemidCatalogo]`). Las filas quedan sin empresa y, desde `9c16f35`, son un catálogo compartido de solo lectura para todas las empresas | `sofia-apis/src/SOFIA.DbUp/Scripts/0004_Seed_Digemid_Catalogo.sql:2-5`, `:29883-29885`; `sofia-apis/src/SOFIA.Infrastructure/Persistence/ApplicationDbContext.cs:110-114` |
 | Carga masiva | Plantilla Excel, previsualización y carga por lotes desde el SPA, con permiso `DIGEMID:Crear` | `sofia-apis/src/SOFIA.API/Controllers/DIGEMIDController.cs:97-127` |
 | Mantenimiento manual | Listar, ver, crear, actualizar, eliminar y exportar (`DIGEMID:Leer`, `Crear`, `Actualizar`, `Eliminar`) | `sofia-apis/src/SOFIA.API/Controllers/DIGEMIDController.cs:54-95`, `:133-135` |
-| Pantalla | Ruta `digemid-catalogo` del SPA | `sofia-web-spa/src/app/app.routes.ts:174-176` |
+| Pantalla | Ruta `digemid-catalogo` del SPA | `sofia-web-spa/src/app/app.routes.ts:179-181` |
 
 En la versión 1.0 de este documento el seed dependía de una tabla `dbo.DigemidCatalogo` que ningún script creaba; con `34089ec` el catálogo viaja dentro del script y esa dependencia desapareció. **No verificado**: que el script se ejecute sin errores en una base nueva (no se ejecutó DbUp) y de qué descarga oficial salió el CSV (el comentario del script solo dice «official CSV export», `0004:1`).
 
@@ -795,15 +808,15 @@ No hay analítica ni seguimiento: la búsqueda de Google Analytics, Tag Manager,
 
 ### 8.3 Alojamiento del SPA: Azure Static Web Apps
 
-**Estado: parcial (solo un archivo de configuración).** Existe `sofia-web-spa/public/staticwebapp.config.json` con cabeceras globales: política de seguridad de contenido, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security` y `Permissions-Policy` (`staticwebapp.config.json:1-10`). No define rutas, redirecciones ni `navigationFallback`, y en el repositorio del SPA no hay flujo de despliegue (no existe carpeta `.github`; solo ganchos locales en `.husky`).
+**Estado: parcial (solo un archivo de configuración).** Existe `sofia-web-spa/public/staticwebapp.config.json` con cabeceras globales: política de seguridad de contenido, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Strict-Transport-Security` y `Permissions-Policy` (`staticwebapp.config.json:1-10`). No define rutas, redirecciones ni `navigationFallback`. El despliegue del SPA no se describe en este documento.
 
 Relación con la API en producción: `environment.prod.ts` deja `api.baseurl` vacío (`sofia-web-spa/src/environments/environment.prod.ts:3-9`), de modo que las llamadas son relativas al mismo origen, y la política `connect-src 'self' …` no autoriza otro dominio para la API. La URL puede sustituirse en tiempo de ejecución con `window.__env` (`sofia-web-spa/src/environments/environment.model.ts:21-31`), que hoy es un objeto vacío (`sofia-web-spa/public/environment.js:1`). **No verificado**: cómo se enruta `/api` hacia el backend en un entorno desplegado, ni si el SPA está realmente publicado en Azure Static Web Apps.
 
-En el backend, la única configuración relacionada es CORS: en `Development` se aceptan `http://localhost:4200` y `https://localhost:4200`; en otros entornos la clave `AllowedOrigins` es obligatoria (`sofia-apis/src/SOFIA.API/Program.cs:38-64`).
+En el backend, la única configuración relacionada es CORS: en `Development` se aceptan `http://localhost:4200` y `https://localhost:4200`; en otros entornos la clave `AllowedOrigins` es obligatoria (`sofia-apis/src/SOFIA.API/Program.cs:38-62`).
 
 ### 8.4 Observabilidad
 
-**No existe integración externa.** Serilog escribe solo en consola y en archivos locales `logs/sofia-.log` con rotación diaria, 30 archivos y 50 MB por archivo (`sofia-apis/src/SOFIA.API/Program.cs:18-29`; paquetes `Serilog.AspNetCore`, `Serilog.Sinks.File` y `Serilog.Enrichers.Environment` en `sofia-apis/src/SOFIA.API/SOFIA.API.csproj:17-19`; volumen `sofia_logs` en `sofia-apis/docker-compose.yml:67-68`). No hay Application Insights, OpenTelemetry, Sentry, Seq ni Datadog en `sofia-apis/src` (búsqueda sin resultados en código de producción).
+**No existe integración externa.** Serilog escribe solo en consola y en archivos locales `logs/sofia-.log` con rotación diaria, 30 archivos y 50 MB por archivo (`sofia-apis/src/SOFIA.API/Program.cs:17-27`; paquetes `Serilog.AspNetCore`, `Serilog.Sinks.File` y `Serilog.Enrichers.Environment` en `sofia-apis/src/SOFIA.API/SOFIA.API.csproj:17-19`; volumen `sofia_logs` en `sofia-apis/docker-compose.yml:67-68`). No hay Application Insights, OpenTelemetry, Sentry, Seq ni Datadog en `sofia-apis/src` (búsqueda sin resultados en código de producción).
 
 ### 8.5 Otras ausencias verificadas
 
@@ -835,7 +848,7 @@ En el backend, la única configuración relacionada es CORS: en `Development` se
 |---|---|---|---|---|
 | Google Gemini (OCR y razonamiento de recetas) | Implementada | **Sí, y de salud**: la imagen completa de la receta sin anonimizar (primera llamada) y el texto anonimizado (segunda llamada) | `GeminiApi:BaseUrl`, `GeminiApi:OcrModel`, `GeminiApi:ReasoningModel`, `GeminiApi:ApiKey` | `sofia-apis/src/SOFIA.Infrastructure/Services/GeminiRecetaAnalyzer.cs:23-62`, `:64-102`, `:104-198` |
 | Presidio (anonimización de texto) | Implementada (microservicio propio). Registro en `Registro_Privacidad_Presidio`: no existe | Recibe el texto OCR con datos personales y de salud, pero dentro de la infraestructura propia | `PresidioApi:BaseUrl`, `PresidioApi:InternalKey`; variable `PRESIDIO_INTERNAL_KEY` | `sofia-apis/src/SOFIA.Infrastructure/Services/PresidioPrivacyService.cs:13-42`; `sofia-apis/src/SOFIA.PresidioAPI/main.py:103-116` |
-| Correo por SMTP | Implementada (un solo correo: recuperación de contraseña) | Correo, nombres y usuario del empleado, y el enlace con token de un solo uso. Sin datos de salud | `Email:Provider`, `Email:FromAddress`, `Email:FromDisplayName`, `Email:Smtp:*`, `App:FrontendBaseUrl` | `sofia-apis/src/SOFIA.Infrastructure/Email/SmtpEmailSender.cs:16-48`; `sofia-apis/src/SOFIA.Application/Security/Commands/ForgotPassword/ForgotPasswordCommandHandler.cs:31-32` |
+| Correo por SMTP | Implementada (un solo correo: recuperación de contraseña) | Correo, nombres y usuario del empleado, y el enlace con token de un solo uso. Sin datos de salud | `Email:Provider`, `Email:FromAddress`, `Email:FromDisplayName`, `Email:Smtp:*`, `App:FrontendBaseUrl` | `sofia-apis/src/SOFIA.Infrastructure/Email/SmtpEmailSender.cs:13-54`; `sofia-apis/src/SOFIA.Application/Security/Commands/ForgotPassword/ForgotPasswordCommandHandler.cs:31-32` |
 | Correo por Azure Communication Services | Implementada (alternativa de proveedor para el mismo correo) | Los mismos que por SMTP | `Email:Provider`, `Email:FromAddress`, `Email:AzureCommunication:ConnectionString`, `App:FrontendBaseUrl` | `sofia-apis/src/SOFIA.Infrastructure/Email/AzureCommunicationEmailSender.cs:14-37` |
 | SUNAT, OSE o PSE (facturación electrónica) | **No existe** (solo numeración y registro local con estado `NoEnviado`) | Ninguno | Ninguna | `sofia-apis/src/SOFIA.Application/Ventas/Common/VentaComprobanteGenerator.cs:49-58`; `sofia-apis/src/SOFIA.Domain/Enums/EstadoComprobanteSunat.cs:3-10` |
 | DIGEMID | **No existe** integración en línea (catálogo local por seed y carga masiva) | Ninguno | Ninguna | `sofia-apis/src/SOFIA.DbUp/Scripts/0003_Digemid_Catalogo.sql:1-23`; `sofia-apis/src/SOFIA.DbUp/Scripts/0004_Seed_Digemid_Catalogo.sql:3-46` |
@@ -843,8 +856,8 @@ En el backend, la única configuración relacionada es CORS: en `Development` se
 | Notificaciones internas (`Sistema_Notificaciones_Internas`) | No existe (solo esquema) | Ninguno | Ninguna | `sofia-apis/src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql:770-785` |
 | Google Fonts (Manrope y Material Icons) | Implementada (recurso estático del SPA) | Ninguno de la aplicación; IP y agente de usuario del navegador | Ninguna (URL fijas en el código) | `sofia-web-spa/src/index.html:11-17`; `sofia-web-spa/src/assets/scss/_variables.scss:1` |
 | Iconify (iconos del SPA) | Implementada (recurso del SPA) | Ninguno de la aplicación; IP, agente de usuario y nombres de iconos | Dominios autorizados en la política de contenido | `sofia-web-spa/angular.json:47`; `sofia-web-spa/public/staticwebapp.config.json:3` |
-| Azure Static Web Apps (alojamiento del SPA) | Parcial: solo archivo de cabeceras; sin flujo de despliegue en el repositorio | No aplica | `staticwebapp.config.json`; `window.__env` | `sofia-web-spa/public/staticwebapp.config.json:1-10` |
-| Application Insights u otra telemetría externa | No existe | Ninguno | Ninguna | `sofia-apis/src/SOFIA.API/Program.cs:18-29` |
+| Azure Static Web Apps (alojamiento del SPA) | Parcial: solo archivo de cabeceras; el despliegue no se describe en este documento | No aplica | `staticwebapp.config.json`; `window.__env` | `sofia-web-spa/public/staticwebapp.config.json:1-10` |
+| Application Insights u otra telemetría externa | No existe | Ninguno | Ninguna | `sofia-apis/src/SOFIA.API/Program.cs:17-27` |
 | Pasarelas de pago, identidad externa, SMS, WhatsApp, almacenamiento en la nube, colas, consulta de DNI o RUC | No existe | Ninguno | Ninguna | Apartado 8.5 |
 
 ## 10. Lectura relacionada
@@ -869,8 +882,8 @@ En el backend, la única configuración relacionada es CORS: en `Development` se
 
 | N.º | Qué | Por qué |
 |---|---|---|
-| 1 | Valores reales de `GeminiApi:*`, `PresidioApi:*`, `Email:*` y `App:FrontendBaseUrl` en los secretos de usuario y en cualquier entorno desplegado | Las reglas prohíben listar secretos y abrir archivos `.env`; no hay archivos de despliegue en el repositorio |
-| 2 | Dónde y cómo se despliegan en producción la API, Presidio y el SPA, y cómo se enruta `/api` desde el SPA | No hay infraestructura como código ni flujo de despliegue en ninguno de los dos repositorios |
+| 1 | Valores reales de `GeminiApi:*`, `PresidioApi:*`, `Email:*` y `App:FrontendBaseUrl` en los secretos de usuario y en cualquier entorno desplegado | Las reglas prohíben listar secretos y abrir archivos `.env`; el despliegue no se describe en este documento |
+| 2 | Dónde y cómo se despliegan en producción la API, Presidio y el SPA, y cómo se enruta `/api` desde el SPA | El despliegue no se describe en este documento |
 | 3 | Lista exacta de entidades predefinidas de Presidio activas para español y formato exacto del reemplazo por defecto | Depende de `presidio-analyzer` y `presidio-anonymizer` 2.2.351 y del modelo spaCy; no se ejecutó el servicio |
 | 4 | Código HTTP que devuelve Presidio cuando el texto supera 20 000 caracteres | Comportamiento estándar de FastAPI; no se ejecutó |
 | 5 | Cuál de los dos límites de 10 MB actúa primero en `POST /api/v1/Recetas/analizar` y la respuesta exacta | Requiere ejecutar la API |
@@ -886,7 +899,7 @@ Ninguno. Al 2026-10-14 `git status --short` no muestra cambios locales en `sofia
 
 | Archivo | Afirmación afectada | Apartado |
 |---|---|---|
-| `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs` | Paso a `Anulado` de los comprobantes al anular la venta: líneas 68-76 | 5.1 |
+| `sofia-apis/src/SOFIA.Application/Ventas/Commands/AnularVenta/AnularVentaCommandHandler.cs` | Paso a `Anulado` de los comprobantes al anular la venta: líneas 66-81 | 5.1 |
 | `sofia-web-spa/public/i18n/pos/es.json` | Textos de SUNAT: líneas 119, 239-242, 345 y 358-362 | 5.3 |
 | `sofia-web-spa/src/index.html` | `<script src="environment.js">` en la línea 18 (mismo origen). Las fuentes de Google citadas (`:11-17`) no cambian | 8.2 |
 | `sofia-web-spa/angular.json` | Configuración por defecto y patrones de lint: no afectan a las líneas citadas (`:28-32`, `:47`, `:69-76`) | 8.2 |
@@ -941,7 +954,7 @@ Cobertura: 36 de 36 elementos del inventario.
 
 ## 13. Fuentes
 
-Backend (`sofia-apis`, commit `00991bc`):
+Backend (`sofia-apis`, commit `b67e3ee`):
 
 - `docker-compose.yml`, `.env.example`, `dotnet-tools.json`, `.github/workflows/security.yml`
 - `src/Directory.Build.props`
@@ -971,7 +984,7 @@ Backend (`sofia-apis`, commit `00991bc`):
 - `src/SOFIA.DbUp/Scripts/0001_Initial_Schema.sql`, `0003_Digemid_Catalogo.sql`, `0004_Seed_Digemid_Catalogo.sql`, `0018_SeriesFiscales_UniqueNumbering.sql`, `0022_Empleados_Email.sql`
 - `src/SOFIA.IntegrationTests/Recetas/GeminiRecetaAnalyzerTests.cs`, `Infrastructure/SofiaWebAppFactory.cs`
 
-Frontend (`sofia-web-spa`, commit `31af681`):
+Frontend (`sofia-web-spa`, commit `526bc8f`):
 
 - `package.json`, `angular.json` y `src/index.html`
 - `public/staticwebapp.config.json`, `public/environment.js`
