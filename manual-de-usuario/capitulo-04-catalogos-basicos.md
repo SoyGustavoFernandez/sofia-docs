@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.2 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
+| **Versión del documento** | 1.3 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado a fondo contra `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado a fondo contra `526bc8f` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -87,6 +87,8 @@ Las cuatro pantallas de búsqueda se parecen mucho entre sí y a las de los cap�
 ### 5.1 Qué unidades crear
 
 Para los capítulos siguientes se crean estas unidades. Las siete primeras se crean una por una en esta sección; «Gramo» y «Kilogramo» se crean con la carga masiva (sección 9.2).
+
+**Antes de crearlas, abre la búsqueda y mira qué hay.** Al registrar una empresa, SOFIA ya le crea cuatro unidades: `UND` / «Unidad», `CJA` / «Caja», `BLS` / «Blíster» y `FRC` / «Frasco» (`sofia-apis/src/SOFIA.Domain/Entities/UnidadMedida.cs`, `Basicas`; `RegistrarEmpresaCommandHandler.cs`). El código no puede repetirse: si intentas crear `UND` de nuevo verás «Ya existe una unidad de medida con ese código.» (No verificado en la aplicación: el recorrido de este capítulo se hizo con una empresa que no tenía esas cuatro unidades, por eso los ejemplos crean `UND`, `CAJ`, `BLI` y `FRA` y el total de «Resultados (9)» de la sección 5.4 sería mayor.) Puedes usar las unidades que ya tienes y crear solo las que te falten.
 
 | Código | Descripción | Para qué se usará |
 |---|---|---|
@@ -327,11 +329,11 @@ Permisos: `Actualizar` para **Editar** y `Eliminar` para **Eliminar**, ambos del
 
 ### 8.1 Qué es y para qué lo usa SOFIA
 
-DIGEMID es la Dirección General de Medicamentos, Insumos y Drogas del Ministerio de Salud. Su relación de productos farmacéuticos registrados es la base de este catálogo. En SOFIA el catálogo es una **tabla local** que mezcla dos clases de productos: el **catálogo nacional compartido** (sin empresa, de solo lectura, que ven todas las empresas) y los productos de **tu empresa**, que llenas tú cargando un Excel. SOFIA **no** se conecta a DIGEMID para actualizarla ni consultarla. Lo del catálogo compartido viene de `sofia-apis` `9c16f35` y es **No verificado en la aplicación**: este capítulo se recorrió antes de ese commit.
+DIGEMID es la Dirección General de Medicamentos, Insumos y Drogas del Ministerio de Salud. Su relación de productos farmacéuticos registrados es la base de este catálogo. En SOFIA el catálogo es una **tabla local** que mezcla dos clases de productos: el **catálogo nacional compartido** (sin empresa, de solo lectura, que ven todas las empresas) y los productos de **tu empresa**, que llenas tú cargando un Excel. SOFIA **no** se conecta a DIGEMID para actualizarla ni consultarla. El catálogo compartido sale del script `0004_Seed_Digemid_Catalogo.sql` (29 698 productos sin empresa) y de la entidad `DIGEMIDCatalogoProducto.cs` (`IsGlobal`); es **No verificado en la aplicación**: este capítulo se recorrió antes de que existiera.
 
 Se usa para el **análisis de recetas con IA** (capítulo de recetas): por cada medicamento que la IA detecta en la foto de una receta, SOFIA busca su nombre en este catálogo; si encuentra coincidencias, marca el medicamento como «validado por DIGEMID» (con la razón «Validado por DIGEMID (nombre)»); si no, queda como «Detectado en receta». Un catálogo vacío no impide analizar recetas, pero ningún medicamento saldrá validado. (Fuente: regla RN-REC-023; el análisis de recetas se recorre en un capítulo posterior.)
 
-Con la versión `43f5529` una empresa recién registrada tenía el catálogo **vacío**: se comprobó que la búsqueda de la empresa de prueba mostró «Resultados (0)» antes de cargar nada. Desde `9c16f35` una empresa nueva debería ver también el catálogo compartido (29 698 productos si la base se creó con el script `0004` de `34089ec`); **No verificado en la aplicación**. Los productos compartidos no se pueden editar ni eliminar (la pantalla no ofrece esas acciones; por API responde 403), y no puedes cargar un código que ya exista en ellos: la carga masiva lo omite como duplicado.
+Una empresa nueva ve el catálogo compartido desde el primer día (29 698 productos, si la base se creó con el script `0004`; **No verificado en la aplicación**: durante el recorrido de este capítulo la búsqueda de la empresa de prueba mostró «Resultados (0)» antes de cargar nada, porque el catálogo compartido todavía no existía). Los productos compartidos no se pueden editar ni eliminar (la pantalla no ofrece esas acciones; por API responde 403), y no puedes cargar un código que ya exista en ellos: la vista previa lo marca «ya existe en el sistema» y, si de todos modos llegara al guardado, esa fila se omite sin avisar. Por eso los ejemplos con «Resultados (0)» o con solo cinco productos de las secciones 8.3 a 8.5 y 10 corresponden a un catálogo que solo tenía los productos de la empresa de prueba.
 
 ### 8.2 Qué puedes hacer y qué no en esta pantalla
 
@@ -369,7 +371,7 @@ Tabla de resultados, ordenada por nombre de producto:
 
 La tabla no muestra concentración, registro sanitario ni titular; los ves en el detalle. Comprobado con los productos de la sección 8.5: «Código de Producto» = `0003` trae «DEMO-0003»; «Nombre del Producto» = `tabl` trae los tres productos «TABLETA»; `demo-000` junto con `capsula` trae «DEMO-0002» y «DEMO-0004». Sin resultados: «Resultados (0)» y «Sin resultados» en el paginador.
 
-**Exportar** genera `digemid-catalogo.xlsx`, con una hoja «Data» y cuatro columnas: «Código», «Nombre del Producto», «Forma Farmacéutica» y «Estado» (las mismas de la tabla; **no** incluye concentración, fracción, registro sanitario ni titular). Comprobado: el servidor respondió 200 y no hubo aviso de error. (No verificado en la aplicación: el contenido del archivo; viene de `producto/pantallas/catalogos-basicos` §5.1 y del documento `tecnico/carga-masiva-y-exportacion` §4.2.) Fallo de búsqueda o exportación: «Error al buscar en el catálogo DIGEMID».
+**Exportar** genera `digemid-catalogo.xlsx`, con una hoja «Data» y cuatro columnas: «Código», «Nombre del Producto», «Forma Farmacéutica» y «Estado» (las mismas de la tabla; **no** incluye concentración, fracción, registro sanitario ni titular). Comprobado: el servidor respondió 200 y no hubo aviso de error. (No verificado en la aplicación: el contenido del archivo; viene de `producto/pantallas/catalogos-basicos` §5.1 y del documento `tecnico/carga-masiva-y-exportacion` §4.2.) Si hay más de 10 000 filas la exportación se rechaza (límite de `PaginationLimits.MaxPageSize`) y la pantalla muestra ese mismo aviso genérico de fallo: como el catálogo compartido tiene más de 29 000 productos, escribe un filtro antes de exportar. Fallo de búsqueda o exportación: «Error al buscar en el catálogo DIGEMID».
 
 ### 8.4 Ver un producto
 
@@ -577,7 +579,7 @@ El inventario `producto/pantallas/catalogos-basicos.md` y la referencia `tecnico
 | 2 | `tecnico/carga-masiva-y-exportacion` §3.5 y `negocio/reglas/catalogos` RN-LAB-015 | La vista previa no revisa el código identificador repetido | Confirmado: la fila salió válida y el guardado informó «Se guardaron 0 registros correctamente» (un mensaje de éxito con cero registros) |
 | 3 | `tecnico/carga-masiva-y-exportacion` §3.2 y `negocio/reglas/catalogos` RN-DIG-005 | La vista previa no valida longitudes y el guardado sí | Confirmado: un registro sanitario de 60 caracteres salió válido y el guardado completo fue rechazado con «Algunas filas tienen datos inválidos. Vuelve a subir el archivo y revisa la vista previa.» |
 | 4 | `tecnico/carga-masiva-y-exportacion` §3.12 y 3.2 | Las filas repetidas en el archivo quedan con error | Confirmado, incluida la **primera** aparición (`LT` x2 en unidades; `DEMO-0008` y `demo-0008` en DIGEMID) |
-| 5 | negocio/glosario («Catálogo DIGEMID») y `negocio/reglas/catalogos` nota de RN-DIG | El catálogo se siembra con el script `0004_Seed_Digemid_Catalogo.sql`; `negocio/reglas/catalogos` dice «No verificado» si esos productos son visibles para cada empresa | En la empresa de prueba, recién registrada, la búsqueda del catálogo mostró «Resultados (0)»: no se ve ningún producto sembrado (resultado con `43f5529`; desde `9c16f35` el catálogo sembrado es compartido y visible, **No verificado en la aplicación**) |
+| 5 | negocio/glosario («Catálogo DIGEMID») y `negocio/reglas/catalogos` nota de RN-DIG | El catálogo se siembra con el script `0004_Seed_Digemid_Catalogo.sql`; `negocio/reglas/catalogos` dice «No verificado» si esos productos son visibles para cada empresa | En la empresa de prueba, recién registrada, la búsqueda del catálogo mostró «Resultados (0)» durante el recorrido; según el código revisado, los 29 698 productos sembrados son un catálogo compartido visible para todas las empresas (**No verificado en la aplicación**) |
 | 6 | `producto/pantallas/catalogos-basicos` §5.1 y `negocio/reglas/catalogos` RN-DIG-009 | Los filtros buscan «contiene» | Además, el filtro «Nombre del Producto» **distingue los acentos** (`cápsula` no encuentra «CAPSULA»), aunque no distingue mayúsculas. Ningún documento lo menciona |
 | 7 | `producto/pantallas/catalogos-basicos` §5 (abrir `/digemid-catalogo/nueva`) | «Error al cargar el producto DIGEMID» con el formulario vacío | Formulario vacío y deshabilitado; y, al recargar la página directamente en esa dirección, el aviso rojo mostró la clave sin traducir `digemidCatalogo.detail.load-error` (el aviso salió antes de que cargaran los textos del catálogo) |
 | 8 | `producto/pantallas/catalogos-basicos` §0 (crear con éxito navega a la búsqueda) | Navega a la búsqueda | Coincide; con los filtros vacíos y sin tabla, como en Sucursales (capítulo 2) |
