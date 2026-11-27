@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `37048ea` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `9c16f35`; revisado contra `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `7070e1a`; revisado contra `526bc8f` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## Índice
@@ -84,8 +84,8 @@ La pantalla **no muestra resultados al entrar**: primero debes pulsar **Buscar**
 
 | Campo | Qué escribir o elegir | Obligatorio | Reglas |
 |---|---|---|---|
-| Empleado | Empieza a escribir un nombre (con lupa) y **elige una opción de la lista**; la opción muestra el nombre completo, por ejemplo «Carlos Cajero Demo» | No | **El filtro solo se aplica si eliges una opción de la lista.** Si escribes el nombre y pulsas **Buscar** sin elegirlo, el filtro se ignora sin avisar. Este es el filtro «Cajero»: no existe otro |
-| Cliente | Empieza a escribir un nombre o un documento (con lupa) y elige una opción, por ejemplo «Luis Paciente Demo» | No | Igual que Empleado: solo filtra si eliges la opción. Las ventas sin cliente aparecen como «Público General» |
+| Empleado | Empieza a escribir un nombre (con lupa) y **elige una opción de la lista**; la opción muestra el nombre completo, por ejemplo «Carlos Cajero Demo» | No | **El filtro solo se aplica si eliges una opción de la lista.** Si escribes el nombre y pulsas **Buscar** sin elegirlo, el filtro se ignora sin avisar. Al revés, si eliges una opción y después **borras todo el texto**, el filtro **sigue aplicado** hasta que escribas otra cosa o pulses **Limpiar** (confirmado en el código, `ventas-search.component.ts`; no ejecutado). Sin coincidencias, la lista muestra «Sin resultados». Este es el filtro «Cajero»: no existe otro |
+| Cliente | Empieza a escribir un nombre o un documento (con lupa) y elige una opción, por ejemplo «Luis Paciente Demo» | No | Igual que Empleado: solo filtra si eliges la opción, y borrar el texto no quita el filtro elegido. Las ventas sin cliente aparecen como «Público General» |
 | Fecha desde | Una fecha, con el selector de calendario o escrita como `dd/mm/aaaa` | No | Incluye todo el día |
 | Fecha hasta | Una fecha | No | Incluye todo el día |
 | Estado | «— Todos —», «Completada», «Anulada», «Devuelta» o «Pendiente» | No | «Pendiente» es la venta en espera |
@@ -123,7 +123,7 @@ Bajo la tabla, a la izquierda el botón **Exportar** y a la derecha el paginador
 
 ### Exportar a Excel
 
-Con los resultados a la vista, haz clic en **Exportar**. Se descarga el archivo `ventas.xlsx` con **los mismos filtros** que tienes puestos (no solo la página que ves). La hoja trae siete columnas, en este orden: «Código de Venta», «Fecha», «Cliente», «Empleado», «Total (S/)», «Estado» e «Ítems»; la exportada con «Fecha desde» y «Fecha hasta» del 02/11/2026 trajo las 9 ventas.
+Con los resultados a la vista, haz clic en **Exportar**. Se descarga el archivo `ventas.xlsx` con **los mismos filtros** que tienes puestos (no solo la página que ves). La hoja trae siete columnas, en este orden: «Código de Venta», «Fecha», «Cliente», «Empleado», «Total (S/)», «Estado» e «Ítems»; la exportada con «Fecha desde» y «Fecha hasta» del 02/11/2026 trajo las 9 ventas. Si los filtros dejan más de 10 000 ventas, el servidor rechaza la exportación y la pantalla muestra «Error al buscar ventas»: aplica filtros para reducir los resultados.
 
 > **Cuidado con la fecha del Excel.** En la exportación probada, las ventas hechas el 02/11/2026 a las 19:24 y 19:25 (hora de Lima) aparecieron con la fecha **03/11/2026**. El Excel muestra la fecha en hora universal (UTC) sin convertirla a tu hora local, así que las ventas hechas a partir de las 19:00 salen con la fecha del día siguiente. En la pantalla la fecha es la correcta. Tenlo presente al revisar el Excel (regla `RN-VEN-078`; ver sección 11).
 
@@ -202,9 +202,9 @@ La reimpresión se puede hacer las veces que haga falta. En una venta **anulada*
 | «Efectivo esperado» de tu caja en el Dashboard | S/ 172.70 | **S/ 163.80** (bajó 8.90: lo cobrado en efectivo menos el vuelto) |
 | Ventas de «ayer» en el Dashboard | S/ 104.10 | S/ 95.20 (el total vendido ya no cuenta la venta anulada) |
 | Botones del detalle | **Reimprimir Comprobante**, **Devolver**, **Anular Venta** | Ninguno: solo queda la flecha de volver |
-| La receta de la venta, si la tenía | Cuenta una dispensación | Se libera la dispensación (la venta anulada ya no cuenta). **No verificado en la aplicación:** `B001-00000005` no usó una receta registrada; sale de la regla `RN-VEN-068` |
+| La receta de la venta, si la tenía | Cuenta una dispensación | Se libera la dispensación (la venta anulada ya no cuenta). Confirmado en el código (`VentaDetalleFactory.cs`, las dispensaciones previas ignoran las ventas anuladas); **No verificado en la aplicación:** `B001-00000005` no usó una receta registrada |
 
-Los **pagos** de la venta anulada siguen mostrándose en el detalle («Efectivo 10.00» y «Vuelto: S/ 1.10»): la anulación no los borra ni crea un reverso. La caja lo refleja de otra forma: como anulaste la venta desde la **misma caja en la que se cobró**, esa venta **sale del arqueo** (cobrada y devuelta en el mismo cajón: efecto neto cero).
+Los **pagos** de la venta anulada siguen mostrándose en el detalle («Efectivo 10.00» y «Vuelto: S/ 1.10»): la anulación no los borra ni crea un reverso. La caja lo refleja de otra forma: como anulaste la venta desde la **misma caja en la que se cobró**, esa venta **sale del arqueo** (cobrada y devuelta en el mismo cajón: efecto neto cero). Si la anula **otra** persona desde **su** caja, la venta sigue contando en la caja donde se cobró y su efectivo neto (cobrado menos vuelto) se resta de la caja que la anuló (confirmado en el código, `ArqueoCajaCalculator.cs`; no ejecutado).
 
 ### Por qué hace falta tu caja abierta
 
@@ -273,7 +273,7 @@ Haz una **devolución** cuando el cliente devuelve **una parte o todo** lo que c
 
 **Cómo llegar:** **Ventas** › abre la venta › botón **Devolver** (arriba a la derecha del detalle).
 
-**Qué necesitas:** el permiso `Devoluciones › Procesar devolución`, **tu propia caja abierta** en la sucursal de la venta (el reembolso sale de tu caja; se pide siempre, incluso si reembolsas por tarjeta), que la venta esté «Completada», que tenga boleta y que la sucursal tenga una **serie de nota de crédito activa** (capítulo 2). Las ventas de otra sucursal no se pueden devolver, ni siquiera siendo administrador.
+**Qué necesitas:** el permiso `Devoluciones › Procesar devolución`, **tu propia caja abierta** en la sucursal de la venta (el reembolso sale de tu caja; se pide siempre, incluso si reembolsas por tarjeta), que la venta esté «Completada», que tenga boleta y que la sucursal tenga una **serie de nota de crédito activa** (capítulo 2). Las ventas de otra sucursal no se pueden devolver, ni siquiera siendo administrador. El servidor revisa en este orden: que la venta exista, que sea de tu sucursal, que tengas tu caja abierta, que la venta tenga boleta o factura, que la sucursal tenga serie de nota de crédito activa, que la venta esté «Completada» y que las cantidades no pasen de lo devolvible; el primero que falla es el aviso que ves.
 
 ### Pasos
 
@@ -355,7 +355,7 @@ Lo que aprendes de esto:
 | «El sustento es obligatorio.» | Dejaste el sustento vacío | Escribe el sustento |
 | «Necesitas una caja abierta para procesar la devolución.» | No tienes caja abierta. Se comprobó con el administrador `ana.manual` (sin caja): no se emitió ninguna nota de crédito | Abre tu caja (capítulo 8) y repite |
 | «La cantidad supera lo que queda por devolver en alguna línea. Actualiza la pantalla e inténtalo de nuevo.» | Otra persona devolvió antes y la pantalla quedó desactualizada. **No verificado en la aplicación:** el campo corrige las cantidades, por lo que este mensaje solo sale con una pantalla vieja (fuente: `producto/pantallas/punto-de-venta` §9) | Cierra el cuadro, recarga la venta y vuelve a intentar |
-| «Solo se pueden devolver ventas completadas.» | La venta ya no está «Completada». **No verificado en la aplicación:** el botón ya no aparece en una venta anulada o devuelta | Revisa el estado de la venta |
+| «Solo se pueden devolver ventas completadas.» | La venta ya no está «Completada»: por ejemplo, ya se devolvió por completo (o se anuló) mientras tenías el detalle abierto. Sale solo si tienes tu caja abierta, porque la caja se revisa antes que el estado. **No verificado en la aplicación:** el botón ya no aparece en una venta anulada o devuelta | Revisa el estado de la venta |
 | «Solo puedes devolver ventas de tu propia sucursal.» | Venta de otra sucursal. **No verificado** | Entra con una cuenta de esa sucursal |
 | «La venta no tiene boleta ni factura emitida que acreditar.» | Venta sin comprobante. **No verificado** | — |
 | «La sucursal no tiene una serie de nota de crédito activa. Configúrala en Series Fiscales.» | Falta la serie `BC01`/`BC02` activa. **No verificado** | Actívala como indica el capítulo 2 |
@@ -413,11 +413,11 @@ Al terminar el turno **cierras tu caja** contando el efectivo que hay en el caj�
 
 **Cómo llegar:** menú lateral › **PUNTO DE VENTA** › **Sesiones de Caja** › **Buscar** › haz clic en el nombre de la sucursal de **tu** sesión abierta (columna «Sucursal»). También puedes entrar con el enlace «Ver mi caja» de la tarjeta «Caja» del Dashboard.
 
-**Quién puede cerrar:** el cajero que abrió la caja o un administrador (rol Admin), y se necesita `Sesiones de Caja › Cerrar caja`. El botón **Cerrar Sesión** se muestra a quien tenga ese permiso en cualquier sesión abierta, pero si no eres quien la abrió ni administrador, al confirmar el sistema responde «Solo el cajero que abrió la caja o un administrador puede cerrarla.» (**No verificado en la aplicación:** no se intentó cerrar la caja de otra persona con un cajero; fuente: `producto/pantallas/punto-de-venta` §1.3).
+**Quién puede cerrar:** el cajero que abrió la caja o un administrador (rol Admin), y se necesita `Sesiones de Caja › Cerrar caja`. El botón **Cerrar Sesión** se muestra a quien tenga ese permiso en cualquier sesión abierta, pero si no eres quien la abrió ni administrador, al confirmar el sistema responde «Solo el cajero que abrió la caja o un administrador puede cerrarla.» El cierre **no comprueba el acceso a la sucursal** de la caja: solo importa que seas quien la abrió o administrador (`CerrarCajaCommandHandler.cs`). (**No verificado en la aplicación:** no se intentó cerrar la caja de otra persona con un cajero; fuente: `producto/pantallas/punto-de-venta` §1.3).
 
 ### Cuánto efectivo debería haber (la fórmula)
 
-**Efectivo esperado = monto de apertura + efectivo cobrado − vuelto entregado − reembolsos en efectivo.** Solo cuentan las ventas **cobradas** en tu caja y **no anuladas**; las ventas en espera no entran. Los pagos con Yape / Plin, tarjeta o transferencia **no** son efectivo y no cuentan (regla `RN-CAJ-011`).
+**Efectivo esperado = monto de apertura + efectivo cobrado − vuelto entregado − reembolsos en efectivo.** Solo cuentan las ventas **cobradas** en tu caja y **no anuladas**; las ventas en espera no entran. Una venta cobrada en tu caja pero anulada desde otra caja sigue contando aquí, y una venta de otra caja que anulaste tú resta su efectivo neto de la tuya. Los pagos con Yape / Plin, tarjeta o transferencia **no** son efectivo y no cuentan (regla `RN-CAJ-011`).
 
 **Cálculo a mano de la caja de la prueba**, antes de cerrar:
 
@@ -474,7 +474,7 @@ Cómo se lee:
 - **El cálculo se hace una sola vez, al cerrar.** Lo que ocurra después con las ventas de esa caja ya no cambia estos tres montos.
 - **Una caja cerrada no se reabre** y no admite más ventas. En el detalle ya no hay botones, solo la flecha de volver.
 - **Las ventas en espera no impiden cerrar.** Si hubiera ventas en espera, el cierre no avisa ni las bloquea; quedan pendientes y las puede cobrar luego cualquier usuario de la sucursal con su propia caja abierta.
-- **Si el efectivo esperado fuera negativo** (por ejemplo, reembolsos en efectivo mayores que lo que entró), el sistema no deja cerrar la caja y muestra «Error al cerrar la sesión». **No verificado en la aplicación** (fuente: `producto/pantallas/punto-de-venta` §1.3, regla `RN-CAJ-016`).
+- **Si el efectivo esperado fuera negativo** (por ejemplo, reembolsos en efectivo mayores que lo que entró), el sistema no deja cerrar la caja y muestra «Error al cerrar la sesión» (confirmado en el código, `PosSesionCaja.cs`, método `Cerrar`). **No verificado en la aplicación** (fuente: `producto/pantallas/punto-de-venta` §1.3, regla `RN-CAJ-016`).
 
 ### Errores que puedes ver
 
@@ -622,10 +622,10 @@ No hubo contradicciones: la aplicación se comportó como describen el inventari
 | 3 | Filtro por empleado de Ventas | Se eligió «Carlos Cajero Demo» junto con otros filtros; no se probó solo ni con otro empleado distinto |
 | 4 | Faltas de permiso | No se quitaron permisos a un rol: las condiciones de los botones salen del inventario `producto/pantallas/punto-de-venta` (§6 a §9) |
 | 5 | Cerrar la caja de otra persona | No se intentó con un cajero ni se confirmó con el administrador (solo se vio el botón) |
-| 6 | Efectivo esperado negativo al cerrar | No se provocó |
+| 6 | Efectivo esperado negativo al cerrar | No se provocó; el código lo rechaza (sección 8) |
 | 7 | Errores de devolución y anulación que la pantalla no deja provocar | «La cantidad supera lo que queda por devolver…», «Solo se pueden devolver ventas completadas.», «Solo puedes devolver ventas de tu propia sucursal.», «La venta no tiene boleta ni factura emitida que acreditar.», «La sucursal no tiene una serie de nota de crédito activa…», «La venta ya no existe.», «Una de las líneas ya no pertenece a la venta.», «Esta venta tiene devoluciones registradas y ya no puede anularse…» y los avisos de conflicto de concurrencia. Se documentan desde el inventario `producto/pantallas/punto-de-venta` |
 | 8 | Límites de texto | No se escribió un motivo de anulación de más de 255 caracteres ni un sustento de más de 255 (el sustento tiene `maxlength` en el campo). Un monto declarado negativo no se probó (solo vacío) |
-| 9 | Receta y dispensaciones | Las ventas anuladas y devueltas de esta prueba no usaron una receta registrada: la liberación de la dispensación al anular (`RN-VEN-068`) y su permanencia al devolver (`RN-DEV-026`) no se comprobaron |
+| 9 | Receta y dispensaciones | Las ventas anuladas y devueltas de esta prueba no usaron una receta registrada: la liberación de la dispensación al anular (`RN-VEN-068`) y su permanencia al devolver (`RN-DEV-026`) no se comprobaron en la aplicación; ambas están confirmadas en el código (`VentaDetalleFactory.cs`: solo se excluyen las ventas anuladas) |
 | 10 | Cuarentena formal | La operación de cuarentena del módulo DIGEMID existe solo por API (sin pantalla) y no se usó |
 | 11 | Cuenta del administrador con caja | No se abrió caja al administrador; por eso no se vio a un administrador anulando o devolviendo con caja propia |
 | 12 | **En curso (sin commitear)** | Ninguno: ambos repositorios estaban sin cambios locales |
