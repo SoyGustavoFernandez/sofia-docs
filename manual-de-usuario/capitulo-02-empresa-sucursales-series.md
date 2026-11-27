@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **Sistema** | SOFIA — Sistema Optimizado Farmacéutico con Inteligencia Artificial |
-| **Versión del documento** | 1.1 |
-| **Fecha** | 2026-11-20 |
-| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado contra `0678e40` |
-| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado contra `37048ea` |
+| **Versión del documento** | 1.2 |
+| **Fecha** | 2026-11-26 |
+| **Backend** | `sofia-apis`, rama `main`, commit `43f5529`; revisado a fondo contra `b67e3ee` |
+| **Frontend** | `sofia-web-spa`, rama `main`, commit `eeffbb6`; revisado a fondo contra `526bc8f` |
 | **Método** | Recorrido en la aplicación local más inventario de pantallas |
 
 ## 1. Introducción
@@ -322,7 +322,7 @@ Arriba, la flecha de volver, el título «Carga Masiva» y las migas «Inicio / 
 | `DireccionFisica` | La dirección | Sí | 255 caracteres |
 | `NumeroLicencia` | El número de licencia | Sí | 50 caracteres |
 
-   No hay columna para el gerente: las sucursales de la carga masiva quedan sin gerente (puedes asignarlo después con **Editar**). Si cambias el nombre de una columna (por ejemplo, con tilde) no se reconoce y esa columna se lee como vacía. El orden de las columnas no importa y las columnas extra se ignoran.
+   No hay columna para el gerente: las sucursales de la carga masiva quedan sin gerente (puedes asignarlo después con **Editar**). Si cambias el nombre de una columna (por ejemplo, con tilde) no se reconoce y esa columna se lee como vacía; las mayúsculas y minúsculas del título no importan. El orden de las columnas no importa y las columnas extra se ignoran. Solo se lee la primera hoja del archivo y las filas completamente vacías se saltan.
 2. **Llena el Excel.** Una sucursal por fila, desde la fila 2. Guárdalo como `.xlsx`.
 3. **Elige el archivo.** Arrástralo a la zona punteada o haz clic en ella. La pantalla comprueba primero en tu navegador que el nombre termine en `.xlsx` y que pese menos de 5 MB.
 4. **Espera la vista previa.** Mientras el sistema lee el archivo ves «Procesando archivo...» (No verificado en la aplicación: con archivos pequeños la espera es muy breve y no se alcanzó a ver; viene de `producto/pantallas/acceso-layout-y-compartidos` §6.5). No se guarda nada todavía.
@@ -416,8 +416,8 @@ Arriba, la flecha de volver, el título «Series Fiscales» y las migas «Inicio
 |---|---|---|---|
 | Sucursal | Elige la sucursal en la lista. Aparecen todas las sucursales de tu empresa | Sí | Vacío: «Este campo es obligatorio» |
 | Tipo de Comprobante | Elige «Boleta», «Factura», «Nota de Crédito» o «Proforma». Empieza en «Boleta» | Sí | Siempre tiene un valor |
-| Prefijo de Serie | 4 caracteres: letras mayúsculas y números. Debajo se lee la ayuda «4 caracteres en mayúsculas. Boleta empieza con B, Factura con F, Nota de Crédito con B o F.». Lo que escribas en minúsculas se convierte solo a mayúsculas, y el campo no deja escribir más de 4 caracteres | Sí | Vacío: «Este campo es obligatorio». Menos de 4 caracteres, con un símbolo (por ejemplo `B-01`) o con una letra que no corresponde al tipo (por ejemplo `F001` en una Boleta): «El prefijo debe tener 4 caracteres en mayúsculas y empezar con la letra que exige el tipo de comprobante.» |
-| Correlativo Actual | Un número entero. Empieza en `0`. Debajo se lee «Último número emitido; el siguiente comprobante usará este valor + 1.» | Sí | Vacío: «Este campo es obligatorio». Negativo (`-3`) o con decimales (`1.5`): «El correlativo debe ser un número entero mayor o igual a 0.» |
+| Prefijo de Serie | 4 caracteres: letras mayúsculas y números. Al crear o editar (no al solo ver) se lee debajo la ayuda «4 caracteres en mayúsculas. Boletas: empiezan con B. Facturas: con F. Notas de crédito: B si anulan boletas, F si anulan facturas.». Lo que escribas en minúsculas se convierte solo a mayúsculas, y el campo no deja escribir más de 4 caracteres | Sí | Vacío: «Este campo es obligatorio». Menos de 4 caracteres, con un símbolo (por ejemplo `B-01`) o con una letra que no corresponde al tipo (por ejemplo `F001` en una Boleta): «El prefijo debe tener 4 caracteres en mayúsculas y empezar con la letra que exige el tipo de comprobante.» |
+| Correlativo Actual | Un número entero. Empieza en `0`. Al crear o editar se lee debajo «Último número emitido; el siguiente comprobante usará este valor + 1.» | Sí | Vacío: «Este campo es obligatorio». Negativo (`-3`) o con decimales (`1.5`): «El correlativo debe ser un número entero mayor o igual a 0.» |
 | Estado | «Activa» o «Inactiva». Empieza en «Activa» | Sí | Siempre tiene un valor |
 
 Todos los mensajes de campo aparecen debajo del campo, al salir de él o al hacer clic en **Guardar** con el formulario incompleto (en ese caso no se envía nada). El mensaje del prefijo se vuelve a evaluar al cambiar el tipo: un prefijo `BC01` es válido para «Nota de Crédito» y «Boleta», pero no para «Factura».
